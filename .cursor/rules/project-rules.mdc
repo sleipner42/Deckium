@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Project rules
+
+- Never make comment in code. IMPORTANT
+- Remove comment if you see them.
+- Less is more.
+- Simplicity over complexity.
+- If unsure, ask.
+- Adhere to clean code.
+- Always use absolute imports.
+- NO COMMENT IN CODE.

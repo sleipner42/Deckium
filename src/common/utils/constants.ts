@@ -1,0 +1,7 @@
+export const PRESENTATION_DIMENSIONS = {
+  WIDTH: 1280,
+  HEIGHT: 720,
+  ASPECT_RATIO: 16 / 9,
+};
+
+export const THUMBNAIL_SCALE = 0.2; 
