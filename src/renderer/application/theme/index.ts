@@ -3,22 +3,22 @@ import { createTheme } from '@mui/material';
 // Create Material UI theme
 const theme = createTheme({
   palette: {
+    mode: 'dark',
     primary: {
-      main: '#007AFF', // Apple blue
+      main: '#FF2D55', // Apple Music red
     },
     secondary: {
-      main: '#FF2D55', // Apple pink
+      main: '#FFFFFF', // White
     },
     background: {
-      default: '#F5F5F7', // Apple light gray
-      paper: '#FFFFFF',
+      default: '#1E1E1E', // Dark background
+      paper: '#212121', // Slightly lighter dark
     },
-    error: {
-      main: '#FF3B30', // Apple red
+    text: {
+      primary: '#FFFFFF',
+      secondary: '#B3B3B3',
     },
-    success: {
-      main: '#34C759', // Apple green
-    },
+    divider: 'rgba(255, 255, 255, 0.12)',
   },
   typography: {
     fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Roboto", "Helvetica Neue", sans-serif',
@@ -47,7 +47,7 @@ const theme = createTheme({
         },
         containedPrimary: {
           '&:hover': {
-            backgroundColor: '#0071E3', // Slightly darker Apple blue on hover
+            backgroundColor: '#FF1A43', // Slightly darker red on hover
           },
         },
       },
@@ -55,7 +55,7 @@ const theme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.05)',
+          boxShadow: 'none',
         },
       },
     },

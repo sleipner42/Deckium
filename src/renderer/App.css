@@ -1,3 +1,57 @@
+/* Apple Music Style CSS */
+
+/* Reset and Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Roboto', 'Helvetica Neue', sans-serif;
+  background-color: #1E1E1E;
+  color: white;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Apple Music specific styles */
+.apple-music-sidebar {
+  background-color: #212121;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.apple-music-list-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.apple-music-promo-banner {
+  background-color: #FF2D55;
+  border-radius: 8px;
+  color: white;
+  text-align: center;
+  padding: 24px;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Original styles with dark theme adjustments */
 .App {
   text-align: center;
 }
@@ -14,7 +68,7 @@
 }
 
 .App-header {
-  background-color: #282c34;
+  background-color: #1E1E1E;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -25,7 +79,7 @@
 }
 
 .App-link {
-  color: #61dafb;
+  color: #FF2D55;
 }
 
 @keyframes App-logo-spin {
@@ -40,7 +94,7 @@
 .app {
   display: flex;
   height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #1E1E1E;
 }
 
 .welcome-screen {
@@ -49,7 +103,7 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #2c3e50;
+  background-color: #1E1E1E;
   color: white;
 }
 
@@ -61,21 +115,21 @@
 .create-presentation-btn {
   padding: 1rem 2rem;
   font-size: 1.2rem;
-  background-color: #27ae60;
+  background-color: #FF2D55;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .create-presentation-btn:hover {
-  background-color: #2ecc71;
+  background-color: #FF1A43;
 }
 
 .sidebar {
   width: 300px;
-  background-color: #2c3e50;
+  background-color: #212121;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -84,30 +138,30 @@
 }
 
 .slide-thumbnail {
-  background-color: #34495e;
+  background-color: #2C2C2C;
   color: white;
   padding: 10px;
   margin-bottom: 10px;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .slide-thumbnail:hover {
-  background-color: #3d566e;
+  background-color: #3A3A3A;
 }
 
 .slide-thumbnail.active {
-  background-color: #3498db;
+  background-color: #FF2D55;
 }
 
 .add-slide-btn {
   width: 100%;
   padding: 10px;
-  background-color: #27ae60;
+  background-color: #FF2D55;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
   font-weight: 500;
@@ -115,7 +169,7 @@
 }
 
 .add-slide-btn:hover {
-  background-color: #2ecc71;
+  background-color: #FF1A43;
 }
 
 .slide-navigation {
@@ -131,23 +185,23 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #ecf0f1;
+  background-color: #1E1E1E;
 }
 
 .slide-editor {
   width: 100%;
   max-width: 1200px;
   aspect-ratio: 16/9;
-  background-color: white;
+  background-color: #212121;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .toolbar {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   padding: 8px 16px;
   display: flex;
   align-items: center;
@@ -166,10 +220,12 @@
   font-size: 18px;
   line-height: 1.6;
   padding: 20px;
+  background-color: #212121;
+  color: white;
 }
 
 button {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Roboto', 'Helvetica Neue', sans-serif;
 }
 
 button:disabled {
@@ -182,7 +238,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   height: 400px;
-  border-top: 1px solid #34495e;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
   padding-top: 16px;
 }
 
@@ -196,7 +252,7 @@ button:disabled {
 .ai-chat-interface {
   flex: 1;
   border-radius: 8px;
-  background-color: white;
+  background-color: #2C2C2C;
   overflow: hidden;
   display: flex;
   flex-direction: column;

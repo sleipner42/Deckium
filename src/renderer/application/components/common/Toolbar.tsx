@@ -28,11 +28,10 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
 
 interface ToolbarProps {
-  className?: string;
   style?: React.CSSProperties;
 }
 
-export const Toolbar: React.FC<ToolbarProps> = ({ className, style }) => {
+export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
   const { selectedSlide, addElement } = usePresentation();
   const [shapeAnchorEl, setShapeAnchorEl] = useState<null | HTMLElement>(null);
   
@@ -91,25 +90,29 @@ export const Toolbar: React.FC<ToolbarProps> = ({ className, style }) => {
   
   return (
     <Box
-      className={className}
       sx={{
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'center',
         px: 2,
         py: 1,
+        height: '60px',
         bgcolor: 'background.paper',
-        borderBottom: 1,
+        borderBottom: '1px solid',
         borderColor: 'divider',
         gap: 2,
-        ...style
+        WebkitAppRegion: 'drag',
+        ...style,
       }}
     >
+      {/* Centered toolbar content */}
       <Typography 
         variant="subtitle2" 
         sx={{ 
           fontWeight: 600, 
           color: 'text.secondary',
-          mr: 1
+          mr: 1,
+          WebkitAppRegion: 'no-drag'
         }}
       >
         Insert
@@ -129,7 +132,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ className, style }) => {
             '&:hover': {
               bgcolor: alpha('#007AFF', 0.04),
               borderColor: alpha('#007AFF', 0.5),
-            }
+            },
+            WebkitAppRegion: 'no-drag'
           }}
         >
           Text
@@ -149,7 +153,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ className, style }) => {
             '&:hover': {
               bgcolor: alpha('#007AFF', 0.04),
               borderColor: alpha('#007AFF', 0.5),
-            }
+            },
+            WebkitAppRegion: 'no-drag'
           }}
         >
           Image
@@ -170,7 +175,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ className, style }) => {
             '&:hover': {
               bgcolor: alpha('#007AFF', 0.04),
               borderColor: alpha('#007AFF', 0.5),
-            }
+            },
+            WebkitAppRegion: 'no-drag'
           }}
         >
           Shape
@@ -191,7 +197,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ className, style }) => {
             '&:hover': {
               bgcolor: alpha('#007AFF', 0.04),
               borderColor: alpha('#007AFF', 0.5),
-            }
+            },
+            WebkitAppRegion: 'no-drag'
           }}
         >
           Chart
@@ -238,36 +245,38 @@ export const Toolbar: React.FC<ToolbarProps> = ({ className, style }) => {
         sx={{ 
           fontWeight: 600, 
           color: 'text.secondary',
-          ml: 1
+          ml: 1,
+          WebkitAppRegion: 'no-drag'
         }}
       >
         Format
       </Typography>
       
       <Tooltip title="Bold">
-        <IconButton size="small" sx={{ color: 'text.secondary' }}>
+        <IconButton size="small" sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}>
           <FormatBoldIcon fontSize="small" />
         </IconButton>
       </Tooltip>
       
       <Tooltip title="Italic">
-        <IconButton size="small" sx={{ color: 'text.secondary' }}>
+        <IconButton size="small" sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}>
           <FormatItalicIcon fontSize="small" />
         </IconButton>
       </Tooltip>
       
       <Tooltip title="Underline">
-        <IconButton size="small" sx={{ color: 'text.secondary' }}>
+        <IconButton size="small" sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}>
           <FormatUnderlinedIcon fontSize="small" />
         </IconButton>
       </Tooltip>
       
       <Tooltip title="Fill Color">
-        <IconButton size="small" sx={{ color: 'text.secondary' }}>
+        <IconButton size="small" sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}>
           <FormatColorFillIcon fontSize="small" />
         </IconButton>
       </Tooltip>
-      
     </Box>
   );
 };
+
+export default Toolbar;

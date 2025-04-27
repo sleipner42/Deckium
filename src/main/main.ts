@@ -87,7 +87,12 @@ const createWindow = async () => {
     // width: 1024,
     // height: 728,
     icon: getAssetPath('icon.png'),
-    fullscreen: true,
+    fullscreen: false,
+    width: 1280,
+    height: 800,
+    frame: false,
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 10, y: 10 },
     webPreferences: {
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
@@ -132,6 +137,8 @@ const createSecondWindow = async () => {
     width: 1024,
     height: 728,
     show: true,
+    frame: false,
+    titleBarStyle: 'hiddenInset',
     webPreferences: {
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
