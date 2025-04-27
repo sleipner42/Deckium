@@ -33,7 +33,9 @@ GOOD DESIGN PRACTICES:
 - The cordinates of an element are relative to the top left corner of the slide and top left corner.
 - Don't place elements outside the slide. If you notify that en element is outside the slide, you should move it inside the slide.
 - Think really deeply about how to place objects in relation to each other. It's always nice when items is centered and aligned. 
-- Aligning items is very important. This is the most important thing to keep in mind. Use the available tools to align items
+- Aligning items is very important. This is the most important thing to keep in mind. Use the available tools to align items.
+- Try to structure text as bullets. Use shapes to make the presentation more interesting. Use nice fonts and colors.
+- A good title is like a good headline. It should be short, concise and to the point.
 
 TEXT FORMATTING:
 - To format text, use markdown.

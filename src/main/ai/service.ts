@@ -23,7 +23,6 @@ export class AIService {
   }
 
   createThread(title: string, presentationId: UUID): Thread {
-
     const presentation = this.presentationService.getPresentation();
     const developerPrompt = getDeveloperPrompt(presentation);
 
@@ -73,7 +72,7 @@ export class AIService {
       this.eventBus.broadcastProcessingStarted(updatedThread.id);
       
       const startTime = performance.now();
-      updatedThread = await this.processAILoop(updatedThread, request.message);
+      updatedThread = await this.processAILoopWithStreaming(updatedThread, request.message);
       const endTime = performance.now();
       console.log(`Total AI loop processing time: ${endTime - startTime}ms`);
       
@@ -108,6 +107,156 @@ export class AIService {
         message: `Error: ${errorMessage}`
       };
     }
+  }
+
+  private async processAILoopWithStreaming(thread: Thread, userMessage: string): Promise<Thread> {
+    console.log(`AI streaming loop started for thread ${thread.id}`);
+    const loopStartTime = performance.now();
+    
+    let updatedThread = thread;
+    
+    console.time('getPresentation');
+    const presentation = this.presentationService.getPresentation();
+    console.timeEnd('getPresentation');
+    
+    console.time('getDeveloperPrompt');
+    const developerPrompt = getDeveloperPrompt(presentation);
+    console.timeEnd('getDeveloperPrompt');
+    
+    console.time('updateSystemMessage');
+    updatedThread = this.state.updateSystemMessage(updatedThread, developerPrompt);
+    console.timeEnd('updateSystemMessage');
+    
+    let currentMessage = userMessage;
+    let iterationCount = 0;
+    const MAX_ITERATIONS = 20;
+
+    while (iterationCount < MAX_ITERATIONS) {
+      const iterationStartTime = performance.now();
+      console.log(`Starting iteration ${iterationCount + 1}/${MAX_ITERATIONS}`);
+      
+      try {
+        const messages = updatedThread.messages;
+        const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini';
+        
+        console.time('createAssistantMessageForStreaming');
+        const assistantMessageId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+        console.log(`Creating streaming message with ID: ${assistantMessageId}`);
+        
+        updatedThread = this.state.addMessageWithState(
+          updatedThread, 
+          '', 
+          'assistant',
+          assistantMessageId, 
+          'streaming'
+        );
+        
+        this.saveThread(updatedThread);
+        
+        this.eventBus.broadcastThreadUpdated(updatedThread);
+        console.timeEnd('createAssistantMessageForStreaming');
+        
+        console.time('aiClientChatStream');
+        console.log(`Starting streaming request to AI with ${messages.length} messages`);
+        
+        let streamingContent = '';
+        
+        const onChunk = (chunk: string) => {
+          console.log(`Received chunk: "${chunk}"`);
+          streamingContent += chunk;
+          
+          updatedThread = this.state.updateMessageContent(updatedThread, assistantMessageId, streamingContent);
+          
+          this.eventBus.broadcastMessageChunkReceived(updatedThread.id, assistantMessageId, chunk, streamingContent);
+          
+          this.eventBus.broadcastThreadUpdated(updatedThread);
+        };
+        
+        const aiResponse = await this.aiClient.chatStream(messages, onChunk, deploymentName);
+        console.timeEnd('aiClientChatStream');
+        
+        console.time('finalizeStreamingMessage');
+        updatedThread = this.state.setMessageStreamingState(updatedThread, assistantMessageId, 'completed');
+        this.eventBus.broadcastThreadUpdated(updatedThread);
+        console.timeEnd('finalizeStreamingMessage');
+        
+        console.time('extractToolCall');
+        const toolCall = this.toolsService.extractToolCall(aiResponse);
+        console.timeEnd('extractToolCall');
+        
+        if (!toolCall) {
+          console.log('No tool call detected, exiting loop');
+          break;
+        }
+        
+        console.log(`Executing tool call: ${toolCall.toolName}`);
+        console.time('executeToolCalls');
+        const toolResults = await this.toolsService.executeToolCalls([toolCall], this.presentationService);
+        console.timeEnd('executeToolCalls');
+        
+        console.time('formatToolResults');
+        const toolResultsFormatted = this.toolsService.formatToolResults(toolResults);
+        console.timeEnd('formatToolResults');
+
+        if (Array.isArray(toolResultsFormatted)) {
+          const textContent = toolResultsFormatted.find(
+            (item) => item.type === 'text'
+          )?.text;
+          
+          if (textContent) {
+            console.time('addSystemMessage');
+            updatedThread = this.state.addMessage(updatedThread, textContent, 'system');
+            console.timeEnd('addSystemMessage');
+          }
+
+          const hasImages = toolResultsFormatted.some(
+            (item) => item.type === 'image_url'
+          );
+          
+          if (hasImages) {
+            const imageContents = toolResultsFormatted.filter(
+              (item) => item.type === 'image_url'
+            );
+
+            imageContents.unshift({
+              type: 'text',
+              text: 'Here is the screenshot from the tool execution:',
+            });
+
+            console.time('addImageMessage');
+            updatedThread = this.state.addMessage(updatedThread, imageContents as MessageContent[], 'user');
+            console.timeEnd('addImageMessage');
+            currentMessage = 'Tool execution completed successfully. Screenshots have been added to the conversation.';
+          } else {
+            currentMessage = 'Tool execution completed successfully.';
+          }
+        } else {
+          console.time('addSystemMessage');
+          updatedThread = this.state.addMessage(updatedThread, toolResultsFormatted, 'system');
+          console.timeEnd('addSystemMessage');
+          currentMessage = `Tool execution results: ${toolResultsFormatted}`;
+        }
+
+        iterationCount++;
+        const iterationEndTime = performance.now();
+        console.log(`Iteration ${iterationCount} completed in ${iterationEndTime - iterationStartTime}ms`);
+
+        if (iterationCount === MAX_ITERATIONS) {
+          const warningMessage = 'Maximum number of tool call iterations reached. Some actions may not have been completed.';
+          updatedThread = this.state.addMessage(updatedThread, warningMessage, 'system');
+        }
+      } catch (error) {
+        console.error('Error in AI loop:', error);
+        const errorMessage = `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`;
+        updatedThread = this.state.addMessage(updatedThread, errorMessage, 'system');
+        break;
+      }
+    }
+
+    const loopEndTime = performance.now();
+    console.log(`AI loop completed after ${iterationCount} iterations in ${loopEndTime - loopStartTime}ms`);
+    
+    return updatedThread;
   }
 
   private async processAILoop(thread: Thread, userMessage: string): Promise<Thread> {

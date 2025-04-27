@@ -77,6 +77,96 @@ export class AIState {
     return updatedThread;
   }
 
+  addMessageWithState(
+    thread: Thread,
+    content: string | MessageContent[],
+    role: 'user' | 'assistant' | 'system',
+    messageId: string = uuidv4(),
+    streamingState: 'streaming' | 'completed' = 'completed'
+  ): Thread {
+    const threadToUpdate = this.threads.get(thread.id) || thread;
+
+    const newMessage: Message = {
+      id: messageId,
+      content,
+      role,
+      timestamp: new Date(),
+      threadId: thread.id,
+      streamingState
+    };
+
+    const updatedThread = {
+      ...threadToUpdate,
+      messages: [...threadToUpdate.messages, newMessage],
+      updatedAt: new Date(),
+    };
+
+    this.threads.set(updatedThread.id, updatedThread);
+    return updatedThread;
+  }
+
+  updateMessageContent(
+    thread: Thread,
+    messageId: string,
+    content: string | MessageContent[]
+  ): Thread {
+    const threadToUpdate = this.threads.get(thread.id) || thread;
+    
+    const messageIndex = threadToUpdate.messages.findIndex(
+      (message) => message.id === messageId
+    );
+    
+    if (messageIndex === -1) {
+      return threadToUpdate;
+    }
+    
+    const updatedMessages = [...threadToUpdate.messages];
+    updatedMessages[messageIndex] = {
+      ...updatedMessages[messageIndex],
+      content
+    };
+    
+    const updatedThread = {
+      ...threadToUpdate,
+      messages: updatedMessages,
+      updatedAt: new Date()
+    };
+    
+    this.threads.set(updatedThread.id, updatedThread);
+    return updatedThread;
+  }
+
+  setMessageStreamingState(
+    thread: Thread,
+    messageId: string,
+    streamingState: 'streaming' | 'completed'
+  ): Thread {
+    const threadToUpdate = this.threads.get(thread.id) || thread;
+    
+    const messageIndex = threadToUpdate.messages.findIndex(
+      (message) => message.id === messageId
+    );
+    
+    if (messageIndex === -1) {
+      return threadToUpdate;
+    }
+    
+    const updatedMessages = [...threadToUpdate.messages];
+    updatedMessages[messageIndex] = {
+      ...updatedMessages[messageIndex],
+      streamingState
+    };
+    
+    const updatedThread = {
+      ...threadToUpdate,
+      messages: updatedMessages,
+      updatedAt: new Date()
+    };
+    
+    this.threads.set(updatedThread.id, updatedThread);
+    return updatedThread;
+  }
+
   updateSystemMessage(thread: Thread, newContent: string): Thread {
     const updatedThread = {...thread};
     

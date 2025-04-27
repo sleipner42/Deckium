@@ -9,6 +9,7 @@ export interface Message {
   role: MessageRole;
   timestamp: Date;
   threadId: UUID;
+  streamingState?: 'streaming' | 'completed';
 }
 
 export interface Thread {

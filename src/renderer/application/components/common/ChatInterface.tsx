@@ -22,6 +22,7 @@ import {
 import React, { useEffect, useRef, useState } from 'react';
 import { Message } from '../../../../common/domain/entities/ai-types';
 import { useAI } from '../../context/AIContext';
+import { keyframes } from '@mui/system';
 
 interface ChatInterfaceProps {
   className?: string;
@@ -29,6 +30,12 @@ interface ChatInterfaceProps {
 
 const MAX_IMAGE_SIZE = 800;
 const IMAGE_QUALITY = 0.85;
+
+// Add this keyframe animation outside of the component
+const blinkKeyframes = keyframes`
+  from, to { opacity: 1; }
+  50% { opacity: 0; }
+`;
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   className = '',
@@ -462,6 +469,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 />
                               </Tooltip>
                             )}
+                            {message.streamingState === 'streaming' && (
+                              <Box
+                                component="span"
+                                sx={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  ml: 0.5,
+                                }}
+                              >
+                                <CircularProgress size={8} thickness={6} />
+                              </Box>
+                            )}
                           </Typography>
                           <Paper
                             elevation={0}
@@ -489,6 +508,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                               }}
                             >
                               {content}
+                              {message.streamingState === 'streaming' && 
+                                <Box 
+                                  component="span" 
+                                  sx={{ 
+                                    display: 'inline-block', 
+                                    width: '0.5em',
+                                    height: '1em',
+                                    ml: 0.5,
+                                    verticalAlign: 'middle',
+                                    animation: `${blinkKeyframes} 1s step-end infinite`,
+                                    bgcolor: isUser ? 'white' : 'text.primary',
+                                  }}
+                                >
+                                  &nbsp;
+                                </Box>
+                              }
                             </Typography>
 
                             {/* Render images from message content */}

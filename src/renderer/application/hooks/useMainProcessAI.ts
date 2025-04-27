@@ -71,6 +71,26 @@ export const useMainProcessAI = (presentationId: UUID) => {
       }
     );
 
+    const threadUpdatedUnsubscribe = electronAPI.ipcRenderer.on(
+      'ai:thread-updated',
+      (...args: unknown[]) => {
+        const updatedThread = args[0] as Thread;
+        
+        setThreads(prev => {
+          const index = prev.findIndex(t => t.id === updatedThread.id);
+          if (index === -1) return prev;
+          
+          const newThreads = [...prev];
+          newThreads[index] = updatedThread;
+          return newThreads;
+        });
+        
+        if (currentThread?.id === updatedThread.id) {
+          setCurrentThread(updatedThread);
+        }
+      }
+    );
+
     const threadDeletedUnsubscribe = electronAPI.ipcRenderer.on(
       'ai:thread-deleted',
       (...args: unknown[]) => {
@@ -108,10 +128,105 @@ export const useMainProcessAI = (presentationId: UUID) => {
       }
     );
 
+    const messageChunkReceivedUnsubscribe = electronAPI.ipcRenderer.on(
+      'ai:message-chunk-received',
+      (...args: unknown[]) => {
+        const data = args[0] as { 
+          threadId: UUID, 
+          messageId: UUID, 
+          chunk: string, 
+          fullContent: string 
+        };
+        
+        console.log('Chunk received:', data);
+        
+        if (data.threadId && data.messageId) {
+          setThreads(prev => {
+            const threadIndex = prev.findIndex(t => t.id === data.threadId);
+            if (threadIndex === -1) return prev;
+            
+            const updatedThreads = [...prev];
+            const thread = {...updatedThreads[threadIndex]};
+            
+            const messageIndex = thread.messages.findIndex(m => m.id === data.messageId);
+            if (messageIndex === -1) return prev;
+            
+            const updatedMessages = [...thread.messages];
+            updatedMessages[messageIndex] = {
+              ...updatedMessages[messageIndex],
+              content: data.fullContent,
+              streamingState: 'streaming'
+            };
+            
+            thread.messages = updatedMessages;
+            updatedThreads[threadIndex] = thread;
+            
+            return updatedThreads;
+          });
+          
+          if (currentThread?.id === data.threadId) {
+            setCurrentThread(prev => {
+              if (!prev) return prev;
+              
+              const updatedThread = {...prev};
+              const messageIndex = updatedThread.messages.findIndex(m => m.id === data.messageId);
+              if (messageIndex === -1) return prev;
+              
+              const updatedMessages = [...updatedThread.messages];
+              updatedMessages[messageIndex] = {
+                ...updatedMessages[messageIndex],
+                content: data.fullContent,
+                streamingState: 'streaming'
+              };
+              
+              updatedThread.messages = updatedMessages;
+              return updatedThread;
+            });
+          }
+        }
+      }
+    );
+
+    const processingStartedUnsubscribe = electronAPI.ipcRenderer.on(
+      'ai:processing-started',
+      (...args: unknown[]) => {
+        const threadId = args[0] as UUID;
+        if (currentThread?.id === threadId) {
+          setIsLoading(true);
+        }
+      }
+    );
+
+    const processingCompletedUnsubscribe = electronAPI.ipcRenderer.on(
+      'ai:processing-completed',
+      (...args: unknown[]) => {
+        const threadId = args[0] as UUID;
+        if (currentThread?.id === threadId) {
+          setIsLoading(false);
+        }
+      }
+    );
+    
+    const processingErrorUnsubscribe = electronAPI.ipcRenderer.on(
+      'ai:processing-error',
+      (...args: unknown[]) => {
+        const data = args[0] as { threadId: UUID, error: string };
+        if (currentThread?.id === data.threadId) {
+          setError(data.error);
+          setIsLoading(false);
+        }
+      }
+    );
+
     return () => {
       threadCreatedUnsubscribe();
+      threadUpdatedUnsubscribe();
       threadDeletedUnsubscribe();
       messageReceivedUnsubscribe();
+      messageChunkReceivedUnsubscribe();
+      processingStartedUnsubscribe();
+      processingCompletedUnsubscribe();
+      processingErrorUnsubscribe();
     };
   }, [currentThread]);
 

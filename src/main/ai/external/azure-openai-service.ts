@@ -82,7 +82,7 @@ export class AzureOpenAIService implements IAIService {
       
       console.log(`[AzureOpenAI] Payload optimization: Original ${(originalSize / 1024).toFixed(2)} KB → Optimized ${(optimizedSize / 1024).toFixed(2)} KB (${(sizeSaved / 1024).toFixed(2)} KB saved, ${((sizeSaved / originalSize) * 100).toFixed(2)}%)`);
 
-      const modelName = "gpt-4.1-mini"// || process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini';
+      const modelName = "gpt-4.1-mini";
       console.log(`[AzureOpenAI] Using deployment: ${modelName}`);
       
       let requestSize = 0;
@@ -125,6 +125,109 @@ export class AzureOpenAIService implements IAIService {
     } catch (error) {
       const overallEndTime = performance.now();
       console.error(`[AzureOpenAI] Error sending message to Azure OpenAI (after ${overallEndTime - overallStartTime}ms):`, error);
+      throw error;
+    }
+  }
+
+  async chatStream(
+    messages: Message[],
+    onChunk: (chunk: string) => void,
+    deploymentName?: string
+  ): Promise<string> {
+    const overallStartTime = performance.now();
+    console.log(`[AzureOpenAI] Starting streaming chat request with ${messages.length} messages`);
+    
+    try {
+      const formatStartTime = performance.now();
+      
+      const userMessages = messages.filter(msg => msg.role === 'user');
+      const latestUserMessageId = userMessages.length > 0 
+        ? userMessages[userMessages.length - 1].id 
+        : null;
+      
+      const formattedMessages = messages.map((msg) => {
+        const baseMessage = {
+          role: msg.role as 'user' | 'assistant' | 'system'
+        };
+
+        const isLatestUserMessage = msg.id === latestUserMessageId;
+        
+        if (typeof msg.content === 'string') {
+          return {
+            ...baseMessage,
+            content: msg.content
+          };
+        } else {
+          const isOldMessage = msg.role === 'user' && !isLatestUserMessage;
+          
+          return {
+            ...baseMessage,
+            content: msg.content.map(item => {
+              if (item.type === 'text') {
+                return { type: 'text', text: item.text };
+              } else if (item.type === 'image_url' && item.image_url) {
+                if (isOldMessage) {
+                  return { 
+                    type: 'text', 
+                    text: '[Image removed to improve performance]' 
+                  };
+                }
+                return { 
+                  type: 'image_url', 
+                  image_url: { url: item.image_url.url }
+                };
+              }
+              return item;
+            })
+          };
+        }
+      });
+      
+      const formatEndTime = performance.now();
+      console.log(`[AzureOpenAI] Message formatting took ${formatEndTime - formatStartTime}ms`);
+
+      const modelName = "gpt-4.1-mini";
+      console.log(`[AzureOpenAI] Using deployment for streaming: ${modelName}`);
+      
+      const apiCallStartTime = performance.now();
+      console.log(`[AzureOpenAI] Sending streaming request to Azure OpenAI API at ${new Date().toISOString()}`);
+      
+      try {
+        const stream = await this.client.chat.completions.create({
+          model: modelName,
+          messages: formattedMessages as any,
+          stream: true
+        });
+        
+        let completeResponse = '';
+        
+        console.log('[AzureOpenAI] Stream created, processing chunks...');
+        
+        for await (const chunk of stream) {
+          const content = chunk.choices[0]?.delta?.content || '';
+          if (content) {
+            console.log(`[AzureOpenAI] Received chunk: "${content}"`);
+            completeResponse += content;
+            onChunk(content);
+          }
+        }
+        
+        const apiCallEndTime = performance.now();
+        const apiCallDuration = apiCallEndTime - apiCallStartTime;
+        console.log(`[AzureOpenAI] Streaming API call completed in ${apiCallDuration}ms`);
+        console.log(`[AzureOpenAI] Total streamed response length: ${completeResponse.length} characters`);
+        
+        const overallEndTime = performance.now();
+        console.log(`[AzureOpenAI] Total streaming request time: ${overallEndTime - overallStartTime}ms`);
+        
+        return completeResponse;
+      } catch (streamError) {
+        console.error('[AzureOpenAI] Error during streaming:', streamError);
+        throw streamError;
+      }
+    } catch (error) {
+      const overallEndTime = performance.now();
+      console.error(`[AzureOpenAI] Error in streaming chat (after ${overallEndTime - overallStartTime}ms):`, error);
       throw error;
     }
   }

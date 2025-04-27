@@ -6,6 +6,7 @@ import { UUID } from '../../common/domain/entities/types';
 export class AIEventBus extends EventEmitter {
   static events = {
     MESSAGE_RECEIVED: 'ai:message-received',
+    MESSAGE_CHUNK_RECEIVED: 'ai:message-chunk-received',
     THREAD_CREATED: 'ai:thread-created',
     THREAD_UPDATED: 'ai:thread-updated',
     THREAD_DELETED: 'ai:thread-deleted',
@@ -28,6 +29,16 @@ export class AIEventBus extends EventEmitter {
       updatedThread
     };
     this.broadcastToWindows(AIEventBus.events.MESSAGE_RECEIVED, data);
+  }
+  
+  broadcastMessageChunkReceived(threadId: UUID, messageId: UUID, chunk: string, fullContent: string): void {
+    const data = {
+      threadId,
+      messageId,
+      chunk,
+      fullContent
+    };
+    this.broadcastToWindows(AIEventBus.events.MESSAGE_CHUNK_RECEIVED, data);
   }
   
   broadcastThreadCreated(thread: Thread): void {
