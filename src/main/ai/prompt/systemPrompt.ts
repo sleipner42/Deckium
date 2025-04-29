@@ -26,6 +26,9 @@ GUIDELINES:
 5. When creating slides, make sure to create really good board level slides. The information should be easy to understand and the slides should be visually appealing.
 6. Structure the slides in a way that is easy to understand and follow.
 7. It's better to do something and be creative than to do nothing.
+8. If adding a title, make sure to have some margin to the top of the slide. Especially if you are using center cordinates. Also have some margin to the text below. Better to have to much than to little.
+9. Dark blue is a really nice color.
+10. Try to have text (bullets, etc) on the left side of the slide. And graphics (such as plots, charts, etc) on the right side of the slide.
 
 GOOD DESIGN PRACTICES:
 - The size of a slide is 1280x720 pixels.
@@ -34,7 +37,7 @@ GOOD DESIGN PRACTICES:
 - Don't place elements outside the slide. If you notify that en element is outside the slide, you should move it inside the slide.
 - Think really deeply about how to place objects in relation to each other. It's always nice when items is centered and aligned. 
 - Aligning items is very important. This is the most important thing to keep in mind. Use the available tools to align items.
-- Try to structure text as bullets. Use shapes to make the presentation more interesting. Use nice fonts and colors.
+- Try to structure text as bullets. Use shapes to make the presentation more interesting. Use nice fonts and colors. Bullets should alway be in markdown format.
 - A good title is like a good headline. It should be short, concise and to the point.
 
 TEXT FORMATTING:

@@ -14,10 +14,9 @@ export class PresentationState {
     };
   }
 
-  private createSlide(title: string): Slide {
+  private createSlide(): Slide {
     return {
       id: crypto.randomUUID(),
-      title,
       elements: [],
       background: '#FFFFFF',
       transition: 'none',
@@ -28,12 +27,12 @@ export class PresentationState {
     return this.presentation;
   }
 
-  initializePresentation(title: string): Presentation {
-    const titleSlide = this.createSlide('Title Slide');
+  initializePresentation(): Presentation {
+    const titleSlide = this.createSlide();
     
     this.presentation = {
       id: 'singleton',
-      title,
+      title: 'Untitled Presentation',
       slides: [titleSlide],
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -52,8 +51,8 @@ export class PresentationState {
     return this.presentation;
   }
   
-  addSlide(title: string = 'New Slide'): Slide {
-    const newSlide = this.createSlide(title);
+  addSlide(): Slide {
+    const newSlide = this.createSlide();
     
     this.presentation = {
       ...this.presentation,

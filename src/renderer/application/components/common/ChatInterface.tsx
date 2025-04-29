@@ -401,6 +401,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       key={message.id}
                       sx={{
                         maxWidth: '85%',
+                        width: 'fit-content',
                         alignSelf: isUser ? 'flex-end' : 'flex-start',
                         mb: 1.5,
                       }}
@@ -487,6 +488,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             sx={{
                               p: 1.5,
                               borderRadius: 1.5,
+                              maxWidth: '100%',
+                              overflowWrap: 'break-word',
                               bgcolor: isUser
                                 ? 'primary.main'
                                 : isAssistant
@@ -502,6 +505,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                               variant="body2"
                               sx={{
                                 whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word',
+                                overflow: 'visible',
                                 color: isUser ? 'white' : 'text.primary',
                                 fontSize: '0.85rem',
                                 lineHeight: 1.5,

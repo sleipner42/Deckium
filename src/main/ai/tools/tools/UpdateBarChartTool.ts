@@ -17,6 +17,7 @@ export class UpdateBarChartTool extends BaseTool {
     y: 'New Y position (optional)',
     width: 'New width (optional)',
     height: 'New height (optional)',
+    barColor: 'New color for the bars (optional)',
   };
 
   protected async executeImpl(
@@ -34,6 +35,7 @@ export class UpdateBarChartTool extends BaseTool {
       y,
       width,
       height,
+      barColor,
     } = params;
 
     if (!elementId) {
@@ -88,6 +90,11 @@ export class UpdateBarChartTool extends BaseTool {
         width: width !== undefined ? Number(width) : barChart.size.width,
         height: height !== undefined ? Number(height) : barChart.size.height,
       };
+    }
+
+    // Process bar color updates
+    if (barColor !== undefined) {
+      updates.barColor = barColor;
     }
 
     // Process data updates

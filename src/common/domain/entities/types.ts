@@ -51,6 +51,7 @@ export interface BarChart {
   xAxisLabel: string;
   yAxisLabel: string;
   style?: ElementStyle;
+  barColor?: string;
 }
 
 export interface TextBox {
@@ -93,10 +94,8 @@ export type ContentElement = Shape | TextBox | Plot | Image | BarChart;
 
 export interface Slide {
   id: UUID;
-  title: string;
   elements: ContentElement[];
   background: string;
-  transition: 'none' | 'fade' | 'slide' | 'zoom';
 }
 
 export interface Presentation {

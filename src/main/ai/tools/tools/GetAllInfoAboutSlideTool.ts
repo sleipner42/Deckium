@@ -103,9 +103,7 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
 
     const slideInfo = {
       id: slide.id,
-      title: slide.title,
       background: slide.background,
-      transition: slide.transition,
       elementsCount: slide.elements.length,
       elements: processedElements,
     };

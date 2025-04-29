@@ -13,7 +13,7 @@ import { CreateShapeTool } from './tools/CreateShapeTool';
 import { UpdateShapeTool } from './tools/UpdateShapeTool';
 import { AlignElementsTool } from './tools/AlignElementsTool';
 import { SpaceElementsEvenlyTool } from './tools/SpaceElementsEvenlyTool';
-
+import { GetDataFromUrl } from './tools/GetDataFromUrl';
 export class ToolFactory {
   static getBuiltInTools(): AITool[] {
     return [
@@ -31,6 +31,7 @@ export class ToolFactory {
       new UpdateShapeTool(),
       new AlignElementsTool(),
       new SpaceElementsEvenlyTool(),
+      new GetDataFromUrl(),
     ];
   }
 } 

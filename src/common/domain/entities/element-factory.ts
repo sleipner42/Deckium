@@ -57,7 +57,8 @@ export class ElementFactory {
     data?: BarChartData,
     title: string,
     xAxisLabel: string,
-    yAxisLabel: string
+    yAxisLabel: string,
+    barColor?: string
   }): ContentElement {
     return {
       id: uuidv4(),
@@ -67,7 +68,8 @@ export class ElementFactory {
       data: options.data || { x: [1, 2, 3, 4, 5], y: [10, 45, 30, 25, 60] },
       title: options.title,
       xAxisLabel: options.xAxisLabel,
-      yAxisLabel: options.yAxisLabel
+      yAxisLabel: options.yAxisLabel,
+      barColor: options.barColor || '#000000'
     };
   }
 

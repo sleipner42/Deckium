@@ -12,7 +12,7 @@ export class AddTextElementTool extends BaseTool {
     content: 'The text content to display',
     x: 'X position of the element (optional, defaults to 100)',
     y: 'Y position of the element (optional, defaults to 100)',
-    positionReference: 'The reference position of the element (optional, defaults to top left), choose from top left or center',
+    //positionReference: 'The reference position of the element (optional, defaults to top left), choose from top left or center',
     width: 'The width of the element (optional, defaults to 400)',
     fontSize: 'The font size of the element (optional, defaults to 12)',
     fontFamily: 'The font family of the element (optional, defaults to Arial)',
@@ -33,7 +33,7 @@ export class AddTextElementTool extends BaseTool {
       content,
       x,
       y,
-      positionReference,
+      //positionReference,
       fontSize,
       fontFamily,
       color,
@@ -64,10 +64,10 @@ export class AddTextElementTool extends BaseTool {
     let xPos = Number(x) || 100;
     let yPos = Number(y) || 100;
     
-    if (positionReference === 'center') {
-      xPos = xPos - (width / 2);
-      yPos = yPos - (height / 2);
-    }
+    // if (positionReference === 'center') {
+    //   xPos = xPos - (width / 2);
+    //   yPos = yPos - (height / 2);
+    // }
 
     const element = ElementFactory.createTextBox({
       content,

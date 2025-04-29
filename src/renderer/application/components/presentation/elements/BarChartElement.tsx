@@ -24,7 +24,7 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
   onStopEditing,
   readOnly = false
 }) => {
-  const { position, size, data, title, xAxisLabel, yAxisLabel, style } = element;
+  const { position, size, data, title, xAxisLabel, yAxisLabel, style, barColor } = element;
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showEditor, setShowEditor] = useState(false);
@@ -118,7 +118,7 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
               x: data.x.map(String),
               y: data.y,
               marker: {
-                color: '#007bff',
+                color: barColor || '#007bff',
               },
             },
           ]}

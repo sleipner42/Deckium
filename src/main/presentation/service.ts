@@ -15,8 +15,8 @@ export class PresentationService {
     return this.state.getPresentation();
   }
 
-  initializePresentation(title: string): Presentation {
-    const presentation = this.state.initializePresentation(title);
+  initializePresentation(): Presentation {
+    const presentation = this.state.initializePresentation();
     this.eventBus.broadcastToWindows(PresentationEventBus.events.INITIALIZED, presentation);
     return presentation;
   }
@@ -31,8 +31,8 @@ export class PresentationService {
     return data;
   }
 
-  addSlide(title: string = 'New Slide'): Slide {
-    const newSlide = this.state.addSlide(title);
+  addSlide(): Slide {
+    const newSlide = this.state.addSlide();
     this.eventBus.broadcastToWindows(PresentationEventBus.events.SLIDE_ADDED, newSlide);
     return newSlide;
   }
