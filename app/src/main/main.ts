@@ -1,5 +1,5 @@
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain, NativeImage } from 'electron';
+import { app, BrowserWindow, shell, protocol } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import * as dotenv from 'dotenv';
@@ -7,11 +7,15 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { setupPresentationIPC } from './presentation/ipc-handler';
 import { AzureOpenAIServiceFactory } from './ai/external/azure-openai-service';
+<<<<<<< HEAD
 import { MockAIServiceFactory } from './ai/external/mock-ai-service';
+=======
+>>>>>>> 7acbb44 (auth first try)
 import { PresentationService } from './presentation/service';
 import { AIService } from './ai/service';
 import { IAIServiceFactory } from '../common/domain/interfaces/ai-service.interface';
 import { setupAIIPC } from './ai/ipc-handler';
+import { setupAuthIPC } from './auth/ipc-handler';
 
 dotenv.config();
 
@@ -84,8 +88,6 @@ const createWindow = async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
-    // width: 1024,
-    // height: 728,
     icon: getAssetPath('icon.png'),
     fullscreen: false,
     width: 1280,
@@ -101,7 +103,7 @@ const createWindow = async () => {
     },
   });
 
-  mainWindow.loadURL(`${resolveHtmlPath('index.html')}#/?layout=editor`);
+  mainWindow.loadURL(resolveHtmlPath('index.html'));
 
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) {
@@ -167,6 +169,11 @@ let aiServiceFactory: IAIServiceFactory | null = null;
 app
   .whenReady()
   .then(() => {
+    protocol.registerFileProtocol('kraftpo', (request, callback) => {
+      const url = request.url.substring(9);
+      callback(decodeURI(url));
+    });
+
     createWindow();
     createSecondWindow();
     app.on('activate', () => {
@@ -175,14 +182,14 @@ app
     });
 
     presentationService = new PresentationService();
-
+    
     aiServiceFactory = new AzureOpenAIServiceFactory();
-    // aiServiceFactory = new MockAIServiceFactory();
 
     const aiModel = aiServiceFactory.createService();
 
     aiService = new AIService(aiModel, presentationService);
 
+    setupAuthIPC();
     setupAIIPC(aiService);
     setupPresentationIPC(presentationService);
   })

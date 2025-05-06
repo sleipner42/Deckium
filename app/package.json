@@ -196,8 +196,14 @@
     "webpack-merge": "^6.0.1"
   },
   "build": {
-    "productName": "ElectronReact",
-    "appId": "org.erb.ElectronReact",
+    "productName": "Kraftpo",
+    "appId": "org.kraftpo.app",
+    "protocols": {
+      "name": "kraftpo-auth-protocol",
+      "schemes": [
+        "kraftpo"
+      ]
+    },
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",
     "files": [

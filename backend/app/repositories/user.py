@@ -19,9 +19,7 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
-    async def update(
-        self, user_id: int, user_in: UserUpdate
-    ) -> Optional[User]:
+    async def update(self, user_id: int, user_in: UserUpdate) -> Optional[User]:
         pass
 
     @abstractmethod
@@ -30,4 +28,4 @@ class UserRepository(ABC):
 
     @abstractmethod
     async def list(self, skip: int = 0, limit: int = 100) -> List[User]:
-        pass 
+        pass

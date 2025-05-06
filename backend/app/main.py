@@ -2,17 +2,22 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.api.api_v1.api import api_router
+from app.api.api import api_router
 from app.core.config import settings
 from app.db.session import init_db
-from app.repositories.sqlite_user_repository import SQLiteUserRepository
 
 app = FastAPI()
 
 DATABASE_PATH = "./test.db"
 
-# Add middlewares
-app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
+
+app.add_middleware(
+    SessionMiddleware, 
+    secret_key=settings.SECRET_KEY,
+    max_age=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    same_site="lax",
+    https_only=False
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.FRONTEND_URL],
@@ -23,18 +28,21 @@ app.add_middleware(
 
 
 @app.on_event("startup")
-async def startup_db_client():
+async def startup_db_client() -> None:
     await init_db()
+
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        print("WARNING: Google OAuth credentials are not set or empty.")
+        print("Please check your .env file and ensure GOOGLE_CLIENT_ID and")
+        print("GOOGLE_CLIENT_SECRET are set.")
+    else:
+        print("Google OAuth configuration loaded.")
+        print(f"Client ID: {settings.GOOGLE_CLIENT_ID[:8]}...")
 
 
 @app.get("/")
-def read_root():
+def read_root() -> dict[str, str]:
     return {"Hello": "World"}
 
 
-# Simple example of how to use SQLiteUserRepository with dependency injection
-async def get_user_repo() -> SQLiteUserRepository:
-    return SQLiteUserRepository(DATABASE_PATH)
-
-
-app.include_router(api_router, prefix=settings.API_V1_STR) 
+app.include_router(api_router)

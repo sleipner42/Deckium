@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { AuthChannels } from '../common/domain/interfaces/auth.interface';
 
 export type PresentationChannels =
   | 'presentation:initialize'
@@ -36,12 +37,14 @@ export type AIChannels =
   | 'ai:processing-completed'
   | 'ai:processing-error';
 
+type IpcChannels = PresentationChannels | AIChannels | AuthChannels;
+
 const electronHandler = {
   ipcRenderer: {
     sendMessage(channel: string, ...args: unknown[]) {
       ipcRenderer.send(channel, ...args);
     },
-    on(channel: string, func: (...args: unknown[]) => void) {
+    on(channel: IpcChannels, func: (...args: unknown[]) => void) {
       const subscription = (_event: IpcRendererEvent, ...args: unknown[]) =>
         func(...args);
       ipcRenderer.on(channel, subscription);
@@ -50,11 +53,26 @@ const electronHandler = {
         ipcRenderer.removeListener(channel, subscription);
       };
     },
-    once(channel: string, func: (...args: unknown[]) => void) {
+    once(channel: IpcChannels, func: (...args: unknown[]) => void) {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
     },
   },
-
+  
+  auth: {
+    login() {
+      return ipcRenderer.invoke('auth:login');
+    },
+    logout() {
+      return ipcRenderer.invoke('auth:logout');
+    },
+    getUser() {
+      return ipcRenderer.invoke('auth:get-user');
+    },
+    refreshTokens() {
+      return ipcRenderer.invoke('auth:refresh-tokens');
+    }
+  },
+  
   ai: {
     createThread(title: string, presentationId: string) {
       return ipcRenderer.invoke('ai:create-thread', title, presentationId);
