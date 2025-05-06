@@ -2,16 +2,28 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import PresentationEditor from '../components/presentation/PresentationEditor';
 import PresentationViewer from '../components/presentation/PresentationViewer';
+import LoginScreen from '../components/auth/LoginScreen';
+import { useAuth } from '../context/AuthContext';
+import { Box, CircularProgress } from '@mui/material';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
-  console.log(`Renderer: Location is ${JSON.stringify(location)}`);
-
+  const { authState } = useAuth();
+  
   const searchParams = new URLSearchParams(location.search);
-  console.log(`Renderer: Search params: ${searchParams.toString()}`);
-
   const layout = searchParams.get('layout') || 'editor';
-  console.log(`Renderer: Layout is ${layout}`);
+  
+  if (authState.loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+  
+  if (!authState.isAuthenticated) {
+    return <LoginScreen />;
+  }
 
   return (
     <>{layout === 'editor' ? <PresentationEditor /> : <PresentationViewer />}</>

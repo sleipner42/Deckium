@@ -1,16 +1,15 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
 
 
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # OAuth2 settings
-    GOOGLE_CLIENT_ID: Optional[str] = None
-    GOOGLE_CLIENT_SECRET: Optional[str] = None
+    GOOGLE_CLIENT_ID: str = ""  # Will be overridden from .env
+    GOOGLE_CLIENT_SECRET: str = ""  # Will be overridden from .env
     SECRET_KEY: str = "development_secret_key"  # For state param in OAuth
-    REDIRECT_URL: Optional[str] = "http://localhost:8000/api/v1/auth/callback"
-    FRONTEND_URL: Optional[str] = "http://localhost:3000"
+    REDIRECT_URL: str = "http://localhost:8000/api/v1/auth/callback"
+    FRONTEND_URL: str = "http://localhost:3000"
     
     # JWT settings
     JWT_SECRET_KEY: str = "development_jwt_secret_key"

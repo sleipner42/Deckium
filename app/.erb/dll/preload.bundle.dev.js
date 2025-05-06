@@ -75,6 +75,20 @@ const electronHandler = {
             electron_1.ipcRenderer.once(channel, (_event, ...args) => func(...args));
         },
     },
+    auth: {
+        login() {
+            return electron_1.ipcRenderer.invoke('auth:login');
+        },
+        logout() {
+            return electron_1.ipcRenderer.invoke('auth:logout');
+        },
+        getUser() {
+            return electron_1.ipcRenderer.invoke('auth:get-user');
+        },
+        refreshTokens() {
+            return electron_1.ipcRenderer.invoke('auth:refresh-tokens');
+        }
+    },
     ai: {
         createThread(title, presentationId) {
             return electron_1.ipcRenderer.invoke('ai:create-thread', title, presentationId);
