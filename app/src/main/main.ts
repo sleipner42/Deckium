@@ -136,10 +136,11 @@ const createSecondWindow = async () => {
   secondWindow = new BrowserWindow({
     width: 1024,
     height: 728,
-    show: true,
+    show: false,
     frame: false,
     titleBarStyle: 'hiddenInset',
     webPreferences: {
+      offscreen: true,
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),

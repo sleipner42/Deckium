@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+aiosqlite
+passlib[bcrypt]
+types-passlib
+types-aiosqlite
+email-validator
+python-jose[cryptography]
+authlib
+pyjwt
+itsdangerous
+google-auth
+python-dotenv 
