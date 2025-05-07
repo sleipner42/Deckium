@@ -186,7 +186,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
               },
             }}
           >
-            {currentFilePath ? 'Saved' : 'New'}
+            File
           </Button>
         </Tooltip>
         
