@@ -111,13 +111,21 @@ export class CreateShapeTool extends BaseTool {
     // Create appropriate message based on whether there was an overlap
     let message = `${shapeType} shape added successfully`;
     
-    if (overlapCheck.hasOverlap) {
-      message += `\n\nNOTE: This element overlaps with existing elements: ${overlapCheck.overlappingElements.join(', ')}. `;
+    // Only warn about elements outside slide boundaries - shape overlaps are fine
+    if (overlapCheck.isOutsideSlide) {
+      message += `\n\nWARNING: This shape is positioned outside the slide boundaries (1280x720). `;
       
       if (overlapCheck.suggestedPosition) {
-        message += `If this overlap was not intentional, consider using position (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) instead.`;
-      } else {
-        message += `If this overlap was not intentional, please check the element placement and consider repositioning if needed.`;
+        message += `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to ensure visibility.`;
+      }
+    }
+    
+    // Only mention text overlaps, not shape overlaps
+    if (overlapCheck.hasOverlap) {
+      message += `\n\nNOTE: This shape overlaps with text elements: ${overlapCheck.overlappingElements.join(', ')}. `;
+      
+      if (overlapCheck.suggestedPosition) {
+        message += `If text readability is important, consider using position (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) instead.`;
       }
     }
 

@@ -125,13 +125,21 @@ export class AddTextElementTool extends BaseTool {
     let message = `Text element added successfully.\n` +
       ElementFactory.calculateBoxAroundTextElement(element as TextBox);
       
-    if (overlapCheck.hasOverlap) {
-      message += `\n\nNOTE: This text element overlaps with existing elements: ${overlapCheck.overlappingElements.join(', ')}. `;
+    if (overlapCheck.isOutsideSlide) {
+      message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). `;
       
       if (overlapCheck.suggestedPosition) {
-        message += `If this overlap was not intentional, consider using position (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) instead.`;
+        message += `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to ensure visibility.`;
+      }
+    }
+    
+    if (overlapCheck.hasOverlap) {
+      message += `\n\nNOTE: This text element overlaps with other text elements: ${overlapCheck.overlappingElements.join(', ')}. `;
+      
+      if (overlapCheck.suggestedPosition) {
+        message += `Consider using position (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to make text more readable.`;
       } else {
-        message += `If this overlap was not intentional, please check the element placement and consider repositioning if needed.`;
+        message += `Please check the text placement to ensure readability.`;
       }
     }
 
