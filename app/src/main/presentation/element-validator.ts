@@ -58,14 +58,32 @@ export class ElementValidator {
         continue;
       }
 
-      // Special case for bullet points: allow text to be positioned below other text with less padding
-      // This helps with title + bullet point relationships
-      const isLikelyBulletPoint =
-        position.y > element.position.y + element.size.height - 10 &&
-        Math.abs(position.x - element.position.x) < 30;
-
-      // Use a reduced padding for vertical text arrangements that look like bullet points or lists
-      const effectivePadding = isLikelyBulletPoint ? 2 : padding;
+      // Special case for common text arrangements:
+      // 1. Title followed by content (vertical stacking)
+      // 2. Bullet points or list items
+      // 3. Adjacent columns of text
+      
+      // Vertical stacking (title + content, or list items)
+      const isVerticalArrangement = 
+           // New element is clearly below existing element with reasonable spacing
+           (position.y >= element.position.y + Math.min(element.size.height, 50) && 
+           // Horizontally aligned or with minimal offset (column-like)
+           Math.abs(position.x - element.position.x) < Math.max(30, element.size.width * 0.2));
+      
+      // Adjacent columns
+      const isAdjacentColumn = 
+           // Horizontally separated with reasonable gap
+           (position.x >= element.position.x + element.size.width + 10 || 
+            element.position.x >= position.x + size.width + 10) &&
+           // Some vertical overlap (same row)
+           !(position.y >= element.position.y + element.size.height || 
+             element.position.y >= position.y + size.height);
+             
+      // If it's a common, valid layout pattern, don't consider it an overlap
+      const isValidLayout = isVerticalArrangement || isAdjacentColumn;
+      
+      // Use a reduced padding for known layout patterns
+      const effectivePadding = isValidLayout ? 0 : padding;
 
       const elementBox: BoundingBox = {
         x: element.position.x - effectivePadding,
@@ -76,8 +94,8 @@ export class ElementValidator {
 
       // Check if boxes overlap
       if (this.doBoxesOverlap(newElementBox, elementBox)) {
-        // For bullet points that are properly positioned below text, don't count as overlap
-        if (isLikelyBulletPoint) {
+        // For valid layout patterns, don't count as overlap
+        if (isValidLayout) {
           continue;
         }
 

@@ -24,6 +24,24 @@ export class AddTextElementTool extends BaseTool {
     align: 'The alignment of the element (optional, defaults to left), choose from left, center, right',
     verticalAlign: 'The vertical alignment of the element (optional, defaults to top), choose from top, middle, bottom',
   };
+  
+  /**
+   * Estimates the actual height of text content based on line count and font size
+   * This is more accurate than using the element's declared height
+   */
+  private estimateTextHeight(content: string, fontSize: number): number {
+    // Count the number of lines in the text
+    const lineCount = content.split('\n').length;
+    
+    // Approximate line height based on font size (typically 1.2-1.5× the font size)
+    const lineHeight = fontSize * 1.3;
+    
+    // Calculate total height with a small margin
+    const totalHeight = (lineCount * lineHeight) + 20; // 20px extra for padding
+    
+    // For very short content (like titles), use a minimum height
+    return Math.max(totalHeight, fontSize * 2);
+  }
 
   protected async executeImpl(
     params: Record<string, any>,
@@ -81,9 +99,16 @@ export class AddTextElementTool extends BaseTool {
       };
     }
     
-    // Check for potential overlaps before adding the element
+    // Calculate a more realistic height based on content for overlap checking
+    // Text height is often overestimated in the element size
+    const estimatedContentHeight = this.estimateTextHeight(content, Number(fontSize) || 12);
+    
+    // Check for potential overlaps using a more realistic height estimate
     const elementPosition = { x: xPos, y: yPos };
-    const elementSize = { width, height };
+    const elementSize = { 
+      width, 
+      height: Math.min(height, estimatedContentHeight) // Use the smaller of specified height or estimated
+    };
     const overlapCheck = ElementValidator.checkOverlap(slide, elementPosition, elementSize);
     
     // We'll warn about overlap but not force repositioning to allow for intentional overlaps
