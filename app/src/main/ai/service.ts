@@ -130,6 +130,17 @@ export class AIService {
     let currentMessage = userMessage;
     let iterationCount = 0;
     const MAX_ITERATIONS = 20;
+    const MAX_CONSECUTIVE_EMPTY_ITERATIONS = 2;
+    let consecutiveEmptyIterations = 0;
+
+    // Add a continuation message to the thread to signal the AI to continue
+    const addContinuationMessage = (thread: Thread): Thread => {
+      return this.state.addMessage(
+        thread,
+        "Continue with the task. If you were in the middle of something, please complete it.",
+        'system'
+      );
+    };
 
     while (iterationCount < MAX_ITERATIONS) {
       const iterationStartTime = performance.now();
@@ -175,6 +186,26 @@ export class AIService {
         const aiResponse = await this.aiClient.chatStream(messages, onChunk, deploymentName);
         console.timeEnd('aiClientChatStream');
         
+        // Check if we're getting the same response repeatedly
+        const lastMessages = messages.slice(-4)
+          .filter(m => m.role === 'assistant')
+          .map(m => typeof m.content === 'string' ? m.content : '');
+          
+        const isRepeatingResponse = lastMessages.some(msg => 
+          msg && aiResponse && msg.trim() === aiResponse.trim() && msg.length > 20
+        );
+        
+        if (isRepeatingResponse) {
+          console.log('Detected repeating responses, adding variation to break the loop');
+          updatedThread = this.state.addMessage(
+            updatedThread,
+            "Let's try a different approach. Please continue with the next logical step in creating this presentation.",
+            'system'
+          );
+          iterationCount++;
+          continue;
+        }
+        
         console.time('finalizeStreamingMessage');
         updatedThread = this.state.setMessageStreamingState(updatedThread, assistantMessageId, 'completed');
         this.eventBus.broadcastThreadUpdated(updatedThread);
@@ -185,9 +216,41 @@ export class AIService {
         console.timeEnd('extractToolCall');
         
         if (!toolCall) {
-          console.log('No tool call detected, exiting loop');
+          // Check if the response indicates the AI is stopping prematurely
+          const responseEndSignals = [
+            "let me know if",
+            "let me know what",
+            "anything else",
+            "is there anything else",
+            "do you want me to",
+            "how does that sound",
+            "would you like me to"
+          ];
+          
+          const containsEndSignal = responseEndSignals.some(signal => 
+            aiResponse.toLowerCase().includes(signal.toLowerCase())
+          );
+          
+          if (containsEndSignal && !aiResponse.includes("completed") && !aiResponse.includes("finished")) {
+            console.log('AI seems to be stopping prematurely, encouraging continuation');
+            updatedThread = addContinuationMessage(updatedThread);
+            iterationCount++;
+            consecutiveEmptyIterations++;
+            
+            if (consecutiveEmptyIterations >= MAX_CONSECUTIVE_EMPTY_ITERATIONS) {
+              console.log(`Reached ${MAX_CONSECUTIVE_EMPTY_ITERATIONS} consecutive empty iterations, breaking loop`);
+              break;
+            }
+            
+            continue;
+          }
+          
+          console.log('No tool call detected and no premature ending, exiting loop');
           break;
         }
+        
+        // Reset empty iterations counter since we got a tool call
+        consecutiveEmptyIterations = 0;
         
         console.log(`Executing tool call: ${toolCall.toolName}`);
         console.time('executeToolCalls');
@@ -226,15 +289,41 @@ export class AIService {
             console.time('addImageMessage');
             updatedThread = this.state.addMessage(updatedThread, imageContents as MessageContent[], 'user');
             console.timeEnd('addImageMessage');
-            currentMessage = 'Tool execution completed successfully. Screenshots have been added to the conversation.';
+            
+            // Vary continuation messages to avoid getting stuck in loops
+            const continuationMessages = [
+              'Tool execution completed successfully. Screenshots have been added to the conversation. Please continue with the task.',
+              'The tool has executed successfully and screenshots are added above. What would be the next step to complete this presentation?',
+              'Above are the screenshots from the tool execution. Please proceed with the next logical step in this workflow.'
+            ];
+            currentMessage = continuationMessages[iterationCount % continuationMessages.length];
           } else {
-            currentMessage = 'Tool execution completed successfully.';
+            // Vary continuation messages to avoid getting stuck in loops
+            const continuationMessages = [
+              'Tool execution completed successfully. Please continue with the task.',
+              'The tool has executed successfully. What would be the next step to complete this presentation?',
+              'Tool execution is complete. Please proceed with the next logical step in this workflow.'
+            ];
+            currentMessage = continuationMessages[iterationCount % continuationMessages.length];
           }
+          
+          // Add an explicit continuation message after tool execution
+          updatedThread = this.state.addMessage(updatedThread, currentMessage, 'system');
         } else {
           console.time('addSystemMessage');
           updatedThread = this.state.addMessage(updatedThread, toolResultsFormatted, 'system');
           console.timeEnd('addSystemMessage');
-          currentMessage = `Tool execution results: ${toolResultsFormatted}`;
+          
+          // Vary continuation messages to avoid getting stuck in loops
+          const continuationMessages = [
+            `Tool execution results: ${toolResultsFormatted}. Please continue with the task.`,
+            `Here are the results of the tool execution: ${toolResultsFormatted}. What would be the next step?`,
+            `The tool has completed with the following results: ${toolResultsFormatted}. Please proceed with the next logical step.`
+          ];
+          currentMessage = continuationMessages[iterationCount % continuationMessages.length];
+          
+          // Add an explicit continuation message after tool execution
+          updatedThread = this.state.addMessage(updatedThread, currentMessage, 'system');
         }
 
         iterationCount++;
