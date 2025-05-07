@@ -3,6 +3,7 @@ import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
 import { TextBox } from '../../../../common/domain/entities/types';
+import { ElementValidator } from '../../../presentation/element-validator';
 
 export class AddTextElementTool extends BaseTool {
   name = 'addTextElement';
@@ -69,6 +70,28 @@ export class AddTextElementTool extends BaseTool {
     //   yPos = yPos - (height / 2);
     // }
 
+    // Get the current slide to check for overlaps
+    const presentation = presentationService.getPresentation();
+    const slide = presentation.slides.find(s => s.id === slideId);
+    
+    if (!slide) {
+      return {
+        success: false,
+        error: `Slide with ID ${slideId} not found`,
+      };
+    }
+    
+    // Check for potential overlaps before adding the element
+    const elementPosition = { x: xPos, y: yPos };
+    const elementSize = { width, height };
+    const overlapCheck = ElementValidator.checkOverlap(slide, elementPosition, elementSize);
+    
+    // We'll warn about overlap but not force repositioning to allow for intentional overlaps
+    // if (overlapCheck.hasOverlap && overlapCheck.suggestedPosition) {
+    //   xPos = overlapCheck.suggestedPosition.x;
+    //   yPos = overlapCheck.suggestedPosition.y;
+    // }
+    
     const element = ElementFactory.createTextBox({
       content,
       position: { x: xPos, y: yPos },
@@ -98,13 +121,26 @@ export class AddTextElementTool extends BaseTool {
       };
     }
 
+    // Create appropriate message based on whether there was an overlap
+    let message = `Text element added successfully.\n` +
+      ElementFactory.calculateBoxAroundTextElement(element as TextBox);
+      
+    if (overlapCheck.hasOverlap) {
+      message += `\n\nNOTE: This text element overlaps with existing elements: ${overlapCheck.overlappingElements.join(', ')}. `;
+      
+      if (overlapCheck.suggestedPosition) {
+        message += `If this overlap was not intentional, consider using position (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) instead.`;
+      } else {
+        message += `If this overlap was not intentional, please check the element placement and consider repositioning if needed.`;
+      }
+    }
+
     return {
       success: true,
       data: {
         elementId: element.id,
         slideId: updatedSlide.id,
-        message: `Text element added successfully.\n` +
-        ElementFactory.calculateBoxAroundTextElement(element as TextBox),
+        message,
       },
     };
   }

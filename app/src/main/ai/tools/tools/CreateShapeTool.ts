@@ -2,6 +2,7 @@ import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
+import { ElementValidator } from '../../../presentation/element-validator';
 
 export class CreateShapeTool extends BaseTool {
   name = 'createShape';
@@ -61,6 +62,28 @@ export class CreateShapeTool extends BaseTool {
       yPos = yPos - (heightValue / 2);
     }
 
+    // Get the current slide to check for overlaps
+    const presentation = presentationService.getPresentation();
+    const slide = presentation.slides.find(s => s.id === slideId);
+    
+    if (!slide) {
+      return {
+        success: false,
+        error: `Slide with ID ${slideId} not found`,
+      };
+    }
+    
+    // Check for potential overlaps before adding the element
+    const elementPosition = { x: xPos, y: yPos };
+    const elementSize = { width: widthValue, height: heightValue };
+    const overlapCheck = ElementValidator.checkOverlap(slide, elementPosition, elementSize);
+    
+    // We'll warn about overlap but not force repositioning to allow for intentional overlaps with shapes
+    // if (overlapCheck.hasOverlap && overlapCheck.suggestedPosition) {
+    //   xPos = overlapCheck.suggestedPosition.x;
+    //   yPos = overlapCheck.suggestedPosition.y;
+    // }
+
     const element = ElementFactory.createShape({
       shapeType: shapeType as 'rectangle' | 'circle' | 'triangle',
       position: { x: xPos, y: yPos },
@@ -85,11 +108,24 @@ export class CreateShapeTool extends BaseTool {
       };
     }
 
+    // Create appropriate message based on whether there was an overlap
+    let message = `${shapeType} shape added successfully`;
+    
+    if (overlapCheck.hasOverlap) {
+      message += `\n\nNOTE: This element overlaps with existing elements: ${overlapCheck.overlappingElements.join(', ')}. `;
+      
+      if (overlapCheck.suggestedPosition) {
+        message += `If this overlap was not intentional, consider using position (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) instead.`;
+      } else {
+        message += `If this overlap was not intentional, please check the element placement and consider repositioning if needed.`;
+      }
+    }
+
     return {
       success: true,
       data: {
         elementId: element.id,
-        message: `${shapeType} shape added successfully`,
+        message,
         shapeInfo: {
           type: shapeType,
           position: { x: xPos, y: yPos },

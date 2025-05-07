@@ -138,6 +138,133 @@ export class MockAIService implements IAIService {
     
     return 'I\'m a mock AI service. In a real environment, I would provide a more detailed and contextual response based on your query. For now, I can simulate basic interactions and tool calls.';
   }
+
+  async chatStream(
+    messages: Message[],
+    onChunk: (chunk: string) => void,
+    deploymentName?: string
+  ): Promise<string> {
+    console.log('Using MockAIService for streaming chat completion');
+    
+    // Generate response based on user message
+    let userMessage = '';
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    
+    if (lastUserMessage) {
+      if (typeof lastUserMessage.content === 'string') {
+        userMessage = lastUserMessage.content;
+      } else if (Array.isArray(lastUserMessage.content)) {
+        const textContents = lastUserMessage.content
+          .filter(item => item.type === 'text' && item.text)
+          .map(item => (item as MessageContent & { text: string }).text);
+        
+        userMessage = textContents.join('\n');
+      }
+    }
+    
+    console.log(`Streaming response for message: ${userMessage.substring(0, 100)}${userMessage.length > 100 ? '...' : ''}`);
+    
+    // Generate a more detailed response for slide creation to showcase the continuing behavior
+    let response = '';
+    
+    if (userMessage.toLowerCase().includes('presentation') || 
+        userMessage.toLowerCase().includes('create slides') || 
+        userMessage.toLowerCase().includes('make slides')) {
+      
+      // First, get presentation info
+      response = "I'll help you create a presentation. Let me first check what we're working with.\n\n" +
+        "### Action ###\n" +
+        '{ "tool": "getPresentationInfo", "params": {} }';
+      
+      // Simulate streaming response by sending chunks
+      await this.streamResponse(response, onChunk);
+      return response;
+    }
+    
+    // Handle response after getting presentation info
+    if (userMessage.toLowerCase().includes('tool execution completed') && 
+        messages.some(m => m.content && typeof m.content === 'string' && m.content.includes('getPresentationInfo'))) {
+      
+      response = "Now I'll create a new slide for your presentation. I'll make it about the key benefits of your product.\n\n" +
+        "### Action ###\n" +
+        '{ "tool": "createSlide", "params": { "title": "Key Benefits" } }';
+      
+      await this.streamResponse(response, onChunk);
+      return response;
+    }
+    
+    // Handle response after creating a slide
+    if (userMessage.toLowerCase().includes('tool execution completed') && 
+        messages.some(m => m.content && typeof m.content === 'string' && m.content.includes('createSlide'))) {
+      
+      response = "Great! I've created a slide with the title 'Key Benefits'. Now, let me add some bullet points to it.\n\n" +
+        "### Action ###\n" +
+        '{ "tool": "addTextElement", "params": { "slideId": "SLIDE_ID", "text": "- Increased efficiency\\n- Cost reduction\\n- Better user experience\\n- Seamless integration", "x": 100, "y": 200, "width": 400, "height": 300 } }';
+      
+      await this.streamResponse(response, onChunk);
+      return response;
+    }
+    
+    // Handle response after adding text element
+    if (userMessage.toLowerCase().includes('tool execution completed') && 
+        messages.some(m => m.content && typeof m.content === 'string' && m.content.includes('addTextElement'))) {
+      
+      response = "Now I'll add a shape to highlight the important information.\n\n" +
+        "### Action ###\n" +
+        '{ "tool": "createShape", "params": { "slideId": "SLIDE_ID", "shapeType": "rectangle", "x": 80, "y": 180, "width": 440, "height": 320, "fillColor": "#E3F2FD", "strokeColor": "#2196F3", "strokeWidth": 2 } }';
+      
+      await this.streamResponse(response, onChunk);
+      return response;
+    }
+    
+    // Handle response after creating a shape
+    if (userMessage.toLowerCase().includes('tool execution completed') && 
+        messages.some(m => m.content && typeof m.content === 'string' && m.content.includes('createShape'))) {
+      
+      response = "I've completed the slide with a title, bullet points, and a background shape. The slide looks great! Now let's make sure everything is properly aligned.\n\n" +
+        "### Action ###\n" + 
+        '{ "tool": "alignElements", "params": { "slideId": "SLIDE_ID", "elementIds": "ELEMENT_ID_1,ELEMENT_ID_2", "alignType": "center-horizontal" } }';
+      
+      await this.streamResponse(response, onChunk);
+      return response;
+    }
+    
+    // Default response
+    response = await this.chat(messages, deploymentName);
+    await this.streamResponse(response, onChunk);
+    return response;
+  }
+  
+  private async streamResponse(text: string, onChunk: (chunk: string) => void): Promise<void> {
+    const chunks = this.splitIntoChunks(text);
+    
+    for (const chunk of chunks) {
+      await new Promise(resolve => setTimeout(resolve, 50)); // 50ms delay between chunks
+      onChunk(chunk);
+    }
+  }
+  
+  private splitIntoChunks(text: string, avgChunkSize: number = 10): string[] {
+    const chunks: string[] = [];
+    let currentPos = 0;
+    
+    while (currentPos < text.length) {
+      // Vary chunk size slightly to make it more realistic
+      const randomVariance = Math.floor(Math.random() * 6) - 3; // -3 to +3
+      const chunkSize = Math.max(2, avgChunkSize + randomVariance);
+      
+      // Don't exceed text length
+      const endPos = Math.min(currentPos + chunkSize, text.length);
+      
+      // Extract chunk
+      const chunk = text.substring(currentPos, endPos);
+      chunks.push(chunk);
+      
+      currentPos = endPos;
+    }
+    
+    return chunks;
+  }
 }
 
 export class MockAIServiceFactory implements IAIServiceFactory {
