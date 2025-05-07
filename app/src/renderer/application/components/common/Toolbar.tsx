@@ -21,6 +21,9 @@ import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
 import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import SaveIcon from '@mui/icons-material/Save';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import FileOpenIcon from '@mui/icons-material/FileOpen';
 import RectangleIcon from '@mui/icons-material/Rectangle';
 import CircleIcon from '@mui/icons-material/RadioButtonUnchecked';
 import TriangleIcon from '@mui/icons-material/ChangeHistory';
@@ -32,8 +35,17 @@ interface ToolbarProps {
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
-  const { selectedSlide, addElement } = usePresentation();
+  const { 
+    selectedSlide, 
+    addElement, 
+    savePresentation, 
+    savePresentationAs,
+    loadPresentation,
+    currentFilePath 
+  } = usePresentation();
+  
   const [shapeAnchorEl, setShapeAnchorEl] = useState<null | HTMLElement>(null);
+  const [fileAnchorEl, setFileAnchorEl] = useState<null | HTMLElement>(null);
   
   const handleShapeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setShapeAnchorEl(event.currentTarget);
@@ -41,6 +53,41 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
   
   const handleShapeMenuClose = () => {
     setShapeAnchorEl(null);
+  };
+
+  const handleFileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setFileAnchorEl(event.currentTarget);
+  };
+  
+  const handleFileMenuClose = () => {
+    setFileAnchorEl(null);
+  };
+  
+  const handleSave = async () => {
+    try {
+      await savePresentation();
+    } catch (error) {
+      console.error('Error saving presentation:', error);
+    }
+    handleFileMenuClose();
+  };
+  
+  const handleSaveAs = async () => {
+    try {
+      await savePresentationAs();
+    } catch (error) {
+      console.error('Error saving presentation:', error);
+    }
+    handleFileMenuClose();
+  };
+  
+  const handleOpen = async () => {
+    try {
+      await loadPresentation();
+    } catch (error) {
+      console.error('Error loading presentation:', error);
+    }
+    handleFileMenuClose();
   };
   
   const addTextElement = async () => {
@@ -105,6 +152,78 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
         ...style,
       }}
     >
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center',
+        marginRight: 'auto', 
+        WebkitAppRegion: 'no-drag' 
+      }}>
+        <Typography 
+          variant="subtitle2" 
+          sx={{ 
+            fontWeight: 600, 
+            color: 'text.secondary',
+            mr: 1,
+          }}
+        >
+          File
+        </Typography>
+        
+        <Tooltip title="File Operations">
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<FileOpenIcon />}
+            onClick={handleFileMenuOpen}
+            sx={{
+              borderRadius: 1,
+              textTransform: 'none',
+              px: 2,
+              borderColor: alpha('#000', 0.12),
+              '&:hover': {
+                bgcolor: alpha('#007AFF', 0.04),
+                borderColor: alpha('#007AFF', 0.5),
+              },
+            }}
+          >
+            {currentFilePath ? 'Saved' : 'New'}
+          </Button>
+        </Tooltip>
+        
+        <Menu
+          anchorEl={fileAnchorEl}
+          open={Boolean(fileAnchorEl)}
+          onClose={handleFileMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'left',
+          }}
+        >
+          <MenuItem onClick={handleSave}>
+            <ListItemIcon>
+              <SaveIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Save</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={handleSaveAs}>
+            <ListItemIcon>
+              <SaveAltIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Save As...</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={handleOpen}>
+            <ListItemIcon>
+              <FolderOpenIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Open...</ListItemText>
+          </MenuItem>
+        </Menu>
+      </Box>
+      
       {/* Centered toolbar content */}
       <Typography 
         variant="subtitle2" 

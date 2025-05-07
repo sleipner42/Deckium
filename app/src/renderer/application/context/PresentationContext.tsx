@@ -10,6 +10,7 @@ interface PresentationContextState {
   selectedElementId: string | null;
   isLoading: boolean;
   error: string | null;
+  currentFilePath: string | null;
 }
 
 interface PresentationContextActions {
@@ -29,6 +30,9 @@ interface PresentationContextActions {
   stopEditingElement: (elementId: string, content?: string) => void;
   moveElement: (elementId: string, x: number, y: number) => void;
   resizeElement: (elementId: string, width: number, height: number) => void;
+  savePresentation: () => Promise<string | null>;
+  savePresentationAs: () => Promise<string | null>;
+  loadPresentation: (filePath?: string) => Promise<Presentation | null>;
 }
 
 export interface PresentationContextValue extends PresentationContextState, PresentationContextActions {}
@@ -48,6 +52,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({ chil
     selectedElementId,
     isLoading,
     error,
+    currentFilePath,
     
     // Actions
     initializePresentation,
@@ -62,6 +67,9 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({ chil
     selectElement,
     addElement,
     updateElement,
+    savePresentation,
+    savePresentationAs,
+    loadPresentation,
   } = useMainProcessPresentation();
 
   const slides = presentation.slides;
@@ -74,6 +82,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({ chil
     selectedElementId,
     isLoading,
     error,
+    currentFilePath,
   }
 
   return (
@@ -92,6 +101,9 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({ chil
         selectElement,
         addElement,
         updateElement,
+        savePresentation,
+        savePresentationAs,
+        loadPresentation,
         startEditingElement: () => {},
         stopEditingElement: () => {},
         moveElement: () => {},

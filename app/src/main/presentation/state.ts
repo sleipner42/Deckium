@@ -4,7 +4,7 @@ export class PresentationState {
   private presentation: Presentation;
 
   constructor() {
-    const titleSlide = this.createSlide('Title Slide');
+    const titleSlide = this.createSlide();
     this.presentation = {
       id: 'singleton',
       title: 'Untitled Presentation',
@@ -27,15 +27,29 @@ export class PresentationState {
     return this.presentation;
   }
 
-  initializePresentation(): Presentation {
+  initializePresentation(title = 'Untitled Presentation'): Presentation {
     const titleSlide = this.createSlide();
     
     this.presentation = {
       id: 'singleton',
-      title: 'Untitled Presentation',
+      title: title,
       slides: [titleSlide],
       createdAt: new Date(),
       updatedAt: new Date(),
+    };
+    
+    return this.presentation;
+  }
+
+  /**
+   * Load an existing presentation into the state
+   * @param presentation The presentation to load
+   * @returns The loaded presentation
+   */
+  loadPresentation(presentation: Presentation): Presentation {
+    this.presentation = {
+      ...presentation,
+      updatedAt: new Date(), // Update the timestamp when loading
     };
     
     return this.presentation;
@@ -91,7 +105,7 @@ export class PresentationState {
     const newSlides = this.presentation.slides.filter(slide => slide.id !== slideId);
     
     if (newSlides.length === 0) {
-      newSlides.push(this.createSlide('New Slide'));
+      newSlides.push(this.createSlide());
     }
     
     this.presentation = {

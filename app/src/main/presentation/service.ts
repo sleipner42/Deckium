@@ -1,10 +1,15 @@
 import { Presentation, Slide, ContentElement } from '../../common/domain/entities/types';
 import { PresentationState } from './state';
 import { PresentationEventBus } from './event-bus';
+import fs from 'fs';
+import { dialog, BrowserWindow } from 'electron';
+
+const FILE_EXTENSION = '.kpres';
 
 export class PresentationService {
   private state: PresentationState;
   private eventBus: PresentationEventBus;
+  private currentFilePath: string | null = null;
 
   constructor() {
     this.state = new PresentationState();
@@ -15,8 +20,9 @@ export class PresentationService {
     return this.state.getPresentation();
   }
 
-  initializePresentation(): Presentation {
-    const presentation = this.state.initializePresentation();
+  initializePresentation(title = 'Untitled Presentation'): Presentation {
+    const presentation = this.state.initializePresentation(title);
+    this.currentFilePath = null;
     this.eventBus.broadcastToWindows(PresentationEventBus.events.INITIALIZED, presentation);
     return presentation;
   }
@@ -79,5 +85,132 @@ export class PresentationService {
 
   offEvent(eventName: string, listener: (...args: any[]) => void): void {
     this.eventBus.off(eventName, listener);
+  }
+
+  /**
+   * Saves the current presentation to a file
+   * @param window The BrowserWindow to attach the dialog to
+   * @param forceNewPath Force a "Save As" dialog even if the file has been saved before
+   * @returns The path where the file was saved, or null if the operation was cancelled
+   */
+  async savePresentation(window: BrowserWindow, forceNewPath = false): Promise<string | null> {
+    try {
+      const filePath = forceNewPath || !this.currentFilePath
+        ? await this.showSaveDialog(window)
+        : this.currentFilePath;
+      
+      if (!filePath) {
+        return null; // User cancelled the dialog
+      }
+
+      const presentation = this.state.getPresentation();
+      
+      // Create a serializable version of the presentation
+      const serializedPresentation = {
+        ...presentation,
+        createdAt: presentation.createdAt.toISOString(),
+        updatedAt: presentation.updatedAt.toISOString()
+      };
+      
+      // Write the file
+      await fs.promises.writeFile(
+        filePath,
+        JSON.stringify(serializedPresentation, null, 2)
+      );
+      
+      this.currentFilePath = filePath;
+      
+      // Notify the renderer process
+      this.eventBus.broadcastToWindows(
+        PresentationEventBus.events.SAVED, 
+        { path: filePath, title: presentation.title }
+      );
+      
+      return filePath;
+    } catch (error) {
+      console.error('Error saving presentation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Loads a presentation from a file
+   * @param window The BrowserWindow to attach the dialog to
+   * @param filePath Optional - specific file path to load from, or shows open dialog if not provided
+   * @returns The loaded presentation or null if the operation was cancelled
+   */
+  async loadPresentation(window: BrowserWindow, filePath?: string): Promise<Presentation | null> {
+    try {
+      const path = filePath || await this.showOpenDialog(window);
+      
+      if (!path) {
+        return null; // User cancelled the dialog
+      }
+      
+      // Read and parse the file
+      const fileContent = await fs.promises.readFile(path, 'utf-8');
+      const presentationData = JSON.parse(fileContent);
+      
+      // Convert ISO strings back to Date objects
+      presentationData.createdAt = new Date(presentationData.createdAt);
+      presentationData.updatedAt = new Date(presentationData.updatedAt);
+      
+      // Load the presentation into the state
+      const loadedPresentation = this.state.loadPresentation(presentationData);
+      this.currentFilePath = path;
+      
+      // Notify the renderer process
+      this.eventBus.broadcastToWindows(
+        PresentationEventBus.events.LOADED, 
+        loadedPresentation
+      );
+      
+      return loadedPresentation;
+    } catch (error) {
+      console.error('Error loading presentation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Returns the current file path (if saved)
+   */
+  getCurrentFilePath(): string | null {
+    return this.currentFilePath;
+  }
+
+  /**
+   * Shows a file save dialog and returns the selected path
+   */
+  private async showSaveDialog(window: BrowserWindow): Promise<string | null> {
+    const presentation = this.state.getPresentation();
+    const defaultPath = `${presentation.title}${FILE_EXTENSION}`;
+    
+    const { canceled, filePath } = await dialog.showSaveDialog(window, {
+      title: 'Save Presentation',
+      defaultPath,
+      filters: [
+        { name: 'KraftPo Presentations', extensions: [FILE_EXTENSION.substring(1)] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+
+    return canceled ? null : filePath || null;
+  }
+  
+  /**
+   * Shows a file open dialog and returns the selected path
+   */
+  private async showOpenDialog(window: BrowserWindow): Promise<string | null> {
+    const { canceled, filePaths } = await dialog.showOpenDialog(window, {
+      title: 'Open Presentation',
+      properties: ['openFile'],
+      filters: [
+        { name: 'KraftPo Presentations', extensions: [FILE_EXTENSION.substring(1)] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+
+    return canceled ? null : (filePaths.length > 0 ? filePaths[0] : null);
   }
 } 

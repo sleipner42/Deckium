@@ -24,6 +24,10 @@ interface ElectronWindow {
       deleteSlide: (slideId: string) => Promise<string>;
       addElement: (slideId: string, element: ContentElement) => Promise<Slide>;
       updateElement: (elementId: string, updates: Partial<ContentElement>) => Promise<Slide>;
+      savePresentation: () => Promise<string | null>;
+      savePresentationAs: () => Promise<string | null>;
+      loadPresentation: (filePath?: string) => Promise<Presentation | null>;
+      getCurrentFilePath: () => Promise<string | null>;
     };
   };
 }
@@ -40,6 +44,7 @@ export const useMainProcessPresentation = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -163,6 +168,36 @@ export const useMainProcessPresentation = () => {
           setSlides(presentation.slides);
           setSelectedSlide(presentation.slides[0]);
         } 
+        setCurrentFilePath(null);
+      }
+    );
+
+    const presentationSavedUnsubscribe = electronAPI.ipcRenderer.on(
+      'presentation:saved',
+      (...args: unknown[]) => {
+        const data = args[0] as { path: string, title: string };
+        setCurrentFilePath(data.path);
+      }
+    );
+
+    const presentationLoadedUnsubscribe = electronAPI.ipcRenderer.on(
+      'presentation:loaded',
+      (...args: unknown[]) => {
+        const presentation = args[0] as Presentation;
+        setTitle(presentation.title);
+        setCreatedAt(new Date(presentation.createdAt));
+        setUpdatedAt(new Date(presentation.updatedAt));
+        setSlides(presentation.slides);
+        
+        if (presentation.slides && presentation.slides.length > 0) {
+          setSelectedSlide(presentation.slides[0]);
+        } else {
+          setSelectedSlide(null);
+        }
+
+        // Retrieve the file path
+        electronAPI.presentation.getCurrentFilePath()
+          .then(path => setCurrentFilePath(path));
       }
     );
 
@@ -173,6 +208,8 @@ export const useMainProcessPresentation = () => {
       slideDeletedUnsubscribe();
       initUnsubscribe();
       setSlideUnsubscribe();
+      presentationSavedUnsubscribe();
+      presentationLoadedUnsubscribe();
     };
   }, [selectedSlide]);
 
@@ -384,6 +421,54 @@ export const useMainProcessPresentation = () => {
     selectSlide(slides[index]);
   }, [slides, selectSlide]);
   
+  const savePresentation = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const filePath = await electronAPI.presentation.savePresentation();
+      return filePath;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const savePresentationAs = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const filePath = await electronAPI.presentation.savePresentationAs();
+      return filePath;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const loadPresentation = useCallback(async (filePath?: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const presentation = await electronAPI.presentation.loadPresentation(filePath);
+      return presentation;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const presentation = {
     id: 'singleton',
     title,
@@ -399,6 +484,7 @@ export const useMainProcessPresentation = () => {
     selectedElementId,
     isLoading,
     error,
+    currentFilePath,
     
     initializePresentation,
     updatePresentationMeta,
@@ -412,5 +498,8 @@ export const useMainProcessPresentation = () => {
     selectElement,
     addElement,
     updateElement,
+    savePresentation,
+    savePresentationAs,
+    loadPresentation,
   };
 }; 

@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, BrowserWindow } from 'electron';
 import { Slide, ContentElement } from '../../common/domain/entities/types';
 import { PresentationService } from './service';
 
@@ -34,5 +34,33 @@ export function setupPresentationIPC(service: PresentationService) {
   
   ipcMain.handle('presentation:update-element', (_, elementId: string, updates: Partial<ContentElement>) => {
     return service.updateElement(elementId, updates);
+  });
+  
+  ipcMain.handle('presentation:save', async (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) {
+      throw new Error('Could not determine source window');
+    }
+    return service.savePresentation(window);
+  });
+  
+  ipcMain.handle('presentation:save-as', async (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) {
+      throw new Error('Could not determine source window');
+    }
+    return service.savePresentation(window, true);
+  });
+  
+  ipcMain.handle('presentation:load', async (event, filePath?: string) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) {
+      throw new Error('Could not determine source window');
+    }
+    return service.loadPresentation(window, filePath);
+  });
+  
+  ipcMain.handle('presentation:get-file-path', () => {
+    return service.getCurrentFilePath();
   });
 } 

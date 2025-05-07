@@ -9,12 +9,17 @@ export type PresentationChannels =
   | 'presentation:delete-slide'
   | 'presentation:add-element'
   | 'presentation:update-element'
+  | 'presentation:save'
+  | 'presentation:save-as'
+  | 'presentation:load'
   | 'presentation:slide-added'
   | 'presentation:slide-updated'
   | 'presentation:slide-deleted'
   | 'presentation:meta-updated'
   | 'presentation:initialized'
-  | 'presentation:set-selected-slide';
+  | 'presentation:set-selected-slide'
+  | 'presentation:saved'
+  | 'presentation:loaded';
 
 export type AIChannels =
   | 'ai:create-thread'
@@ -95,6 +100,18 @@ const electronHandler = {
     },
     updateElement(elementId: string, updates: unknown) {
       return ipcRenderer.invoke('presentation:update-element', elementId, updates);
+    },
+    savePresentation() {
+      return ipcRenderer.invoke('presentation:save');
+    },
+    savePresentationAs() {
+      return ipcRenderer.invoke('presentation:save-as');
+    },
+    loadPresentation(filePath?: string) {
+      return ipcRenderer.invoke('presentation:load', filePath);
+    },
+    getCurrentFilePath() {
+      return ipcRenderer.invoke('presentation:get-file-path');
     }
   },
 };

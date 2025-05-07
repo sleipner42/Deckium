@@ -8,7 +8,9 @@ export class PresentationEventBus extends EventEmitter {
     SLIDE_ADDED: 'presentation:slide-added',
     SLIDE_UPDATED: 'presentation:slide-updated',
     SLIDE_DELETED: 'presentation:slide-deleted',
-    SET_SELECTED_SLIDE: 'presentation:set-selected-slide'
+    SET_SELECTED_SLIDE: 'presentation:set-selected-slide',
+    SAVED: 'presentation:saved',
+    LOADED: 'presentation:loaded'
   };
 
   broadcastToWindows(eventName: string, data: any): void {
