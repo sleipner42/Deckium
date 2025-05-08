@@ -3,6 +3,7 @@ import {
   Slide,
   Position,
   Size,
+  TextBox,
 } from '../../common/domain/entities/types';
 
 interface BoundingBox {
@@ -14,6 +15,49 @@ interface BoundingBox {
 }
 
 export class ElementValidator {
+  /**
+   * Estimates the actual height of text content based on line count, font size, and content width
+   * This is more accurate than using the element's declared height
+   */
+  private static estimateTextHeight(content: string, fontSize: number, width: number): number {
+    // If there's no content, return a minimal height
+    if (!content || content.trim() === '') {
+      return fontSize * 1.5;
+    }
+
+    // Get all lines from explicit line breaks
+    const lines = content.split('\n');
+    let totalLines = 0;
+    
+    // Average character width for the given font size (approximation)
+    const averageCharWidth = fontSize * 0.6;
+    
+    // Maximum characters per line at the given width
+    const maxCharsPerLine = Math.floor((width - 20) / averageCharWidth); // 20px for padding
+    
+    // Calculate total lines accounting for wrapping
+    for (const line of lines) {
+      if (line.trim() === '') {
+        totalLines += 1; // Count empty lines
+      } else if (maxCharsPerLine > 0) {
+        // Estimate wrapped lines based on character count
+        totalLines += Math.max(1, Math.ceil(line.length / maxCharsPerLine));
+      } else {
+        totalLines += 1;
+      }
+    }
+    
+    // Approximate line height based on font size
+    const lineHeight = fontSize * 1.4; // Slightly more space for readability
+    
+    // Calculate total height with padding
+    const totalHeight = (totalLines * lineHeight) + 24; // 24px for padding
+    
+    // For titles or very short content, ensure minimum height based on font size
+    const minHeight = fontSize * 2;
+    
+    return Math.max(totalHeight, minHeight);
+  }
   /**
    * Checks if a new element would overlap with text elements on a slide
    * or if it would be outside the slide boundaries
@@ -38,12 +82,29 @@ export class ElementValidator {
     // The position parameter might actually be a ContentElement
     const zIndex = position.hasOwnProperty('zIndex') && position.zIndex !== undefined ? 
                   position.zIndex : 1;
+    
+    // Check if we're dealing with a text element and can get more accurate height
+    let elementHeight = size.height;
+    
+    // If the position parameter is actually a ContentElement and it's a textbox
+    if (position.hasOwnProperty('type') && position['type'] === 'textbox') {
+      const textElement = position as unknown as TextBox;
+      if (textElement.content && textElement.fontSize) {
+        elementHeight = this.estimateTextHeight(
+          textElement.content, 
+          textElement.fontSize, 
+          size.width
+        );
+        // Add a small buffer for UI elements
+        elementHeight += textElement.fontSize * 0.5;
+      }
+    }
                   
     const newElementBox: BoundingBox = {
       x: position.x - padding,
       y: position.y - padding,
       width: size.width + padding * 2,
-      height: size.height + padding * 2,
+      height: elementHeight + padding * 2,
       zIndex: zIndex,
     };
 
@@ -52,7 +113,7 @@ export class ElementValidator {
       position.x < 0 ||
       position.y < 0 ||
       position.x + size.width > 1280 ||
-      position.y + size.height > 720;
+      position.y + elementHeight > 720;
 
     const overlappingElements: string[] = [];
     let mostSignificantOverlap = 0;
@@ -87,11 +148,24 @@ export class ElementValidator {
       // Use a reduced padding for known layout patterns
       const effectivePadding = isValidLayout ? 0 : padding;
 
+      let elementHeight = element.size.height;
+      // For textbox elements, use the estimated height for more accurate overlap detection
+      if (element.type === 'textbox') {
+        const textElement = element as TextBox;
+        elementHeight = this.estimateTextHeight(
+          textElement.content, 
+          textElement.fontSize, 
+          textElement.size.width
+        );
+        // Add a small buffer to account for UI elements, padding, etc.
+        elementHeight += textElement.fontSize * 0.5;
+      }
+
       const elementBox: BoundingBox = {
         x: element.position.x - effectivePadding,
         y: element.position.y - effectivePadding,
         width: element.size.width + effectivePadding * 2,
-        height: element.size.height + effectivePadding * 2,
+        height: elementHeight + effectivePadding * 2,
         zIndex: element.zIndex || 1,
       };
 
@@ -233,11 +307,25 @@ export class ElementValidator {
         // Check if this position overlaps with any existing element
         let hasOverlap = false;
         for (const element of slide.elements) {
+          let elementHeight = element.size.height;
+          
+          // For textbox elements, use the estimated height for more accurate overlap detection
+          if (element.type === 'textbox') {
+            const textElement = element as TextBox;
+            elementHeight = this.estimateTextHeight(
+              textElement.content, 
+              textElement.fontSize, 
+              textElement.size.width
+            );
+            // Add a small buffer to account for UI elements, padding, etc.
+            elementHeight += textElement.fontSize * 0.5;
+          }
+          
           const elementBox = {
             x: element.position.x,
             y: element.position.y,
             width: element.size.width,
-            height: element.size.height,
+            height: elementHeight,
           };
 
           if (this.doBoxesOverlap(testBox, elementBox)) {
