@@ -111,7 +111,7 @@ export class CreateShapeTool extends BaseTool {
       fillColor: fillColor || '#FFFFFF',
       strokeColor: strokeColor || '#000000',
       strokeWidth: Number(strokeWidth) || 2,
-      zIndex: Number(zIndex) || 1,
+      zIndex: zIndex !== undefined ? Number(zIndex) : 1,
     });
 
     const updatedSlide = presentationService.addElement(slideId, element);

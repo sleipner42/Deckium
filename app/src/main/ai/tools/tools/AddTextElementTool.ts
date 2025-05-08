@@ -166,8 +166,8 @@ export class AddTextElementTool extends BaseTool {
     //   yPos = overlapCheck.suggestedPosition.y;
     // }
 
-    // Use a standard z-index for text elements
-    const zIndex = 1;
+    // Use the provided z-index or default to 1
+    const zIndex = params.zIndex !== undefined ? Number(params.zIndex) : 1;
 
     const element = ElementFactory.createTextBox({
       content,
