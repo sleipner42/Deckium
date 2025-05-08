@@ -19,7 +19,11 @@ export class ElementValidator {
    * Estimates the actual height of text content based on line count, font size, and content width
    * This is more accurate than using the element's declared height
    */
-  private static estimateTextHeight(content: string, fontSize: number, width: number): number {
+  private static estimateTextHeight(
+    content: string,
+    fontSize: number,
+    width: number,
+  ): number {
     // If there's no content, return a minimal height
     if (!content || content.trim() === '') {
       return fontSize * 1.5;
@@ -28,13 +32,13 @@ export class ElementValidator {
     // Get all lines from explicit line breaks
     const lines = content.split('\n');
     let totalLines = 0;
-    
+
     // Average character width for the given font size (approximation)
     const averageCharWidth = fontSize * 0.6;
-    
+
     // Maximum characters per line at the given width
     const maxCharsPerLine = Math.floor((width - 20) / averageCharWidth); // 20px for padding
-    
+
     // Calculate total lines accounting for wrapping
     for (const line of lines) {
       if (line.trim() === '') {
@@ -46,18 +50,19 @@ export class ElementValidator {
         totalLines += 1;
       }
     }
-    
+
     // Approximate line height based on font size
     const lineHeight = fontSize * 1.4; // Slightly more space for readability
-    
+
     // Calculate total height with padding
-    const totalHeight = (totalLines * lineHeight) + 24; // 24px for padding
-    
+    const totalHeight = totalLines * lineHeight + 24; // 24px for padding
+
     // For titles or very short content, ensure minimum height based on font size
     const minHeight = fontSize * 2;
-    
+
     return Math.max(totalHeight, minHeight);
   }
+
   /**
    * Checks if a new element would overlap with text elements on a slide
    * or if it would be outside the slide boundaries
@@ -80,32 +85,34 @@ export class ElementValidator {
   } {
     // Extract z-index from the position parameter if available
     // The position parameter might actually be a ContentElement
-    const zIndex = position.hasOwnProperty('zIndex') && position.zIndex !== undefined ? 
-                  position.zIndex : 1;
-    
+    const zIndex =
+      position.hasOwnProperty('zIndex') && position.zIndex !== undefined
+        ? position.zIndex
+        : 1;
+
     // Check if we're dealing with a text element and can get more accurate height
     let elementHeight = size.height;
-    
+
     // If the position parameter is actually a ContentElement and it's a textbox
-    if (position.hasOwnProperty('type') && position['type'] === 'textbox') {
+    if (position.hasOwnProperty('type') && position.type === 'textbox') {
       const textElement = position as unknown as TextBox;
       if (textElement.content && textElement.fontSize) {
         elementHeight = this.estimateTextHeight(
-          textElement.content, 
-          textElement.fontSize, 
-          size.width
+          textElement.content,
+          textElement.fontSize,
+          size.width,
         );
         // Add a small buffer for UI elements
         elementHeight += textElement.fontSize * 0.5;
       }
     }
-                  
+
     const newElementBox: BoundingBox = {
       x: position.x - padding,
       y: position.y - padding,
       width: size.width + padding * 2,
       height: elementHeight + padding * 2,
-      zIndex: zIndex,
+      zIndex,
     };
 
     // Check if element is outside slide boundaries (1280x720)
@@ -130,21 +137,21 @@ export class ElementValidator {
       // 1. Title followed by content (vertical stacking)
       // 2. Bullet points or list items
       // 3. Adjacent columns of text
-      
+
       // Simple non-overlap check - elements are clearly separate if:
       // 1. One is entirely to the right of the other
       // 2. One is entirely below the other
-      const noOverlap = 
-           // Horizontally separated (no overlap)
-           (position.x >= element.position.x + element.size.width || 
-            element.position.x >= position.x + size.width) ||
-           // Vertically separated (no overlap)
-           (position.y >= element.position.y + element.size.height || 
-            element.position.y >= position.y + size.height);
-            
+      const noOverlap =
+        // Horizontally separated (no overlap)
+        position.x >= element.position.x + element.size.width ||
+        element.position.x >= position.x + size.width ||
+        // Vertically separated (no overlap)
+        position.y >= element.position.y + element.size.height ||
+        element.position.y >= position.y + size.height;
+
       // If elements are clearly separate, consider it a valid layout
       const isValidLayout = noOverlap;
-      
+
       // Use a reduced padding for known layout patterns
       const effectivePadding = isValidLayout ? 0 : padding;
 
@@ -153,9 +160,9 @@ export class ElementValidator {
       if (element.type === 'textbox') {
         const textElement = element as TextBox;
         elementHeight = this.estimateTextHeight(
-          textElement.content, 
-          textElement.fontSize, 
-          textElement.size.width
+          textElement.content,
+          textElement.fontSize,
+          textElement.size.width,
         );
         // Add a small buffer to account for UI elements, padding, etc.
         elementHeight += textElement.fontSize * 0.5;
@@ -178,12 +185,12 @@ export class ElementValidator {
 
         // Check z-index if both elements have it defined
         // Safely extract z-index from the elements
-        const newElementZIndex = newElementBox.zIndex !== undefined ? 
-                                 newElementBox.zIndex : 1;
-                                
-        const existingElementZIndex = element.zIndex !== undefined ? 
-                                     element.zIndex : 1;
-        
+        const newElementZIndex =
+          newElementBox.zIndex !== undefined ? newElementBox.zIndex : 1;
+
+        const existingElementZIndex =
+          element.zIndex !== undefined ? element.zIndex : 1;
+
         // If new element is above existing one, don't consider it an overlap issue
         // The higher z-index element will be rendered on top
         if (newElementZIndex > existingElementZIndex) {
@@ -308,19 +315,19 @@ export class ElementValidator {
         let hasOverlap = false;
         for (const element of slide.elements) {
           let elementHeight = element.size.height;
-          
+
           // For textbox elements, use the estimated height for more accurate overlap detection
           if (element.type === 'textbox') {
             const textElement = element as TextBox;
             elementHeight = this.estimateTextHeight(
-              textElement.content, 
-              textElement.fontSize, 
-              textElement.size.width
+              textElement.content,
+              textElement.fontSize,
+              textElement.size.width,
             );
             // Add a small buffer to account for UI elements, padding, etc.
             elementHeight += textElement.fontSize * 0.5;
           }
-          
+
           const elementBox = {
             x: element.position.x,
             y: element.position.y,
@@ -376,4 +383,3 @@ export class ElementValidator {
     return positions;
   }
 }
-
