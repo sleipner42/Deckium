@@ -1,38 +1,42 @@
+import axios from 'axios';
+import TurndownService from 'turndown';
 import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
-import axios from 'axios';
-import TurndownService from 'turndown';
 
 export class GetDataFromUrl extends BaseTool {
   name = 'getDataFromUrl';
+
   description = 'Get data from a URL and convert HTML to Markdown';
+
   requiredParams = {
     url: 'The URL to get data from',
   };
 
   protected async executeImpl(
     params: Record<string, any>,
-    presentationService: PresentationService
+    presentationService: PresentationService,
   ): Promise<AIToolResult> {
-    const url = params.url;
+    const { url } = params;
     const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
         'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
+        Pragma: 'no-cache',
         'Sec-Fetch-Dest': 'document',
         'Sec-Fetch-Mode': 'navigate',
         'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1'
-      }
+        'Sec-Fetch-User': '?1',
+      },
     });
-    const data = response.data;
-    
+    const { data } = response;
+
     let markdown = '';
-    
+
     if (typeof data === 'string' && data.trim().startsWith('<')) {
       try {
         const turndownService = new TurndownService();
@@ -45,9 +49,9 @@ export class GetDataFromUrl extends BaseTool {
     return {
       success: true,
       data: {
-        data: data,
-        markdown: markdown || ''
+        data,
+        markdown: markdown || '',
       },
     };
   }
-} 
+}

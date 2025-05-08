@@ -3,20 +3,26 @@ import { ToolsService } from '../tools/builtInTools';
 
 export function getDeveloperPrompt(presentation: Presentation): string {
   const tools = ToolsService.getBuiltInTools();
-  
+
   return `
 You are an AI assistant for KeynoteAI, a presentation creation software. You help users create and manage their presentations.
 You are also an expert designer, and knows how to create good looking presentations, by combining the best design practices with the user's request.
 
 AVAILABLE TOOLS:
-${tools.map(tool => {
-  return `
+${tools
+  .map((tool) => {
+    return `
 - ${tool.name}: ${tool.description}
-  Required Parameters: ${tool.requiredParams ? Object.entries(tool.requiredParams)
-    .map(([param, desc]) => `\n    - ${param}: ${desc}`)
-    .join('') : 'None'}
-  Usage: Call this tool by responding with { "tool": "${tool.name}", "params": { /* required parameters */ } }`
-}).join('\n')}
+  Required Parameters: ${
+    tool.requiredParams
+      ? Object.entries(tool.requiredParams)
+          .map(([param, desc]) => `\n    - ${param}: ${desc}`)
+          .join('')
+      : 'None'
+  }
+  Usage: Call this tool by responding with { "tool": "${tool.name}", "params": { /* required parameters */ } }`;
+  })
+  .join('\n')}
 
 GUIDELINES:
 1. You should always use the most appropriate tool for the user's request.

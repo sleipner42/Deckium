@@ -6,7 +6,9 @@ import { ElementValidator } from '../../../presentation/element-validator';
 
 export class UpdateShapeTool extends BaseTool {
   name = 'updateShape';
+
   description = 'Update an existing shape element on a slide';
+
   requiredParams = {
     elementId: 'The ID of the shape element to update',
     x: 'New X position (optional)',
@@ -16,12 +18,13 @@ export class UpdateShapeTool extends BaseTool {
     fillColor: 'New fill color (optional)',
     strokeColor: 'New stroke/border color (optional)',
     strokeWidth: 'New stroke/border width (optional)',
-    zIndex: 'The new z-index value (optional) - controls stacking order with higher values appearing on top',
+    zIndex:
+      'The new z-index value (optional) - controls stacking order with higher values appearing on top',
   };
 
   protected async executeImpl(
     params: Record<string, any>,
-    presentationService: PresentationService
+    presentationService: PresentationService,
   ): Promise<AIToolResult> {
     const {
       elementId,
@@ -101,7 +104,7 @@ export class UpdateShapeTool extends BaseTool {
     if (strokeWidth !== undefined) {
       updates.strokeWidth = Number(strokeWidth);
     }
-    
+
     if (zIndex !== undefined) {
       updates.zIndex = Number(zIndex);
     }
@@ -119,11 +122,11 @@ export class UpdateShapeTool extends BaseTool {
     // Check for potential overlaps if position or size is updated
     let overlapCheck = null;
     if (updates.position || updates.size) {
-      const slide = currentPresentation.slides.find(s => s.id === slideId);
+      const slide = currentPresentation.slides.find((s) => s.id === slideId);
       if (slide) {
         const newPosition = updates.position || shape.position;
         const newSize = updates.size || shape.size;
-        
+
         // Check for overlaps with the new position/size
         overlapCheck = ElementValidator.checkOverlap(
           slide,
@@ -148,21 +151,21 @@ export class UpdateShapeTool extends BaseTool {
 
     // Create appropriate message based on whether there was an overlap
     let message = 'Shape updated successfully';
-    
+
     if (overlapCheck) {
       // Only warn about elements outside slide boundaries
       if (overlapCheck.isOutsideSlide) {
         message += `\n\nWARNING: This shape is now positioned outside the slide boundaries (1280x720). `;
-        
+
         if (overlapCheck.suggestedPosition) {
           message += `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to ensure visibility.`;
         }
       }
-      
+
       // Warn about text overlaps
       if (overlapCheck.hasOverlap) {
         message += `\n\nWARNING: OVERLAP DETECTED. This shape now overlaps with text elements: ${overlapCheck.overlappingElements.join(', ')}. `;
-        
+
         if (overlapCheck.suggestedPosition) {
           message += `The closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}). Alternatively, you can adjust the z-index to control which element appears on top.`;
         } else {
@@ -180,4 +183,4 @@ export class UpdateShapeTool extends BaseTool {
       },
     };
   }
-} 
+}

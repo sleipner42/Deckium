@@ -17,7 +17,7 @@ export class AIState {
 
   getThreadsForPresentation(presentationId: UUID): Thread[] {
     return Array.from(this.threads.values()).filter(
-      (thread) => thread.presentationId === presentationId
+      (thread) => thread.presentationId === presentationId,
     );
   }
 
@@ -25,7 +25,11 @@ export class AIState {
     return this.threads.delete(threadId);
   }
 
-  createThread(title: string, presentationId: UUID, developerPrompt: string): Thread {
+  createThread(
+    title: string,
+    presentationId: UUID,
+    developerPrompt: string,
+  ): Thread {
     const newThread: Thread = {
       id: uuidv4(),
       title,
@@ -35,17 +39,16 @@ export class AIState {
       presentationId,
     };
 
-
     const threadWithPrompt = this.addMessage(
       newThread,
       developerPrompt,
-      'system'
+      'system',
     );
 
     const threadWithWelcome = this.addMessage(
       threadWithPrompt,
       'Welcome to KeynoteAI Assistant. I can help you create and manage your presentation. Ask me to create slides, suggest content, or help with design.',
-      'assistant'
+      'assistant',
     );
 
     this.threads.set(threadWithWelcome.id, threadWithWelcome);
@@ -55,7 +58,7 @@ export class AIState {
   addMessage(
     thread: Thread,
     content: string | MessageContent[],
-    role: 'user' | 'assistant' | 'system'
+    role: 'user' | 'assistant' | 'system',
   ): Thread {
     const threadToUpdate = this.threads.get(thread.id) || thread;
 
@@ -82,7 +85,7 @@ export class AIState {
     content: string | MessageContent[],
     role: 'user' | 'assistant' | 'system',
     messageId: string = uuidv4(),
-    streamingState: 'streaming' | 'completed' = 'completed'
+    streamingState: 'streaming' | 'completed' = 'completed',
   ): Thread {
     const threadToUpdate = this.threads.get(thread.id) || thread;
 
@@ -92,7 +95,7 @@ export class AIState {
       role,
       timestamp: new Date(),
       threadId: thread.id,
-      streamingState
+      streamingState,
     };
 
     const updatedThread = {
@@ -108,30 +111,30 @@ export class AIState {
   updateMessageContent(
     thread: Thread,
     messageId: string,
-    content: string | MessageContent[]
+    content: string | MessageContent[],
   ): Thread {
     const threadToUpdate = this.threads.get(thread.id) || thread;
-    
+
     const messageIndex = threadToUpdate.messages.findIndex(
-      (message) => message.id === messageId
+      (message) => message.id === messageId,
     );
-    
+
     if (messageIndex === -1) {
       return threadToUpdate;
     }
-    
+
     const updatedMessages = [...threadToUpdate.messages];
     updatedMessages[messageIndex] = {
       ...updatedMessages[messageIndex],
-      content
+      content,
     };
-    
+
     const updatedThread = {
       ...threadToUpdate,
       messages: updatedMessages,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
-    
+
     this.threads.set(updatedThread.id, updatedThread);
     return updatedThread;
   }
@@ -139,39 +142,39 @@ export class AIState {
   setMessageStreamingState(
     thread: Thread,
     messageId: string,
-    streamingState: 'streaming' | 'completed'
+    streamingState: 'streaming' | 'completed',
   ): Thread {
     const threadToUpdate = this.threads.get(thread.id) || thread;
-    
+
     const messageIndex = threadToUpdate.messages.findIndex(
-      (message) => message.id === messageId
+      (message) => message.id === messageId,
     );
-    
+
     if (messageIndex === -1) {
       return threadToUpdate;
     }
-    
+
     const updatedMessages = [...threadToUpdate.messages];
     updatedMessages[messageIndex] = {
       ...updatedMessages[messageIndex],
-      streamingState
+      streamingState,
     };
-    
+
     const updatedThread = {
       ...threadToUpdate,
       messages: updatedMessages,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
-    
+
     this.threads.set(updatedThread.id, updatedThread);
     return updatedThread;
   }
 
   updateSystemMessage(thread: Thread, newContent: string): Thread {
-    const updatedThread = {...thread};
-    
+    const updatedThread = { ...thread };
+
     const firstSystemMessageIndex = updatedThread.messages.findIndex(
-      (m) => m.role === 'system'
+      (m) => m.role === 'system',
     );
 
     if (firstSystemMessageIndex >= 0) {
@@ -193,8 +196,8 @@ export class AIState {
 
       updatedThread.messages = [systemMessage, ...updatedThread.messages];
     }
-    
+
     this.threads.set(updatedThread.id, updatedThread);
     return updatedThread;
   }
-} 
+}

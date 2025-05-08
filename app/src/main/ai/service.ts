@@ -17,9 +17,13 @@ import { PresentationService } from '../presentation/service';
 
 export class AIService {
   private state: AIState;
+
   private eventBus: AIEventBus;
+
   private toolsService: AIToolsService;
+
   private aiClient: IAIService;
+
   private presentationService: PresentationService;
 
   constructor(aiClient: IAIService, presentationService: PresentationService) {
@@ -173,7 +177,7 @@ export class AIService {
       console.log(`Starting iteration ${iterationCount + 1}/${MAX_ITERATIONS}`);
 
       try {
-        const messages = updatedThread.messages;
+        const { messages } = updatedThread;
         const deploymentName =
           process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini';
 
@@ -488,7 +492,7 @@ export class AIService {
       console.log(`Starting iteration ${iterationCount + 1}/${MAX_ITERATIONS}`);
 
       try {
-        const messages = updatedThread.messages;
+        const { messages } = updatedThread;
         const deploymentName =
           process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini';
 

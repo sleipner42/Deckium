@@ -3,7 +3,10 @@ import { AIToolResult } from '../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../presentation/service';
 
 export abstract class BaseTool extends AITool {
-  async execute(params: Record<string, any>, presentationService: PresentationService): Promise<AIToolResult> {
+  async execute(
+    params: Record<string, any>,
+    presentationService: PresentationService,
+  ): Promise<AIToolResult> {
     try {
       const result = await this.executeImpl(params, presentationService);
       this.logToolExecution(params, result);
@@ -19,5 +22,8 @@ export abstract class BaseTool extends AITool {
     }
   }
 
-  protected abstract executeImpl(params: Record<string, any>, presentationService: PresentationService): Promise<AIToolResult>;
-} 
+  protected abstract executeImpl(
+    params: Record<string, any>,
+    presentationService: PresentationService,
+  ): Promise<AIToolResult>;
+}

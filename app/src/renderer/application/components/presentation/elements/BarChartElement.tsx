@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart } from '../../../../../common/domain/entities/types';
 import Plot from 'react-plotly.js';
+import { BarChart } from '../../../../../common/domain/entities/types';
 import { BarChartEditor } from './BarChartEditor';
 
 interface BarChartElementProps {
@@ -14,24 +14,33 @@ interface BarChartElementProps {
   readOnly?: boolean;
 }
 
-export const BarChartElement: React.FC<BarChartElementProps> = ({ 
-  element, 
-  isSelected, 
+export const BarChartElement: React.FC<BarChartElementProps> = ({
+  element,
+  isSelected,
   isEditing,
   onClick,
   onElementUpdate,
   onStartEditing,
   onStopEditing,
-  readOnly = false
+  readOnly = false,
 }) => {
-  const { position, size, data, title, xAxisLabel, yAxisLabel, style, barColor } = element;
+  const {
+    position,
+    size,
+    data,
+    title,
+    xAxisLabel,
+    yAxisLabel,
+    style,
+    barColor,
+  } = element;
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showEditor, setShowEditor] = useState(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (readOnly) return;
-    
+
     if (isSelected) {
       e.stopPropagation();
       setIsDragging(true);
@@ -49,7 +58,7 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
           position: {
             x: e.clientX - dragOffset.x,
             y: e.clientY - dragOffset.y,
-          }
+          },
         });
       }
     };
@@ -71,14 +80,14 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
 
   const handleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
-    
+
     e.stopPropagation();
     if (onClick) onClick();
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
-    
+
     e.stopPropagation();
     setShowEditor(true);
     if (onStartEditing) onStartEditing();
@@ -137,7 +146,7 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
               r: 30,
               b: 50,
               t: 50,
-              pad: 0
+              pad: 0,
             },
             xaxis: {
               title: xAxisLabel,
@@ -171,4 +180,4 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
       )}
     </>
   );
-}; 
+};

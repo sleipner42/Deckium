@@ -42,6 +42,6 @@ export const useElementState = () => {
     startEditingElement,
     stopEditingElement,
     isSelected,
-    isEditing
+    isEditing,
   };
-}; 
+};

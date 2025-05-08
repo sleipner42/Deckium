@@ -17,12 +17,12 @@ import {
   Paper,
   TextField,
   Tooltip,
-  Typography
+  Typography,
 } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
+import { keyframes } from '@mui/system';
 import { Message } from '../../../../common/domain/entities/ai-types';
 import { useAI } from '../../context/AIContext';
-import { keyframes } from '@mui/system';
 
 interface ChatInterfaceProps {
   className?: string;
@@ -64,7 +64,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const handlePaste = (e: ClipboardEvent) => {
       if (!e.clipboardData || !currentThread) return;
 
-      const items = e.clipboardData.items;
+      const { items } = e.clipboardData;
 
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image') !== -1) {
@@ -77,19 +77,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 img.onload = () => {
                   const canvas = document.createElement('canvas');
 
-                  let width = img.width;
-                  let height = img.height;
+                  let { width } = img;
+                  let { height } = img;
 
                   if (width > height) {
                     if (width > MAX_IMAGE_SIZE) {
                       height = Math.round(height * (MAX_IMAGE_SIZE / width));
                       width = MAX_IMAGE_SIZE;
                     }
-                  } else {
-                    if (height > MAX_IMAGE_SIZE) {
-                      width = Math.round(width * (MAX_IMAGE_SIZE / height));
-                      height = MAX_IMAGE_SIZE;
-                    }
+                  } else if (height > MAX_IMAGE_SIZE) {
+                    width = Math.round(width * (MAX_IMAGE_SIZE / height));
+                    height = MAX_IMAGE_SIZE;
                   }
 
                   canvas.width = width;
@@ -181,7 +179,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           isUsingTool: false,
           hasImages: false,
         };
-      } else if (Array.isArray(message.content)) {
+      }
+      if (Array.isArray(message.content)) {
         const textContents = message.content
           .filter((item) => item.type === 'text' && item.text)
           .map((item) => (item as { type: 'text'; text: string }).text)
@@ -206,7 +205,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
 
     if (typeof message.content === 'string') {
-      const content = message.content;
+      const { content } = message;
       const actionMatch = content.match(/###\s*Action\s*###\s*(\{[\s\S]*\})/i);
 
       if (actionMatch) {
@@ -218,8 +217,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         };
       }
 
-      return { content: content, isUsingTool: false, hasImages: false };
-    } else if (Array.isArray(message.content)) {
+      return { content, isUsingTool: false, hasImages: false };
+    }
+    if (Array.isArray(message.content)) {
       const textContents = message.content
         .filter((item) => item.type === 'text' && item.text)
         .map((item) => (item as { type: 'text'; text: string }).text)
@@ -513,11 +513,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                               }}
                             >
                               {content}
-                              {message.streamingState === 'streaming' && 
-                                <Box 
-                                  component="span" 
-                                  sx={{ 
-                                    display: 'inline-block', 
+                              {message.streamingState === 'streaming' && (
+                                <Box
+                                  component="span"
+                                  sx={{
+                                    display: 'inline-block',
                                     width: '0.5em',
                                     height: '1em',
                                     ml: 0.5,
@@ -528,7 +528,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 >
                                   &nbsp;
                                 </Box>
-                              }
+                              )}
                             </Typography>
 
                             {/* Render images from message content */}

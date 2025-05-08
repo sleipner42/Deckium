@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart } from '../../../../../common/domain/entities/types';
 import {
   Dialog,
   DialogTitle,
@@ -17,10 +16,11 @@ import {
   TableRow,
   IconButton,
   Paper,
-  Divider
+  Divider,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import { BarChart } from '../../../../../common/domain/entities/types';
 
 interface BarChartEditorProps {
   element: BarChart;
@@ -33,14 +33,17 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
   element,
   onUpdate,
   onClose,
-  open
+  open,
 }) => {
   const [title, setTitle] = useState(element.title);
   const [xAxisLabel, setXAxisLabel] = useState(element.xAxisLabel);
   const [yAxisLabel, setYAxisLabel] = useState(element.yAxisLabel);
-  const [chartData, setChartData] = useState<{x: (string | number)[]; y: number[]}>({
+  const [chartData, setChartData] = useState<{
+    x: (string | number)[];
+    y: number[];
+  }>({
     x: [...element.data.x],
-    y: [...element.data.y]
+    y: [...element.data.y],
   });
 
   // Reset form when element changes
@@ -50,7 +53,7 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
     setYAxisLabel(element.yAxisLabel);
     setChartData({
       x: [...element.data.x],
-      y: [...element.data.y]
+      y: [...element.data.y],
     });
   }, [element]);
 
@@ -59,7 +62,7 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
       title,
       xAxisLabel,
       yAxisLabel,
-      data: chartData
+      data: chartData,
     });
     onClose();
   };
@@ -71,7 +74,7 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
     setYAxisLabel(element.yAxisLabel);
     setChartData({
       x: [...element.data.x],
-      y: [...element.data.y]
+      y: [...element.data.y],
     });
     onClose();
   };
@@ -101,16 +104,16 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
   };
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={handleCancel}
       maxWidth="md"
       fullWidth
       PaperProps={{
         sx: {
           borderRadius: 2,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
-        }
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+        },
       }}
     >
       <DialogTitle sx={{ pb: 1 }}>
@@ -118,7 +121,7 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
           Edit Bar Chart
         </Typography>
       </DialogTitle>
-      
+
       <DialogContent sx={{ pb: 2 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -131,7 +134,7 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
               size="small"
             />
           </Box>
-          
+
           <Box sx={{ display: 'flex', gap: 2 }}>
             <TextField
               fullWidth
@@ -150,16 +153,23 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
               size="small"
             />
           </Box>
-          
+
           <Divider sx={{ my: 1 }} />
-          
+
           <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 1,
+              }}
+            >
               <Typography variant="subtitle1" fontWeight={600}>
                 Chart Data
               </Typography>
-              <Button 
-                startIcon={<AddIcon />} 
+              <Button
+                startIcon={<AddIcon />}
                 onClick={addDataPoint}
                 size="small"
                 variant="outlined"
@@ -167,14 +177,16 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
                 Add Data Point
               </Button>
             </Box>
-            
+
             <TableContainer component={Paper} variant="outlined">
               <Table size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 600 }}>Category (X)</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Value (Y)</TableCell>
-                    <TableCell align="center" sx={{ width: 70 }}>Action</TableCell>
+                    <TableCell align="center" sx={{ width: 70 }}>
+                      Action
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -184,7 +196,9 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
                         <TextField
                           fullWidth
                           value={xValue}
-                          onChange={(e) => updateDataPoint(index, 'x', e.target.value)}
+                          onChange={(e) =>
+                            updateDataPoint(index, 'x', e.target.value)
+                          }
                           size="small"
                           variant="outlined"
                         />
@@ -194,14 +208,16 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
                           fullWidth
                           type="number"
                           value={chartData.y[index]}
-                          onChange={(e) => updateDataPoint(index, 'y', e.target.value)}
+                          onChange={(e) =>
+                            updateDataPoint(index, 'y', e.target.value)
+                          }
                           size="small"
                           variant="outlined"
                         />
                       </TableCell>
                       <TableCell align="center">
-                        <IconButton 
-                          size="small" 
+                        <IconButton
+                          size="small"
                           color="error"
                           onClick={() => removeDataPoint(index)}
                           disabled={chartData.x.length <= 1}
@@ -217,7 +233,7 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
           </Box>
         </Box>
       </DialogContent>
-      
+
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={handleCancel} variant="outlined">
           Cancel
@@ -228,4 +244,4 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
       </DialogActions>
     </Dialog>
   );
-}; 
+};

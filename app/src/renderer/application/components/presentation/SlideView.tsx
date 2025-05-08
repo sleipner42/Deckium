@@ -5,41 +5,44 @@ import { SlideRenderer } from './SlideRenderer';
 import { PRESENTATION_DIMENSIONS } from '../../../../common/utils/constants';
 import { Slide } from '../../../../common/domain/entities/types';
 
-export const SlideView: React.FC<{defaultScale?: number, selectedSlideOverride?: Slide}> = ({defaultScale = 0.7, selectedSlideOverride}) => {
+export const SlideView: React.FC<{
+  defaultScale?: number;
+  selectedSlideOverride?: Slide;
+}> = ({ defaultScale = 0.7, selectedSlideOverride }) => {
   const { selectedSlide } = usePresentation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(defaultScale);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  
+
   useEffect(() => {
     const updateScale = () => {
       if (!containerRef.current) return;
-      
+
       const containerWidth = containerRef.current.clientWidth;
       const containerHeight = containerRef.current.clientHeight;
-      
+
       const slideWidth = PRESENTATION_DIMENSIONS.WIDTH;
       const slideHeight = PRESENTATION_DIMENSIONS.HEIGHT;
-      
+
       const widthScale = (containerWidth * 0.85) / slideWidth;
       const heightScale = (containerHeight * 0.85) / slideHeight;
-      
+
       const newScale = Math.min(widthScale, heightScale);
       setScale(newScale);
-      
+
       setDimensions({
         width: slideWidth,
-        height: slideHeight
+        height: slideHeight,
       });
     };
-    
+
     updateScale();
-    
+
     const resizeObserver = new ResizeObserver(updateScale);
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
-    
+
     return () => {
       resizeObserver.disconnect();
     };
@@ -70,9 +73,7 @@ export const SlideView: React.FC<{defaultScale?: number, selectedSlideOverride?:
         }}
       >
         {selectedSlide ? (
-          <SlideRenderer
-            slide={selectedSlideOverride ? selectedSlideOverride : selectedSlide}
-          />
+          <SlideRenderer slide={selectedSlideOverride || selectedSlide} />
         ) : (
           <Box
             sx={{

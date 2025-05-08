@@ -1,23 +1,18 @@
 import React from 'react';
-import { usePresentation } from '../../context/PresentationContext';
-import { SlideRenderer } from './SlideRenderer';
-import { 
-  Box, 
-  Typography, 
-  IconButton, 
-  Paper,
-  Stack,
-  Chip
-} from '@mui/material';
+import { Box, Typography, IconButton, Paper, Stack, Chip } from '@mui/material';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import { SlideRenderer } from './SlideRenderer';
+import { usePresentation } from '../../context/PresentationContext';
 import { SlideView } from './SlideView';
 
 interface SlideNavigationProps {
   className?: string;
 }
 
-export const SlideNavigation: React.FC<SlideNavigationProps> = ({ className }) => {
+export const SlideNavigation: React.FC<SlideNavigationProps> = ({
+  className,
+}) => {
   const {
     currentPresentation,
     currentSlideIndex,
@@ -28,10 +23,13 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({ className }) =
   } = usePresentation();
 
   return (
-    <Box className={className} sx={{ display: 'flex', flexDirection: 'column' }}>
+    <Box
+      className={className}
+      sx={{ display: 'flex', flexDirection: 'column' }}
+    >
       {/* Navigation Controls */}
-      <Stack 
-        direction="row" 
+      <Stack
+        direction="row"
         spacing={1}
         alignItems="center"
         justifyContent="space-between"
@@ -50,12 +48,12 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({ className }) =
         >
           <ArrowBackIosNewIcon fontSize="small" />
         </IconButton>
-        
+
         <Chip
           label={`${currentSlideIndex + 1} / ${currentPresentation.slides.length}`}
           size="small"
           variant="outlined"
-          sx={{ 
+          sx={{
             borderRadius: 1,
             height: 24,
             fontSize: '0.75rem',
@@ -64,7 +62,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({ className }) =
             borderColor: 'divider',
           }}
         />
-        
+
         <IconButton
           size="small"
           onClick={nextSlide}
@@ -114,15 +112,22 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({ className }) =
               overflow: 'hidden',
               cursor: 'pointer',
               border: '1px solid',
-              borderColor: selectedSlide?.id === slide.id ? 'primary.main' : 'divider',
-              boxShadow: selectedSlide?.id === slide.id ? '0 0 0 2px rgba(0, 122, 255, 0.2)' : 'none',
+              borderColor:
+                selectedSlide?.id === slide.id ? 'primary.main' : 'divider',
+              boxShadow:
+                selectedSlide?.id === slide.id
+                  ? '0 0 0 2px rgba(0, 122, 255, 0.2)'
+                  : 'none',
               transition: 'all 0.2s ease-in-out',
               '&:hover': {
-                borderColor: selectedSlide?.id === slide.id ? 'primary.main' : 'primary.light',
+                borderColor:
+                  selectedSlide?.id === slide.id
+                    ? 'primary.main'
+                    : 'primary.light',
               },
             }}
           >
-            <Box 
+            <Box
               sx={{
                 position: 'absolute',
                 top: 0,
@@ -132,7 +137,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({ className }) =
                 bgcolor: 'background.paper',
               }}
             >
-              <SlideView defaultScale={0.2} selectedSlideOverride={slide}/>
+              <SlideView defaultScale={0.2} selectedSlideOverride={slide} />
             </Box>
             <Box
               sx={{
@@ -147,9 +152,9 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({ className }) =
                 borderColor: 'divider',
               }}
             >
-              <Typography 
-                variant="caption" 
-                sx={{ 
+              <Typography
+                variant="caption"
+                sx={{
                   fontSize: '0.65rem',
                   color: 'text.secondary',
                   fontWeight: selectedSlide?.id === slide.id ? 600 : 400,
@@ -163,4 +168,4 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({ className }) =
       </Box>
     </Box>
   );
-}; 
+};

@@ -10,13 +10,13 @@ interface PlotElementProps {
   readOnly?: boolean;
 }
 
-export const PlotElement: React.FC<PlotElementProps> = ({ 
-  element, 
-  isSelected, 
+export const PlotElement: React.FC<PlotElementProps> = ({
+  element,
+  isSelected,
   isEditing,
   onClick,
   onElementUpdate,
-  readOnly = false
+  readOnly = false,
 }) => {
   const { position, size, data, plotType, style } = element;
   const [isDragging, setIsDragging] = useState(false);
@@ -25,7 +25,7 @@ export const PlotElement: React.FC<PlotElementProps> = ({
   // Handle mouse events for dragging
   const handleMouseDown = (e: React.MouseEvent) => {
     if (readOnly) return;
-    
+
     if (isSelected) {
       e.stopPropagation();
       setIsDragging(true);
@@ -44,7 +44,7 @@ export const PlotElement: React.FC<PlotElementProps> = ({
           position: {
             x: e.clientX - dragOffset.x,
             y: e.clientY - dragOffset.y,
-          }
+          },
         });
       }
     };
@@ -66,7 +66,7 @@ export const PlotElement: React.FC<PlotElementProps> = ({
 
   const handleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
-    
+
     e.stopPropagation();
     if (onClick) onClick();
   };
@@ -100,4 +100,4 @@ export const PlotElement: React.FC<PlotElementProps> = ({
       </div>
     </div>
   );
-}; 
+};

@@ -6,8 +6,10 @@ import { ElementValidator } from '../../../presentation/element-validator';
 
 export class CreateShapeTool extends BaseTool {
   name = 'createShape';
+
   description =
     'Create a shape element (rectangle, circle, or triangle) on a slide';
+
   requiredParams = {
     slideId: 'The ID of the slide to add the shape to',
     shapeType: 'The type of shape to create (rectangle, circle, or triangle)',
@@ -69,8 +71,8 @@ export class CreateShapeTool extends BaseTool {
     let yPos = Number(y) || 100;
 
     if (positionReference === 'center') {
-      xPos = xPos - widthValue / 2;
-      yPos = yPos - heightValue / 2;
+      xPos -= widthValue / 2;
+      yPos -= heightValue / 2;
     }
 
     // Get the current slide to check for overlaps
@@ -162,4 +164,3 @@ export class CreateShapeTool extends BaseTool {
     };
   }
 }
-

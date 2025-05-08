@@ -1,6 +1,9 @@
 import { AITool } from './AITool';
 import { ToolFactory } from './ToolFactory';
-import { AIToolCall, AIToolResult } from '../../../common/domain/entities/ai-types';
+import {
+  AIToolCall,
+  AIToolResult,
+} from '../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../presentation/service';
 
 export class AIToolsService {
@@ -17,7 +20,7 @@ export class AIToolsService {
   logToolExecution(
     toolName: string,
     params: Record<string, any>,
-    result: AIToolResult
+    result: AIToolResult,
   ): void {
     console.log(`Tool execution: ${toolName}`);
     console.log('Params:', JSON.stringify(params, null, 2));
@@ -26,7 +29,7 @@ export class AIToolsService {
 
   extractToolCall(response: string): AIToolCall | null {
     const actionMatch = response.match(
-      /\{\s*"tool":\s*"[^"]+",\s*"params":\s*\{[^}]*\}\s*\}/i
+      /\{\s*"tool":\s*"[^"]+",\s*"params":\s*\{[^}]*\}\s*\}/i,
     );
 
     if (!actionMatch) {
@@ -40,7 +43,7 @@ export class AIToolsService {
       if (!toolCallData.tool || !toolCallData.params) {
         console.warn(
           'Extracted tool call data is missing required fields',
-          toolCallData
+          toolCallData,
         );
         return null;
       }
@@ -65,7 +68,7 @@ export class AIToolsService {
 
   async executeToolCalls(
     toolCalls: AIToolCall[],
-    presentationService: PresentationService
+    presentationService: PresentationService,
   ): Promise<Array<{ toolName: string; result: any }>> {
     const results = [];
 
@@ -104,22 +107,25 @@ export class AIToolsService {
   }
 
   formatToolResults(
-    results: Array<{ toolName: string; result: any }>
+    results: Array<{ toolName: string; result: any }>,
   ): string | { type: string; text?: string; image_url?: { url: string } }[] {
     const hasScreenshot = results.some(
-      ({ result }) => result.success && result.screenshot
+      ({ result }) => result.success && result.screenshot,
     );
 
     if (hasScreenshot) {
-      const contentArray: { type: string; text?: string; image_url?: { url: string } }[] = [];
+      const contentArray: {
+        type: string;
+        text?: string;
+        image_url?: { url: string };
+      }[] = [];
 
       const textContent = results
         .map(({ toolName, result }) => {
           if (result.success) {
             return `${toolName}: Success - ${JSON.stringify(result.data)}`;
-          } else {
-            return `${toolName}: Failed - ${result.error}`;
           }
+          return `${toolName}: Failed - ${result.error}`;
         })
         .join('\n');
 
@@ -146,10 +152,9 @@ export class AIToolsService {
       .map(({ toolName, result }) => {
         if (result.success) {
           return `${toolName}: Success - ${JSON.stringify(result.data)}`;
-        } else {
-          return `${toolName}: Failed - ${result.error}`;
         }
+        return `${toolName}: Failed - ${result.error}`;
       })
       .join('\n');
   }
-} 
+}

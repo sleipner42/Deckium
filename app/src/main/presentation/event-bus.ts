@@ -10,13 +10,13 @@ export class PresentationEventBus extends EventEmitter {
     SLIDE_DELETED: 'presentation:slide-deleted',
     SET_SELECTED_SLIDE: 'presentation:set-selected-slide',
     SAVED: 'presentation:saved',
-    LOADED: 'presentation:loaded'
+    LOADED: 'presentation:loaded',
   };
 
   broadcastToWindows(eventName: string, data: any): void {
-    BrowserWindow.getAllWindows().forEach(window => {
+    BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send(eventName, data);
     });
     this.emit(eventName, data);
   }
-} 
+}

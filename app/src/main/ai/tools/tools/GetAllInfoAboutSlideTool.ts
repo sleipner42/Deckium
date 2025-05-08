@@ -2,18 +2,26 @@ import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
-import { TextBox, Shape, Image, Plot } from '../../../../common/domain/entities/types';
+import {
+  TextBox,
+  Shape,
+  Image,
+  Plot,
+} from '../../../../common/domain/entities/types';
 
 export class GetAllInfoAboutSlideTool extends BaseTool {
   name = 'getAllInfoAboutSlide';
-  description = 'Get detailed information about a slide and its elements in text. Use this tool to get information about a slide before you edit or add something to it.';
+
+  description =
+    'Get detailed information about a slide and its elements in text. Use this tool to get information about a slide before you edit or add something to it.';
+
   requiredParams = {
     slideId: 'The ID of the slide to get information about',
   };
 
   protected async executeImpl(
     params: Record<string, any>,
-    presentationService: PresentationService
+    presentationService: PresentationService,
   ): Promise<AIToolResult> {
     const { slideId } = params;
 
@@ -25,9 +33,7 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
     }
 
     const currentPresentation = presentationService.getPresentation();
-    const slide = currentPresentation.slides.find(
-      (s) => s.id === slideId,
-    );
+    const slide = currentPresentation.slides.find((s) => s.id === slideId);
 
     if (!slide) {
       return {
@@ -41,7 +47,6 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
     );
 
     const processedElements = sortedElements.map((element) => {
-
       const centerCordinatesOfElement = {
         x: element.position.x + element.size.width / 2,
         y: element.position.y + element.size.height / 2,
@@ -113,4 +118,4 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
       data: slideInfo,
     };
   }
-} 
+}

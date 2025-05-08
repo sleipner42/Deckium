@@ -1,43 +1,40 @@
 import React from 'react';
+import { Box, Button, Paper, Typography } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { usePresentation } from '../../context/PresentationContext';
 import { SlideNavigation } from './SlideNavigation';
 import { SlideView } from './SlideView';
 import { ChatInterface } from '../common/ChatInterface';
-import {
-  Box,
-  Button,
-  Paper,
-  Typography,
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import Toolbar from '../common/Toolbar';
 
 const PresentationEditor: React.FC = () => {
-  const { 
-    addSlide, 
-  } = usePresentation();
+  const { addSlide } = usePresentation();
 
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column',
-      height: '100vh',
-      width: '100vw',
-      overflow: 'hidden',
-      bgcolor: 'background.default',
-      color: 'text.primary',
-    }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        width: '100vw',
+        overflow: 'hidden',
+        bgcolor: 'background.default',
+        color: 'text.primary',
+      }}
+    >
       {/* Apple Music style toolbar at the top */}
       <Toolbar />
-      
+
       {/* Main content with sidebar and slide view */}
-      <Box sx={{ 
-        display: 'flex',
-        flex: 1,
-        overflow: 'hidden'
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flex: 1,
+          overflow: 'hidden',
+        }}
+      >
         {/* Sidebar */}
-        <Paper 
+        <Paper
           elevation={0}
           sx={{
             width: 400,
@@ -66,7 +63,7 @@ const PresentationEditor: React.FC = () => {
           >
             Add Slide
           </Button>
-          
+
           <Box
             sx={{
               flex: 1,
@@ -77,7 +74,7 @@ const PresentationEditor: React.FC = () => {
           >
             <SlideNavigation className="slide-navigation" />
           </Box>
-          
+
           <Paper
             elevation={0}
             sx={{
@@ -92,21 +89,25 @@ const PresentationEditor: React.FC = () => {
               flexShrink: 0,
             }}
           >
-            <Box sx={{ 
-              fontWeight: 600, 
-              mb: 1.5,
-              color: 'text.primary',
-            }}>
+            <Box
+              sx={{
+                fontWeight: 600,
+                mb: 1.5,
+                color: 'text.primary',
+              }}
+            >
               AI Assistant
             </Box>
-            <Box sx={{ 
-              flex: 1, 
-              bgcolor: 'background.default', 
-              borderRadius: 1,
-              overflow: 'hidden',
-              border: '1px solid',
-              borderColor: 'divider',
-            }}>
+            <Box
+              sx={{
+                flex: 1,
+                bgcolor: 'background.default',
+                borderRadius: 1,
+                overflow: 'hidden',
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
               <ChatInterface className="ai-chat-interface" />
             </Box>
           </Paper>
@@ -123,13 +124,15 @@ const PresentationEditor: React.FC = () => {
           }}
         >
           {/* Slide view */}
-          <Box sx={{ 
-            flex: 1,
-            display: 'flex',
-            overflow: 'hidden',
-            width: '100%',
-            position: 'relative',
-          }}>
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              overflow: 'hidden',
+              width: '100%',
+              position: 'relative',
+            }}
+          >
             <SlideView />
           </Box>
         </Box>
@@ -138,4 +141,4 @@ const PresentationEditor: React.FC = () => {
   );
 };
 
-export default PresentationEditor; 
+export default PresentationEditor;

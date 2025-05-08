@@ -5,25 +5,30 @@ import { ElementFactory } from '../../../../common/domain/entities/element-facto
 
 export class CreateBarChartTool extends BaseTool {
   name = 'createBarChart';
+
   description = 'Create a bar chart element on a slide';
+
   requiredParams = {
     slideId: 'The ID of the slide to add the bar chart to',
     title: 'The title of the chart',
     xAxisLabel: 'The label for the X axis',
     yAxisLabel: 'The label for the Y axis',
-    xData: 'Array of x-axis values (labels) as comma-separated string, e.g. "Jan,Feb,Mar"',
-    yData: 'Array of y-axis values (numbers) as comma-separated string, e.g. "10,24,30"',
+    xData:
+      'Array of x-axis values (labels) as comma-separated string, e.g. "Jan,Feb,Mar"',
+    yData:
+      'Array of y-axis values (numbers) as comma-separated string, e.g. "10,24,30"',
     x: 'X position of the element (optional, defaults to 100)',
     y: 'Y position of the element (optional, defaults to 100)',
     width: 'The width of the element (optional, defaults to 400)',
     height: 'The height of the element (optional, defaults to 300)',
     barColor: 'The color of the bars (optional, defaults to #000000)',
-    zIndex: 'The z-index of the element (optional, defaults to 1) - controls stacking order with higher values appearing on top',
+    zIndex:
+      'The z-index of the element (optional, defaults to 1) - controls stacking order with higher values appearing on top',
   };
 
   protected async executeImpl(
     params: Record<string, any>,
-    presentationService: PresentationService
+    presentationService: PresentationService,
   ): Promise<AIToolResult> {
     const {
       slideId,
@@ -63,7 +68,9 @@ export class CreateBarChartTool extends BaseTool {
 
     // Parse data arrays
     const xDataArray = xData.split(',').map((item: string) => item.trim());
-    const yDataArray = yData.split(',').map((item: string) => Number(item.trim()));
+    const yDataArray = yData
+      .split(',')
+      .map((item: string) => Number(item.trim()));
 
     if (xDataArray.length !== yDataArray.length) {
       return {
@@ -89,10 +96,7 @@ export class CreateBarChartTool extends BaseTool {
       zIndex: zIndex !== undefined ? Number(zIndex) : 1,
     });
 
-    const updatedSlide = presentationService.addElement(
-      slideId,
-      element,
-    );
+    const updatedSlide = presentationService.addElement(slideId, element);
 
     if (!updatedSlide) {
       return {
@@ -118,4 +122,4 @@ export class CreateBarChartTool extends BaseTool {
       },
     };
   }
-} 
+}

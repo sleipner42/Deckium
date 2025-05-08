@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Presentation, Slide, ContentElement } from '../../../common/domain/entities/types';
+import {
+  Presentation,
+  Slide,
+  ContentElement,
+} from '../../../common/domain/entities/types';
 
 interface ElectronWindow {
   electron: {
@@ -18,12 +22,17 @@ interface ElectronWindow {
     presentation: {
       initializePresentation: (title: string) => Promise<Presentation>;
       getPresentation: () => Promise<Presentation>;
-      updateMeta: (title: string) => Promise<{title: string, updatedAt: Date}>;
+      updateMeta: (
+        title: string,
+      ) => Promise<{ title: string; updatedAt: Date }>;
       addSlide: (title?: string) => Promise<Slide>;
       updateSlide: (slideId: string, updates: Partial<Slide>) => Promise<Slide>;
       deleteSlide: (slideId: string) => Promise<string>;
       addElement: (slideId: string, element: ContentElement) => Promise<Slide>;
-      updateElement: (elementId: string, updates: Partial<ContentElement>) => Promise<Slide>;
+      updateElement: (
+        elementId: string,
+        updates: Partial<ContentElement>,
+      ) => Promise<Slide>;
       savePresentation: () => Promise<string | null>;
       savePresentationAs: () => Promise<string | null>;
       loadPresentation: (filePath?: string) => Promise<Presentation | null>;
@@ -32,7 +41,7 @@ interface ElectronWindow {
   };
 }
 
-const electronAPI = ((window as unknown) as ElectronWindow).electron;
+const electronAPI = (window as unknown as ElectronWindow).electron;
 
 export const useMainProcessPresentation = () => {
   const [title, setTitle] = useState<string>('Untitled Presentation');
@@ -40,7 +49,9 @@ export const useMainProcessPresentation = () => {
   const [updatedAt, setUpdatedAt] = useState<Date>(new Date());
   const [slides, setSlides] = useState<Slide[]>([]);
   const [selectedSlide, setSelectedSlide] = useState<Slide | null>(null);
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
@@ -49,13 +60,17 @@ export const useMainProcessPresentation = () => {
   useEffect(() => {
     if (!isInitialized) {
       setIsLoading(true);
-      electronAPI.presentation.getPresentation()
+      electronAPI.presentation
+        .getPresentation()
         .then((loadedPresentation) => {
           setTitle(loadedPresentation.title);
           setCreatedAt(new Date(loadedPresentation.createdAt));
           setUpdatedAt(new Date(loadedPresentation.updatedAt));
-          
-          if (loadedPresentation.slides && loadedPresentation.slides.length > 0) {
+
+          if (
+            loadedPresentation.slides &&
+            loadedPresentation.slides.length > 0
+          ) {
             setSlides(loadedPresentation.slides);
             setSelectedSlide(loadedPresentation.slides[0]);
           }
@@ -76,7 +91,7 @@ export const useMainProcessPresentation = () => {
     } else if (slides.length === 0) {
       setSelectedSlide(null);
     } else if (selectedSlide) {
-      const slideExists = slides.some(slide => slide.id === selectedSlide.id);
+      const slideExists = slides.some((slide) => slide.id === selectedSlide.id);
       if (!slideExists) {
         setSelectedSlide(slides.length > 0 ? slides[0] : null);
       }
@@ -87,35 +102,35 @@ export const useMainProcessPresentation = () => {
     const metaUpdatedUnsubscribe = electronAPI.ipcRenderer.on(
       'presentation:meta-updated',
       (...args: unknown[]) => {
-        const metaUpdate = args[0] as {title: string, updatedAt: Date};
+        const metaUpdate = args[0] as { title: string; updatedAt: Date };
         setTitle(metaUpdate.title);
         setUpdatedAt(new Date(metaUpdate.updatedAt));
-      }
+      },
     );
 
     const slideAddedUnsubscribe = electronAPI.ipcRenderer.on(
       'presentation:slide-added',
       (...args: unknown[]) => {
         const newSlide = args[0] as Slide;
-        setSlides(prev => [...prev, newSlide]);
+        setSlides((prev) => [...prev, newSlide]);
         setSelectedSlide(newSlide);
-      }
+      },
     );
 
     const setSlideUnsubscribe = electronAPI.ipcRenderer.on(
       'presentation:set-selected-slide',
       (...args: unknown[]) => {
         const slideId = args[0] as string;
-        setSelectedSlide(slides.find(s => s.id === slideId) || null);
-      }
+        setSelectedSlide(slides.find((s) => s.id === slideId) || null);
+      },
     );
 
     const slideUpdatedUnsubscribe = electronAPI.ipcRenderer.on(
       'presentation:slide-updated',
       (...args: unknown[]) => {
         const updatedSlide = args[0] as Slide;
-        setSlides(prev => {
-          const index = prev.findIndex(s => s.id === updatedSlide.id);
+        setSlides((prev) => {
+          const index = prev.findIndex((s) => s.id === updatedSlide.id);
           if (index === -1) return prev;
 
           const newSlides = [...prev];
@@ -125,7 +140,7 @@ export const useMainProcessPresentation = () => {
         if (selectedSlide?.id === updatedSlide.id) {
           setSelectedSlide(updatedSlide);
         }
-      }
+      },
     );
 
     const slideDeletedUnsubscribe = electronAPI.ipcRenderer.on(
@@ -135,8 +150,10 @@ export const useMainProcessPresentation = () => {
           const deletedSlideId = args[0] as string;
           if (!deletedSlideId) return;
 
-          setSlides(prev => {
-            const updatedSlides = prev.filter(slide => slide.id !== deletedSlideId);
+          setSlides((prev) => {
+            const updatedSlides = prev.filter(
+              (slide) => slide.id !== deletedSlideId,
+            );
 
             setTimeout(() => {
               if (selectedSlide?.id === deletedSlideId) {
@@ -153,7 +170,7 @@ export const useMainProcessPresentation = () => {
         } catch (error) {
           console.error('Error handling slide deletion:', error);
         }
-      }
+      },
     );
 
     const initUnsubscribe = electronAPI.ipcRenderer.on(
@@ -163,21 +180,21 @@ export const useMainProcessPresentation = () => {
         setTitle(presentation.title);
         setCreatedAt(new Date(presentation.createdAt));
         setUpdatedAt(new Date(presentation.updatedAt));
-        
+
         if (presentation.slides && presentation.slides.length > 0) {
           setSlides(presentation.slides);
           setSelectedSlide(presentation.slides[0]);
-        } 
+        }
         setCurrentFilePath(null);
-      }
+      },
     );
 
     const presentationSavedUnsubscribe = electronAPI.ipcRenderer.on(
       'presentation:saved',
       (...args: unknown[]) => {
-        const data = args[0] as { path: string, title: string };
+        const data = args[0] as { path: string; title: string };
         setCurrentFilePath(data.path);
-      }
+      },
     );
 
     const presentationLoadedUnsubscribe = electronAPI.ipcRenderer.on(
@@ -188,7 +205,7 @@ export const useMainProcessPresentation = () => {
         setCreatedAt(new Date(presentation.createdAt));
         setUpdatedAt(new Date(presentation.updatedAt));
         setSlides(presentation.slides);
-        
+
         if (presentation.slides && presentation.slides.length > 0) {
           setSelectedSlide(presentation.slides[0]);
         } else {
@@ -196,9 +213,10 @@ export const useMainProcessPresentation = () => {
         }
 
         // Retrieve the file path
-        electronAPI.presentation.getCurrentFilePath()
-          .then(path => setCurrentFilePath(path));
-      }
+        electronAPI.presentation
+          .getCurrentFilePath()
+          .then((path) => setCurrentFilePath(path));
+      },
     );
 
     return () => {
@@ -217,21 +235,23 @@ export const useMainProcessPresentation = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const presentation = await electronAPI.presentation.initializePresentation(title);
-      
+
+      const presentation =
+        await electronAPI.presentation.initializePresentation(title);
+
       setTitle(presentation.title);
       setCreatedAt(new Date(presentation.createdAt));
       setUpdatedAt(new Date(presentation.updatedAt));
-      
+
       if (presentation.slides && presentation.slides.length > 0) {
         setSlides(presentation.slides);
         setSelectedSlide(presentation.slides[0]);
-      } 
-      
+      }
+
       return presentation;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       throw err;
     } finally {
@@ -243,14 +263,15 @@ export const useMainProcessPresentation = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const result = await electronAPI.presentation.updateMeta(newTitle);
       setTitle(result.title);
       setUpdatedAt(new Date(result.updatedAt));
-      
+
       return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       throw err;
     } finally {
@@ -262,11 +283,11 @@ export const useMainProcessPresentation = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       await electronAPI.presentation.addSlide(title);
-
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       throw err;
     } finally {
@@ -274,135 +295,154 @@ export const useMainProcessPresentation = () => {
     }
   }, []);
 
-  const selectSlide = useCallback((slide: Slide) => {
-    const slideExists = slides.some(s => s.id === slide.id);
-    if (slideExists) {
-      setSelectedSlide(slide);
-      setSelectedElementId(null);
-    }
-  }, [slides]);
-
-  const updateSlide = useCallback(async (slideId: string, updates: Partial<Slide>) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const updatedSlide = await electronAPI.presentation.updateSlide(slideId, updates);
-      
-      setSlides(prev => {
-        const index = prev.findIndex(s => s.id === slideId);
-        if (index === -1) return prev;
-        
-        const newSlides = [...prev];
-        newSlides[index] = updatedSlide;
-        return newSlides;
-      });
-      
-      return updatedSlide;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const deleteSlide = useCallback(async (slideId: string) => {
-    try {
-      if (!slideId) {
-        setError('No slide ID provided');
-        return null;
+  const selectSlide = useCallback(
+    (slide: Slide) => {
+      const slideExists = slides.some((s) => s.id === slide.id);
+      if (slideExists) {
+        setSelectedSlide(slide);
+        setSelectedElementId(null);
       }
-      
-      setIsLoading(true);
-      setError(null);
-      
-      const deletedSlideId = await electronAPI.presentation.deleteSlide(slideId);
-      
-      setSlides(prevSlides => {
-        const updatedSlides = prevSlides.filter(s => s.id !== slideId);
-        
-        setTimeout(() => {
-          if (selectedSlide?.id === slideId) {
-            if (updatedSlides.length > 0) {
-              setSelectedSlide(updatedSlides[0]);
-            } else {
-              setSelectedSlide(null);
+    },
+    [slides],
+  );
+
+  const updateSlide = useCallback(
+    async (slideId: string, updates: Partial<Slide>) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const updatedSlide = await electronAPI.presentation.updateSlide(
+          slideId,
+          updates,
+        );
+
+        setSlides((prev) => {
+          const index = prev.findIndex((s) => s.id === slideId);
+          if (index === -1) return prev;
+
+          const newSlides = [...prev];
+          newSlides[index] = updatedSlide;
+          return newSlides;
+        });
+
+        return updatedSlide;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'An error occurred';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  const deleteSlide = useCallback(
+    async (slideId: string) => {
+      try {
+        if (!slideId) {
+          setError('No slide ID provided');
+          return null;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        const deletedSlideId =
+          await electronAPI.presentation.deleteSlide(slideId);
+
+        setSlides((prevSlides) => {
+          const updatedSlides = prevSlides.filter((s) => s.id !== slideId);
+
+          setTimeout(() => {
+            if (selectedSlide?.id === slideId) {
+              if (updatedSlides.length > 0) {
+                setSelectedSlide(updatedSlides[0]);
+              } else {
+                setSelectedSlide(null);
+              }
             }
-          }
-        }, 0);
-        
-        return updatedSlides;
-      });
-      
-      return deletedSlideId;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedSlide]);
+          }, 0);
+
+          return updatedSlides;
+        });
+
+        return deletedSlideId;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'An error occurred';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [selectedSlide],
+  );
 
   const selectElement = useCallback((elementId: string | null) => {
     setSelectedElementId(elementId);
   }, []);
 
-  const addElement = useCallback(async (element: ContentElement) => {
-    if (!selectedSlide) {
-      setError('No slide is selected');
-      return null;
-    }
-    
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      await electronAPI.presentation.addElement(
-        selectedSlide.id,
-        element
-      );
+  const addElement = useCallback(
+    async (element: ContentElement) => {
+      if (!selectedSlide) {
+        setError('No slide is selected');
+        return null;
+      }
 
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedSlide]);
+      try {
+        setIsLoading(true);
+        setError(null);
 
-  const updateElement = useCallback(async (elementId: string, updates: Partial<ContentElement>) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const updatedSlide = await electronAPI.presentation.updateElement(
-        elementId,
-        updates
-      );
-      
-      return updatedSlide;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+        await electronAPI.presentation.addElement(selectedSlide.id, element);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'An error occurred';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [selectedSlide],
+  );
+
+  const updateElement = useCallback(
+    async (elementId: string, updates: Partial<ContentElement>) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const updatedSlide = await electronAPI.presentation.updateElement(
+          elementId,
+          updates,
+        );
+
+        return updatedSlide;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'An error occurred';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
   const currentSlideIndex = useMemo(() => {
     if (!selectedSlide || slides.length === 0) return 0;
-    const index = slides.findIndex(slide => slide.id === selectedSlide.id);
+    const index = slides.findIndex((slide) => slide.id === selectedSlide.id);
     return index >= 0 ? index : 0;
   }, [selectedSlide, slides]);
 
   const nextSlide = useCallback(() => {
     if (slides.length === 0) return;
-    
+
     const nextIndex = currentSlideIndex + 1;
     if (nextIndex < slides.length) {
       selectSlide(slides[nextIndex]);
@@ -411,25 +451,29 @@ export const useMainProcessPresentation = () => {
 
   const previousSlide = useCallback(() => {
     if (slides.length === 0 || currentSlideIndex <= 0) return;
-    
+
     selectSlide(slides[currentSlideIndex - 1]);
   }, [slides, currentSlideIndex, selectSlide]);
 
-  const goToSlide = useCallback((index: number) => {
-    if (slides.length === 0 || index < 0 || index >= slides.length) return;
-    
-    selectSlide(slides[index]);
-  }, [slides, selectSlide]);
-  
+  const goToSlide = useCallback(
+    (index: number) => {
+      if (slides.length === 0 || index < 0 || index >= slides.length) return;
+
+      selectSlide(slides[index]);
+    },
+    [slides, selectSlide],
+  );
+
   const savePresentation = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const filePath = await electronAPI.presentation.savePresentation();
       return filePath;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       throw err;
     } finally {
@@ -441,11 +485,12 @@ export const useMainProcessPresentation = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const filePath = await electronAPI.presentation.savePresentationAs();
       return filePath;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       throw err;
     } finally {
@@ -457,11 +502,13 @@ export const useMainProcessPresentation = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const presentation = await electronAPI.presentation.loadPresentation(filePath);
+
+      const presentation =
+        await electronAPI.presentation.loadPresentation(filePath);
       return presentation;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       throw err;
     } finally {
@@ -474,9 +521,9 @@ export const useMainProcessPresentation = () => {
     title,
     slides,
     createdAt,
-    updatedAt
+    updatedAt,
   };
-  
+
   return {
     presentation,
     selectedSlide,
@@ -485,7 +532,7 @@ export const useMainProcessPresentation = () => {
     isLoading,
     error,
     currentFilePath,
-    
+
     initializePresentation,
     updatePresentationMeta,
     addSlide,
@@ -502,4 +549,4 @@ export const useMainProcessPresentation = () => {
     savePresentationAs,
     loadPresentation,
   };
-}; 
+};

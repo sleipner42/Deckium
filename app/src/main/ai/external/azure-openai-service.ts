@@ -51,32 +51,32 @@ export class AzureOpenAIService implements IAIService {
             ...baseMessage,
             content: msg.content,
           };
-        } else {
-          // For older messages, filter out image content to reduce payload size
-          const isOldMessage = msg.role === 'user' && !isLatestUserMessage;
+        }
+        // For older messages, filter out image content to reduce payload size
+        const isOldMessage = msg.role === 'user' && !isLatestUserMessage;
 
-          return {
-            ...baseMessage,
-            content: msg.content.map((item) => {
-              if (item.type === 'text') {
-                return { type: 'text', text: item.text };
-              } else if (item.type === 'image_url' && item.image_url) {
-                // Only include images in the latest user message
-                if (isOldMessage) {
-                  return {
-                    type: 'text',
-                    text: '[Image removed to improve performance]',
-                  };
-                }
+        return {
+          ...baseMessage,
+          content: msg.content.map((item) => {
+            if (item.type === 'text') {
+              return { type: 'text', text: item.text };
+            }
+            if (item.type === 'image_url' && item.image_url) {
+              // Only include images in the latest user message
+              if (isOldMessage) {
                 return {
-                  type: 'image_url',
-                  image_url: { url: item.image_url.url },
+                  type: 'text',
+                  text: '[Image removed to improve performance]',
                 };
               }
-              return item;
-            }),
-          };
-        }
+              return {
+                type: 'image_url',
+                image_url: { url: item.image_url.url },
+              };
+            }
+            return item;
+          }),
+        };
       });
 
       const formatEndTime = performance.now();
@@ -170,30 +170,30 @@ export class AzureOpenAIService implements IAIService {
             ...baseMessage,
             content: msg.content,
           };
-        } else {
-          const isOldMessage = msg.role === 'user' && !isLatestUserMessage;
+        }
+        const isOldMessage = msg.role === 'user' && !isLatestUserMessage;
 
-          return {
-            ...baseMessage,
-            content: msg.content.map((item) => {
-              if (item.type === 'text') {
-                return { type: 'text', text: item.text };
-              } else if (item.type === 'image_url' && item.image_url) {
-                if (isOldMessage) {
-                  return {
-                    type: 'text',
-                    text: '[Image removed to improve performance]',
-                  };
-                }
+        return {
+          ...baseMessage,
+          content: msg.content.map((item) => {
+            if (item.type === 'text') {
+              return { type: 'text', text: item.text };
+            }
+            if (item.type === 'image_url' && item.image_url) {
+              if (isOldMessage) {
                 return {
-                  type: 'image_url',
-                  image_url: { url: item.image_url.url },
+                  type: 'text',
+                  text: '[Image removed to improve performance]',
                 };
               }
-              return item;
-            }),
-          };
-        }
+              return {
+                type: 'image_url',
+                image_url: { url: item.image_url.url },
+              };
+            }
+            return item;
+          }),
+        };
       });
 
       const formatEndTime = performance.now();

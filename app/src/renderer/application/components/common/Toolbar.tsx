@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { usePresentation } from '../../context/PresentationContext';
-import { 
-  Box, 
-  Button, 
-  Divider, 
-  IconButton, 
+import {
+  Box,
+  Button,
+  Divider,
+  IconButton,
   Tooltip,
   Typography,
   alpha,
   Menu,
   MenuItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
 } from '@mui/material';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import ImageIcon from '@mui/icons-material/Image';
@@ -28,6 +27,7 @@ import RectangleIcon from '@mui/icons-material/Rectangle';
 import CircleIcon from '@mui/icons-material/RadioButtonUnchecked';
 import TriangleIcon from '@mui/icons-material/ChangeHistory';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import { usePresentation } from '../../context/PresentationContext';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
 
 interface ToolbarProps {
@@ -35,22 +35,22 @@ interface ToolbarProps {
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
-  const { 
-    selectedSlide, 
-    addElement, 
-    savePresentation, 
+  const {
+    selectedSlide,
+    addElement,
+    savePresentation,
     savePresentationAs,
     loadPresentation,
-    currentFilePath 
+    currentFilePath,
   } = usePresentation();
-  
+
   const [shapeAnchorEl, setShapeAnchorEl] = useState<null | HTMLElement>(null);
   const [fileAnchorEl, setFileAnchorEl] = useState<null | HTMLElement>(null);
-  
+
   const handleShapeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setShapeAnchorEl(event.currentTarget);
   };
-  
+
   const handleShapeMenuClose = () => {
     setShapeAnchorEl(null);
   };
@@ -58,11 +58,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
   const handleFileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setFileAnchorEl(event.currentTarget);
   };
-  
+
   const handleFileMenuClose = () => {
     setFileAnchorEl(null);
   };
-  
+
   const handleSave = async () => {
     try {
       await savePresentation();
@@ -71,7 +71,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
     }
     handleFileMenuClose();
   };
-  
+
   const handleSaveAs = async () => {
     try {
       await savePresentationAs();
@@ -80,7 +80,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
     }
     handleFileMenuClose();
   };
-  
+
   const handleOpen = async () => {
     try {
       await loadPresentation();
@@ -89,7 +89,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
     }
     handleFileMenuClose();
   };
-  
+
   const addTextElement = async () => {
     if (!selectedSlide) return;
     console.log('addTextElement', selectedSlide.id);
@@ -102,12 +102,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
       color: '#000000',
       backgroundColor: '#FFFFFF',
       backgroundOpacity: 1,
-      align: 'left'
+      align: 'left',
     });
     await addElement(newTextElement);
   };
-  
-  const addShapeElement = async (shapeType: 'rectangle' | 'circle' | 'triangle') => {
+
+  const addShapeElement = async (
+    shapeType: 'rectangle' | 'circle' | 'triangle',
+  ) => {
     if (!selectedSlide) return;
     console.log('addShapeElement', selectedSlide.id, shapeType);
     const newShapeElement = ElementFactory.createShape({
@@ -116,12 +118,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
       size: { width: 150, height: 150 },
       fillColor: '#FFFFFF',
       strokeColor: '#000000',
-      strokeWidth: 2
+      strokeWidth: 2,
     });
     await addElement(newShapeElement);
     handleShapeMenuClose();
   };
-  
+
   const addBarChartElement = async () => {
     if (!selectedSlide) return;
     console.log('addBarChartElement', selectedSlide.id);
@@ -130,11 +132,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
       size: { width: 300, height: 200 },
       title: 'Sample Data',
       xAxisLabel: 'Categories',
-      yAxisLabel: 'Values'
+      yAxisLabel: 'Values',
     });
     await addElement(newBarChartElement);
   };
-  
+
   return (
     <Box
       sx={{
@@ -152,23 +154,25 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
         ...style,
       }}
     >
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center',
-        marginRight: 'auto', 
-        WebkitAppRegion: 'no-drag' 
-      }}>
-        <Typography 
-          variant="subtitle2" 
-          sx={{ 
-            fontWeight: 600, 
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          marginRight: 'auto',
+          WebkitAppRegion: 'no-drag',
+        }}
+      >
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontWeight: 600,
             color: 'text.secondary',
             mr: 1,
           }}
         >
           File
         </Typography>
-        
+
         <Tooltip title="File Operations">
           <Button
             variant="outlined"
@@ -189,7 +193,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
             File
           </Button>
         </Tooltip>
-        
+
         <Menu
           anchorEl={fileAnchorEl}
           open={Boolean(fileAnchorEl)}
@@ -223,20 +227,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
           </MenuItem>
         </Menu>
       </Box>
-      
+
       {/* Centered toolbar content */}
-      <Typography 
-        variant="subtitle2" 
-        sx={{ 
-          fontWeight: 600, 
+      <Typography
+        variant="subtitle2"
+        sx={{
+          fontWeight: 600,
           color: 'text.secondary',
           mr: 1,
-          WebkitAppRegion: 'no-drag'
+          WebkitAppRegion: 'no-drag',
         }}
       >
         Insert
       </Typography>
-      
+
       <Tooltip title="Add Text">
         <Button
           variant="outlined"
@@ -252,13 +256,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
               bgcolor: alpha('#007AFF', 0.04),
               borderColor: alpha('#007AFF', 0.5),
             },
-            WebkitAppRegion: 'no-drag'
+            WebkitAppRegion: 'no-drag',
           }}
         >
           Text
         </Button>
       </Tooltip>
-      
+
       <Tooltip title="Add Image">
         <Button
           variant="outlined"
@@ -273,13 +277,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
               bgcolor: alpha('#007AFF', 0.04),
               borderColor: alpha('#007AFF', 0.5),
             },
-            WebkitAppRegion: 'no-drag'
+            WebkitAppRegion: 'no-drag',
           }}
         >
           Image
         </Button>
       </Tooltip>
-      
+
       <Tooltip title="Add Shape">
         <Button
           variant="outlined"
@@ -295,13 +299,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
               bgcolor: alpha('#007AFF', 0.04),
               borderColor: alpha('#007AFF', 0.5),
             },
-            WebkitAppRegion: 'no-drag'
+            WebkitAppRegion: 'no-drag',
           }}
         >
           Shape
         </Button>
       </Tooltip>
-      
+
       <Tooltip title="Add Bar Chart">
         <Button
           variant="outlined"
@@ -317,13 +321,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
               bgcolor: alpha('#007AFF', 0.04),
               borderColor: alpha('#007AFF', 0.5),
             },
-            WebkitAppRegion: 'no-drag'
+            WebkitAppRegion: 'no-drag',
           }}
         >
           Chart
         </Button>
       </Tooltip>
-      
+
       <Menu
         anchorEl={shapeAnchorEl}
         open={Boolean(shapeAnchorEl)}
@@ -356,41 +360,53 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
           <ListItemText>Triangle</ListItemText>
         </MenuItem>
       </Menu>
-      
+
       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-      
-      <Typography 
-        variant="subtitle2" 
-        sx={{ 
-          fontWeight: 600, 
+
+      <Typography
+        variant="subtitle2"
+        sx={{
+          fontWeight: 600,
           color: 'text.secondary',
           ml: 1,
-          WebkitAppRegion: 'no-drag'
+          WebkitAppRegion: 'no-drag',
         }}
       >
         Format
       </Typography>
-      
+
       <Tooltip title="Bold">
-        <IconButton size="small" sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}>
+        <IconButton
+          size="small"
+          sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}
+        >
           <FormatBoldIcon fontSize="small" />
         </IconButton>
       </Tooltip>
-      
+
       <Tooltip title="Italic">
-        <IconButton size="small" sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}>
+        <IconButton
+          size="small"
+          sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}
+        >
           <FormatItalicIcon fontSize="small" />
         </IconButton>
       </Tooltip>
-      
+
       <Tooltip title="Underline">
-        <IconButton size="small" sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}>
+        <IconButton
+          size="small"
+          sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}
+        >
           <FormatUnderlinedIcon fontSize="small" />
         </IconButton>
       </Tooltip>
-      
+
       <Tooltip title="Fill Color">
-        <IconButton size="small" sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}>
+        <IconButton
+          size="small"
+          sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}
+        >
           <FormatColorFillIcon fontSize="small" />
         </IconButton>
       </Tooltip>

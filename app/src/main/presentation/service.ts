@@ -1,14 +1,20 @@
-import { Presentation, Slide, ContentElement } from '../../common/domain/entities/types';
-import { PresentationState } from './state';
-import { PresentationEventBus } from './event-bus';
 import fs from 'fs';
 import { dialog, BrowserWindow } from 'electron';
+import {
+  Presentation,
+  Slide,
+  ContentElement,
+} from '../../common/domain/entities/types';
+import { PresentationState } from './state';
+import { PresentationEventBus } from './event-bus';
 
 const FILE_EXTENSION = '.kpres';
 
 export class PresentationService {
   private state: PresentationState;
+
   private eventBus: PresentationEventBus;
+
   private currentFilePath: string | null = null;
 
   constructor() {
@@ -23,30 +29,42 @@ export class PresentationService {
   initializePresentation(title = 'Untitled Presentation'): Presentation {
     const presentation = this.state.initializePresentation(title);
     this.currentFilePath = null;
-    this.eventBus.broadcastToWindows(PresentationEventBus.events.INITIALIZED, presentation);
+    this.eventBus.broadcastToWindows(
+      PresentationEventBus.events.INITIALIZED,
+      presentation,
+    );
     return presentation;
   }
 
-  updatePresentationMeta(title: string): { title: string, updatedAt: Date } {
+  updatePresentationMeta(title: string): { title: string; updatedAt: Date } {
     const presentation = this.state.updatePresentationMeta(title);
-    const data = { 
+    const data = {
       title: presentation.title,
-      updatedAt: presentation.updatedAt 
+      updatedAt: presentation.updatedAt,
     };
-    this.eventBus.broadcastToWindows(PresentationEventBus.events.META_UPDATED, data);
+    this.eventBus.broadcastToWindows(
+      PresentationEventBus.events.META_UPDATED,
+      data,
+    );
     return data;
   }
 
   addSlide(): Slide {
     const newSlide = this.state.addSlide();
-    this.eventBus.broadcastToWindows(PresentationEventBus.events.SLIDE_ADDED, newSlide);
+    this.eventBus.broadcastToWindows(
+      PresentationEventBus.events.SLIDE_ADDED,
+      newSlide,
+    );
     return newSlide;
   }
 
   updateSlide(slideId: string, updates: Partial<Slide>): Slide | null {
     const updatedSlide = this.state.updateSlide(slideId, updates);
     if (updatedSlide) {
-      this.eventBus.broadcastToWindows(PresentationEventBus.events.SLIDE_UPDATED, updatedSlide);
+      this.eventBus.broadcastToWindows(
+        PresentationEventBus.events.SLIDE_UPDATED,
+        updatedSlide,
+      );
     }
     return updatedSlide;
   }
@@ -54,7 +72,10 @@ export class PresentationService {
   deleteSlide(slideId: string): string | null {
     const deletedSlideId = this.state.deleteSlide(slideId);
     if (deletedSlideId) {
-      this.eventBus.broadcastToWindows(PresentationEventBus.events.SLIDE_DELETED, deletedSlideId);
+      this.eventBus.broadcastToWindows(
+        PresentationEventBus.events.SLIDE_DELETED,
+        deletedSlideId,
+      );
     }
     return deletedSlideId;
   }
@@ -62,21 +83,33 @@ export class PresentationService {
   addElement(slideId: string, element: ContentElement): Slide | null {
     const updatedSlide = this.state.addElement(slideId, element);
     if (updatedSlide) {
-      this.eventBus.broadcastToWindows(PresentationEventBus.events.SLIDE_UPDATED, updatedSlide);
+      this.eventBus.broadcastToWindows(
+        PresentationEventBus.events.SLIDE_UPDATED,
+        updatedSlide,
+      );
     }
     return updatedSlide;
   }
 
-  updateElement(elementId: string, updates: Partial<ContentElement>): Slide | null {
+  updateElement(
+    elementId: string,
+    updates: Partial<ContentElement>,
+  ): Slide | null {
     const updatedSlide = this.state.updateElement(elementId, updates);
     if (updatedSlide) {
-      this.eventBus.broadcastToWindows(PresentationEventBus.events.SLIDE_UPDATED, updatedSlide);
+      this.eventBus.broadcastToWindows(
+        PresentationEventBus.events.SLIDE_UPDATED,
+        updatedSlide,
+      );
     }
     return updatedSlide;
   }
 
   setSelectedSlideInViewer(slideId: string): void {
-    this.eventBus.broadcastToWindows(PresentationEventBus.events.SET_SELECTED_SLIDE, slideId);
+    this.eventBus.broadcastToWindows(
+      PresentationEventBus.events.SET_SELECTED_SLIDE,
+      slideId,
+    );
   }
 
   onEvent(eventName: string, listener: (...args: any[]) => void): void {
@@ -93,39 +126,43 @@ export class PresentationService {
    * @param forceNewPath Force a "Save As" dialog even if the file has been saved before
    * @returns The path where the file was saved, or null if the operation was cancelled
    */
-  async savePresentation(window: BrowserWindow, forceNewPath = false): Promise<string | null> {
+  async savePresentation(
+    window: BrowserWindow,
+    forceNewPath = false,
+  ): Promise<string | null> {
     try {
-      const filePath = forceNewPath || !this.currentFilePath
-        ? await this.showSaveDialog(window)
-        : this.currentFilePath;
-      
+      const filePath =
+        forceNewPath || !this.currentFilePath
+          ? await this.showSaveDialog(window)
+          : this.currentFilePath;
+
       if (!filePath) {
         return null; // User cancelled the dialog
       }
 
       const presentation = this.state.getPresentation();
-      
+
       // Create a serializable version of the presentation
       const serializedPresentation = {
         ...presentation,
         createdAt: presentation.createdAt.toISOString(),
-        updatedAt: presentation.updatedAt.toISOString()
+        updatedAt: presentation.updatedAt.toISOString(),
       };
-      
+
       // Write the file
       await fs.promises.writeFile(
         filePath,
-        JSON.stringify(serializedPresentation, null, 2)
+        JSON.stringify(serializedPresentation, null, 2),
       );
-      
+
       this.currentFilePath = filePath;
-      
+
       // Notify the renderer process
-      this.eventBus.broadcastToWindows(
-        PresentationEventBus.events.SAVED, 
-        { path: filePath, title: presentation.title }
-      );
-      
+      this.eventBus.broadcastToWindows(PresentationEventBus.events.SAVED, {
+        path: filePath,
+        title: presentation.title,
+      });
+
       return filePath;
     } catch (error) {
       console.error('Error saving presentation:', error);
@@ -139,32 +176,35 @@ export class PresentationService {
    * @param filePath Optional - specific file path to load from, or shows open dialog if not provided
    * @returns The loaded presentation or null if the operation was cancelled
    */
-  async loadPresentation(window: BrowserWindow, filePath?: string): Promise<Presentation | null> {
+  async loadPresentation(
+    window: BrowserWindow,
+    filePath?: string,
+  ): Promise<Presentation | null> {
     try {
-      const path = filePath || await this.showOpenDialog(window);
-      
+      const path = filePath || (await this.showOpenDialog(window));
+
       if (!path) {
         return null; // User cancelled the dialog
       }
-      
+
       // Read and parse the file
       const fileContent = await fs.promises.readFile(path, 'utf-8');
       const presentationData = JSON.parse(fileContent);
-      
+
       // Convert ISO strings back to Date objects
       presentationData.createdAt = new Date(presentationData.createdAt);
       presentationData.updatedAt = new Date(presentationData.updatedAt);
-      
+
       // Load the presentation into the state
       const loadedPresentation = this.state.loadPresentation(presentationData);
       this.currentFilePath = path;
-      
+
       // Notify the renderer process
       this.eventBus.broadcastToWindows(
-        PresentationEventBus.events.LOADED, 
-        loadedPresentation
+        PresentationEventBus.events.LOADED,
+        loadedPresentation,
       );
-      
+
       return loadedPresentation;
     } catch (error) {
       console.error('Error loading presentation:', error);
@@ -185,19 +225,22 @@ export class PresentationService {
   private async showSaveDialog(window: BrowserWindow): Promise<string | null> {
     const presentation = this.state.getPresentation();
     const defaultPath = `${presentation.title}${FILE_EXTENSION}`;
-    
+
     const { canceled, filePath } = await dialog.showSaveDialog(window, {
       title: 'Save Presentation',
       defaultPath,
       filters: [
-        { name: 'KraftPo Presentations', extensions: [FILE_EXTENSION.substring(1)] },
-        { name: 'All Files', extensions: ['*'] }
-      ]
+        {
+          name: 'KraftPo Presentations',
+          extensions: [FILE_EXTENSION.substring(1)],
+        },
+        { name: 'All Files', extensions: ['*'] },
+      ],
     });
 
     return canceled ? null : filePath || null;
   }
-  
+
   /**
    * Shows a file open dialog and returns the selected path
    */
@@ -206,11 +249,14 @@ export class PresentationService {
       title: 'Open Presentation',
       properties: ['openFile'],
       filters: [
-        { name: 'KraftPo Presentations', extensions: [FILE_EXTENSION.substring(1)] },
-        { name: 'All Files', extensions: ['*'] }
-      ]
+        {
+          name: 'KraftPo Presentations',
+          extensions: [FILE_EXTENSION.substring(1)],
+        },
+        { name: 'All Files', extensions: ['*'] },
+      ],
     });
 
-    return canceled ? null : (filePaths.length > 0 ? filePaths[0] : null);
+    return canceled ? null : filePaths.length > 0 ? filePaths[0] : null;
   }
-} 
+}

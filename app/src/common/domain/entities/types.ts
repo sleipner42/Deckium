@@ -113,4 +113,4 @@ export interface Presentation {
 }
 
 // Export AI related types
-export * from '../../../common/domain/entities/ai-types'; 
+export * from './ai-types';

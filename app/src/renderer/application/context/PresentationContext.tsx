@@ -1,5 +1,16 @@
-import React, { createContext, useContext, ReactNode, useRef, useCallback, RefObject } from 'react';
-import { Presentation, Slide, ContentElement } from '../../../common/domain/entities/types';
+import React, {
+  createContext,
+  useContext,
+  ReactNode,
+  useRef,
+  useCallback,
+  RefObject,
+} from 'react';
+import {
+  Presentation,
+  Slide,
+  ContentElement,
+} from '../../../common/domain/entities/types';
 import { useMainProcessPresentation } from '../hooks/useMainProcessPresentation';
 
 interface PresentationContextState {
@@ -15,10 +26,15 @@ interface PresentationContextState {
 
 interface PresentationContextActions {
   initializePresentation: (title: string) => Promise<Presentation>;
-  updatePresentationMeta: (title: string) => Promise<{title: string, updatedAt: Date}>;
+  updatePresentationMeta: (
+    title: string,
+  ) => Promise<{ title: string; updatedAt: Date }>;
   addSlide: (title?: string) => void;
   selectSlide: (slide: Slide) => void;
-  updateSlide: (slideId: string, updates: Partial<Slide>) => Promise<Slide | null>;
+  updateSlide: (
+    slideId: string,
+    updates: Partial<Slide>,
+  ) => Promise<Slide | null>;
   deleteSlide: (slideId: string) => Promise<string | null>;
   nextSlide: () => void;
   previousSlide: () => void;
@@ -35,16 +51,21 @@ interface PresentationContextActions {
   loadPresentation: (filePath?: string) => Promise<Presentation | null>;
 }
 
-export interface PresentationContextValue extends PresentationContextState, PresentationContextActions {}
+export interface PresentationContextValue
+  extends PresentationContextState,
+    PresentationContextActions {}
 
-const PresentationContext = createContext<PresentationContextValue | null>(null);
+const PresentationContext = createContext<PresentationContextValue | null>(
+  null,
+);
 
 interface PresentationProviderProps {
   children: ReactNode;
 }
 
-export const PresentationProvider: React.FC<PresentationProviderProps> = ({ children }) => {
-
+export const PresentationProvider: React.FC<PresentationProviderProps> = ({
+  children,
+}) => {
   const {
     presentation,
     selectedSlide,
@@ -53,7 +74,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({ chil
     isLoading,
     error,
     currentFilePath,
-    
+
     // Actions
     initializePresentation,
     updatePresentationMeta,
@@ -72,7 +93,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({ chil
     loadPresentation,
   } = useMainProcessPresentation();
 
-  const slides = presentation.slides;
+  const { slides } = presentation;
 
   const state = {
     currentPresentation: presentation,
@@ -83,7 +104,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({ chil
     isLoading,
     error,
     currentFilePath,
-  }
+  };
 
   return (
     <PresentationContext.Provider
@@ -107,7 +128,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({ chil
         startEditingElement: () => {},
         stopEditingElement: () => {},
         moveElement: () => {},
-        resizeElement: () => {}
+        resizeElement: () => {},
       }}
     >
       {children}
@@ -118,7 +139,9 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({ chil
 export const usePresentation = () => {
   const context = useContext(PresentationContext);
   if (!context) {
-    throw new Error('usePresentation must be used within a PresentationProvider');
+    throw new Error(
+      'usePresentation must be used within a PresentationProvider',
+    );
   }
   return context;
-}; 
+};

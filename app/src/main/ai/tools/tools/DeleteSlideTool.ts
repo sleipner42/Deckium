@@ -4,14 +4,16 @@ import { PresentationService } from '../../../presentation/service';
 
 export class DeleteSlideTool extends BaseTool {
   name = 'deleteSlide';
+
   description = 'Delete a slide from the current presentation';
+
   requiredParams = {
     slideId: 'The ID of the slide to delete',
   };
 
   protected async executeImpl(
     params: Record<string, any>,
-    presentationService: PresentationService
+    presentationService: PresentationService,
   ): Promise<AIToolResult> {
     const { slideId } = params;
 
@@ -39,4 +41,4 @@ export class DeleteSlideTool extends BaseTool {
       },
     };
   }
-} 
+}

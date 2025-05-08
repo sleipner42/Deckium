@@ -1,2 +1,2 @@
 export * from './SlideRenderer';
-export * from './ZoomableSlideRenderer'; 
+export * from './ZoomableSlideRenderer';

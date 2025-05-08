@@ -5,7 +5,9 @@ import { BarChart } from '../../../../common/domain/entities/types';
 
 export class UpdateBarChartTool extends BaseTool {
   name = 'updateBarChart';
+
   description = 'Update an existing bar chart on a slide';
+
   requiredParams = {
     elementId: 'The ID of the bar chart element to update',
     title: 'The new title of the chart (optional)',
@@ -18,12 +20,13 @@ export class UpdateBarChartTool extends BaseTool {
     width: 'New width (optional)',
     height: 'New height (optional)',
     barColor: 'New color for the bars (optional)',
-    zIndex: 'The new z-index value (optional) - controls stacking order with higher values appearing on top',
+    zIndex:
+      'The new z-index value (optional) - controls stacking order with higher values appearing on top',
   };
 
   protected async executeImpl(
     params: Record<string, any>,
-    presentationService: PresentationService
+    presentationService: PresentationService,
   ): Promise<AIToolResult> {
     const {
       elementId,
@@ -98,7 +101,7 @@ export class UpdateBarChartTool extends BaseTool {
     if (barColor !== undefined) {
       updates.barColor = barColor;
     }
-    
+
     if (zIndex !== undefined) {
       updates.zIndex = Number(zIndex);
     }
@@ -106,7 +109,7 @@ export class UpdateBarChartTool extends BaseTool {
     // Process data updates
     if (xData || yData) {
       const currentData = barChart.data;
-      
+
       let newXData = currentData.x;
       let newYData = currentData.y;
 
@@ -177,4 +180,4 @@ export class UpdateBarChartTool extends BaseTool {
       },
     };
   }
-} 
+}

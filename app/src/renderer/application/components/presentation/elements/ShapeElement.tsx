@@ -10,15 +10,24 @@ interface ShapeElementProps {
   readOnly?: boolean;
 }
 
-export const ShapeElement: React.FC<ShapeElementProps> = ({ 
-  element, 
-  onClick, 
+export const ShapeElement: React.FC<ShapeElementProps> = ({
+  element,
+  onClick,
   onElementUpdate,
   isSelected,
   isEditing,
-  readOnly = false
+  readOnly = false,
 }) => {
-  const { position, size, type, fillColor, strokeColor, strokeWidth, style, zIndex } = element;
+  const {
+    position,
+    size,
+    type,
+    fillColor,
+    strokeColor,
+    strokeWidth,
+    style,
+    zIndex,
+  } = element;
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
@@ -40,7 +49,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
   // Handle mouse events for dragging
   const handleMouseDown = (e: React.MouseEvent) => {
     if (readOnly) return;
-    
+
     if (isSelected) {
       e.stopPropagation();
       setIsDragging(true);
@@ -59,7 +68,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
           position: {
             x: e.clientX - dragOffset.x,
             y: e.clientY - dragOffset.y,
-          }
+          },
         });
       }
     };
@@ -81,7 +90,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
 
   const handleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
-    
+
     e.stopPropagation();
     if (onClick) {
       onClick();
@@ -91,7 +100,13 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
   const renderShape = () => {
     switch (type) {
       case 'rectangle':
-        return <div style={commonStyles} onClick={handleClick} onMouseDown={handleMouseDown} />;
+        return (
+          <div
+            style={commonStyles}
+            onClick={handleClick}
+            onMouseDown={handleMouseDown}
+          />
+        );
       case 'circle':
         return (
           <div
@@ -121,4 +136,4 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
   };
 
   return renderShape();
-}; 
+};

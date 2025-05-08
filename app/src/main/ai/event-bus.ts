@@ -12,56 +12,68 @@ export class AIEventBus extends EventEmitter {
     THREAD_DELETED: 'ai:thread-deleted',
     PROCESSING_STARTED: 'ai:processing-started',
     PROCESSING_COMPLETED: 'ai:processing-completed',
-    PROCESSING_ERROR: 'ai:processing-error'
+    PROCESSING_ERROR: 'ai:processing-error',
   };
 
   broadcastToWindows(eventName: string, data: any): void {
-    BrowserWindow.getAllWindows().forEach(window => {
+    BrowserWindow.getAllWindows().forEach((window) => {
       window.webContents.send(eventName, data);
     });
     this.emit(eventName, data);
   }
-  
-  broadcastMessageReceived(threadId: UUID, message: any, updatedThread: Thread): void {
+
+  broadcastMessageReceived(
+    threadId: UUID,
+    message: any,
+    updatedThread: Thread,
+  ): void {
     const data = {
       threadId,
       message,
-      updatedThread
+      updatedThread,
     };
     this.broadcastToWindows(AIEventBus.events.MESSAGE_RECEIVED, data);
   }
-  
-  broadcastMessageChunkReceived(threadId: UUID, messageId: UUID, chunk: string, fullContent: string): void {
+
+  broadcastMessageChunkReceived(
+    threadId: UUID,
+    messageId: UUID,
+    chunk: string,
+    fullContent: string,
+  ): void {
     const data = {
       threadId,
       messageId,
       chunk,
-      fullContent
+      fullContent,
     };
     this.broadcastToWindows(AIEventBus.events.MESSAGE_CHUNK_RECEIVED, data);
   }
-  
+
   broadcastThreadCreated(thread: Thread): void {
     this.broadcastToWindows(AIEventBus.events.THREAD_CREATED, thread);
   }
-  
+
   broadcastThreadUpdated(thread: Thread): void {
     this.broadcastToWindows(AIEventBus.events.THREAD_UPDATED, thread);
   }
-  
+
   broadcastThreadDeleted(threadId: UUID): void {
     this.broadcastToWindows(AIEventBus.events.THREAD_DELETED, threadId);
   }
-  
+
   broadcastProcessingStarted(threadId: UUID): void {
     this.broadcastToWindows(AIEventBus.events.PROCESSING_STARTED, threadId);
   }
-  
+
   broadcastProcessingCompleted(threadId: UUID): void {
     this.broadcastToWindows(AIEventBus.events.PROCESSING_COMPLETED, threadId);
   }
-  
+
   broadcastProcessingError(threadId: UUID, error: string): void {
-    this.broadcastToWindows(AIEventBus.events.PROCESSING_ERROR, { threadId, error });
+    this.broadcastToWindows(AIEventBus.events.PROCESSING_ERROR, {
+      threadId,
+      error,
+    });
   }
-} 
+}

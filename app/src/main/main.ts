@@ -2,12 +2,12 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain, NativeImage } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import * as dotenv from 'dotenv';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { setupPresentationIPC } from './presentation/ipc-handler';
 import { AzureOpenAIServiceFactory } from './ai/external/azure-openai-service';
 import { MockAIServiceFactory } from './ai/external/mock-ai-service';
-import * as dotenv from 'dotenv';
 import { PresentationService } from './presentation/service';
 import { AIService } from './ai/service';
 import { IAIServiceFactory } from '../common/domain/interfaces/ai-service.interface';
@@ -36,7 +36,7 @@ export async function getScreenshotFromSecondaryWindow(): Promise<string> {
     const image = await secondWindow.webContents.capturePage();
     const pngData = image.toPNG();
     const base64Data = pngData.toString('base64');
-    
+
     return `data:image/png;base64,${base64Data}`;
   } catch (error) {
     console.error('Error capturing screenshot from secondary window:', error);
@@ -101,7 +101,7 @@ const createWindow = async () => {
     },
   });
 
-  mainWindow.loadURL(resolveHtmlPath('index.html') + '#/?layout=editor');
+  mainWindow.loadURL(`${resolveHtmlPath('index.html')}#/?layout=editor`);
 
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) {
@@ -147,7 +147,7 @@ const createSecondWindow = async () => {
     },
   });
 
-  secondWindow.loadURL(resolveHtmlPath('index.html') + '#/?layout=viewer');
+  secondWindow.loadURL(`${resolveHtmlPath('index.html')}#/?layout=viewer`);
 
   secondWindow.on('closed', () => {
     secondWindow = null;
@@ -175,9 +175,9 @@ app
     });
 
     presentationService = new PresentationService();
-      
+
     aiServiceFactory = new AzureOpenAIServiceFactory();
-    //aiServiceFactory = new MockAIServiceFactory();
+    // aiServiceFactory = new MockAIServiceFactory();
 
     const aiModel = aiServiceFactory.createService();
 
@@ -185,6 +185,5 @@ app
 
     setupAIIPC(aiService);
     setupPresentationIPC(presentationService);
-    
   })
   .catch(console.log);

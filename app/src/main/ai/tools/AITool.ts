@@ -1,20 +1,26 @@
+import { v4 as uuidv4 } from 'uuid';
 import { AIToolResult } from '../../../common/domain/entities/ai-types';
 import { UUID } from '../../../common/domain/entities/types';
 import { PresentationService } from '../../presentation/service';
-import { v4 as uuidv4 } from 'uuid';
 
 export abstract class AITool {
   id: UUID;
+
   abstract name: string;
+
   abstract description: string;
+
   requiredParams: Record<string, string> = {};
 
   constructor() {
     this.id = uuidv4();
   }
 
-  abstract execute(params: Record<string, any>, presentationService: PresentationService): Promise<AIToolResult>;
-  
+  abstract execute(
+    params: Record<string, any>,
+    presentationService: PresentationService,
+  ): Promise<AIToolResult>;
+
   protected logToolExecution(
     params: Record<string, any>,
     result: AIToolResult,

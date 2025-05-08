@@ -1,10 +1,7 @@
 import React from 'react';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import { PresentationProvider } from './application/context/PresentationContext';
 import { AIProvider } from './application/context/AIContext';
-import { 
-  ThemeProvider, 
-  CssBaseline,
-} from '@mui/material';
 import theme from './application/theme';
 import './App.css';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
@@ -27,4 +24,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App; 
+export default App;

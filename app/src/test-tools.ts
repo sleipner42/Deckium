@@ -3,7 +3,7 @@ import { AIToolsService } from './renderer/domain/services';
 // Test context
 const testContext = {
   presentationId: 'test-presentation-id',
-  slideId: 'test-slide-id'
+  slideId: 'test-slide-id',
 };
 
 // Test getDeveloperPrompt
@@ -31,4 +31,4 @@ try {
   console.log('Number of tools:', tools.length);
 } catch (error) {
   console.error('Error calling getBuiltInTools:', error);
-} 
+}

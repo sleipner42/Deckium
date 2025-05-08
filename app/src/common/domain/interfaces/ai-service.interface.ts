@@ -29,10 +29,10 @@ export interface IAIService {
   chatStream(
     messages: Message[],
     onChunk: (chunk: string) => void,
-    deploymentName?: string
+    deploymentName?: string,
   ): Promise<string>;
 }
 
 export interface IAIServiceFactory {
   createService(): IAIService;
-} 
+}

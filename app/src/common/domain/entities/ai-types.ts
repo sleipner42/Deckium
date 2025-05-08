@@ -50,10 +50,13 @@ export interface AIToolContext {
   slideId?: UUID;
   presentationMethods?: {
     addSlide: () => Promise<void>;
-    updateElement: (elementId: string, updates: Partial<ContentElement>) => Promise<void>;
+    updateElement: (
+      elementId: string,
+      updates: Partial<ContentElement>,
+    ) => Promise<void>;
     selectSlide: (slideId: string) => void;
     deleteSlide: (slideId: string) => Promise<void>;
     moveElement: (elementId: string, x: number, y: number) => void;
     resizeElement: (elementId: string, width: number, height: number) => void;
   };
-} 
+}

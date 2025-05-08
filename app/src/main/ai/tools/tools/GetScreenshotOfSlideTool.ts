@@ -5,14 +5,16 @@ import { getScreenshotFromSecondaryWindow } from '../../../main';
 
 export class GetScreenshotOfSlideTool extends BaseTool {
   name = 'getScreenshotOfSlide';
+
   description = 'Get a screenshot of a slide';
+
   requiredParams = {
     slideId: 'The ID of the slide to get a screenshot of',
   };
 
   protected async executeImpl(
     params: Record<string, any>,
-    presentationService: PresentationService
+    presentationService: PresentationService,
   ): Promise<AIToolResult> {
     const { slideId } = params;
 
@@ -24,9 +26,7 @@ export class GetScreenshotOfSlideTool extends BaseTool {
     }
 
     const currentPresentation = presentationService.getPresentation();
-    const slide = currentPresentation.slides.find(
-      (s) => s.id === slideId,
-    );
+    const slide = currentPresentation.slides.find((s) => s.id === slideId);
 
     if (!slide) {
       return {
@@ -43,7 +43,7 @@ export class GetScreenshotOfSlideTool extends BaseTool {
 
     return {
       success: true,
-      screenshot: screenshot,
+      screenshot,
     };
   }
-} 
+}

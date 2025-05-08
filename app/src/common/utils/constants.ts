@@ -4,4 +4,4 @@ export const PRESENTATION_DIMENSIONS = {
   ASPECT_RATIO: 16 / 9,
 };
 
-export const THUMBNAIL_SCALE = 0.2; 
+export const THUMBNAIL_SCALE = 0.2;

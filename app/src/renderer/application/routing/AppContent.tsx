@@ -6,18 +6,16 @@ import PresentationViewer from '../components/presentation/PresentationViewer';
 const AppContent: React.FC = () => {
   const location = useLocation();
   console.log(`Renderer: Location is ${JSON.stringify(location)}`);
-  
+
   const searchParams = new URLSearchParams(location.search);
   console.log(`Renderer: Search params: ${searchParams.toString()}`);
-  
+
   const layout = searchParams.get('layout') || 'editor';
   console.log(`Renderer: Layout is ${layout}`);
 
   return (
-    <>
-      {layout === 'editor' ? <PresentationEditor /> : <PresentationViewer />}
-    </>
+    <>{layout === 'editor' ? <PresentationEditor /> : <PresentationViewer />}</>
   );
 };
 
-export default AppContent; 
+export default AppContent;

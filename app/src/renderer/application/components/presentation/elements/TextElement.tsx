@@ -1,19 +1,20 @@
 import React, { useRef, useEffect, useState, lazy, Suspense } from 'react';
 import { TextBox } from '../../../../../common/domain/entities/types';
 
-const ReactMarkdownWithPlugins = lazy(() => Promise.all([
-  import('react-markdown'),
-  import('remark-gfm')
-]).then(([reactMarkdown, remarkGfm]) => {
-  const ReactMarkdown = reactMarkdown.default;
-  const gfm = remarkGfm.default;
-  
-  return {
-    default: (props: any) => (
-      <ReactMarkdown remarkPlugins={[gfm]} {...props} />
-    )
-  };
-}));
+const ReactMarkdownWithPlugins = lazy(() =>
+  Promise.all([import('react-markdown'), import('remark-gfm')]).then(
+    ([reactMarkdown, remarkGfm]) => {
+      const ReactMarkdown = reactMarkdown.default;
+      const gfm = remarkGfm.default;
+
+      return {
+        default: (props: any) => (
+          <ReactMarkdown remarkPlugins={[gfm]} {...props} />
+        ),
+      };
+    },
+  ),
+);
 
 interface TextElementProps {
   element: TextBox;
@@ -26,17 +27,31 @@ interface TextElementProps {
   readOnly?: boolean;
 }
 
-export const TextElement: React.FC<TextElementProps> = ({ 
-  element, 
+export const TextElement: React.FC<TextElementProps> = ({
+  element,
   onClick,
   isSelected,
   isEditing,
   onStartEditing,
   onStopEditing,
   onElementUpdate,
-  readOnly = false
+  readOnly = false,
 }) => {
-  const { position, size, content, fontSize, fontFamily, color, style, backgroundColor, backgroundOpacity, borderRadius, align, verticalAlign, zIndex } = element;
+  const {
+    position,
+    size,
+    content,
+    fontSize,
+    fontFamily,
+    color,
+    style,
+    backgroundColor,
+    backgroundOpacity,
+    borderRadius,
+    align,
+    verticalAlign,
+    zIndex,
+  } = element;
   const textRef = useRef<HTMLDivElement>(null);
   const [preventBlur, setPreventBlur] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -51,19 +66,19 @@ export const TextElement: React.FC<TextElementProps> = ({
       range.collapse(false);
       selection?.removeAllRanges();
       selection?.addRange(range);
-      
+
       setPreventBlur(true);
       const timer = setTimeout(() => {
         setPreventBlur(false);
       }, 200);
-      
+
       return () => clearTimeout(timer);
     }
   }, [isEditing]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (readOnly) return;
-    
+
     if (isSelected && !isEditing) {
       e.stopPropagation();
       setIsDragging(true);
@@ -81,7 +96,7 @@ export const TextElement: React.FC<TextElementProps> = ({
           position: {
             x: e.clientX - dragOffset.x,
             y: e.clientY - dragOffset.y,
-          }
+          },
         });
       }
     };
@@ -103,7 +118,7 @@ export const TextElement: React.FC<TextElementProps> = ({
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
-    
+
     e.stopPropagation();
     onStartEditing();
   };
@@ -118,10 +133,10 @@ export const TextElement: React.FC<TextElementProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      
+
       const selection = window.getSelection();
       const range = selection?.getRangeAt(0);
-      
+
       if (range) {
         const lineBreak = document.createTextNode('\n');
         range.insertNode(lineBreak);
@@ -130,10 +145,10 @@ export const TextElement: React.FC<TextElementProps> = ({
         selection?.removeAllRanges();
         selection?.addRange(range);
       }
-      
+
       e.stopPropagation();
     }
-    
+
     if (e.key === 'Escape') {
       setPreventBlur(false);
       textRef.current?.blur();
@@ -142,7 +157,7 @@ export const TextElement: React.FC<TextElementProps> = ({
 
   const handleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
-    
+
     e.stopPropagation();
     if (!isEditing) {
       onClick();
@@ -158,30 +173,58 @@ export const TextElement: React.FC<TextElementProps> = ({
         </React.Fragment>
       ));
     }
-    
+
     return (
-      <Suspense fallback={
-        <div>
-          {content.split('\n').map((line, index) => (
-            <React.Fragment key={index}>
-              {index > 0 && <br />}
-              {line}
-            </React.Fragment>
-          ))}
-        </div>
-      }>
+      <Suspense
+        fallback={
+          <div>
+            {content.split('\n').map((line, index) => (
+              <React.Fragment key={index}>
+                {index > 0 && <br />}
+                {line}
+              </React.Fragment>
+            ))}
+          </div>
+        }
+      >
         <ReactMarkdownWithPlugins
           components={{
-            p: ({node, ...props}: {node: any; [key: string]: any}) => <p style={{margin: 0}} {...props} />,
-            a: ({node, ...props}: {node: any; [key: string]: any}) => <a style={{color: 'inherit'}} {...props} />,
-            ul: ({node, ...props}: {node: any; [key: string]: any}) => <ul style={{margin: '0.5em 0', paddingLeft: '1.5em'}} {...props} />,
-            ol: ({node, ...props}: {node: any; [key: string]: any}) => <ol style={{margin: '0.5em 0', paddingLeft: '1.5em'}} {...props} />,
-            h1: ({node, ...props}: {node: any; [key: string]: any}) => <h1 style={{margin: '0.2em 0', fontSize: '1.5em'}} {...props} />,
-            h2: ({node, ...props}: {node: any; [key: string]: any}) => <h2 style={{margin: '0.2em 0', fontSize: '1.3em'}} {...props} />,
-            h3: ({node, ...props}: {node: any; [key: string]: any}) => <h3 style={{margin: '0.2em 0', fontSize: '1.2em'}} {...props} />,
-            h4: ({node, ...props}: {node: any; [key: string]: any}) => <h4 style={{margin: '0.2em 0', fontSize: '1.1em'}} {...props} />,
-            h5: ({node, ...props}: {node: any; [key: string]: any}) => <h5 style={{margin: '0.2em 0', fontSize: '1em'}} {...props} />,
-            h6: ({node, ...props}: {node: any; [key: string]: any}) => <h6 style={{margin: '0.2em 0', fontSize: '0.9em'}} {...props} />
+            p: ({ node, ...props }: { node: any; [key: string]: any }) => (
+              <p style={{ margin: 0 }} {...props} />
+            ),
+            a: ({ node, ...props }: { node: any; [key: string]: any }) => (
+              <a style={{ color: 'inherit' }} {...props} />
+            ),
+            ul: ({ node, ...props }: { node: any; [key: string]: any }) => (
+              <ul
+                style={{ margin: '0.5em 0', paddingLeft: '1.5em' }}
+                {...props}
+              />
+            ),
+            ol: ({ node, ...props }: { node: any; [key: string]: any }) => (
+              <ol
+                style={{ margin: '0.5em 0', paddingLeft: '1.5em' }}
+                {...props}
+              />
+            ),
+            h1: ({ node, ...props }: { node: any; [key: string]: any }) => (
+              <h1 style={{ margin: '0.2em 0', fontSize: '1.5em' }} {...props} />
+            ),
+            h2: ({ node, ...props }: { node: any; [key: string]: any }) => (
+              <h2 style={{ margin: '0.2em 0', fontSize: '1.3em' }} {...props} />
+            ),
+            h3: ({ node, ...props }: { node: any; [key: string]: any }) => (
+              <h3 style={{ margin: '0.2em 0', fontSize: '1.2em' }} {...props} />
+            ),
+            h4: ({ node, ...props }: { node: any; [key: string]: any }) => (
+              <h4 style={{ margin: '0.2em 0', fontSize: '1.1em' }} {...props} />
+            ),
+            h5: ({ node, ...props }: { node: any; [key: string]: any }) => (
+              <h5 style={{ margin: '0.2em 0', fontSize: '1em' }} {...props} />
+            ),
+            h6: ({ node, ...props }: { node: any; [key: string]: any }) => (
+              <h6 style={{ margin: '0.2em 0', fontSize: '0.9em' }} {...props} />
+            ),
           }}
         >
           {content}
@@ -215,10 +258,21 @@ export const TextElement: React.FC<TextElementProps> = ({
         fontSize: `${fontSize}px`,
         fontFamily,
         color,
-        cursor: readOnly ? 'default' : isEditing ? 'text' : isSelected ? 'move' : 'pointer',
+        cursor: readOnly
+          ? 'default'
+          : isEditing
+            ? 'text'
+            : isSelected
+              ? 'move'
+              : 'pointer',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
+        alignItems:
+          align === 'center'
+            ? 'center'
+            : align === 'right'
+              ? 'flex-end'
+              : 'flex-start',
         justifyContent: getVerticalAlignment(),
         userSelect: isEditing ? 'text' : 'none',
         outline: isSelected ? '2px solid #0066ff' : 'none',
@@ -227,7 +281,8 @@ export const TextElement: React.FC<TextElementProps> = ({
         border: isEditing ? '1px solid #ddd' : 'none',
         backgroundColor: isEditing ? 'white' : backgroundColor || 'transparent',
         opacity: backgroundOpacity !== undefined ? backgroundOpacity : 1,
-        borderRadius: borderRadius !== undefined ? `${borderRadius}px` : undefined,
+        borderRadius:
+          borderRadius !== undefined ? `${borderRadius}px` : undefined,
         boxShadow: isEditing ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
         whiteSpace: isEditing ? 'pre-wrap' : 'normal',
         textAlign: align || 'left',
@@ -235,7 +290,7 @@ export const TextElement: React.FC<TextElementProps> = ({
         ...style,
       }}
       contentEditable={isEditing}
-      suppressContentEditableWarning={true}
+      suppressContentEditableWarning
       onDoubleClick={handleDoubleClick}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
@@ -245,4 +300,4 @@ export const TextElement: React.FC<TextElementProps> = ({
       {renderDisplayContent()}
     </div>
   );
-}; 
+};

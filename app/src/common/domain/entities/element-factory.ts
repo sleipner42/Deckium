@@ -1,20 +1,20 @@
 import { v4 as uuidv4 } from 'uuid';
-import { ContentElement, TextBox, Shape, BarChart, BarChartData } from './types';
+import { ContentElement, TextBox, BarChartData } from './types';
 
 export class ElementFactory {
-  static createTextBox(options: { 
-    content: string, 
-    position: { x: number, y: number }, 
-    size: { width: number, height: number },
-    fontSize: number,
-    fontFamily: string,
-    color: string,
-    borderRadius?: number,
-    backgroundColor?: string,
-    backgroundOpacity?: number,
-    align?: 'left' | 'center' | 'right',
-    verticalAlign?: 'top' | 'middle' | 'bottom',
-    zIndex?: number
+  static createTextBox(options: {
+    content: string;
+    position: { x: number; y: number };
+    size: { width: number; height: number };
+    fontSize: number;
+    fontFamily: string;
+    color: string;
+    borderRadius?: number;
+    backgroundColor?: string;
+    backgroundOpacity?: number;
+    align?: 'left' | 'center' | 'right';
+    verticalAlign?: 'top' | 'middle' | 'bottom';
+    zIndex?: number;
   }): ContentElement {
     return {
       id: uuidv4(),
@@ -30,18 +30,18 @@ export class ElementFactory {
       backgroundOpacity: options.backgroundOpacity || 0,
       align: options.align || 'left',
       verticalAlign: options.verticalAlign || 'top',
-      zIndex: options.zIndex || 1
+      zIndex: options.zIndex || 1,
     };
   }
 
   static createShape(options: {
-    shapeType: 'rectangle' | 'circle' | 'triangle',
-    position: { x: number, y: number },
-    size: { width: number, height: number },
-    fillColor: string,
-    strokeColor: string,
-    strokeWidth: number,
-    zIndex?: number
+    shapeType: 'rectangle' | 'circle' | 'triangle';
+    position: { x: number; y: number };
+    size: { width: number; height: number };
+    fillColor: string;
+    strokeColor: string;
+    strokeWidth: number;
+    zIndex?: number;
   }): ContentElement {
     return {
       id: uuidv4(),
@@ -51,19 +51,19 @@ export class ElementFactory {
       fillColor: options.fillColor,
       strokeColor: options.strokeColor,
       strokeWidth: options.strokeWidth,
-      zIndex: options.zIndex || 1
+      zIndex: options.zIndex || 1,
     };
   }
 
   static createBarChart(options: {
-    position: { x: number, y: number },
-    size: { width: number, height: number },
-    data?: BarChartData,
-    title: string,
-    xAxisLabel: string,
-    yAxisLabel: string,
-    barColor?: string,
-    zIndex?: number
+    position: { x: number; y: number };
+    size: { width: number; height: number };
+    data?: BarChartData;
+    title: string;
+    xAxisLabel: string;
+    yAxisLabel: string;
+    barColor?: string;
+    zIndex?: number;
   }): ContentElement {
     return {
       id: uuidv4(),
@@ -75,7 +75,7 @@ export class ElementFactory {
       xAxisLabel: options.xAxisLabel,
       yAxisLabel: options.yAxisLabel,
       barColor: options.barColor || '#000000',
-      zIndex: options.zIndex || 1
+      zIndex: options.zIndex || 1,
     };
   }
 
@@ -84,27 +84,27 @@ export class ElementFactory {
       return element.size.height;
     }
 
-    const lineCount = element.content.split('\n').length;
-    
     const averageCharWidth = element.fontSize * 0.6;
     const charsPerLine = Math.floor(element.size.width / averageCharWidth);
     const padding = 20;
-    
+
     const lines = element.content.split('\n');
-    let totalLines = 0;
-    
-    for (const line of lines) {
-      totalLines += Math.max(1, Math.ceil(line.length / charsPerLine));
-    }
-    
+    // Calculate total line count using array methods instead of for-loop (for lint compliance)
+    const totalLines = lines.reduce(
+      (acc, line) => acc + Math.max(1, Math.ceil(line.length / charsPerLine)),
+      0,
+    );
+
     const lineHeight = element.fontSize * 1.2;
-    const calculatedHeight = (totalLines * lineHeight) + padding;
-    
-    return Math.max(element.size.height);
+    const calculatedHeight = totalLines * lineHeight + padding;
+
+    return Math.max(calculatedHeight, element.size.height);
   }
 
   static calculateBoxAroundTextElement(element: TextBox): string {
-    const calculatedHeight = ElementFactory.calculateHeightBasedOnContent(element);
+    // Get the calculated height that accounts for text content
+    const calculatedHeight =
+      ElementFactory.calculateHeightBasedOnContent(element);
     const calculatedEndY = element.position.y + calculatedHeight;
     const isOutsideSlide = calculatedEndY > 720;
 
@@ -118,4 +118,4 @@ export class ElementFactory {
       y: ${calculatedEndY} ${isOutsideSlide ? '(outside slide)' : ''}
     `;
   }
-} 
+}

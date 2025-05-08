@@ -21,7 +21,8 @@ const theme = createTheme({
     divider: 'rgba(255, 255, 255, 0.12)',
   },
   typography: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Roboto", "Helvetica Neue", sans-serif',
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Roboto", "Helvetica Neue", sans-serif',
     h1: {
       fontWeight: 600,
     },
@@ -62,4 +63,4 @@ const theme = createTheme({
   },
 });
 
-export default theme; 
+export default theme;

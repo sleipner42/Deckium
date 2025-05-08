@@ -4,11 +4,12 @@ import { PresentationService } from '../../../presentation/service';
 
 export class CreateSlideTool extends BaseTool {
   name = 'createSlide';
+
   description = 'Create a new slide in the current presentation';
 
   protected async executeImpl(
     params: Record<string, any>,
-    presentationService: PresentationService
+    presentationService: PresentationService,
   ): Promise<AIToolResult> {
     const newSlide = presentationService.addSlide();
 
@@ -20,4 +21,4 @@ export class CreateSlideTool extends BaseTool {
       },
     };
   }
-} 
+}

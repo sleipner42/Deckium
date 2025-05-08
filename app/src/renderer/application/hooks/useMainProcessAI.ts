@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Thread, AIRequest, AIResponse } from '../../../common/domain/entities/ai-types';
+import {
+  Thread,
+  AIRequest,
+  AIResponse,
+} from '../../../common/domain/entities/ai-types';
 import { MessageContent } from '../../../common/domain/interfaces/ai-service.interface';
 import { UUID } from '../../../common/domain/entities/types';
 
@@ -21,7 +25,7 @@ interface ElectronWindow {
   };
 }
 
-const electronAPI = ((window as unknown) as ElectronWindow).electron;
+const electronAPI = (window as unknown as ElectronWindow).electron;
 
 export const useMainProcessAI = (presentationId: UUID) => {
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -32,10 +36,11 @@ export const useMainProcessAI = (presentationId: UUID) => {
 
   const loadThreads = useCallback(async () => {
     if (!presentationId) return;
-    
+
     try {
       setIsLoading(true);
-      const loadedThreads = await electronAPI.ai.getThreadsForPresentation(presentationId);
+      const loadedThreads =
+        await electronAPI.ai.getThreadsForPresentation(presentationId);
       setThreads(loadedThreads);
       if (loadedThreads.length > 0 && !currentThread) {
         setCurrentThread(loadedThreads[0]);
@@ -66,125 +71,137 @@ export const useMainProcessAI = (presentationId: UUID) => {
       'ai:thread-created',
       (...args: unknown[]) => {
         const newThread = args[0] as Thread;
-        setThreads(prev => [...prev, newThread]);
+        setThreads((prev) => [...prev, newThread]);
         setCurrentThread(newThread);
-      }
+      },
     );
 
     const threadUpdatedUnsubscribe = electronAPI.ipcRenderer.on(
       'ai:thread-updated',
       (...args: unknown[]) => {
         const updatedThread = args[0] as Thread;
-        
-        setThreads(prev => {
-          const index = prev.findIndex(t => t.id === updatedThread.id);
+
+        setThreads((prev) => {
+          const index = prev.findIndex((t) => t.id === updatedThread.id);
           if (index === -1) return prev;
-          
+
           const newThreads = [...prev];
           newThreads[index] = updatedThread;
           return newThreads;
         });
-        
+
         if (currentThread?.id === updatedThread.id) {
           setCurrentThread(updatedThread);
         }
-      }
+      },
     );
 
     const threadDeletedUnsubscribe = electronAPI.ipcRenderer.on(
       'ai:thread-deleted',
       (...args: unknown[]) => {
         const deletedThreadId = args[0] as UUID;
-        setThreads(prev => {
-          const updatedThreads = prev.filter(thread => thread.id !== deletedThreadId);
+        setThreads((prev) => {
+          const updatedThreads = prev.filter(
+            (thread) => thread.id !== deletedThreadId,
+          );
           if (currentThread?.id === deletedThreadId) {
             setTimeout(() => {
-              setCurrentThread(updatedThreads.length > 0 ? updatedThreads[0] : null);
+              setCurrentThread(
+                updatedThreads.length > 0 ? updatedThreads[0] : null,
+              );
             }, 0);
           }
           return updatedThreads;
         });
-      }
+      },
     );
 
     const messageReceivedUnsubscribe = electronAPI.ipcRenderer.on(
       'ai:message-received',
       (...args: unknown[]) => {
-        const data = args[0] as { threadId: UUID, message: string, updatedThread: Thread };
+        const data = args[0] as {
+          threadId: UUID;
+          message: string;
+          updatedThread: Thread;
+        };
         if (data.updatedThread) {
-          setThreads(prev => {
-            const index = prev.findIndex(t => t.id === data.threadId);
+          setThreads((prev) => {
+            const index = prev.findIndex((t) => t.id === data.threadId);
             if (index === -1) return prev;
-            
+
             const newThreads = [...prev];
             newThreads[index] = data.updatedThread;
             return newThreads;
           });
-          
+
           if (currentThread?.id === data.threadId) {
             setCurrentThread(data.updatedThread);
           }
         }
-      }
+      },
     );
 
     const messageChunkReceivedUnsubscribe = electronAPI.ipcRenderer.on(
       'ai:message-chunk-received',
       (...args: unknown[]) => {
-        const data = args[0] as { 
-          threadId: UUID, 
-          messageId: UUID, 
-          chunk: string, 
-          fullContent: string 
+        const data = args[0] as {
+          threadId: UUID;
+          messageId: UUID;
+          chunk: string;
+          fullContent: string;
         };
-        
+
         console.log('Chunk received:', data);
-        
+
         if (data.threadId && data.messageId) {
-          setThreads(prev => {
-            const threadIndex = prev.findIndex(t => t.id === data.threadId);
+          setThreads((prev) => {
+            const threadIndex = prev.findIndex((t) => t.id === data.threadId);
             if (threadIndex === -1) return prev;
-            
+
             const updatedThreads = [...prev];
-            const thread = {...updatedThreads[threadIndex]};
-            
-            const messageIndex = thread.messages.findIndex(m => m.id === data.messageId);
+            const thread = { ...updatedThreads[threadIndex] };
+
+            const messageIndex = thread.messages.findIndex(
+              (m) => m.id === data.messageId,
+            );
             if (messageIndex === -1) return prev;
-            
+
             const updatedMessages = [...thread.messages];
             updatedMessages[messageIndex] = {
               ...updatedMessages[messageIndex],
               content: data.fullContent,
-              streamingState: 'streaming'
+              streamingState: 'streaming',
             };
-            
+
             thread.messages = updatedMessages;
             updatedThreads[threadIndex] = thread;
-            
+
             return updatedThreads;
           });
-          
+
           if (currentThread?.id === data.threadId) {
-            setCurrentThread(prev => {
+            setCurrentThread((prev) => {
               if (!prev) return prev;
-              
-              const updatedThread = {...prev};
-              const messageIndex = updatedThread.messages.findIndex(m => m.id === data.messageId);
+
+              const updatedThread = { ...prev };
+              const messageIndex = updatedThread.messages.findIndex(
+                (m) => m.id === data.messageId,
+              );
               if (messageIndex === -1) return prev;
-              
+
               const updatedMessages = [...updatedThread.messages];
               updatedMessages[messageIndex] = {
                 ...updatedMessages[messageIndex],
                 content: data.fullContent,
-                streamingState: 'streaming'
+                streamingState: 'streaming',
               };
-              
+
               updatedThread.messages = updatedMessages;
               return updatedThread;
             });
           }
         }
-      }
+      },
     );
 
     const processingStartedUnsubscribe = electronAPI.ipcRenderer.on(
@@ -194,7 +211,7 @@ export const useMainProcessAI = (presentationId: UUID) => {
         if (currentThread?.id === threadId) {
           setIsLoading(true);
         }
-      }
+      },
     );
 
     const processingCompletedUnsubscribe = electronAPI.ipcRenderer.on(
@@ -204,18 +221,18 @@ export const useMainProcessAI = (presentationId: UUID) => {
         if (currentThread?.id === threadId) {
           setIsLoading(false);
         }
-      }
+      },
     );
-    
+
     const processingErrorUnsubscribe = electronAPI.ipcRenderer.on(
       'ai:processing-error',
       (...args: unknown[]) => {
-        const data = args[0] as { threadId: UUID, error: string };
+        const data = args[0] as { threadId: UUID; error: string };
         if (currentThread?.id === data.threadId) {
           setError(data.error);
           setIsLoading(false);
         }
-      }
+      },
     );
 
     return () => {
@@ -230,43 +247,48 @@ export const useMainProcessAI = (presentationId: UUID) => {
     };
   }, [currentThread]);
 
-  const createThread = useCallback(async (title: string) => {
-    if (!presentationId) {
-      setError('No active presentation');
-      throw new Error('No active presentation');
-    }
-    
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      await electronAPI.ai.createThread(title, presentationId);
-      
-      return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [presentationId]);
+  const createThread = useCallback(
+    async (title: string) => {
+      if (!presentationId) {
+        setError('No active presentation');
+        throw new Error('No active presentation');
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        await electronAPI.ai.createThread(title, presentationId);
+
+        return true;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'An error occurred';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [presentationId],
+  );
 
   const loadThread = useCallback(async (threadId: UUID) => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const thread = await electronAPI.ai.getThread(threadId);
-      
+
       if (!thread) {
         throw new Error(`Thread with ID ${threadId} not found`);
       }
-      
+
       setCurrentThread(thread);
       return thread;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       throw err;
     } finally {
@@ -278,16 +300,17 @@ export const useMainProcessAI = (presentationId: UUID) => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const success = await electronAPI.ai.deleteThread(threadId);
-      
+
       if (!success) {
         throw new Error(`Failed to delete thread ${threadId}`);
       }
-      
+
       return success;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       throw err;
     } finally {
@@ -295,45 +318,51 @@ export const useMainProcessAI = (presentationId: UUID) => {
     }
   }, []);
 
-  const sendMessage = useCallback(async (message: string, content?: MessageContent[]) => {
-    if (!currentThread) {
-      setError('No active thread. Please create a thread first before sending a message.');
-      throw new Error('No active thread');
-    }
-    
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const request: AIRequest = {
-        threadId: currentThread.id,
-        message,
-        content
-      };
+  const sendMessage = useCallback(
+    async (message: string, content?: MessageContent[]) => {
+      if (!currentThread) {
+        setError(
+          'No active thread. Please create a thread first before sending a message.',
+        );
+        throw new Error('No active thread');
+      }
 
-      console.log('Sending message:', request);
-      
-      const response = await electronAPI.ai.sendMessage(request);
-      
-      return response.message;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentThread]);
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const request: AIRequest = {
+          threadId: currentThread.id,
+          message,
+          content,
+        };
+
+        console.log('Sending message:', request);
+
+        const response = await electronAPI.ai.sendMessage(request);
+
+        return response.message;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'An error occurred';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [currentThread],
+  );
 
   return {
     threads,
     currentThread,
     isLoading,
     error,
-    
+
     createThread,
     loadThread,
     deleteThread,
-    sendMessage
+    sendMessage,
   };
-}; 
+};

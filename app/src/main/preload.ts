@@ -54,7 +54,7 @@ const electronHandler = {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
     },
   },
-  
+
   ai: {
     createThread(title: string, presentationId: string) {
       return ipcRenderer.invoke('ai:create-thread', title, presentationId);
@@ -66,16 +66,19 @@ const electronHandler = {
       return ipcRenderer.invoke('ai:save-thread', thread);
     },
     getThreadsForPresentation(presentationId: string) {
-      return ipcRenderer.invoke('ai:get-threads-for-presentation', presentationId);
+      return ipcRenderer.invoke(
+        'ai:get-threads-for-presentation',
+        presentationId,
+      );
     },
     deleteThread(threadId: string) {
       return ipcRenderer.invoke('ai:delete-thread', threadId);
     },
     sendMessage(request: unknown) {
       return ipcRenderer.invoke('ai:send-message', request);
-    }
+    },
   },
-  
+
   presentation: {
     initializePresentation(title: string) {
       return ipcRenderer.invoke('presentation:initialize', title);
@@ -99,7 +102,11 @@ const electronHandler = {
       return ipcRenderer.invoke('presentation:add-element', slideId, element);
     },
     updateElement(elementId: string, updates: unknown) {
-      return ipcRenderer.invoke('presentation:update-element', elementId, updates);
+      return ipcRenderer.invoke(
+        'presentation:update-element',
+        elementId,
+        updates,
+      );
     },
     savePresentation() {
       return ipcRenderer.invoke('presentation:save');
@@ -112,7 +119,7 @@ const electronHandler = {
     },
     getCurrentFilePath() {
       return ipcRenderer.invoke('presentation:get-file-path');
-    }
+    },
   },
 };
 

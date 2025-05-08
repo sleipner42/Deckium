@@ -10,13 +10,13 @@ interface ImageElementProps {
   readOnly?: boolean;
 }
 
-export const ImageElement: React.FC<ImageElementProps> = ({ 
-  element, 
-  isSelected, 
+export const ImageElement: React.FC<ImageElementProps> = ({
+  element,
+  isSelected,
   isEditing,
   onClick,
   onElementUpdate,
-  readOnly = false
+  readOnly = false,
 }) => {
   const { position, size, content, style } = element;
   const [isDragging, setIsDragging] = useState(false);
@@ -25,7 +25,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
   // Handle mouse events for dragging
   const handleMouseDown = (e: React.MouseEvent) => {
     if (readOnly) return;
-    
+
     if (isSelected) {
       e.stopPropagation();
       setIsDragging(true);
@@ -44,7 +44,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
           position: {
             x: e.clientX - dragOffset.x,
             y: e.clientY - dragOffset.y,
-          }
+          },
         });
       }
     };
@@ -66,7 +66,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
 
   const handleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
-    
+
     e.stopPropagation();
     if (onClick) onClick();
   };
@@ -99,4 +99,4 @@ export const ImageElement: React.FC<ImageElementProps> = ({
       />
     </div>
   );
-}; 
+};
