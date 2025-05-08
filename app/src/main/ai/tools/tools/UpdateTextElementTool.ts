@@ -219,10 +219,13 @@ export class UpdateTextElementTool extends BaseTool {
         };
 
         // Check for overlaps with the new position/size
+        // Pass the element ID to exclude the current element from overlap detection
         overlapCheck = ElementValidator.checkOverlap(
           slide,
           newPosition,
           elementSize,
+          0, // Default padding
+          elementId, // Exclude this element ID from overlap detection
         );
       }
     }

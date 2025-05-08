@@ -77,6 +77,7 @@ export class ElementValidator {
     position: Position,
     size: Size,
     padding: number = 0,
+    excludeElementId?: string, // Add optional parameter to exclude an element by ID (for updates)
   ): {
     hasOverlap: boolean;
     overlappingElements: string[];
@@ -128,6 +129,11 @@ export class ElementValidator {
 
     // Only check for overlaps with text elements
     for (const element of slide.elements) {
+      // Skip the element being updated (if ID is provided) or non-text elements
+      if (excludeElementId && element.id === excludeElementId) {
+        continue;
+      }
+      
       // Skip non-text elements for overlap checking
       if (element.type !== 'textbox') {
         continue;
@@ -227,6 +233,7 @@ export class ElementValidator {
         conflictingElement,
         size,
         slide,
+        excludeElementId,
       );
     }
 
@@ -279,6 +286,7 @@ export class ElementValidator {
     conflictingElement: ContentElement,
     newElementSize: Size,
     slide: Slide,
+    excludeElementId?: string, // Add optional element ID to exclude from overlap checks
   ): Position {
     // Try positioning below the conflicting element first (for bullet points and other text that should appear below titles)
     let suggestedX = conflictingElement.position.x;
@@ -301,6 +309,8 @@ export class ElementValidator {
         1280,
         720,
         newElementSize,
+        4, // Default grid size
+        excludeElementId, // Pass excluded element ID
       );
 
       for (const pos of gridPositions) {
@@ -314,6 +324,11 @@ export class ElementValidator {
         // Check if this position overlaps with any existing element
         let hasOverlap = false;
         for (const element of slide.elements) {
+          // Skip the element being updated (if ID is provided)
+          if (excludeElementId && element.id === excludeElementId) {
+            continue;
+          }
+          
           let elementHeight = element.size.height;
 
           // For textbox elements, use the estimated height for more accurate overlap detection
@@ -358,6 +373,7 @@ export class ElementValidator {
     slideHeight: number,
     elementSize: Size,
     gridSize: number = 4,
+    excludeElementId?: string, // Add optional element ID to exclude
   ): Position[] {
     const positions: Position[] = [];
     const cellWidth = slideWidth / gridSize;

@@ -28,5 +28,6 @@ export abstract class AITool {
     console.log(`Tool execution: ${this.name}`);
     console.log('Params:', JSON.stringify(params, null, 2));
     console.log('Result:', JSON.stringify(result, null, 2));
+    console.log('\n');
   }
 }
