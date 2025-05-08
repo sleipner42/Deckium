@@ -78,6 +78,22 @@ export class ElementFactory {
       zIndex: options.zIndex || 1,
     };
   }
+  
+  static createImage(options: {
+    content: string; // URL or base64
+    position: { x: number; y: number };
+    size: { width: number; height: number };
+    zIndex?: number;
+  }): ContentElement {
+    return {
+      id: uuidv4(),
+      type: 'image',
+      position: options.position,
+      size: options.size,
+      content: options.content,
+      zIndex: options.zIndex || 1,
+    };
+  }
 
   static calculateHeightBasedOnContent(element: TextBox): number {
     if (!element.content) {

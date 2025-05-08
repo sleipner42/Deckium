@@ -15,6 +15,9 @@ import { AlignElementsTool } from './tools/AlignElementsTool';
 import { SpaceElementsEvenlyTool } from './tools/SpaceElementsEvenlyTool';
 import { GetDataFromUrl } from './tools/GetDataFromUrl';
 import { ChangeElementZIndexTool } from './tools/ChangeElementZIndexTool';
+import { GetImageFromPexelsTool } from './tools/GetImageFromPexelsTool';
+import { AddImageFromPexelsTool } from './tools/AddImageFromPexelsTool';
+import { UpdateImageElementTool } from './tools/UpdateImageElementTool';
 
 export class ToolFactory {
   static getBuiltInTools(): AITool[] {
@@ -35,6 +38,9 @@ export class ToolFactory {
       new SpaceElementsEvenlyTool(),
       new GetDataFromUrl(),
       new ChangeElementZIndexTool(),
+      new GetImageFromPexelsTool(),
+      new AddImageFromPexelsTool(),
+      new UpdateImageElementTool(),
     ];
   }
 }
