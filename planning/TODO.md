@@ -4,6 +4,7 @@
 * Search for information
 * z position
 * Fix toolbar layouting
+* Look into positioning of objects. Why is it so bad at placing shapes.
 
 ## Future features
 * Get images from URLs
