@@ -18,6 +18,8 @@ import { ChangeElementZIndexTool } from './tools/ChangeElementZIndexTool';
 import { GetImageFromPexelsTool } from './tools/GetImageFromPexelsTool';
 import { AddImageFromPexelsTool } from './tools/AddImageFromPexelsTool';
 import { UpdateImageElementTool } from './tools/UpdateImageElementTool';
+import { AddImageFromPexelsResultTool } from './tools/AddImageFromPexelsResultTool';
+import { GetFirstImageFromPexelsTool } from './tools/GetFirstImageFromPexelsTool';
 
 export class ToolFactory {
   static getBuiltInTools(): AITool[] {
@@ -41,6 +43,8 @@ export class ToolFactory {
       new GetImageFromPexelsTool(),
       new AddImageFromPexelsTool(),
       new UpdateImageElementTool(),
+      new AddImageFromPexelsResultTool(),
+      new GetFirstImageFromPexelsTool(),
     ];
   }
 }

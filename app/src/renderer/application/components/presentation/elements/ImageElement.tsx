@@ -18,7 +18,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
   onElementUpdate,
   readOnly = false,
 }) => {
-  const { position, size, content, style } = element;
+  const { position, size, content, style, zIndex } = element;
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
@@ -82,6 +82,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
         cursor: readOnly ? 'default' : isSelected ? 'move' : 'pointer',
         outline: isSelected ? '2px solid #0066ff' : 'none',
         outlineOffset: '2px',
+        zIndex: zIndex || 1,
       }}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
