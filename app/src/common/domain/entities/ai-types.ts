@@ -34,15 +34,15 @@ export interface AIRequest {
   content?: MessageContent[];
 }
 
-export interface AIResponse {
-  message: string | MessageContent[];
-  toolCalls?: AIToolCall[];
-}
-
 export interface AIToolCall {
   toolId: UUID;
   toolName: string;
   params: Record<string, any>;
+}
+
+export interface AIResponse {
+  message: string | MessageContent[];
+  toolCalls?: AIToolCall[];
 }
 
 export interface AIToolContext {
