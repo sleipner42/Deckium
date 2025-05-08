@@ -14,6 +14,7 @@ import { UpdateShapeTool } from './tools/UpdateShapeTool';
 import { AlignElementsTool } from './tools/AlignElementsTool';
 import { SpaceElementsEvenlyTool } from './tools/SpaceElementsEvenlyTool';
 import { GetDataFromUrl } from './tools/GetDataFromUrl';
+import { ChangeElementZIndexTool } from './tools/ChangeElementZIndexTool';
 export class ToolFactory {
   static getBuiltInTools(): AITool[] {
     return [
@@ -32,6 +33,7 @@ export class ToolFactory {
       new AlignElementsTool(),
       new SpaceElementsEvenlyTool(),
       new GetDataFromUrl(),
+      new ChangeElementZIndexTool(),
     ];
   }
 } 

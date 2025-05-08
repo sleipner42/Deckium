@@ -13,7 +13,8 @@ export class ElementFactory {
     backgroundColor?: string,
     backgroundOpacity?: number,
     align?: 'left' | 'center' | 'right',
-    verticalAlign?: 'top' | 'middle' | 'bottom'
+    verticalAlign?: 'top' | 'middle' | 'bottom',
+    zIndex?: number
   }): ContentElement {
     return {
       id: uuidv4(),
@@ -28,7 +29,8 @@ export class ElementFactory {
       backgroundColor: options.backgroundColor || 'transparent',
       backgroundOpacity: options.backgroundOpacity || 0,
       align: options.align || 'left',
-      verticalAlign: options.verticalAlign || 'top'
+      verticalAlign: options.verticalAlign || 'top',
+      zIndex: options.zIndex || 1
     };
   }
 
@@ -38,7 +40,8 @@ export class ElementFactory {
     size: { width: number, height: number },
     fillColor: string,
     strokeColor: string,
-    strokeWidth: number
+    strokeWidth: number,
+    zIndex?: number
   }): ContentElement {
     return {
       id: uuidv4(),
@@ -47,7 +50,8 @@ export class ElementFactory {
       size: options.size,
       fillColor: options.fillColor,
       strokeColor: options.strokeColor,
-      strokeWidth: options.strokeWidth
+      strokeWidth: options.strokeWidth,
+      zIndex: options.zIndex || 1
     };
   }
 
@@ -58,7 +62,8 @@ export class ElementFactory {
     title: string,
     xAxisLabel: string,
     yAxisLabel: string,
-    barColor?: string
+    barColor?: string,
+    zIndex?: number
   }): ContentElement {
     return {
       id: uuidv4(),
@@ -69,7 +74,8 @@ export class ElementFactory {
       title: options.title,
       xAxisLabel: options.xAxisLabel,
       yAxisLabel: options.yAxisLabel,
-      barColor: options.barColor || '#000000'
+      barColor: options.barColor || '#000000',
+      zIndex: options.zIndex || 1
     };
   }
 

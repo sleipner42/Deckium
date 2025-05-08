@@ -18,6 +18,7 @@ export class CreateBarChartTool extends BaseTool {
     width: 'The width of the element (optional, defaults to 400)',
     height: 'The height of the element (optional, defaults to 300)',
     barColor: 'The color of the bars (optional, defaults to #000000)',
+    zIndex: 'The z-index of the element (optional, defaults to 1) - controls stacking order with higher values appearing on top',
   };
 
   protected async executeImpl(
@@ -36,6 +37,7 @@ export class CreateBarChartTool extends BaseTool {
       width,
       height,
       barColor,
+      zIndex,
     } = params;
 
     if (!slideId) {
@@ -84,6 +86,7 @@ export class CreateBarChartTool extends BaseTool {
         y: yDataArray,
       },
       barColor: barColor || '#000000',
+      zIndex: zIndex !== undefined ? Number(zIndex) : 1,
     });
 
     const updatedSlide = presentationService.addElement(

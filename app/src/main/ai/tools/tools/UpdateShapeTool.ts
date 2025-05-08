@@ -2,6 +2,7 @@ import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { Shape } from '../../../../common/domain/entities/types';
+import { ElementValidator } from '../../../presentation/element-validator';
 
 export class UpdateShapeTool extends BaseTool {
   name = 'updateShape';
@@ -15,6 +16,7 @@ export class UpdateShapeTool extends BaseTool {
     fillColor: 'New fill color (optional)',
     strokeColor: 'New stroke/border color (optional)',
     strokeWidth: 'New stroke/border width (optional)',
+    zIndex: 'The new z-index value (optional) - controls stacking order with higher values appearing on top',
   };
 
   protected async executeImpl(
@@ -30,6 +32,7 @@ export class UpdateShapeTool extends BaseTool {
       fillColor,
       strokeColor,
       strokeWidth,
+      zIndex,
     } = params;
 
     if (!elementId) {
@@ -98,6 +101,10 @@ export class UpdateShapeTool extends BaseTool {
     if (strokeWidth !== undefined) {
       updates.strokeWidth = Number(strokeWidth);
     }
+    
+    if (zIndex !== undefined) {
+      updates.zIndex = Number(zIndex);
+    }
 
     // If no updates were requested, return success
     if (Object.keys(updates).length === 0) {
@@ -107,6 +114,23 @@ export class UpdateShapeTool extends BaseTool {
           message: 'No updates were requested',
         },
       };
+    }
+
+    // Check for potential overlaps if position or size is updated
+    let overlapCheck = null;
+    if (updates.position || updates.size) {
+      const slide = currentPresentation.slides.find(s => s.id === slideId);
+      if (slide) {
+        const newPosition = updates.position || shape.position;
+        const newSize = updates.size || shape.size;
+        
+        // Check for overlaps with the new position/size
+        overlapCheck = ElementValidator.checkOverlap(
+          slide,
+          newPosition,
+          newSize,
+        );
+      }
     }
 
     // Update the element
@@ -122,11 +146,36 @@ export class UpdateShapeTool extends BaseTool {
       };
     }
 
+    // Create appropriate message based on whether there was an overlap
+    let message = 'Shape updated successfully';
+    
+    if (overlapCheck) {
+      // Only warn about elements outside slide boundaries
+      if (overlapCheck.isOutsideSlide) {
+        message += `\n\nWARNING: This shape is now positioned outside the slide boundaries (1280x720). `;
+        
+        if (overlapCheck.suggestedPosition) {
+          message += `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to ensure visibility.`;
+        }
+      }
+      
+      // Warn about text overlaps
+      if (overlapCheck.hasOverlap) {
+        message += `\n\nWARNING: OVERLAP DETECTED. This shape now overlaps with text elements: ${overlapCheck.overlappingElements.join(', ')}. `;
+        
+        if (overlapCheck.suggestedPosition) {
+          message += `The closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}). Alternatively, you can adjust the z-index to control which element appears on top.`;
+        } else {
+          message += `Consider adjusting the z-index using the changeElementZIndex tool to control which elements appear on top. Elements with higher z-index values appear on top of elements with lower z-index values.`;
+        }
+      }
+    }
+
     return {
       success: true,
       data: {
         elementId,
-        message: 'Shape updated successfully',
+        message,
         updates,
       },
     };

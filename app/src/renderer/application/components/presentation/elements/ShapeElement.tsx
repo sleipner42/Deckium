@@ -18,7 +18,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
   isEditing,
   readOnly = false
 }) => {
-  const { position, size, type, fillColor, strokeColor, strokeWidth, style } = element;
+  const { position, size, type, fillColor, strokeColor, strokeWidth, style, zIndex } = element;
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
@@ -31,6 +31,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
     backgroundColor: fillColor,
     border: `${strokeWidth}px solid ${strokeColor}`,
     cursor: readOnly ? 'default' : isSelected ? 'move' : 'pointer',
+    zIndex: zIndex || 1,
     ...style,
     outline: isSelected ? '2px solid #0066ff' : 'none',
     outlineOffset: '2px',

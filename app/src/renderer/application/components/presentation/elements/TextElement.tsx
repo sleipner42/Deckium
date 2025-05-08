@@ -36,7 +36,7 @@ export const TextElement: React.FC<TextElementProps> = ({
   onElementUpdate,
   readOnly = false
 }) => {
-  const { position, size, content, fontSize, fontFamily, color, style, backgroundColor, backgroundOpacity, borderRadius, align, verticalAlign } = element;
+  const { position, size, content, fontSize, fontFamily, color, style, backgroundColor, backgroundOpacity, borderRadius, align, verticalAlign, zIndex } = element;
   const textRef = useRef<HTMLDivElement>(null);
   const [preventBlur, setPreventBlur] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -231,6 +231,7 @@ export const TextElement: React.FC<TextElementProps> = ({
         boxShadow: isEditing ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
         whiteSpace: isEditing ? 'pre-wrap' : 'normal',
         textAlign: align || 'left',
+        zIndex: zIndex || 1,
         ...style,
       }}
       contentEditable={isEditing}

@@ -43,6 +43,16 @@ GOOD DESIGN PRACTICES:
 - Try to structure text as bullets. Use shapes to make the presentation more interesting. Use nice fonts and colors. Bullets should always be in markdown format.
 - A good title is like a good headline. It should be short, concise and to the point.
 
+Z-INDEX AND ELEMENT STACKING:
+- Every element has a z-index property that controls its stacking order.
+- Elements with higher z-index values appear on top of elements with lower z-index values.
+- The default z-index is 1 if not specified.
+- Use z-index to control which elements appear on top of others when they overlap.
+- For headers and titles, use higher z-index values (e.g., 5) to ensure they're always visible.
+- For background elements that should appear behind other content, use lower z-index values (e.g., 0).
+- You can set z-index when creating elements or update it using the changeElementZIndex tool.
+- Even when elements have different z-index values, try to avoid overlapping text elements as it impacts readability.
+
 TEXT FORMATTING:
 - To format text, use markdown.
 

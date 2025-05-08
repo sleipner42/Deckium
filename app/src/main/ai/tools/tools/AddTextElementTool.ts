@@ -23,24 +23,51 @@ export class AddTextElementTool extends BaseTool {
     backgroundOpacity: 'The background opacity of the element (optional, defaults to 1)',
     align: 'The alignment of the element (optional, defaults to left), choose from left, center, right',
     verticalAlign: 'The vertical alignment of the element (optional, defaults to top), choose from top, middle, bottom',
+    zIndex: 'The z-index of the element (optional, defaults to 1) - controls stacking order with higher values appearing on top',
   };
   
   /**
-   * Estimates the actual height of text content based on line count and font size
+   * Estimates the actual height of text content based on line count, font size, and content width
    * This is more accurate than using the element's declared height
    */
-  private estimateTextHeight(content: string, fontSize: number): number {
-    // Count the number of lines in the text
-    const lineCount = content.split('\n').length;
+  private estimateTextHeight(content: string, fontSize: number, width: number): number {
+    // If there's no content, return a minimal height
+    if (!content || content.trim() === '') {
+      return fontSize * 1.5;
+    }
+
+    // Get all lines from explicit line breaks
+    const lines = content.split('\n');
+    let totalLines = 0;
     
-    // Approximate line height based on font size (typically 1.2-1.5× the font size)
-    const lineHeight = fontSize * 1.3;
+    // Average character width for the given font size (approximation)
+    const averageCharWidth = fontSize * 0.6;
     
-    // Calculate total height with a small margin
-    const totalHeight = (lineCount * lineHeight) + 20; // 20px extra for padding
+    // Maximum characters per line at the given width
+    const maxCharsPerLine = Math.floor((width - 20) / averageCharWidth); // 20px for padding
     
-    // For very short content (like titles), use a minimum height
-    return Math.max(totalHeight, fontSize * 2);
+    // Calculate total lines accounting for wrapping
+    for (const line of lines) {
+      if (line.trim() === '') {
+        totalLines += 1; // Count empty lines
+      } else if (maxCharsPerLine > 0) {
+        // Estimate wrapped lines based on character count
+        totalLines += Math.max(1, Math.ceil(line.length / maxCharsPerLine));
+      } else {
+        totalLines += 1;
+      }
+    }
+    
+    // Approximate line height based on font size
+    const lineHeight = fontSize * 1.4; // Slightly more space for readability
+    
+    // Calculate total height with padding
+    const totalHeight = (totalLines * lineHeight) + 24; // 24px for padding
+    
+    // For titles or very short content, ensure minimum height based on font size
+    const minHeight = fontSize * 2;
+    
+    return Math.max(totalHeight, minHeight);
   }
 
   protected async executeImpl(
@@ -101,13 +128,16 @@ export class AddTextElementTool extends BaseTool {
     
     // Calculate a more realistic height based on content for overlap checking
     // Text height is often overestimated in the element size
-    const estimatedContentHeight = this.estimateTextHeight(content, Number(fontSize) || 12);
+    const fontSizeValue = Number(fontSize) || 12;
+    const estimatedContentHeight = this.estimateTextHeight(content, fontSizeValue, width);
     
     // Check for potential overlaps using a more realistic height estimate
     const elementPosition = { x: xPos, y: yPos };
+    // For collision detection, use a more precise estimation of text bounding box
+    // Include a small margin around the text for better readability detection
     const elementSize = { 
-      width, 
-      height: Math.min(height, estimatedContentHeight) // Use the smaller of specified height or estimated
+      width: width + 10, // Add slight padding to width
+      height: estimatedContentHeight + (fontSizeValue * 0.5) // Add a bit of extra height to catch partial overlaps
     };
     const overlapCheck = ElementValidator.checkOverlap(slide, elementPosition, elementSize);
     
@@ -117,12 +147,15 @@ export class AddTextElementTool extends BaseTool {
     //   yPos = overlapCheck.suggestedPosition.y;
     // }
     
+    // Use a standard z-index for text elements
+    const zIndex = 1;
+    
     const element = ElementFactory.createTextBox({
       content,
       position: { x: xPos, y: yPos },
       size: {
         width,
-        height,
+        height: Math.max(height, estimatedContentHeight), // Use estimated height if larger
       },
       fontSize: Number(fontSize) || 12,
       fontFamily: fontFamily || 'Arial',
@@ -132,6 +165,7 @@ export class AddTextElementTool extends BaseTool {
       backgroundOpacity: Number(backgroundOpacity) || 1,
       align: align || 'left',
       verticalAlign: verticalAlign || 'top',
+      zIndex: zIndex,
     });
 
     const updatedSlide = presentationService.addElement(
@@ -159,12 +193,12 @@ export class AddTextElementTool extends BaseTool {
     }
     
     if (overlapCheck.hasOverlap) {
-      message += `\n\nNOTE: This text element overlaps with other text elements: ${overlapCheck.overlappingElements.join(', ')}. `;
+      message += `\n\nWARNING: OVERLAP DETECTED. This text element visually overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}. `;
       
       if (overlapCheck.suggestedPosition) {
-        message += `Consider using position (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to make text more readable.`;
+        message += `To avoid overlap, consider using position (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) or increase the z-index of this element to make it appear on top.`;
       } else {
-        message += `Please check the text placement to ensure readability.`;
+        message += `Please check the text placement to ensure readability. You can also use the changeElementZIndex tool to adjust which elements appear on top of others. Elements with higher z-index values appear on top of elements with lower z-index values.`;
       }
     }
 

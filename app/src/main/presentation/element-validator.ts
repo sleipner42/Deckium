@@ -10,6 +10,7 @@ interface BoundingBox {
   y: number;
   width: number;
   height: number;
+  zIndex?: number;
 }
 
 export class ElementValidator {
@@ -33,11 +34,17 @@ export class ElementValidator {
     isOutsideSlide: boolean;
     suggestedPosition?: Position;
   } {
+    // Extract z-index from the position parameter if available
+    // The position parameter might actually be a ContentElement
+    const zIndex = position.hasOwnProperty('zIndex') && position.zIndex !== undefined ? 
+                  position.zIndex : 1;
+                  
     const newElementBox: BoundingBox = {
       x: position.x - padding,
       y: position.y - padding,
       width: size.width + padding * 2,
       height: size.height + padding * 2,
+      zIndex: zIndex,
     };
 
     // Check if element is outside slide boundaries (1280x720)
@@ -63,24 +70,19 @@ export class ElementValidator {
       // 2. Bullet points or list items
       // 3. Adjacent columns of text
       
-      // Vertical stacking (title + content, or list items)
-      const isVerticalArrangement = 
-           // New element is clearly below existing element with reasonable spacing
-           (position.y >= element.position.y + Math.min(element.size.height, 50) && 
-           // Horizontally aligned or with minimal offset (column-like)
-           Math.abs(position.x - element.position.x) < Math.max(30, element.size.width * 0.2));
-      
-      // Adjacent columns
-      const isAdjacentColumn = 
-           // Horizontally separated with reasonable gap
-           (position.x >= element.position.x + element.size.width + 10 || 
-            element.position.x >= position.x + size.width + 10) &&
-           // Some vertical overlap (same row)
-           !(position.y >= element.position.y + element.size.height || 
-             element.position.y >= position.y + size.height);
-             
-      // If it's a common, valid layout pattern, don't consider it an overlap
-      const isValidLayout = isVerticalArrangement || isAdjacentColumn;
+      // Simple non-overlap check - elements are clearly separate if:
+      // 1. One is entirely to the right of the other
+      // 2. One is entirely below the other
+      const noOverlap = 
+           // Horizontally separated (no overlap)
+           (position.x >= element.position.x + element.size.width || 
+            element.position.x >= position.x + size.width) ||
+           // Vertically separated (no overlap)
+           (position.y >= element.position.y + element.size.height || 
+            element.position.y >= position.y + size.height);
+            
+      // If elements are clearly separate, consider it a valid layout
+      const isValidLayout = noOverlap;
       
       // Use a reduced padding for known layout patterns
       const effectivePadding = isValidLayout ? 0 : padding;
@@ -90,12 +92,27 @@ export class ElementValidator {
         y: element.position.y - effectivePadding,
         width: element.size.width + effectivePadding * 2,
         height: element.size.height + effectivePadding * 2,
+        zIndex: element.zIndex || 1,
       };
 
       // Check if boxes overlap
       if (this.doBoxesOverlap(newElementBox, elementBox)) {
         // For valid layout patterns, don't count as overlap
         if (isValidLayout) {
+          continue;
+        }
+
+        // Check z-index if both elements have it defined
+        // Safely extract z-index from the elements
+        const newElementZIndex = newElementBox.zIndex !== undefined ? 
+                                 newElementBox.zIndex : 1;
+                                
+        const existingElementZIndex = element.zIndex !== undefined ? 
+                                     element.zIndex : 1;
+        
+        // If new element is above existing one, don't consider it an overlap issue
+        // The higher z-index element will be rendered on top
+        if (newElementZIndex > existingElementZIndex) {
           continue;
         }
 

@@ -18,6 +18,7 @@ export interface ElementStyle {
   borderColor?: string;
   borderWidth?: number;
   opacity?: number;
+  zIndex?: number;
 }
 
 export interface ElementState {
@@ -33,6 +34,7 @@ export interface Shape {
   fillColor: string;
   strokeColor: string;
   strokeWidth: number;
+  zIndex?: number;
   style?: ElementStyle;
 }
 
@@ -50,6 +52,7 @@ export interface BarChart {
   title: string;
   xAxisLabel: string;
   yAxisLabel: string;
+  zIndex?: number;
   style?: ElementStyle;
   barColor?: string;
 }
@@ -63,6 +66,7 @@ export interface TextBox {
   fontSize: number;
   fontFamily: string;
   color: string;
+  zIndex?: number;
   style?: ElementStyle;
   backgroundColor?: string;
   backgroundOpacity?: number;
@@ -78,6 +82,7 @@ export interface Plot {
   size: Size;
   data: any; // This will be more specific based on plot type
   plotType: 'line' | 'bar' | 'pie';
+  zIndex?: number;
   style?: ElementStyle;
 }
 
@@ -87,6 +92,7 @@ export interface Image {
   position: Position;
   size: Size;
   content: string; // URL or base64
+  zIndex?: number;
   style?: ElementStyle;
 }
 
