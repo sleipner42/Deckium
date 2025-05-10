@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Button,
-  Divider,
-  IconButton,
+import { usePresentation } from '../../context/PresentationContext';
+import { useAuth } from '../../context/AuthContext';
+import { 
+  Box, 
+  Button, 
+  Divider, 
+  IconButton, 
   Tooltip,
   Typography,
   alpha,
@@ -27,7 +29,8 @@ import RectangleIcon from '@mui/icons-material/Rectangle';
 import CircleIcon from '@mui/icons-material/RadioButtonUnchecked';
 import TriangleIcon from '@mui/icons-material/ChangeHistory';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import { usePresentation } from '../../context/PresentationContext';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
 
 interface ToolbarProps {
@@ -46,6 +49,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
 
   const [shapeAnchorEl, setShapeAnchorEl] = useState<null | HTMLElement>(null);
   const [fileAnchorEl, setFileAnchorEl] = useState<null | HTMLElement>(null);
+  const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
+  const { authState, logout } = useAuth();
 
   const handleShapeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setShapeAnchorEl(event.currentTarget);
@@ -90,6 +95,23 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
     handleFileMenuClose();
   };
 
+  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setUserAnchorEl(event.currentTarget);
+  };
+  
+  const handleUserMenuClose = () => {
+    setUserAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      handleUserMenuClose();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+  
   const addTextElement = async () => {
     if (!selectedSlide) return;
     console.log('addTextElement', selectedSlide.id);
@@ -151,6 +173,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
         borderColor: 'divider',
         gap: 2,
         WebkitAppRegion: 'drag',
+        position: 'relative',
         ...style,
       }}
     >
@@ -229,10 +252,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
       </Box>
 
       {/* Centered toolbar content */}
-      <Typography
-        variant="subtitle2"
-        sx={{
-          fontWeight: 600,
+      <Typography 
+        variant="subtitle2" 
+        sx={{ 
+          fontWeight: 600, 
           color: 'text.secondary',
           mr: 1,
           WebkitAppRegion: 'no-drag',
@@ -410,6 +433,52 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
           <FormatColorFillIcon fontSize="small" />
         </IconButton>
       </Tooltip>
+      
+      <Box sx={{ 
+        position: 'absolute', 
+        right: 16, 
+        display: 'flex',
+        alignItems: 'center',
+        WebkitAppRegion: 'no-drag'
+      }}>
+        <Tooltip title="User Account">
+          <IconButton 
+            size="small" 
+            onClick={handleUserMenuOpen}
+            sx={{ color: 'text.secondary' }}
+          >
+            <AccountCircleIcon />
+          </IconButton>
+        </Tooltip>
+        
+        <Menu
+          anchorEl={userAnchorEl}
+          open={Boolean(userAnchorEl)}
+          onClose={handleUserMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+        >
+          {authState.user && (
+            <Box sx={{ px: 2, py: 1 }}>
+              <Typography variant="subtitle1">{authState.user.username}</Typography>
+              <Typography variant="body2" color="text.secondary">{authState.user.email}</Typography>
+            </Box>
+          )}
+          <Divider />
+          <MenuItem onClick={handleLogout}>
+            <ListItemIcon>
+              <LogoutIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Logout</ListItemText>
+          </MenuItem>
+        </Menu>
+      </Box>
     </Box>
   );
 };
