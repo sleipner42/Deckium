@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         if (response.success && response.user) {
           setAuthState({
             isAuthenticated: true,
-            user: response.user,
+            user: response.user as IUser,
             loading: false,
             error: null,
           });
@@ -58,7 +58,8 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
     checkAuthStatus();
 
-    const unsubscribe = window.electron.ipcRenderer.on('auth:user-updated', (user: IUser | null) => {
+    const unsubscribe = window.electron.ipcRenderer.on('auth:user-updated', (data: unknown) => {
+      const user = data as IUser | null;
       setAuthState((prev) => ({
         ...prev,
         isAuthenticated: !!user,
@@ -81,7 +82,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         if (userResponse.success && userResponse.user) {
           setAuthState({
             isAuthenticated: true,
-            user: userResponse.user,
+            user: userResponse.user as IUser,
             loading: false,
             error: null,
           });
@@ -133,7 +134,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         if (userResponse.success && userResponse.user) {
           setAuthState((prev) => ({
             ...prev,
-            user: userResponse.user,
+            user: userResponse.user as IUser,
           }));
         }
         return true;

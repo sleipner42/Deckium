@@ -1,5 +1,5 @@
 import path from 'path';
-import { app, BrowserWindow, shell, protocol } from 'electron';
+import { app, BrowserWindow, shell, protocol, session } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import * as dotenv from 'dotenv';
@@ -100,6 +100,7 @@ const createWindow = async () => {
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
       devTools: true,
+      partition: 'persist:main',
     },
   });
 
@@ -146,6 +147,7 @@ const createSecondWindow = async () => {
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
+      partition: 'persist:main',
     },
   });
 
@@ -168,11 +170,7 @@ let aiServiceFactory: IAIServiceFactory | null = null;
 
 app
   .whenReady()
-  .then(() => {
-    protocol.registerFileProtocol('kraftpo', (request, callback) => {
-      const url = request.url.substring(9);
-      callback(decodeURI(url));
-    });
+  .then(async () => {
 
     createWindow();
     createSecondWindow();
