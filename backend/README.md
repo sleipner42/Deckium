@@ -49,6 +49,9 @@ SECRET_KEY=YOUR_SECURE_SECRET_KEY
 JWT_SECRET_KEY=YOUR_SECURE_JWT_SECRET_KEY
 REDIRECT_URL=http://localhost:8000/api/v1/auth/callback
 FRONTEND_URL=http://localhost:3000
+AZURE_OPENAI_API_KEY=YOUR_AZURE_OPENAI_API_KEY
+AZURE_OPENAI_ENDPOINT=YOUR_AZURE_OPENAI_ENDPOINT
+AZURE_OPENAI_DEPLOYMENT=YOUR_AZURE_OPENAI_MODEL_DEPLOYMENT
 ```
 
 ### 6. Run the application
@@ -84,6 +87,11 @@ The API will be available at http://localhost:8000
 
 - `GET /api/v1/items` - List items
 - `POST /api/v1/items` - Create an item
+
+### AI
+
+- `POST /api/v1/ai/chat` - Send a chat request to Azure OpenAI
+- `POST /api/v1/ai/chat/stream` - Send a streaming chat request to Azure OpenAI
 
 ## Notes
 

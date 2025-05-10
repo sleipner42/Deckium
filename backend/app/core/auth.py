@@ -11,7 +11,7 @@ from app.core.config import settings
 
 SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 365  # 1 year
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")

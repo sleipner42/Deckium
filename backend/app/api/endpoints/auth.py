@@ -89,7 +89,7 @@ async def auth_callback(
         }
         access_token = create_access_token(data=jwt_data)
 
-        response = RedirectResponse(url="/login_success")
+        response = RedirectResponse(url="/auth/login_success")
         response.set_cookie(
             key="access_token",
             value=f"Bearer {access_token}",
@@ -104,7 +104,7 @@ async def auth_callback(
         logger.exception(f"Auth error: {str(e)}")
         error_msg = f"Authentication failed: {str(e)}"
         
-        error_url = f"/login_failed?error={error_msg}"
+        error_url = f"/auth/login_failed?error={error_msg}"
         return RedirectResponse(url=error_url)
 
 
@@ -136,6 +136,7 @@ async def get_user(request: Request):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
         )
     token = cookie_authorization.replace("Bearer ", "")
+    print("token", token)
 
     try:
         from app.core.auth import ALGORITHM, SECRET_KEY, jwt

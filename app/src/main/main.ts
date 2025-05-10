@@ -12,6 +12,8 @@ import { AIService } from './ai/service';
 import { IAIServiceFactory } from '../common/domain/interfaces/ai-service.interface';
 import { setupAIIPC } from './ai/ipc-handler';
 import { setupAuthIPC } from './auth/ipc-handler';
+import { BackendAIServiceFactory } from './ai/external/backend-ai-service';
+import AuthService from './auth/service';
 
 dotenv.config();
 
@@ -163,6 +165,7 @@ app.on('window-all-closed', () => {
 let presentationService: PresentationService | null = null;
 let aiService: AIService | null = null;
 let aiServiceFactory: IAIServiceFactory | null = null;
+let authService: AuthService | null = null;
 
 app
   .whenReady()
@@ -176,14 +179,15 @@ app
     });
 
     presentationService = new PresentationService();
+    authService = new AuthService();
     
-    aiServiceFactory = new AzureOpenAIServiceFactory();
+    aiServiceFactory = new BackendAIServiceFactory(authService);
 
     const aiModel = aiServiceFactory.createService();
 
     aiService = new AIService(aiModel, presentationService);
 
-    setupAuthIPC();
+    setupAuthIPC(authService);
     setupAIIPC(aiService);
     setupPresentationIPC(presentationService);
   })

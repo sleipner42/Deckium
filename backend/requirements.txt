@@ -11,4 +11,5 @@ authlib
 pyjwt
 itsdangerous
 google-auth
-python-dotenv 
+python-dotenv
+openai 

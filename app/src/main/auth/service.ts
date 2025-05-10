@@ -39,6 +39,7 @@ export default class AuthService implements IAuthService {
 
   private saveUserToFile(user: IUser): void {
     this.user = user;
+    console.log('user', user.accessToken);
     try {
       fs.writeFileSync(CONFIG.userDataFile, JSON.stringify(user), 'utf8');
     } catch (error) {
