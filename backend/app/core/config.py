@@ -14,7 +14,13 @@ class Settings(BaseSettings):
     # JWT settings
     JWT_SECRET_KEY: str = "development_jwt_secret_key"
     JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 365  # 1 year
+
+    # Azure OpenAI settings
+    AZURE_OPENAI_API_KEY: str = ""
+    AZURE_OPENAI_ENDPOINT: str = ""
+    AZURE_OPENAI_DEPLOYMENT: str = "gpt-4.1-mini"
+    AZURE_OPENAI_API_VERSION: str = "2024-10-21"
 
     class Config:
         env_file = ".env"

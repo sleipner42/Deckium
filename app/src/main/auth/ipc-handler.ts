@@ -1,9 +1,7 @@
 import { ipcMain } from 'electron';
 import AuthService from './service';
 
-export const authService = new AuthService();
-
-export function setupAuthIPC(): void {
+export function setupAuthIPC(authService: AuthService): void {
   ipcMain.handle('auth:login', async () => {
     try {
       await authService.login();

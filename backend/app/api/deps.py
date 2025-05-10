@@ -10,8 +10,8 @@ async def get_current_authenticated_user(request: Request) -> TokenData:
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     token = cookie_authorization.replace("Bearer ", "")
-
+    if token.startswith('"') and token.endswith('"'):
+        token = token[1:-1]
     user = await get_current_user(token)
     return user

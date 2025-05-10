@@ -15,8 +15,8 @@ export function setupPresentationIPC(service: PresentationService) {
     return service.updatePresentationMeta(title);
   });
 
-  ipcMain.handle('presentation:add-slide', (_, title?: string) => {
-    return service.addSlide(title);
+  ipcMain.handle('presentation:add-slide', () => {
+    return service.addSlide();
   });
 
   ipcMain.handle(
