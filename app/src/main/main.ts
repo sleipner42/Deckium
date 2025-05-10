@@ -7,10 +7,6 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { setupPresentationIPC } from './presentation/ipc-handler';
 import { AzureOpenAIServiceFactory } from './ai/external/azure-openai-service';
-<<<<<<< HEAD
-import { MockAIServiceFactory } from './ai/external/mock-ai-service';
-=======
->>>>>>> 7acbb44 (auth first try)
 import { PresentationService } from './presentation/service';
 import { AIService } from './ai/service';
 import { IAIServiceFactory } from '../common/domain/interfaces/ai-service.interface';
