@@ -24,6 +24,7 @@ interface SlideRendererProps {
   readOnly?: boolean;
   scale?: number;
   maintainAspectRatio?: boolean;
+  selectableElements?: boolean;
 }
 
 export const SlideRenderer: React.FC<SlideRendererProps> = ({
@@ -33,6 +34,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   readOnly = false,
   scale = 1,
   maintainAspectRatio = true,
+  selectableElements = true,
 }) => {
   const { updateElement, updateSlide } = usePresentation();
   const {
@@ -52,7 +54,8 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       if (
         (e.key === 'Backspace' || e.key === 'Delete') &&
         selectedElementId &&
-        !editingElementId
+        !editingElementId &&
+        selectableElements
       ) {
         const elementToDelete = slide.elements.find(
           (el) => el.id === selectedElementId,
@@ -78,13 +81,14 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     readOnly,
     selectedElementId,
     editingElementId,
+    selectableElements,
     slide,
     selectElement,
     updateSlide,
   ]);
 
   const handleElementClick = (elementId: string) => {
-    if (!readOnly) {
+    if (!readOnly && selectableElements) {
       selectElement(elementId);
     }
   };
@@ -94,9 +98,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       element,
       onClick: () => handleElementClick(element.id),
       onElementUpdate: readOnly ? undefined : updateElement,
-      isSelected: !readOnly && isSelected(element.id),
-      isEditing: !readOnly && isEditing(element.id),
-      onStartEditing: () => !readOnly && startEditingElement(element.id),
+      isSelected: !readOnly && selectableElements && isSelected(element.id),
+      isEditing: !readOnly && selectableElements && isEditing(element.id),
+      onStartEditing: () =>
+        !readOnly && selectableElements && startEditingElement(element.id),
       onStopEditing: () => !readOnly && stopEditingElement(),
       readOnly,
     };
@@ -104,9 +109,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     const textProps = {
       element: element as TextBox,
       onClick: () => handleElementClick(element.id),
-      isSelected: !readOnly && isSelected(element.id),
-      isEditing: !readOnly && isEditing(element.id),
-      onStartEditing: () => !readOnly && startEditingElement(element.id),
+      isSelected: !readOnly && selectableElements && isSelected(element.id),
+      isEditing: !readOnly && selectableElements && isEditing(element.id),
+      onStartEditing: () =>
+        !readOnly && selectableElements && startEditingElement(element.id),
       onStopEditing: (content?: string) => {
         if (readOnly) return;
         stopEditingElement();
@@ -170,7 +176,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         ...style,
       }}
       className={className}
-      onClick={() => !readOnly && selectElement(null)}
+      onClick={() => !readOnly && selectableElements && selectElement(null)}
     >
       {slide.elements.map(renderElement)}
     </div>

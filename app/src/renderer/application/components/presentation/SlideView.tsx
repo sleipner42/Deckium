@@ -8,7 +8,8 @@ import { Slide } from '../../../../common/domain/entities/types';
 export const SlideView: React.FC<{
   defaultScale?: number;
   selectedSlideOverride?: Slide;
-}> = ({ defaultScale = 0.7, selectedSlideOverride }) => {
+  selectableElements?: boolean;
+}> = ({ defaultScale = 0.7, selectedSlideOverride, selectableElements }) => {
   const { selectedSlide } = usePresentation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(defaultScale);
@@ -73,7 +74,10 @@ export const SlideView: React.FC<{
         }}
       >
         {selectedSlide ? (
-          <SlideRenderer slide={selectedSlideOverride || selectedSlide} />
+          <SlideRenderer 
+            slide={selectedSlideOverride || selectedSlide} 
+            selectableElements={selectableElements}
+          />
         ) : (
           <Box
             sx={{
