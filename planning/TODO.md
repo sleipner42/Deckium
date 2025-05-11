@@ -1,9 +1,11 @@
 ## TODO
-* Presentation mode
 * Search for information
-* Fix toolbar layouting
 * Look into positioning of objects. Why is it so bad at placing shapes.
 * Undo redo - edit tree
+* Deploy backend
+* Build and distribute app
+* Landing page
+* Resize ability
 
 ## Future features
 * Get images from URLs
@@ -16,3 +18,6 @@
 * z position
 * Look into unintentional line breaks of text
 * Get images from stock image site
+* Presentation mode
+* Fix toolbar layouting
+
