@@ -22,6 +22,7 @@ declare global {
           error?: string;
         }>;
         refreshTokens(): Promise<{ success: boolean; error?: string }>;
+        getBalance(): Promise<{ success: boolean; balance?: number; error?: string }>;
       };
       ai: {
         createThread(title: string, presentationId: string): Promise<unknown>;

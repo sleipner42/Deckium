@@ -41,4 +41,14 @@ export function setupAuthIPC(authService: AuthService): void {
       return { success: false, error: (error as Error).message };
     }
   });
+
+  ipcMain.handle('auth:get-balance', async () => {
+    try {
+      const balance = await authService.getBalance();
+      return { success: true, balance };
+    } catch (error) {
+      console.error('Get balance error:', error);
+      return { success: false, error: (error as Error).message, balance: 0 };
+    }
+  });
 } 

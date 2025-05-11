@@ -70,6 +70,9 @@ const electronHandler = {
     },
     refreshTokens() {
       return ipcRenderer.invoke('auth:refresh-tokens');
+    },
+    getBalance() {
+      return ipcRenderer.invoke('auth:get-balance');
     }
   },
   

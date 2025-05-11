@@ -1,15 +1,14 @@
 import logging
 import secrets
-import string
 
 from app.core.auth import create_access_token
 from app.core.config import settings
-from app.dependencies import get_user_repo
-from app.models.user import UserCreate
+from app.dependencies import get_user_repo, get_transaction_repo
+from app.factories.user_factory import create_oauth_user
 from app.repositories.user import UserRepository
+from app.repositories.transaction import TransactionRepository
 from authlib.integrations.starlette_client import OAuth
-from fastapi import (APIRouter, Depends, HTTPException, Request, Response,
-                     status)
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from starlette.config import Config
 
@@ -36,22 +35,23 @@ oauth.register(
     client_kwargs={"scope": "openid email profile"},
 )
 
+
 @router.get("/login")
 async def login(request: Request):
     """Google login route that redirects to Google OAuth consent screen"""
     redirect_uri = settings.REDIRECT_URL
-
-    
     state = secrets.token_urlsafe(16)
     request.session["oauth_state"] = state
     logger.info(f"Starting OAuth login flow with state: {state[:5]}...")
-
     return await oauth.google.authorize_redirect(request, redirect_uri, state=state)
 
 
 @router.get("/callback")
 async def auth_callback(
-    request: Request, response: Response, repo: UserRepository = Depends(get_user_repo)
+    request: Request,
+    response: Response,
+    repo: UserRepository = Depends(get_user_repo),
+    transaction_repo: TransactionRepository = Depends(get_transaction_repo),
 ):
     """Callback route from Google OAuth, creates JWT and sets cookie"""
     try:
@@ -68,18 +68,12 @@ async def auth_callback(
                 detail="Email not authorized to access this application",
             )
 
-        existing_user = await repo.get_by_email(email)
-        if not existing_user:
-            alphabet = string.ascii_letters + string.digits
-            password = "".join(secrets.choice(alphabet) for _ in range(20))
-            user_create = UserCreate(
-                email=email,
-                password=password,
-                full_name=user_info.get("name", ""),
-                is_active=True,
-                is_superuser=False,
-            )
-            await repo.create(user_in=user_create)
+        await create_oauth_user(
+            email=email,
+            full_name=user_info.get("name", ""),
+            repo=repo,
+            transaction_repo=transaction_repo,
+        )
 
         jwt_data = {
             "sub": user_info["sub"],
@@ -103,7 +97,6 @@ async def auth_callback(
     except Exception as e:
         logger.exception(f"Auth error: {str(e)}")
         error_msg = f"Authentication failed: {str(e)}"
-        
         error_url = f"/auth/login_failed?error={error_msg}"
         return RedirectResponse(url=error_url)
 

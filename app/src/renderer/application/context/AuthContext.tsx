@@ -6,6 +6,7 @@ interface AuthContextProps {
   login: () => Promise<void>;
   logout: () => Promise<void>;
   refreshTokens: () => Promise<boolean>;
+  getBalance: () => Promise<number>;
 }
 
 const initialState: IAuthState = {
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextProps>({
   login: async () => {},
   logout: async () => {},
   refreshTokens: async () => false,
+  getBalance: async () => 0,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -149,8 +151,31 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     }
   };
 
+  const getBalance = async (): Promise<number> => {
+    try {
+      if (!authState.isAuthenticated || !authState.user) {
+        return 0;
+      }
+      
+      if (!window.electron.auth.getBalance) {
+        console.warn('getBalance function is not available in the electron API');
+        return 0;
+      }
+      
+      const response = await window.electron.auth.getBalance();
+      if (response.success && response.balance !== undefined) {
+        return response.balance;
+      }
+      
+      return 0;
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+      return 0;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ authState, login, logout, refreshTokens }}>
+    <AuthContext.Provider value={{ authState, login, logout, refreshTokens, getBalance }}>
       {children}
     </AuthContext.Provider>
   );

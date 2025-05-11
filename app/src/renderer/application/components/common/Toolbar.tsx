@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePresentation } from '../../context/PresentationContext';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -50,7 +50,28 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
   const [shapeAnchorEl, setShapeAnchorEl] = useState<null | HTMLElement>(null);
   const [fileAnchorEl, setFileAnchorEl] = useState<null | HTMLElement>(null);
   const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
-  const { authState, logout } = useAuth();
+  const [balance, setBalance] = useState<number>(0);
+  const [balanceError, setBalanceError] = useState<boolean>(false);
+  const { authState, logout, getBalance } = useAuth();
+
+  const fetchUserBalance = async () => {
+    if (authState.isAuthenticated) {
+      try {
+        setBalanceError(false);
+        const userBalance = await getBalance();
+        setBalance(userBalance);
+      } catch (error) {
+        console.error('Failed to fetch balance:', error);
+        setBalanceError(true);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (authState.isAuthenticated) {
+      fetchUserBalance();
+    }
+  }, [authState.isAuthenticated]);
 
   const handleShapeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setShapeAnchorEl(event.currentTarget);
@@ -97,6 +118,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
 
   const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setUserAnchorEl(event.currentTarget);
+    fetchUserBalance();
   };
   
   const handleUserMenuClose = () => {
@@ -468,6 +490,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
             <Box sx={{ px: 2, py: 1 }}>
               <Typography variant="subtitle1">{authState.user.username}</Typography>
               <Typography variant="body2" color="text.secondary">{authState.user.email}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Balance: {balanceError ? 'Not available' : balance.toFixed(2)}
+              </Typography>
             </Box>
           )}
           <Divider />

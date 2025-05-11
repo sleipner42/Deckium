@@ -190,6 +190,34 @@ export default class AuthService implements IAuthService {
     return this.user;
   }
 
+  async getBalance(): Promise<number> {
+    try {
+      const user = await this.getUser();
+      if (!user) {
+        return 0;
+      }
+      
+      const response = await fetch(`${CONFIG.apiBaseUrl}/transactions/balance`, {
+        headers: {
+          Cookie: `access_token=Bearer ${user.accessToken}`,
+        },
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to get balance: ${response.statusText}`);
+      }
+      
+      const data = await response.text();
+      const balance = parseFloat(data);
+      
+      return isNaN(balance) ? 0 : balance;
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+      return 0;
+    }
+  }
+
   async refreshTokens(): Promise<boolean> {
     await this.login();
     return !!this.user;
