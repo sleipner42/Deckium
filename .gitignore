@@ -37,6 +37,8 @@ npm-debug.log.*
 app/.erb/dll/*.dll.js
 app/.erb/dll/*.dll
 app/.erb/dll/*.json
+app/.erb/dll/*.bundle.dev.js
+app/.erb/dll/*.bundle.*.js
 
 *.db
 
