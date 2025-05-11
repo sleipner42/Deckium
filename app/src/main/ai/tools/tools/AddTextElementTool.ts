@@ -173,9 +173,9 @@ export class AddTextElementTool extends BaseTool {
       message += `\n\nWARNING: OVERLAP DETECTED. This text element visually overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}. `;
 
       if (overlapCheck.suggestedPosition) {
-        message += `To avoid overlap, consider using position (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) or increase the z-index of this element to make it appear on top.`;
+        message += `Closes non overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}).`;
       } else {
-        message += `Please check the text placement to ensure readability. You can also use the changeElementZIndex tool to adjust which elements appear on top of others. Elements with higher z-index values appear on top of elements with lower z-index values.`;
+        message += `Please check the text placement to ensure readability.`;
       }
     }
 

@@ -137,7 +137,7 @@ export class CreateShapeTool extends BaseTool {
 
     // Only mention text overlaps, not shape overlaps
     if (overlapCheck.hasOverlap) {
-      message += `\n\nNOTE: This shape overlaps with text elements: ${overlapCheck.overlappingElements.join(', ')}. `;
+      message += `\n\nWARNING: OVERLAP DETECTED. This shape overlaps with text elements: ${overlapCheck.overlappingElements.join(', ')}. `;
 
       if (overlapCheck.suggestedPosition) {
         message += `The closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}). Alternatively, you can adjust the z-index to control which element appears on top.`;

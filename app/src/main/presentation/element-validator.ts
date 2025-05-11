@@ -86,10 +86,11 @@ export class ElementValidator {
   } {
     // Extract z-index from the position parameter if available
     // The position parameter might actually be a ContentElement
+    const fallbackZIndex = 1; // NOTE: Should this be 0?
     const zIndex =
       position.hasOwnProperty('zIndex') && position.zIndex !== undefined
         ? position.zIndex
-        : 1;
+        : fallbackZIndex;
 
     // Check if we're dealing with a text element and can get more accurate height
     let elementHeight = size.height;
@@ -125,7 +126,7 @@ export class ElementValidator {
 
     const overlappingElements: string[] = [];
     let mostSignificantOverlap = 0;
-    let conflictingElement: ContentElement | null = null;
+    let conflictingElement: BoundingBox | null = null;
 
     // Only check for overlaps with text elements
     for (const element of slide.elements) {
@@ -133,9 +134,9 @@ export class ElementValidator {
       if (excludeElementId && element.id === excludeElementId) {
         continue;
       }
-      
-      // Skip non-text elements for overlap checking
-      if (element.type !== 'textbox') {
+
+      // Skip non-text and image elements for overlap checking
+      if (element.type !== 'textbox' && element.type !== 'image') {
         continue;
       }
 
@@ -171,7 +172,13 @@ export class ElementValidator {
           textElement.size.width,
         );
         // Add a small buffer to account for UI elements, padding, etc.
-        elementHeight += textElement.fontSize * 0.5;
+        // elementHeight += textElement.fontSize * 0.5;
+        console.log('Other elem. Estimated height for textbox:', elementHeight);
+      } else {
+        console.log(
+          'Other elem. Height for non-textbox element:',
+          elementHeight,
+        );
       }
 
       const elementBox: BoundingBox = {
@@ -192,13 +199,16 @@ export class ElementValidator {
         // Check z-index if both elements have it defined
         // Safely extract z-index from the elements
         const newElementZIndex =
-          newElementBox.zIndex !== undefined ? newElementBox.zIndex : 1;
+          newElementBox.zIndex !== undefined
+            ? newElementBox.zIndex
+            : fallbackZIndex;
 
         const existingElementZIndex =
-          element.zIndex !== undefined ? element.zIndex : 1;
+          element.zIndex !== undefined ? element.zIndex : fallbackZIndex;
 
         // If new element is above existing one, don't consider it an overlap issue
         // The higher z-index element will be rendered on top
+        // NOTE: Is this correct?
         if (newElementZIndex > existingElementZIndex) {
           continue;
         }
@@ -214,7 +224,7 @@ export class ElementValidator {
         );
         if (overlapArea > mostSignificantOverlap) {
           mostSignificantOverlap = overlapArea;
-          conflictingElement = element;
+          conflictingElement = elementBox;
         }
       }
     }
@@ -283,82 +293,111 @@ export class ElementValidator {
    * Suggests a new position for an element to avoid overlaps
    */
   private static suggestNewPosition(
-    conflictingElement: ContentElement,
+    conflictingElement: BoundingBox,
     newElementSize: Size,
     slide: Slide,
     excludeElementId?: string, // Add optional element ID to exclude from overlap checks
+    padding = 0, // Add optional element ID to exclude from overlap checks
   ): Position {
-    // Try positioning below the conflicting element first (for bullet points and other text that should appear below titles)
-    let suggestedX = conflictingElement.position.x;
-    let suggestedY =
-      conflictingElement.position.y + conflictingElement.size.height + 15; // Reduced from 20 to 15
+    // Move down
+    let suggestedX = conflictingElement.x;
+    let suggestedY = conflictingElement.y + conflictingElement.height + padding;
 
-    // If that would place it off the slide, try to the right of the element
-    if (suggestedY + newElementSize.height > 720) {
-      // Slide height
-      suggestedX =
-        conflictingElement.position.x + conflictingElement.size.width + 15;
-      suggestedY = conflictingElement.position.y;
-    }
-
-    // If that would place it off the slide, try a position relative to slide size
-    if (suggestedY + newElementSize.height > 720) {
-      // Slide height
-      // Find a free spot by dividing the slide into a grid
-      const gridPositions = this.generateGridPositions(
-        1280,
-        720,
-        newElementSize,
-        4, // Default grid size
-        excludeElementId, // Pass excluded element ID
+    if (
+      suggestedX + newElementSize.width <= 1280 &&
+      suggestedY + newElementSize.height <= 720
+    ) {
+      console.log(
+        'Found a suitable new position by looking down',
+        suggestedX,
+        suggestedY,
+        conflictingElement.y,
+        conflictingElement.height,
+        padding,
       );
 
-      for (const pos of gridPositions) {
-        const testBox = {
-          x: pos.x,
-          y: pos.y,
-          width: newElementSize.width,
-          height: newElementSize.height,
+      return { x: suggestedX, y: suggestedY };
+    }
+
+    // Move right
+    suggestedX = conflictingElement.x + conflictingElement.width + padding;
+    suggestedY = conflictingElement.y;
+
+    if (
+      suggestedX + newElementSize.width <= 1280 &&
+      suggestedY + newElementSize.height <= 720
+    ) {
+      return { x: suggestedX, y: suggestedY };
+    }
+
+    console.log(
+      'Could not find a suitable new position by looking down and right. Trying grid method',
+    );
+
+    // Slide height
+    // Find a free spot by dividing the slide into a grid
+    const gridPositions = this.generateGridPositions(
+      1280,
+      720,
+      newElementSize,
+      4, // Default grid size
+      excludeElementId, // Pass excluded element ID
+    );
+
+    for (const pos of gridPositions) {
+      const testBox = {
+        x: pos.x,
+        y: pos.y,
+        width: newElementSize.width,
+        height: newElementSize.height,
+      };
+
+      // Check if this position overlaps with any existing element
+      let hasOverlap = false;
+      for (const element of slide.elements) {
+        // Skip the element being updated (if ID is provided)
+        if (excludeElementId && element.id === excludeElementId) {
+          continue;
+        }
+
+        let elementHeight = element.size.height;
+
+        // For textbox elements, use the estimated height for more accurate overlap detection
+        if (element.type === 'textbox') {
+          const textElement = element as TextBox;
+          elementHeight = this.estimateTextHeight(
+            textElement.content,
+            textElement.fontSize,
+            textElement.size.width,
+          );
+          // Add a small buffer to account for UI elements, padding, etc.
+          elementHeight += textElement.fontSize * 0.5;
+          console.log(
+            'Sug new pos. Estimated height for textbox:',
+            elementHeight,
+          );
+        } else {
+          console.log(
+            'Sug new pos. Height for non-textbox element:',
+            elementHeight,
+          );
+        }
+
+        const elementBox = {
+          x: element.position.x,
+          y: element.position.y,
+          width: element.size.width,
+          height: elementHeight,
         };
 
-        // Check if this position overlaps with any existing element
-        let hasOverlap = false;
-        for (const element of slide.elements) {
-          // Skip the element being updated (if ID is provided)
-          if (excludeElementId && element.id === excludeElementId) {
-            continue;
-          }
-          
-          let elementHeight = element.size.height;
-
-          // For textbox elements, use the estimated height for more accurate overlap detection
-          if (element.type === 'textbox') {
-            const textElement = element as TextBox;
-            elementHeight = this.estimateTextHeight(
-              textElement.content,
-              textElement.fontSize,
-              textElement.size.width,
-            );
-            // Add a small buffer to account for UI elements, padding, etc.
-            elementHeight += textElement.fontSize * 0.5;
-          }
-
-          const elementBox = {
-            x: element.position.x,
-            y: element.position.y,
-            width: element.size.width,
-            height: elementHeight,
-          };
-
-          if (this.doBoxesOverlap(testBox, elementBox)) {
-            hasOverlap = true;
-            break;
-          }
+        if (this.doBoxesOverlap(testBox, elementBox)) {
+          hasOverlap = true;
+          break;
         }
+      }
 
-        if (!hasOverlap) {
-          return pos;
-        }
+      if (!hasOverlap) {
+        return pos;
       }
     }
 

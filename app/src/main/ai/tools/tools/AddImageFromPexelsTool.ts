@@ -185,7 +185,7 @@ Image details:
         message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). `;
 
         if (overlapCheck.suggestedPosition) {
-          message += `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to ensure visibility.`;
+          message += `Closes non overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}).`;
         }
       }
 
@@ -225,4 +225,3 @@ Image details:
     }
   }
 }
-
