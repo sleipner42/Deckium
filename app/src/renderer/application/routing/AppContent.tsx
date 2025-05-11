@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import PresentationEditor from '../components/presentation/PresentationEditor';
 import PresentationViewer from '../components/presentation/PresentationViewer';
+import FullScreenPresentationViewer from '../components/presentation/FullScreenPresentationViewer';
 import LoginScreen from '../components/auth/LoginScreen';
 import { useAuth } from '../context/AuthContext';
 import { Box, CircularProgress } from '@mui/material';
@@ -23,6 +24,10 @@ const AppContent: React.FC = () => {
   
   if (!authState.isAuthenticated) {
     return <LoginScreen />;
+  }
+
+  if (layout === 'fullscreen') {
+    return <FullScreenPresentationViewer />;
   }
 
   return (

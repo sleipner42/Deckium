@@ -41,6 +41,13 @@ declare global {
         deleteSlide(slideId: string): Promise<unknown>;
         addElement(slideId: string, element: unknown): Promise<unknown>;
         updateElement(elementId: string, updates: unknown): Promise<unknown>;
+        savePresentation(): Promise<unknown>;
+        savePresentationAs(): Promise<unknown>;
+        loadPresentation(filePath?: string): Promise<unknown>;
+        getCurrentFilePath(): Promise<unknown>;
+        openFullscreen(): Promise<void>;
+        closeFullscreen(): Promise<void>;
+        isFullscreenOpen(): Promise<boolean>;
       };
     };
   }

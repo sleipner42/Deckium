@@ -32,7 +32,8 @@ async def chat(
         if balance < AI_CHAT_COST:
             raise HTTPException(
                 status_code=402,
-                detail=f"Insufficient credits: {balance} available, {AI_CHAT_COST} required",
+                detail=f"Insufficient credits: {balance} available"
+                f" {AI_CHAT_COST} required",
             )
 
         if request.stream:
@@ -73,7 +74,8 @@ async def chat_stream(
         if balance < AI_CHAT_COST:
             raise HTTPException(
                 status_code=402,
-                detail=f"Insufficient credits: {balance} available, {AI_CHAT_COST} required",
+                detail=f"Insufficient credits: {balance} available"
+                f" {AI_CHAT_COST} required",
             )
 
         if not request.stream:
@@ -82,11 +84,15 @@ async def chat_stream(
             )
 
         await transaction_service.use_credits(
-            user_id=user.id, amount=AI_CHAT_COST, description="AI chat stream request"
+            user_id=user.id,
+            amount=AI_CHAT_COST,
+            description="AI chat stream request",
         )
 
         async def generate():
-            async for chunk in ai_service.chat_stream(messages=request.messages):
+            async for chunk in ai_service.chat_stream(
+                messages=request.messages
+            ):
                 yield chunk
 
         return StreamingResponse(

@@ -20,7 +20,13 @@ export type PresentationChannels =
   | 'presentation:initialized'
   | 'presentation:set-selected-slide'
   | 'presentation:saved'
-  | 'presentation:loaded';
+  | 'presentation:loaded'
+  | 'presentation:get-file-path'
+  | 'presentation:open-fullscreen'
+  | 'presentation:close-fullscreen'
+  | 'presentation:is-fullscreen-open'
+  | 'presentation:fullscreen-opened'
+  | 'presentation:fullscreen-closed';
 
 export type AIChannels =
   | 'ai:create-thread'
@@ -140,6 +146,15 @@ const electronHandler = {
     },
     getCurrentFilePath() {
       return ipcRenderer.invoke('presentation:get-file-path');
+    },
+    openFullscreen() {
+      return ipcRenderer.invoke('presentation:open-fullscreen');
+    },
+    closeFullscreen() {
+      return ipcRenderer.invoke('presentation:close-fullscreen');
+    },
+    isFullscreenOpen() {
+      return ipcRenderer.invoke('presentation:is-fullscreen-open');
     },
   },
 };

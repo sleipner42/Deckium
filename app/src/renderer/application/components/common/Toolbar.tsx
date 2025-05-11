@@ -27,6 +27,7 @@ import TriangleIcon from '@mui/icons-material/ChangeHistory';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
+import PresentationIcon from '@mui/icons-material/Slideshow';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
 
 interface ToolbarProps {
@@ -135,6 +136,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
       yAxisLabel: 'Values',
     });
     await addElement(newBarChartElement);
+  };
+
+  const handleStartPresentation = () => {
+    window.electron.presentation.openFullscreen();
   };
 
   return (
@@ -256,6 +261,27 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
             }}
           >
             Chart
+          </Button>
+        </Tooltip>
+
+        <Tooltip title="Present">
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<PresentationIcon />}
+            onClick={handleStartPresentation}
+            sx={{
+              borderRadius: 1,
+              textTransform: 'none',
+              px: 2,
+              ml: 2,
+              bgcolor: 'primary.main',
+              '&:hover': {
+                bgcolor: 'primary.dark',
+              },
+            }}
+          >
+            Present
           </Button>
         </Tooltip>
 

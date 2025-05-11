@@ -11,6 +11,8 @@ export class PresentationEventBus extends EventEmitter {
     SET_SELECTED_SLIDE: 'presentation:set-selected-slide',
     SAVED: 'presentation:saved',
     LOADED: 'presentation:loaded',
+    FULLSCREEN_OPENED: 'presentation:fullscreen-opened',
+    FULLSCREEN_CLOSED: 'presentation:fullscreen-closed',
   };
 
   broadcastToWindows(eventName: string, data: any): void {

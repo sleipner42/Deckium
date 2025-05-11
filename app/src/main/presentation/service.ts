@@ -1,5 +1,6 @@
 import fs from 'fs';
-import { dialog, BrowserWindow } from 'electron';
+import { dialog, BrowserWindow, screen } from 'electron';
+import path from 'path';
 import {
   Presentation,
   Slide,
@@ -7,6 +8,7 @@ import {
 } from '../../common/domain/entities/types';
 import { PresentationState } from './state';
 import { PresentationEventBus } from './event-bus';
+import { resolveHtmlPath } from '../util';
 
 const FILE_EXTENSION = '.kpres';
 
@@ -16,6 +18,8 @@ export class PresentationService {
   private eventBus: PresentationEventBus;
 
   private currentFilePath: string | null = null;
+
+  private fullscreenWindow: BrowserWindow | null = null;
 
   constructor() {
     this.state = new PresentationState();
@@ -258,5 +262,72 @@ export class PresentationService {
     });
 
     return canceled ? null : filePaths.length > 0 ? filePaths[0] : null;
+  }
+
+  /**
+   * Opens a fullscreen presentation window
+   */
+  openFullscreenPresentation(): void {
+    if (this.fullscreenWindow) {
+      this.fullscreenWindow.focus();
+      return;
+    }
+
+    const displays = screen.getAllDisplays();
+    const primaryDisplay = screen.getPrimaryDisplay();
+
+    this.fullscreenWindow = new BrowserWindow({
+      fullscreen: false,
+      frame: false,
+      width: primaryDisplay.bounds.width,
+      height: primaryDisplay.bounds.height,
+      x: primaryDisplay.bounds.x,
+      y: primaryDisplay.bounds.y,
+      webPreferences: {
+        preload: process.env.NODE_ENV === 'production'
+          ? path.join(__dirname, 'preload.js')
+          : path.join(__dirname, '../../.erb/dll/preload.js'),
+        partition: 'persist:main',
+      }
+    });
+
+    // Maximize to ensure it covers the full screen
+    this.fullscreenWindow.maximize();
+    
+    // Hide the menu bar
+    this.fullscreenWindow.setMenuBarVisibility(false);
+
+    this.fullscreenWindow.loadURL(`${resolveHtmlPath('index.html')}#/?layout=fullscreen`);
+
+    this.fullscreenWindow.on('closed', () => {
+      this.fullscreenWindow = null;
+    });
+
+    this.eventBus.broadcastToWindows(
+      PresentationEventBus.events.FULLSCREEN_OPENED,
+      null
+    );
+  }
+
+  /**
+   * Closes the fullscreen presentation window if open
+   */
+  closeFullscreenPresentation(): void {
+    if (this.fullscreenWindow) {
+      this.fullscreenWindow.close();
+      this.fullscreenWindow = null;
+      
+      this.eventBus.broadcastToWindows(
+        PresentationEventBus.events.FULLSCREEN_CLOSED,
+        null
+      );
+    }
+  }
+
+  /**
+   * Returns whether a fullscreen window is currently open
+   */
+  isFullscreenOpen(): boolean {
+    return this.fullscreenWindow !== null;
   }
 }

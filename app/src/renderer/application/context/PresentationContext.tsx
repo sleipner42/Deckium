@@ -49,11 +49,18 @@ interface PresentationContextActions {
   savePresentation: () => Promise<string | null>;
   savePresentationAs: () => Promise<string | null>;
   loadPresentation: (filePath?: string) => Promise<Presentation | null>;
+  openFullscreen: () => Promise<void>;
+  closeFullscreen: () => Promise<void>;
+  isFullscreenOpen: () => Promise<boolean>;
 }
 
 export interface PresentationContextValue
   extends PresentationContextState,
-    PresentationContextActions {}
+    PresentationContextActions {
+  openFullscreen: () => Promise<void>;
+  closeFullscreen: () => Promise<void>;
+  isFullscreenOpen: () => Promise<boolean>;
+}
 
 const PresentationContext = createContext<PresentationContextValue | null>(
   null,
@@ -91,6 +98,9 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
     savePresentation,
     savePresentationAs,
     loadPresentation,
+    openFullscreen,
+    closeFullscreen,
+    isFullscreenOpen,
   } = useMainProcessPresentation();
 
   const { slides } = presentation;
@@ -129,6 +139,9 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
         stopEditingElement: () => {},
         moveElement: () => {},
         resizeElement: () => {},
+        openFullscreen,
+        closeFullscreen,
+        isFullscreenOpen,
       }}
     >
       {children}

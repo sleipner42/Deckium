@@ -37,6 +37,9 @@ interface ElectronWindow {
       savePresentationAs: () => Promise<string | null>;
       loadPresentation: (filePath?: string) => Promise<Presentation | null>;
       getCurrentFilePath: () => Promise<string | null>;
+      openFullscreen: () => Promise<void>;
+      closeFullscreen: () => Promise<void>;
+      isFullscreenOpen: () => Promise<boolean>;
     };
   };
 }
@@ -548,5 +551,14 @@ export const useMainProcessPresentation = () => {
     savePresentation,
     savePresentationAs,
     loadPresentation,
+    openFullscreen: useCallback(() => {
+      return electronAPI.presentation.openFullscreen();
+    }, []),
+    closeFullscreen: useCallback(() => {
+      return electronAPI.presentation.closeFullscreen();
+    }, []),
+    isFullscreenOpen: useCallback(() => {
+      return electronAPI.presentation.isFullscreenOpen();
+    }, []),
   };
 };
