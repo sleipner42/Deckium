@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, Typography, IconButton, Paper, Stack, Chip } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, IconButton, Paper, Stack, Chip, Menu, MenuItem } from '@mui/material';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { SlideRenderer } from './SlideRenderer';
@@ -20,7 +20,29 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
     nextSlide,
     previousSlide,
     goToSlide,
+    deleteSlide,
   } = usePresentation();
+
+  const [contextMenuAnchorEl, setContextMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [contextMenuSlideId, setContextMenuSlideId] = useState<null | string>(null);
+
+  const handleContextMenuOpen = (event: React.MouseEvent<HTMLDivElement>, slideId: string) => {
+    event.preventDefault();
+    setContextMenuAnchorEl(event.currentTarget);
+    setContextMenuSlideId(slideId);
+  };
+
+  const handleContextMenuClose = () => {
+    setContextMenuAnchorEl(null);
+    setContextMenuSlideId(null);
+  };
+
+  const handleDeleteSlide = () => {
+    if (contextMenuSlideId) {
+      deleteSlide(contextMenuSlideId);
+    }
+    handleContextMenuClose();
+  };
 
   return (
     <Box
@@ -81,6 +103,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
       {/* Slide Thumbnails */}
       <Box
         sx={{
+          flex: 1,
           display: 'flex',
           flexDirection: 'column',
           gap: 1.5,
@@ -104,6 +127,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
             key={slide.id}
             elevation={0}
             onClick={() => goToSlide(index)}
+            onContextMenu={(event) => handleContextMenuOpen(event, slide.id)}
             sx={{
               position: 'relative',
               width: '100%',
@@ -166,6 +190,20 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
           </Paper>
         ))}
       </Box>
+
+      {/* Context Menu for Slides */}
+      <Menu
+        anchorEl={contextMenuAnchorEl}
+        open={Boolean(contextMenuAnchorEl)}
+        onClose={handleContextMenuClose}
+        MenuListProps={{
+          'aria-labelledby': 'slide-context-menu',
+        }}
+      >
+        <MenuItem onClick={handleDeleteSlide} disabled={!contextMenuSlideId}>
+          Delete Slide
+        </MenuItem>
+      </Menu>
     </Box>
   );
 };

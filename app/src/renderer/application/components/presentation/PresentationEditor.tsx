@@ -66,9 +66,10 @@ const PresentationEditor: React.FC = () => {
           <Box
             sx={{
               flex: 1,
-              overflowY: 'auto',
               px: 2,
               pb: 2,
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
             <SlideNavigation className="slide-navigation" />
