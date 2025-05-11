@@ -102,11 +102,16 @@ export class AddImageFromPexelsTool extends BaseTool {
       });
 
       // Check if we got any results
-      if (!response.data || !response.data.photos || !response.data.photos.length) {
+      if (
+        !response.data ||
+        !response.data.photos ||
+        !response.data.photos.length
+      ) {
         return {
           success: true,
           data: {
-            message: 'No images found for the given query. Try a different query.',
+            message:
+              'No images found for the given query. Try a different query.',
           },
         };
       }
@@ -190,7 +195,7 @@ Image details:
         )}. `;
 
         if (overlapCheck.suggestedPosition) {
-          message += `To avoid overlap, consider using position (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) or increase the z-index of this element to make it appear on top.`;
+          message += `Please check the image placement to ensure all elements are visible. The closes non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}). You can also decrease the z-index of this element to put it underneath of elements, but it is usually not a good idea to have text over images.`;
         } else {
           message += `Please check the image placement to ensure all elements are visible. You can also use the changeElementZIndex tool to adjust which elements appear on top of others.`;
         }
@@ -220,3 +225,4 @@ Image details:
     }
   }
 }
+

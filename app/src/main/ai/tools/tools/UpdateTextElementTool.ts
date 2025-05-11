@@ -3,59 +3,12 @@ import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { TextBox } from '../../../../common/domain/entities/types';
 import { ElementValidator } from '../../../presentation/element-validator';
+import { estimateTextDimensions } from '../utils/text-dimensions';
 
 export class UpdateTextElementTool extends BaseTool {
   name = 'updateTextElement';
 
   description = 'Update an existing text element on a slide';
-
-  /**
-   * Estimates the actual height of text content based on line count, font size, and content width
-   * This is more accurate than using the element's declared height
-   */
-  private estimateTextHeight(
-    content: string,
-    fontSize: number,
-    width: number,
-  ): number {
-    // If there's no content, return a minimal height
-    if (!content || content.trim() === '') {
-      return fontSize * 1.5;
-    }
-
-    // Get all lines from explicit line breaks
-    const lines = content.split('\n');
-    let totalLines = 0;
-
-    // Average character width for the given font size (approximation)
-    const averageCharWidth = fontSize * 0.6;
-
-    // Maximum characters per line at the given width
-    const maxCharsPerLine = Math.floor((width - 20) / averageCharWidth); // 20px for padding
-
-    // Calculate total lines accounting for wrapping
-    for (const line of lines) {
-      if (line.trim() === '') {
-        totalLines += 1; // Count empty lines
-      } else if (maxCharsPerLine > 0) {
-        // Estimate wrapped lines based on character count
-        totalLines += Math.max(1, Math.ceil(line.length / maxCharsPerLine));
-      } else {
-        totalLines += 1;
-      }
-    }
-
-    // Approximate line height based on font size
-    const lineHeight = fontSize * 1.4; // Slightly more space for readability
-
-    // Calculate total height with padding
-    const totalHeight = totalLines * lineHeight + 24; // 24px for padding
-
-    // For titles or very short content, ensure minimum height based on font size
-    const minHeight = fontSize * 2;
-
-    return Math.max(totalHeight, minHeight);
-  }
 
   requiredParams = {
     elementId: 'The ID of the text element to update',
@@ -186,6 +139,7 @@ export class UpdateTextElementTool extends BaseTool {
 
     // Check for potential overlaps if position or size is updated
     let overlapCheck = null;
+    let lineBreakInfo = null;
     if (updates.position || updates.size) {
       const slide = currentPresentation.slides.find((s) => s.id === slideId);
       if (slide) {
@@ -203,11 +157,13 @@ export class UpdateTextElementTool extends BaseTool {
             updates.fontSize !== undefined
               ? Number(updates.fontSize)
               : targetElement.fontSize;
-          estimatedHeight = this.estimateTextHeight(
+          const textDimensions = estimateTextDimensions(
             contentToCheck,
             fontSizeToCheck,
             newSize.width,
           );
+          estimatedHeight = textDimensions.height;
+          lineBreakInfo = textDimensions.lineBreakInfo;
         }
 
         // For collision detection, use a more precise estimation of text bounding box
@@ -241,6 +197,11 @@ export class UpdateTextElementTool extends BaseTool {
 
     // Create appropriate message based on whether there was an overlap
     let message = 'Text element updated successfully';
+
+    // Add line break warning if detected
+    if (lineBreakInfo) {
+      message += `\n\n${lineBreakInfo}`;
+    }
 
     if (overlapCheck) {
       // Warn about elements outside slide boundaries

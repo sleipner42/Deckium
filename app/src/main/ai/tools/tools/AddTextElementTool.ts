@@ -4,6 +4,7 @@ import { PresentationService } from '../../../presentation/service';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
 import { TextBox } from '../../../../common/domain/entities/types';
 import { ElementValidator } from '../../../presentation/element-validator';
+import { estimateTextDimensions } from '../utils/text-dimensions';
 
 export class AddTextElementTool extends BaseTool {
   name = 'addTextElement';
@@ -32,54 +33,6 @@ export class AddTextElementTool extends BaseTool {
     zIndex:
       'The z-index of the element (optional, defaults to 1) - controls stacking order with higher values appearing on top',
   };
-
-  /**
-   * Estimates the actual height of text content based on line count, font size, and content width
-   * This is more accurate than using the element's declared height
-   */
-  private estimateTextHeight(
-    content: string,
-    fontSize: number,
-    width: number,
-  ): number {
-    // If there's no content, return a minimal height
-    if (!content || content.trim() === '') {
-      return fontSize * 1.5;
-    }
-
-    // Get all lines from explicit line breaks
-    const lines = content.split('\n');
-    let totalLines = 0;
-
-    // Average character width for the given font size (approximation)
-    const averageCharWidth = fontSize * 0.6;
-
-    // Maximum characters per line at the given width
-    const maxCharsPerLine = Math.floor((width - 20) / averageCharWidth); // 20px for padding
-
-    // Calculate total lines accounting for wrapping
-    for (const line of lines) {
-      if (line.trim() === '') {
-        totalLines += 1; // Count empty lines
-      } else if (maxCharsPerLine > 0) {
-        // Estimate wrapped lines based on character count
-        totalLines += Math.max(1, Math.ceil(line.length / maxCharsPerLine));
-      } else {
-        totalLines += 1;
-      }
-    }
-
-    // Approximate line height based on font size
-    const lineHeight = fontSize * 1.4; // Slightly more space for readability
-
-    // Calculate total height with padding
-    const totalHeight = totalLines * lineHeight + 24; // 24px for padding
-
-    // For titles or very short content, ensure minimum height based on font size
-    const minHeight = fontSize * 2;
-
-    return Math.max(totalHeight, minHeight);
-  }
 
   protected async executeImpl(
     params: Record<string, any>,
@@ -140,11 +93,13 @@ export class AddTextElementTool extends BaseTool {
     // Calculate a more realistic height based on content for overlap checking
     // Text height is often overestimated in the element size
     const fontSizeValue = Number(fontSize) || 12;
-    const estimatedContentHeight = this.estimateTextHeight(
+    const textDimensions = estimateTextDimensions(
       content,
       fontSizeValue,
       width,
     );
+    const estimatedContentHeight = textDimensions.height;
+    const lineBreakInfo = textDimensions.lineBreakInfo;
 
     // Check for potential overlaps using a more realistic height estimate
     const elementPosition = { x: xPos, y: yPos };
@@ -200,6 +155,11 @@ export class AddTextElementTool extends BaseTool {
     let message = `Text element added successfully.\n${ElementFactory.calculateBoxAroundTextElement(
       element as TextBox,
     )}`;
+
+    // Add line break warning if detected
+    if (lineBreakInfo) {
+      message += `\n\n${lineBreakInfo}`;
+    }
 
     if (overlapCheck.isOutsideSlide) {
       message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). `;
