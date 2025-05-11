@@ -33,16 +33,16 @@ const PresentationEditor: React.FC = () => {
           overflow: 'hidden',
         }}
       >
-        {/* Sidebar */}
+        {/* Navigation Pane (Add Slide & Slide Navigation) - Moved to the LEFMOST */}
         <Paper
           elevation={0}
           sx={{
-            width: 400,
-            minWidth: 400,
-            maxWidth: 400,
+            width: 280, // Fixed width for navigation pane
+            minWidth: 280,
             height: '100%',
             bgcolor: 'background.paper',
-            borderRight: '1px solid',
+            // borderLeft: '1px solid', // Removed
+            borderRight: '1px solid', // Added
             borderColor: 'divider',
             display: 'flex',
             flexDirection: 'column',
@@ -63,7 +63,6 @@ const PresentationEditor: React.FC = () => {
           >
             Add Slide
           </Button>
-
           <Box
             sx={{
               flex: 1,
@@ -74,53 +73,17 @@ const PresentationEditor: React.FC = () => {
           >
             <SlideNavigation className="slide-navigation" />
           </Box>
-
-          <Paper
-            elevation={0}
-            sx={{
-              borderTop: '1px solid',
-              borderColor: 'divider',
-              p: 2,
-              bgcolor: 'background.paper',
-              height: 650,
-              minHeight: 650,
-              display: 'flex',
-              flexDirection: 'column',
-              flexShrink: 0,
-            }}
-          >
-            <Box
-              sx={{
-                fontWeight: 600,
-                mb: 1.5,
-                color: 'text.primary',
-              }}
-            >
-              AI Assistant
-            </Box>
-            <Box
-              sx={{
-                flex: 1,
-                bgcolor: 'background.default',
-                borderRadius: 1,
-                overflow: 'hidden',
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <ChatInterface className="ai-chat-interface" />
-            </Box>
-          </Paper>
         </Paper>
 
-        {/* Main content area */}
+        {/* Main content area (Slide View) - Stays in the middle */}
         <Box
           sx={{
-            flex: 1,
+            flex: 1, // Takes remaining space
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
             overflow: 'hidden',
+            // backgroundColor: 'lightgreen', // For debugging layout
           }}
         >
           {/* Slide view */}
@@ -136,6 +99,47 @@ const PresentationEditor: React.FC = () => {
             <SlideView />
           </Box>
         </Box>
+
+        {/* AI Assistant Pane (Chat Interface) - Moved to the RIGHTMOST */}
+        <Paper
+          elevation={0}
+          sx={{
+            width: 350, // Fixed width for chat pane
+            minWidth: 350,
+            height: '100%',
+            bgcolor: 'background.paper',
+            // borderRight: '1px solid', // Removed
+            borderLeft: '1px solid', // Added
+            borderColor: 'divider',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            flexShrink: 0,
+            p: 2, // Retained padding consistent with original chat container
+          }}
+        >
+          <Box
+            sx={{
+              fontWeight: 600,
+              mb: 1.5,
+              color: 'text.primary',
+            }}
+          >
+            AI Assistant
+          </Box>
+          <Box
+            sx={{
+              flex: 1,
+              bgcolor: 'background.default', // Or background.paper if preferred
+              borderRadius: 1,
+              overflow: 'hidden',
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <ChatInterface className="ai-chat-interface" />
+          </Box>
+        </Paper>
       </Box>
     </Box>
   );
