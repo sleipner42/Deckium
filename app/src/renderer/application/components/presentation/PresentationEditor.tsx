@@ -70,6 +70,7 @@ const PresentationEditor: React.FC = () => {
               pb: 2,
               display: 'flex',
               flexDirection: 'column',
+              overflow: 'hidden',
             }}
           >
             <SlideNavigation className="slide-navigation" />

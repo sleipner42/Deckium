@@ -47,15 +47,20 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
   return (
     <Box
       className={className}
-      sx={{ display: 'flex', flexDirection: 'column' }}
+      sx={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        height: '100%',
+        width: '100%',
+        overflow: 'hidden',
+      }}
     >
-      {/* Navigation Controls */}
       <Stack
         direction="row"
         spacing={1}
         alignItems="center"
         justifyContent="space-between"
-        sx={{ mb: 2, px: 1 }}
+        sx={{ mb: 2, px: 1, flexShrink: 0 }}
       >
         <IconButton
           size="small"
@@ -100,25 +105,28 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
         </IconButton>
       </Stack>
 
-      {/* Slide Thumbnails */}
       <Box
         sx={{
           flex: 1,
+          minHeight: 0,
+          overflow: 'auto',
           display: 'flex',
           flexDirection: 'column',
           gap: 1.5,
-          overflowY: 'auto',
           px: 0.5,
           pb: 1,
           '&::-webkit-scrollbar': {
-            width: '4px',
+            width: '6px',
           },
           '&::-webkit-scrollbar-track': {
             background: 'transparent',
           },
           '&::-webkit-scrollbar-thumb': {
-            background: 'rgba(0,0,0,0.1)',
-            borderRadius: '2px',
+            background: 'rgba(0,0,0,0.2)',
+            borderRadius: '3px',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: 'rgba(0,0,0,0.3)',
           },
         }}
       >
@@ -131,7 +139,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
             sx={{
               position: 'relative',
               width: '100%',
-              pt: '56.25%', // 16:9 aspect ratio
+              pt: '56.25%',
               borderRadius: 1,
               overflow: 'hidden',
               cursor: 'pointer',
@@ -192,7 +200,6 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
         ))}
       </Box>
 
-      {/* Context Menu for Slides */}
       <Menu
         anchorEl={contextMenuAnchorEl}
         open={Boolean(contextMenuAnchorEl)}
