@@ -14,6 +14,7 @@
  */
 export interface TextDimensionResult {
   height: number;
+  width: number;
   lineBreakInfo: string | null;
 }
 
@@ -22,9 +23,13 @@ export function estimateTextDimensions(
   fontSize: number,
   width: number,
 ): TextDimensionResult {
-  // If there's no content, return a minimal height
+  // If there's no content, return minimal dimensions
   if (!content || content.trim() === '') {
-    return { height: fontSize * 1.5, lineBreakInfo: null };
+    return {
+      height: fontSize * 1.2,
+      width: fontSize * 2, // Minimal width for empty content
+      lineBreakInfo: null
+    };
   }
 
   // Get all lines from explicit line breaks
@@ -37,7 +42,7 @@ export function estimateTextDimensions(
   const averageCharWidth = fontSize * 0.6;
 
   // Maximum characters per line at the given width
-  const maxCharsPerLine = Math.floor((width - 20) / averageCharWidth); // 20px for padding
+  const maxCharsPerLine = Math.floor((width - 10) / averageCharWidth); // 10px for padding
 
   // Calculate total lines accounting for wrapping
   for (const line of lines) {
@@ -72,14 +77,31 @@ export function estimateTextDimensions(
   }
 
   // Approximate line height based on font size
-  const lineHeight = fontSize * 1.4; // Slightly more space for readability
+  const lineHeight = fontSize * 1.2; // Reduced from 1.4 for more accurate height
 
   // Calculate total height with padding
-  const totalHeight = totalLines * lineHeight + 24; // 24px for padding
+  const totalHeight = totalLines * lineHeight + 10; // Reduced padding from 24px to 10px
 
   // For titles or very short content, ensure minimum height based on font size
-  const minHeight = fontSize * 2;
+  const minHeight = fontSize * 1.3;
   const estimatedHeight = Math.max(totalHeight, minHeight);
+
+  // Calculate the estimated text width based on content
+  let estimatedWidth = width; // Default to container width
+
+  // Find the longest line to estimate natural width
+  let maxLineLength = 0;
+  for (const line of lines) {
+    maxLineLength = Math.max(maxLineLength, line.length);
+  }
+
+  // Calculate natural width based on the longest line
+  const naturalWidth = Math.ceil(maxLineLength * averageCharWidth) + 10; // Add padding
+
+  // If natural width is less than container width and there's no wrapping
+  if (naturalWidth < width && !lineBreakDetected) {
+    estimatedWidth = naturalWidth;
+  }
 
   // Generate line break warning information if needed
   let lineBreakInfo = null;
@@ -95,5 +117,9 @@ export function estimateTextDimensions(
         .join('\n');
   }
 
-  return { height: estimatedHeight, lineBreakInfo };
+  return {
+    height: estimatedHeight,
+    width: estimatedWidth,
+    lineBreakInfo
+  };
 }

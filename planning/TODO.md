@@ -6,9 +6,10 @@
 * Build and distribute app
 * Landing page
 * Resize ability
+* Move image tools to backend
+* Overlap detection images
 
 ## Future features
-* Get images from URLs
 * Get images from URLs
 
 ## Done

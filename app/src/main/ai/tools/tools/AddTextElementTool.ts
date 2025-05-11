@@ -104,10 +104,12 @@ export class AddTextElementTool extends BaseTool {
     // Check for potential overlaps using a more realistic height estimate
     const elementPosition = { x: xPos, y: yPos };
     // For collision detection, use a more precise estimation of text bounding box
-    // Include a small margin around the text for better readability detection
+    // Include minimal margin around the text for better readability detection
+    const estimatedWidth = textDimensions.width;
     const elementSize = {
-      width: width + 10, // Add slight padding to width
-      height: estimatedContentHeight + fontSizeValue * 0.5, // Add a bit of extra height to catch partial overlaps
+      // If the estimated width is smaller than the container, use it
+      width: estimatedWidth < width ? estimatedWidth : width + 10,
+      height: estimatedContentHeight, // Use exact estimated height without additional buffer
     };
     const overlapCheck = ElementValidator.checkOverlap(
       slide,
@@ -124,11 +126,17 @@ export class AddTextElementTool extends BaseTool {
     // Use the provided z-index or default to 1
     const zIndex = params.zIndex !== undefined ? Number(params.zIndex) : 1;
 
+    if (Math.max(height, estimatedContentHeight) !== height) {
+      console.log(
+        'Estimated height is larger than provided height, using estimated height',
+      );
+    }
+
     const element = ElementFactory.createTextBox({
       content,
       position: { x: xPos, y: yPos },
       size: {
-        width,
+        width: width,
         height: Math.max(height, estimatedContentHeight), // Use estimated height if larger
       },
       fontSize: Number(fontSize) || 12,

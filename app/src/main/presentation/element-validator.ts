@@ -5,6 +5,7 @@ import {
   Size,
   TextBox,
 } from '../../common/domain/entities/types';
+import { estimateTextDimensions } from '../ai/tools/utils/text-dimensions';
 
 interface BoundingBox {
   x: number;
@@ -16,6 +17,23 @@ interface BoundingBox {
 
 export class ElementValidator {
   /**
+   * Estimates the actual dimensions of text content based on content, font size, and width
+   * This is more accurate than using the element's declared dimensions
+   * @returns An object with estimated width and height
+   */
+  private static estimateTextDimensions(
+    content: string,
+    fontSize: number,
+    width: number,
+  ): { width: number; height: number } {
+    const dimensions = estimateTextDimensions(content, fontSize, width);
+    return {
+      width: dimensions.width,
+      height: dimensions.height
+    };
+  }
+
+  /**
    * Estimates the actual height of text content based on line count, font size, and content width
    * This is more accurate than using the element's declared height
    */
@@ -24,43 +42,7 @@ export class ElementValidator {
     fontSize: number,
     width: number,
   ): number {
-    // If there's no content, return a minimal height
-    if (!content || content.trim() === '') {
-      return fontSize * 1.5;
-    }
-
-    // Get all lines from explicit line breaks
-    const lines = content.split('\n');
-    let totalLines = 0;
-
-    // Average character width for the given font size (approximation)
-    const averageCharWidth = fontSize * 0.6;
-
-    // Maximum characters per line at the given width
-    const maxCharsPerLine = Math.floor((width - 20) / averageCharWidth); // 20px for padding
-
-    // Calculate total lines accounting for wrapping
-    for (const line of lines) {
-      if (line.trim() === '') {
-        totalLines += 1; // Count empty lines
-      } else if (maxCharsPerLine > 0) {
-        // Estimate wrapped lines based on character count
-        totalLines += Math.max(1, Math.ceil(line.length / maxCharsPerLine));
-      } else {
-        totalLines += 1;
-      }
-    }
-
-    // Approximate line height based on font size
-    const lineHeight = fontSize * 1.4; // Slightly more space for readability
-
-    // Calculate total height with padding
-    const totalHeight = totalLines * lineHeight + 24; // 24px for padding
-
-    // For titles or very short content, ensure minimum height based on font size
-    const minHeight = fontSize * 2;
-
-    return Math.max(totalHeight, minHeight);
+    return this.estimateTextDimensions(content, fontSize, width).height;
   }
 
   /**
@@ -92,27 +74,32 @@ export class ElementValidator {
         ? position.zIndex
         : fallbackZIndex;
 
-    // Check if we're dealing with a text element and can get more accurate height
+    // Check if we're dealing with a text element and can get more accurate dimensions
     let elementHeight = size.height;
+    let elementWidth = size.width;
 
     // If the position parameter is actually a ContentElement and it's a textbox
     if (position.hasOwnProperty('type') && position.type === 'textbox') {
       const textElement = position as unknown as TextBox;
       if (textElement.content && textElement.fontSize) {
-        elementHeight = this.estimateTextHeight(
+        const estimatedDimensions = this.estimateTextDimensions(
           textElement.content,
           textElement.fontSize,
           size.width,
         );
-        // Add a small buffer for UI elements
-        elementHeight += textElement.fontSize * 0.5;
+        elementHeight = estimatedDimensions.height;
+        // Only use estimated width if it's smaller than the container width
+        if (estimatedDimensions.width < size.width) {
+          elementWidth = estimatedDimensions.width;
+        }
+        console.log('Estimated dimensions for new textbox:', elementWidth, 'x', elementHeight);
       }
     }
 
     const newElementBox: BoundingBox = {
       x: position.x - padding,
       y: position.y - padding,
-      width: size.width + padding * 2,
+      width: elementWidth + padding * 2,
       height: elementHeight + padding * 2,
       zIndex,
     };
@@ -163,28 +150,32 @@ export class ElementValidator {
       const effectivePadding = isValidLayout ? 0 : padding;
 
       let elementHeight = element.size.height;
-      // For textbox elements, use the estimated height for more accurate overlap detection
+      let elementWidth = element.size.width;
+      // For textbox elements, use the estimated dimensions for more accurate overlap detection
       if (element.type === 'textbox') {
         const textElement = element as TextBox;
-        elementHeight = this.estimateTextHeight(
+        const estimatedDimensions = this.estimateTextDimensions(
           textElement.content,
           textElement.fontSize,
           textElement.size.width,
         );
-        // Add a small buffer to account for UI elements, padding, etc.
-        // elementHeight += textElement.fontSize * 0.5;
-        console.log('Other elem. Estimated height for textbox:', elementHeight);
+        elementHeight = estimatedDimensions.height;
+        // Only use estimated width if it's smaller than the container width
+        if (estimatedDimensions.width < element.size.width) {
+          elementWidth = estimatedDimensions.width;
+        }
+        console.log('Other elem. Estimated dimensions for textbox:', elementWidth, 'x', elementHeight);
       } else {
         console.log(
-          'Other elem. Height for non-textbox element:',
-          elementHeight,
+          'Other elem. Dimensions for non-textbox element:',
+          elementWidth, 'x', elementHeight,
         );
       }
 
       const elementBox: BoundingBox = {
         x: element.position.x - effectivePadding,
         y: element.position.y - effectivePadding,
-        width: element.size.width + effectivePadding * 2,
+        width: elementWidth + effectivePadding * 2,
         height: elementHeight + effectivePadding * 2,
         zIndex: element.zIndex || 1,
       };
@@ -361,32 +352,36 @@ export class ElementValidator {
         }
 
         let elementHeight = element.size.height;
+        let elementWidth = element.size.width;
 
-        // For textbox elements, use the estimated height for more accurate overlap detection
+        // For textbox elements, use the estimated dimensions for more accurate overlap detection
         if (element.type === 'textbox') {
           const textElement = element as TextBox;
-          elementHeight = this.estimateTextHeight(
+          const estimatedDimensions = this.estimateTextDimensions(
             textElement.content,
             textElement.fontSize,
             textElement.size.width,
           );
-          // Add a small buffer to account for UI elements, padding, etc.
-          elementHeight += textElement.fontSize * 0.5;
+          elementHeight = estimatedDimensions.height;
+          // Only use estimated width if it's smaller than the container width
+          if (estimatedDimensions.width < element.size.width) {
+            elementWidth = estimatedDimensions.width;
+          }
           console.log(
-            'Sug new pos. Estimated height for textbox:',
-            elementHeight,
+            'Sug new pos. Estimated dimensions for textbox:',
+            elementWidth, 'x', elementHeight,
           );
         } else {
           console.log(
-            'Sug new pos. Height for non-textbox element:',
-            elementHeight,
+            'Sug new pos. Dimensions for non-textbox element:',
+            elementWidth, 'x', elementHeight,
           );
         }
 
         const elementBox = {
           x: element.position.x,
           y: element.position.y,
-          width: element.size.width,
+          width: elementWidth,
           height: elementHeight,
         };
 
