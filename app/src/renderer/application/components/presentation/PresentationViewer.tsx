@@ -15,12 +15,8 @@ const PresentationViewer: React.FC = () => {
         bgcolor: 'background.default',
       }}
     >
-      {/* Apple Music style toolbar */}
-      <Toolbar />
-
-      {/* Presentation content */}
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
-        <SlideView defaultScale={1} />
+        <SlideView defaultScale={2} />
       </Box>
     </Box>
   );

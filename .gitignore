@@ -38,3 +38,5 @@ app/.erb/dll/*.dll.js
 app/.erb/dll/*.dll
 app/.erb/dll/*.json
 
+*.db
+
