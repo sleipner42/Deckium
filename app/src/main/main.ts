@@ -119,7 +119,7 @@ const createWindow = async () => {
     mainWindow = null;
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow);
+  const menuBuilder = new MenuBuilder(mainWindow, presentationService);
   menuBuilder.buildMenu();
 
   mainWindow.webContents.setWindowOpenHandler((edata) => {

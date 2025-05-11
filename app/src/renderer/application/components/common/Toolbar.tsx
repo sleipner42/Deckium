@@ -21,10 +21,6 @@ import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
 import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
-import SaveAltIcon from '@mui/icons-material/SaveAlt';
-import SaveIcon from '@mui/icons-material/Save';
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import FileOpenIcon from '@mui/icons-material/FileOpen';
 import RectangleIcon from '@mui/icons-material/Rectangle';
 import CircleIcon from '@mui/icons-material/RadioButtonUnchecked';
 import TriangleIcon from '@mui/icons-material/ChangeHistory';
@@ -41,14 +37,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
   const {
     selectedSlide,
     addElement,
-    savePresentation,
-    savePresentationAs,
-    loadPresentation,
-    currentFilePath,
   } = usePresentation();
 
   const [shapeAnchorEl, setShapeAnchorEl] = useState<null | HTMLElement>(null);
-  const [fileAnchorEl, setFileAnchorEl] = useState<null | HTMLElement>(null);
   const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
   const [balance, setBalance] = useState<number>(0);
   const [balanceError, setBalanceError] = useState<boolean>(false);
@@ -79,41 +70,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
 
   const handleShapeMenuClose = () => {
     setShapeAnchorEl(null);
-  };
-
-  const handleFileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setFileAnchorEl(event.currentTarget);
-  };
-
-  const handleFileMenuClose = () => {
-    setFileAnchorEl(null);
-  };
-
-  const handleSave = async () => {
-    try {
-      await savePresentation();
-    } catch (error) {
-      console.error('Error saving presentation:', error);
-    }
-    handleFileMenuClose();
-  };
-
-  const handleSaveAs = async () => {
-    try {
-      await savePresentationAs();
-    } catch (error) {
-      console.error('Error saving presentation:', error);
-    }
-    handleFileMenuClose();
-  };
-
-  const handleOpen = async () => {
-    try {
-      await loadPresentation();
-    } catch (error) {
-      console.error('Error loading presentation:', error);
-    }
-    handleFileMenuClose();
   };
 
   const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -186,7 +142,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
       sx={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
         px: 2,
         py: 1,
         height: '60px',
@@ -199,31 +154,34 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
         ...style,
       }}
     >
+
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
-          marginRight: 'auto',
+          justifyContent: 'center',
+          flexGrow: 1,
           WebkitAppRegion: 'no-drag',
+          gap: 1,
         }}
       >
-        <Typography
-          variant="subtitle2"
-          sx={{
-            fontWeight: 600,
+        <Typography 
+          variant="subtitle2" 
+          sx={{ 
+            fontWeight: 600, 
             color: 'text.secondary',
             mr: 1,
           }}
         >
-          File
+          Insert
         </Typography>
 
-        <Tooltip title="File Operations">
+        <Tooltip title="Add Text">
           <Button
             variant="outlined"
             size="small"
-            startIcon={<FileOpenIcon />}
-            onClick={handleFileMenuOpen}
+            startIcon={<TextFieldsIcon />}
+            onClick={addTextElement}
             sx={{
               borderRadius: 1,
               textTransform: 'none',
@@ -235,14 +193,76 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
               },
             }}
           >
-            File
+            Text
+          </Button>
+        </Tooltip>
+
+        <Tooltip title="Add Image">
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<ImageIcon />}
+            sx={{
+              borderRadius: 1,
+              textTransform: 'none',
+              px: 2,
+              borderColor: alpha('#000', 0.12),
+              '&:hover': {
+                bgcolor: alpha('#007AFF', 0.04),
+                borderColor: alpha('#007AFF', 0.5),
+              },
+            }}
+          >
+            Image
+          </Button>
+        </Tooltip>
+
+        <Tooltip title="Add Shape">
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<ShapesIcon />}
+            onClick={handleShapeMenuOpen}
+            sx={{
+              borderRadius: 1,
+              textTransform: 'none',
+              px: 2,
+              borderColor: alpha('#000', 0.12),
+              '&:hover': {
+                bgcolor: alpha('#007AFF', 0.04),
+                borderColor: alpha('#007AFF', 0.5),
+              },
+            }}
+          >
+            Shape
+          </Button>
+        </Tooltip>
+
+        <Tooltip title="Add Bar Chart">
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<BarChartIcon />}
+            onClick={addBarChartElement}
+            sx={{
+              borderRadius: 1,
+              textTransform: 'none',
+              px: 2,
+              borderColor: alpha('#000', 0.12),
+              '&:hover': {
+                bgcolor: alpha('#007AFF', 0.04),
+                borderColor: alpha('#007AFF', 0.5),
+              },
+            }}
+          >
+            Chart
           </Button>
         </Tooltip>
 
         <Menu
-          anchorEl={fileAnchorEl}
-          open={Boolean(fileAnchorEl)}
-          onClose={handleFileMenuClose}
+          anchorEl={shapeAnchorEl}
+          open={Boolean(shapeAnchorEl)}
+          onClose={handleShapeMenuClose}
           anchorOrigin={{
             vertical: 'bottom',
             horizontal: 'left',
@@ -252,209 +272,75 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
             horizontal: 'left',
           }}
         >
-          <MenuItem onClick={handleSave}>
+          <MenuItem onClick={() => addShapeElement('rectangle')}>
             <ListItemIcon>
-              <SaveIcon fontSize="small" />
+              <RectangleIcon fontSize="small" />
             </ListItemIcon>
-            <ListItemText>Save</ListItemText>
+            <ListItemText>Rectangle</ListItemText>
           </MenuItem>
-          <MenuItem onClick={handleSaveAs}>
+          <MenuItem onClick={() => addShapeElement('circle')}>
             <ListItemIcon>
-              <SaveAltIcon fontSize="small" />
+              <CircleIcon fontSize="small" />
             </ListItemIcon>
-            <ListItemText>Save As...</ListItemText>
+            <ListItemText>Circle</ListItemText>
           </MenuItem>
-          <MenuItem onClick={handleOpen}>
+          <MenuItem onClick={() => addShapeElement('triangle')}>
             <ListItemIcon>
-              <FolderOpenIcon fontSize="small" />
+              <TriangleIcon fontSize="small" />
             </ListItemIcon>
-            <ListItemText>Open...</ListItemText>
+            <ListItemText>Triangle</ListItemText>
           </MenuItem>
         </Menu>
+
+        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontWeight: 600,
+            color: 'text.secondary',
+            ml: 1,
+          }}
+        >
+          Format
+        </Typography>
+
+        <Tooltip title="Bold">
+          <IconButton
+            size="small"
+            sx={{ color: 'text.secondary' }}
+          >
+            <FormatBoldIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title="Italic">
+          <IconButton
+            size="small"
+            sx={{ color: 'text.secondary' }}
+          >
+            <FormatItalicIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title="Underline">
+          <IconButton
+            size="small"
+            sx={{ color: 'text.secondary' }}
+          >
+            <FormatUnderlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title="Fill Color">
+          <IconButton
+            size="small"
+            sx={{ color: 'text.secondary' }}
+          >
+            <FormatColorFillIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Box>
-
-      {/* Centered toolbar content */}
-      <Typography 
-        variant="subtitle2" 
-        sx={{ 
-          fontWeight: 600, 
-          color: 'text.secondary',
-          mr: 1,
-          WebkitAppRegion: 'no-drag',
-        }}
-      >
-        Insert
-      </Typography>
-
-      <Tooltip title="Add Text">
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<TextFieldsIcon />}
-          onClick={addTextElement}
-          sx={{
-            borderRadius: 1,
-            textTransform: 'none',
-            px: 2,
-            borderColor: alpha('#000', 0.12),
-            '&:hover': {
-              bgcolor: alpha('#007AFF', 0.04),
-              borderColor: alpha('#007AFF', 0.5),
-            },
-            WebkitAppRegion: 'no-drag',
-          }}
-        >
-          Text
-        </Button>
-      </Tooltip>
-
-      <Tooltip title="Add Image">
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<ImageIcon />}
-          sx={{
-            borderRadius: 1,
-            textTransform: 'none',
-            px: 2,
-            borderColor: alpha('#000', 0.12),
-            '&:hover': {
-              bgcolor: alpha('#007AFF', 0.04),
-              borderColor: alpha('#007AFF', 0.5),
-            },
-            WebkitAppRegion: 'no-drag',
-          }}
-        >
-          Image
-        </Button>
-      </Tooltip>
-
-      <Tooltip title="Add Shape">
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<ShapesIcon />}
-          onClick={handleShapeMenuOpen}
-          sx={{
-            borderRadius: 1,
-            textTransform: 'none',
-            px: 2,
-            borderColor: alpha('#000', 0.12),
-            '&:hover': {
-              bgcolor: alpha('#007AFF', 0.04),
-              borderColor: alpha('#007AFF', 0.5),
-            },
-            WebkitAppRegion: 'no-drag',
-          }}
-        >
-          Shape
-        </Button>
-      </Tooltip>
-
-      <Tooltip title="Add Bar Chart">
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<BarChartIcon />}
-          onClick={addBarChartElement}
-          sx={{
-            borderRadius: 1,
-            textTransform: 'none',
-            px: 2,
-            borderColor: alpha('#000', 0.12),
-            '&:hover': {
-              bgcolor: alpha('#007AFF', 0.04),
-              borderColor: alpha('#007AFF', 0.5),
-            },
-            WebkitAppRegion: 'no-drag',
-          }}
-        >
-          Chart
-        </Button>
-      </Tooltip>
-
-      <Menu
-        anchorEl={shapeAnchorEl}
-        open={Boolean(shapeAnchorEl)}
-        onClose={handleShapeMenuClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-      >
-        <MenuItem onClick={() => addShapeElement('rectangle')}>
-          <ListItemIcon>
-            <RectangleIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Rectangle</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => addShapeElement('circle')}>
-          <ListItemIcon>
-            <CircleIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Circle</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => addShapeElement('triangle')}>
-          <ListItemIcon>
-            <TriangleIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Triangle</ListItemText>
-        </MenuItem>
-      </Menu>
-
-      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-
-      <Typography
-        variant="subtitle2"
-        sx={{
-          fontWeight: 600,
-          color: 'text.secondary',
-          ml: 1,
-          WebkitAppRegion: 'no-drag',
-        }}
-      >
-        Format
-      </Typography>
-
-      <Tooltip title="Bold">
-        <IconButton
-          size="small"
-          sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}
-        >
-          <FormatBoldIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-
-      <Tooltip title="Italic">
-        <IconButton
-          size="small"
-          sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}
-        >
-          <FormatItalicIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-
-      <Tooltip title="Underline">
-        <IconButton
-          size="small"
-          sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}
-        >
-          <FormatUnderlinedIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-
-      <Tooltip title="Fill Color">
-        <IconButton
-          size="small"
-          sx={{ color: 'text.secondary', WebkitAppRegion: 'no-drag' }}
-        >
-          <FormatColorFillIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
       
       <Box sx={{ 
         position: 'absolute', 

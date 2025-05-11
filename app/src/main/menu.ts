@@ -5,6 +5,7 @@ import {
   BrowserWindow,
   MenuItemConstructorOptions,
 } from 'electron';
+import { PresentationService } from './presentation/service';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
@@ -13,9 +14,11 @@ interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
 
 export default class MenuBuilder {
   mainWindow: BrowserWindow;
+  presentationService: PresentationService | null;
 
-  constructor(mainWindow: BrowserWindow) {
+  constructor(mainWindow: BrowserWindow, presentationService?: PresentationService) {
     this.mainWindow = mainWindow;
+    this.presentationService = presentationService || null;
   }
 
   buildMenu(): Menu {
@@ -84,6 +87,41 @@ export default class MenuBuilder {
         },
       ],
     };
+
+    const subMenuFile: DarwinMenuItemConstructorOptions = {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Open...',
+          accelerator: 'Command+O',
+          click: () => {
+            if (this.presentationService) {
+              this.presentationService.loadPresentation(this.mainWindow);
+            }
+          },
+        },
+        { type: 'separator' },
+        {
+          label: 'Save',
+          accelerator: 'Command+S',
+          click: () => {
+            if (this.presentationService) {
+              this.presentationService.savePresentation(this.mainWindow);
+            }
+          },
+        },
+        {
+          label: 'Save As...',
+          accelerator: 'Command+Shift+S',
+          click: () => {
+            if (this.presentationService) {
+              this.presentationService.savePresentation(this.mainWindow, true);
+            }
+          },
+        },
+      ],
+    };
+
     const subMenuEdit: DarwinMenuItemConstructorOptions = {
       label: 'Edit',
       submenu: [
@@ -189,7 +227,7 @@ export default class MenuBuilder {
         ? subMenuViewDev
         : subMenuViewProd;
 
-    return [subMenuAbout, subMenuEdit, subMenuView, subMenuWindow, subMenuHelp];
+    return [subMenuAbout, subMenuFile, subMenuEdit, subMenuView, subMenuWindow, subMenuHelp];
   }
 
   buildDefaultTemplate() {
@@ -198,9 +236,34 @@ export default class MenuBuilder {
         label: '&File',
         submenu: [
           {
-            label: '&Open',
+            label: '&Open...',
             accelerator: 'Ctrl+O',
+            click: () => {
+              if (this.presentationService) {
+                this.presentationService.loadPresentation(this.mainWindow);
+              }
+            },
           },
+          { type: 'separator' as const },
+          {
+            label: '&Save',
+            accelerator: 'Ctrl+S',
+            click: () => {
+              if (this.presentationService) {
+                this.presentationService.savePresentation(this.mainWindow);
+              }
+            },
+          },
+          {
+            label: 'Save &As...',
+            accelerator: 'Ctrl+Shift+S',
+            click: () => {
+              if (this.presentationService) {
+                this.presentationService.savePresentation(this.mainWindow, true);
+              }
+            },
+          },
+          { type: 'separator' as const },
           {
             label: '&Close',
             accelerator: 'Ctrl+W',
