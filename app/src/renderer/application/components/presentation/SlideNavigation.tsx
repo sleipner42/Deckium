@@ -159,6 +159,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
                 right: 0,
                 bottom: 0,
                 bgcolor: 'background.paper',
+                pointerEvents: 'none',
               }}
             >
               <SlideView defaultScale={0.2} selectedSlideOverride={slide} selectableElements={false} />
