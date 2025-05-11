@@ -1,16 +1,17 @@
 import logging
 import secrets
 
-from app.core.auth import create_access_token
-from app.core.config import settings
-from app.dependencies import get_user_repo, get_transaction_repo
-from app.factories.user_factory import create_oauth_user
-from app.repositories.user import UserRepository
-from app.repositories.transaction import TransactionRepository
 from authlib.integrations.starlette_client import OAuth
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from starlette.config import Config
+
+from app.core.auth import create_access_token
+from app.core.config import settings
+from app.dependencies import get_transaction_repo, get_user_repo
+from app.factories.user_factory import create_oauth_user
+from app.repositories.transaction import TransactionRepository
+from app.repositories.user import UserRepository
 
 router = APIRouter()
 
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 AUTHORIZED_EMAILS = [
     "kristoffer.nordstrom42@gmail.com",
+    "elias.aronson@gmail.com",
 ]
 
 config_data = {
