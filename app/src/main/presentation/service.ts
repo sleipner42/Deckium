@@ -20,6 +20,8 @@ export class PresentationService {
   private currentFilePath: string | null = null;
 
   private fullscreenWindow: BrowserWindow | null = null;
+  
+  private selectedSlideId: string | null = null;
 
   constructor() {
     this.state = new PresentationState();
@@ -329,5 +331,20 @@ export class PresentationService {
    */
   isFullscreenOpen(): boolean {
     return this.fullscreenWindow !== null;
+  }
+  
+  /**
+   * Sets the selected slide ID for the presentation viewer
+   */
+  setSelectedSlideInViewer(slideId: string): void {
+    this.selectedSlideId = slideId;
+    this.eventBus.broadcastToWindows('presentation:selected-slide-changed', slideId);
+  }
+  
+  /**
+   * Gets the current selected slide ID
+   */
+  getSelectedSlideId(): string | null {
+    return this.selectedSlideId;
   }
 }

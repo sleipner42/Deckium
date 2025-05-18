@@ -14,6 +14,8 @@ import { setupAIIPC } from './ai/ipc-handler';
 import { setupAuthIPC } from './auth/ipc-handler';
 import { BackendAIServiceFactory } from './ai/external/backend-ai-service';
 import AuthService from './auth/service';
+import { CriticService } from './ai/critic/service';
+import { setupCriticIPC } from './ai/critic/ipc-handler';
 
 dotenv.config();
 
@@ -164,6 +166,7 @@ app.on('window-all-closed', () => {
 
 let presentationService: PresentationService | null = null;
 let aiService: AIService | null = null;
+let criticService: CriticService | null = null;
 let aiServiceFactory: IAIServiceFactory | null = null;
 let authService: AuthService | null = null;
 
@@ -185,9 +188,14 @@ app
     const aiModel = aiServiceFactory.createService();
 
     aiService = new AIService(aiModel, presentationService);
+    criticService = new CriticService(aiModel, presentationService);
+    
+    // Connect critic service to AI service for feedback loop
+    aiService.setCriticService(criticService);
 
     setupAuthIPC(authService);
     setupAIIPC(aiService);
+    setupCriticIPC(criticService);
     setupPresentationIPC(presentationService);
   })
   .catch(console.log);

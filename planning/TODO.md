@@ -8,6 +8,7 @@
 * Resize ability
 * Move image tools to backend
 * Overlap detection images
+* Delete images? One tool to delete any object?
 
 ## Future features
 * Get images from URLs

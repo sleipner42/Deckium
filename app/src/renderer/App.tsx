@@ -2,6 +2,7 @@ import React from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { PresentationProvider } from './application/context/PresentationContext';
 import { AIProvider } from './application/context/AIContext';
+import { CriticProvider } from './application/context/CriticContext';
 import { AuthProvider } from './application/context/AuthContext';
 import theme from './application/theme';
 import './App.css';
@@ -16,9 +17,11 @@ const App: React.FC = () => {
         <AuthProvider>
           <PresentationProvider>
             <AIProvider>
-              <Routes>
-                <Route path="/" element={<AppContent />} />
-              </Routes>
+              <CriticProvider>
+                <Routes>
+                  <Route path="/" element={<AppContent />} />
+                </Routes>
+              </CriticProvider>
             </AIProvider>
           </PresentationProvider>
         </AuthProvider>

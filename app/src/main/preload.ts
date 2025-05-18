@@ -41,9 +41,26 @@ export type AIChannels =
   | 'ai:message-received'
   | 'ai:processing-started'
   | 'ai:processing-completed'
-  | 'ai:processing-error';
+  | 'ai:processing-error'
+  | 'ai:message-chunk-received';
 
-type IpcChannels = PresentationChannels | AIChannels | AuthChannels;
+export type CriticChannels =
+  | 'critic:create-thread'
+  | 'critic:get-thread'
+  | 'critic:save-thread'
+  | 'critic:get-threads-for-presentation'
+  | 'critic:delete-thread'
+  | 'critic:review-slide'
+  | 'critic:thread-created'
+  | 'critic:thread-updated'
+  | 'critic:thread-deleted'
+  | 'critic:message-received'
+  | 'critic:processing-started'
+  | 'critic:processing-completed'
+  | 'critic:processing-error'
+  | 'critic:message-chunk-received';
+
+type IpcChannels = PresentationChannels | AIChannels | CriticChannels | AuthChannels;
 
 const electronHandler = {
   ipcRenderer: {
@@ -103,6 +120,30 @@ const electronHandler = {
     },
     sendMessage(request: unknown) {
       return ipcRenderer.invoke('ai:send-message', request);
+    },
+  },
+  
+  critic: {
+    createThread(title: string, presentationId: string) {
+      return ipcRenderer.invoke('critic:create-thread', title, presentationId);
+    },
+    getThread(threadId: string) {
+      return ipcRenderer.invoke('critic:get-thread', threadId);
+    },
+    saveThread(thread: unknown) {
+      return ipcRenderer.invoke('critic:save-thread', thread);
+    },
+    getThreadsForPresentation(presentationId: string) {
+      return ipcRenderer.invoke(
+        'critic:get-threads-for-presentation',
+        presentationId,
+      );
+    },
+    deleteThread(threadId: string) {
+      return ipcRenderer.invoke('critic:delete-thread', threadId);
+    },
+    reviewSlide(threadId: string, slideId: string) {
+      return ipcRenderer.invoke('critic:review-slide', threadId, slideId);
     },
   },
 

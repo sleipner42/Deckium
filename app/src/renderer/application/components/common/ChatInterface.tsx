@@ -5,6 +5,7 @@ import ImageIcon from '@mui/icons-material/Image';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
+import RateReviewIcon from '@mui/icons-material/RateReview';
 import {
   alpha,
   Avatar,
@@ -387,11 +388,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             .length > 0 ? (
             <>
               {currentThread.messages
-
-                .filter((message: Message) => message.role !== 'system')
+                // Only show user, assistant and critic messages
+                .filter((message: Message) => message.role === 'user' || message.role === 'assistant' || message.role === 'critic')
                 .map((message: Message) => {
                   const isUser = message.role === 'user';
                   const isAssistant = message.role === 'assistant';
+                  const isCritic = message.role === 'critic';
 
                   const { content, isUsingTool, hasImages } =
                     processMessageContent(message);
@@ -423,9 +425,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                               ? 'primary.main'
                               : isAssistant
                                 ? '#F5F5F7'
-                                : 'grey.300',
-                            border: isAssistant ? '1px solid' : 'none',
-                            borderColor: 'divider',
+                                : isCritic
+                                  ? '#FDF7E2'
+                                  : 'grey.300',
+                            border: (isAssistant || isCritic) ? '1px solid' : 'none',
+                            borderColor: isCritic ? '#F0B432' : 'divider',
                           }}
                         >
                           {isUser ? (
@@ -436,6 +440,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             <SmartToyOutlinedIcon
                               sx={{
                                 color: 'text.secondary',
+                                fontSize: '0.9rem',
+                              }}
+                            />
+                          ) : isCritic ? (
+                            <RateReviewIcon
+                              sx={{
+                                color: '#D4A017',
                                 fontSize: '0.9rem',
                               }}
                             />
@@ -457,7 +468,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                               mr: isUser ? 0 : 'auto',
                             }}
                           >
-                            {isUser ? 'You' : 'AI Assistant'} •{' '}
+                            {isUser ? 'You' : isAssistant ? 'AI Assistant' : isCritic ? 'Presentation Critic' : 'System'} •{' '}
                             {formatTimestamp(message.timestamp)}
                             {isUsingTool && (
                               <Tooltip title="Using a tool">
@@ -496,9 +507,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                   ? isUsingTool
                                     ? alpha('#007AFF', 0.08)
                                     : alpha('#000', 0.03)
-                                  : alpha('#000', 0.02),
+                                  : isCritic
+                                    ? alpha('#F0B432', 0.1)
+                                    : alpha('#000', 0.02),
                               border: !isUser ? '1px solid' : 'none',
-                              borderColor: 'divider',
+                              borderColor: isCritic ? alpha('#F0B432', 0.5) : 'divider',
                             }}
                           >
                             <Typography
@@ -507,7 +520,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 whiteSpace: 'pre-wrap',
                                 wordBreak: 'break-word',
                                 overflow: 'visible',
-                                color: isUser ? 'white' : 'text.primary',
+                                color: isUser ? 'white' : isCritic ? '#6B4700' : 'text.primary',
                                 fontSize: '0.85rem',
                                 lineHeight: 1.5,
                               }}

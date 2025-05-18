@@ -14,6 +14,7 @@ import { AIEventBus } from './event-bus';
 import { AIToolsService } from './tools/tools';
 import { getDeveloperPrompt } from './prompt/systemPrompt';
 import { PresentationService } from '../presentation/service';
+import { CriticService } from './critic/service';
 
 export class AIService {
   private state: AIState;
@@ -25,6 +26,8 @@ export class AIService {
   private aiClient: IAIService;
 
   private presentationService: PresentationService;
+  
+  private criticService: CriticService | null = null;
 
   constructor(aiClient: IAIService, presentationService: PresentationService) {
     this.state = new AIState();
@@ -32,6 +35,10 @@ export class AIService {
     this.toolsService = new AIToolsService();
     this.aiClient = aiClient;
     this.presentationService = presentationService;
+  }
+  
+  setCriticService(criticService: CriticService) {
+    this.criticService = criticService;
   }
 
   createThread(title: string, presentationId: UUID): Thread {
@@ -456,7 +463,68 @@ export class AIService {
       `AI loop completed after ${iterationCount} iterations in ${loopEndTime - loopStartTime}ms`,
     );
 
+    // If we have a critic service and the AI created or modified slides, run the critic
+    if (this.criticService && presentation.slides.length > 0) {
+      try {
+        await this.runCriticOnLatestSlide(updatedThread);
+      } catch (error) {
+        console.error('Error running critic:', error);
+      }
+    }
+
     return updatedThread;
+  }
+  
+  private async runCriticOnLatestSlide(thread: Thread): Promise<void> {
+    if (!this.criticService) return;
+    
+    const presentation = this.presentationService.getPresentation();
+    if (!presentation.slides.length) return;
+    
+    // Get selected slide or last slide
+    const selectedSlideId = this.presentationService.getSelectedSlideId();
+    const slideId = selectedSlideId || presentation.slides[presentation.slides.length - 1].id;
+    
+    // Create a critic thread if needed
+    let criticThread: Thread | null = null;
+    const criticThreads = this.criticService.getThreadsForPresentation(thread.presentationId);
+    
+    if (criticThreads.length > 0) {
+      criticThread = criticThreads[0];
+    } else {
+      criticThread = this.criticService.createThread("Critic Thread", thread.presentationId);
+    }
+    
+    try {
+      // Get critique from the critic service
+      const critique = await this.criticService.reviewSlide(criticThread.id, slideId);
+      
+      // Get the thread again in case it was updated while the critic was running
+      const currentThread = this.getThread(thread.id);
+      if (!currentThread) {
+        console.error(`Thread ${thread.id} not found after critic review`);
+        return;
+      }
+      
+      // Add the critique to the main AI thread as a critic message (new role)
+      const updatedThread = this.state.addMessage(
+        currentThread,
+        `I've reviewed the slide and have the following feedback:\n\n${critique}\n\nPlease consider these suggestions when refining the slide.`,
+        'critic'
+      );
+      
+      this.saveThread(updatedThread);
+      
+      // No need to force AI to respond immediately - let the user decide when to continue
+      this.eventBus.broadcastThreadUpdated(updatedThread);
+      this.eventBus.broadcastMessageReceived(
+        updatedThread.id,
+        critique,
+        updatedThread
+      );
+    } catch (error) {
+      console.error('Error running critic review:', error);
+    }
   }
 
   private async processAILoop(
