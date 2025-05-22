@@ -14,7 +14,7 @@ services:
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
       - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
     volumes:
-      - ./data:/app/data
+      - app_data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
@@ -24,4 +24,4 @@ services:
       start_period: 40s
 
 volumes:
-  data: 
+  app_data: 
