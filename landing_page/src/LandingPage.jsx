@@ -22,12 +22,11 @@ const Modal = ({ isOpen, onClose, children }) => {
 const VimeoPlayer = () => (
   <div className="w-full md:w-1/2">
     <div className="relative w-full h-0 pb-[56.25%]">
-      <iframe
-        src="https://player.vimeo.com/video/1023676635?quality=1080p&title=0&byline=0&portrait=0&transparent=0&controls=1&responsive=1"
+      <video
+        src="/deckiumdemo.mp4"
         className="absolute top-0 left-0 w-full h-full rounded-lg shadow-lg"
-        frameBorder="0"
-        allow="autoplay; fullscreen; picture-in-picture"
-        allowFullScreen
+        controls
+        playsInline
       />
     </div>
   </div>

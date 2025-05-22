@@ -41,4 +41,5 @@ app/.erb/dll/*.bundle.dev.js
 app/.erb/dll/*.bundle.*.js
 
 *.db
+.firebase/*
 
