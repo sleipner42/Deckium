@@ -68,6 +68,8 @@ declare global {
         openFullscreen(): Promise<void>;
         closeFullscreen(): Promise<void>;
         isFullscreenOpen(): Promise<boolean>;
+        setSelectedSlide(slideId: string): Promise<void>;
+        getSelectedSlide(): Promise<string | null>;
       };
     };
   }

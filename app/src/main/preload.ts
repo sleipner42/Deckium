@@ -25,6 +25,8 @@ export type PresentationChannels =
   | 'presentation:open-fullscreen'
   | 'presentation:close-fullscreen'
   | 'presentation:is-fullscreen-open'
+  | 'presentation:set-selected-slide'
+  | 'presentation:get-selected-slide'
   | 'presentation:fullscreen-opened'
   | 'presentation:fullscreen-closed';
 
@@ -200,6 +202,12 @@ const electronHandler = {
     },
     isFullscreenOpen() {
       return ipcRenderer.invoke('presentation:is-fullscreen-open');
+    },
+    setSelectedSlide(slideId: string) {
+      return ipcRenderer.invoke('presentation:set-selected-slide', slideId);
+    },
+    getSelectedSlide() {
+      return ipcRenderer.invoke('presentation:get-selected-slide');
     },
   },
 };

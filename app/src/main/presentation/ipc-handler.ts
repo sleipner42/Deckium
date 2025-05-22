@@ -83,4 +83,12 @@ export function setupPresentationIPC(service: PresentationService) {
   ipcMain.handle('presentation:is-fullscreen-open', () => {
     return service.isFullscreenOpen();
   });
+
+  ipcMain.handle('presentation:set-selected-slide', (_, slideId: string) => {
+    return service.setSelectedSlideInViewer(slideId);
+  });
+
+  ipcMain.handle('presentation:get-selected-slide', () => {
+    return service.getSelectedSlideId();
+  });
 }

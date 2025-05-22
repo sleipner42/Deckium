@@ -36,7 +36,7 @@ export class AIService {
 
   createThread(title: string, presentationId: UUID): Thread {
     const presentation = this.presentationService.getPresentation();
-    const developerPrompt = getDeveloperPrompt(presentation);
+    const developerPrompt = getDeveloperPrompt(presentation, this.presentationService);
 
     const thread = this.state.createThread(
       title,
@@ -194,7 +194,7 @@ export class AIService {
     // console.timeEnd('getPresentation');
 
     // console.time('getDeveloperPrompt');
-    const developerPrompt = getDeveloperPrompt(presentation);
+    const developerPrompt = getDeveloperPrompt(presentation, this.presentationService);
     // console.timeEnd('getDeveloperPrompt');
 
     // console.time('updateSystemMessage');
@@ -656,7 +656,7 @@ export class AIService {
     // console.timeEnd('getPresentation');
 
     // console.time('getDeveloperPrompt');
-    const developerPrompt = getDeveloperPrompt(presentation);
+    const developerPrompt = getDeveloperPrompt(presentation, this.presentationService);
     // console.timeEnd('getDeveloperPrompt');
 
     // console.time('updateSystemMessage');
