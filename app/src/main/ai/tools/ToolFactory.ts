@@ -20,6 +20,7 @@ import { AddImageFromPexelsTool } from './tools/AddImageFromPexelsTool';
 import { UpdateImageElementTool } from './tools/UpdateImageElementTool';
 import { AddImageFromPexelsResultTool } from './tools/AddImageFromPexelsResultTool';
 import { GetFirstImageFromPexelsTool } from './tools/GetFirstImageFromPexelsTool';
+import { DeleteElementTool } from './tools/DeleteElementTool';
 
 export class ToolFactory {
   static getBuiltInTools(): AITool[] {
@@ -45,6 +46,7 @@ export class ToolFactory {
       new UpdateImageElementTool(),
       new AddImageFromPexelsResultTool(),
       new GetFirstImageFromPexelsTool(),
+      new DeleteElementTool(),
     ];
   }
 }

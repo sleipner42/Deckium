@@ -180,6 +180,35 @@ export class PresentationState {
     return null;
   }
 
+  deleteElement(elementId: string): Slide | null {
+    for (let i = 0; i < this.presentation.slides.length; i++) {
+      const slide = this.presentation.slides[i];
+      const elementIndex = slide.elements.findIndex((e) => e.id === elementId);
+
+      if (elementIndex !== -1) {
+        const updatedElements = slide.elements.filter((e) => e.id !== elementId);
+
+        const updatedSlide = {
+          ...slide,
+          elements: updatedElements,
+        };
+
+        const updatedSlides = [...this.presentation.slides];
+        updatedSlides[i] = updatedSlide;
+
+        this.presentation = {
+          ...this.presentation,
+          slides: updatedSlides,
+          updatedAt: new Date(),
+        };
+
+        return updatedSlide;
+      }
+    }
+
+    return null;
+  }
+
   private findSlideIndex(slideId: string): number {
     return this.presentation.slides.findIndex((slide) => slide.id === slideId);
   }

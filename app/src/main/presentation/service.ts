@@ -111,6 +111,17 @@ export class PresentationService {
     return updatedSlide;
   }
 
+  deleteElement(elementId: string): Slide | null {
+    const updatedSlide = this.state.deleteElement(elementId);
+    if (updatedSlide) {
+      this.eventBus.broadcastToWindows(
+        PresentationEventBus.events.SLIDE_UPDATED,
+        updatedSlide,
+      );
+    }
+    return updatedSlide;
+  }
+
   setSelectedSlideInViewer(slideId: string): void {
     this.eventBus.broadcastToWindows(
       PresentationEventBus.events.SET_SELECTED_SLIDE,
