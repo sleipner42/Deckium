@@ -6,7 +6,7 @@ import {
 } from '../../../common/domain/interfaces/ai-service.interface';
 import AuthService from '../../auth/service';
 
-const API_URL = process.env.BACKEND_API_URL || 'http://127.0.0.1:8000';
+const API_URL = process.env.BACKEND_API_URL || 'https://api.deckium.xyz';
 
 export class BackendAIService implements IAIService {
   private authService: AuthService;
