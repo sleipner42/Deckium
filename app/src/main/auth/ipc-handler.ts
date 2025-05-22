@@ -51,4 +51,4 @@ export function setupAuthIPC(authService: AuthService): void {
       return { success: false, error: (error as Error).message, balance: 0 };
     }
   });
-} 
+}

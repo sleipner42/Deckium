@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button, Container, Paper, Typography, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Button,
+  Container,
+  Paper,
+  Typography,
+  CircularProgress,
+} from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 
 const LoginScreen: React.FC = () => {
@@ -26,7 +33,15 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Container
+      maxWidth="sm"
+      sx={{
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <Paper
         elevation={3}
         sx={{
@@ -62,7 +77,11 @@ const LoginScreen: React.FC = () => {
             disabled={isLoggingIn}
             sx={{ height: 48 }}
           >
-            {isLoggingIn ? <CircularProgress size={24} color="inherit" /> : 'Log In'}
+            {isLoggingIn ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Log In'
+            )}
           </Button>
         </Box>
       </Paper>
@@ -70,4 +89,4 @@ const LoginScreen: React.FC = () => {
   );
 };
 
-export default LoginScreen; 
+export default LoginScreen;

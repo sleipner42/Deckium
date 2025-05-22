@@ -12,7 +12,8 @@ export class AddImageFromPexelsResultTool extends BaseTool {
   requiredParams = {
     slideId: 'The ID of the slide to add the image to',
     imageId: 'The Pexels image ID from search results',
-    imageUrl: 'The URL of the image to add (from urls property in search results)',
+    imageUrl:
+      'The URL of the image to add (from urls property in search results)',
   };
 
   optionalParams = {

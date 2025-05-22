@@ -186,7 +186,9 @@ export class PresentationState {
       const elementIndex = slide.elements.findIndex((e) => e.id === elementId);
 
       if (elementIndex !== -1) {
-        const updatedElements = slide.elements.filter((e) => e.id !== elementId);
+        const updatedElements = slide.elements.filter(
+          (e) => e.id !== elementId,
+        );
 
         const updatedSlide = {
           ...slide,

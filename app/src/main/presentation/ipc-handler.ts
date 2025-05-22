@@ -79,7 +79,7 @@ export function setupPresentationIPC(service: PresentationService) {
   ipcMain.handle('presentation:close-fullscreen', () => {
     return service.closeFullscreenPresentation();
   });
-  
+
   ipcMain.handle('presentation:is-fullscreen-open', () => {
     return service.isFullscreenOpen();
   });

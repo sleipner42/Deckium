@@ -6,7 +6,8 @@ import { PresentationService } from '../../../presentation/service';
 export class GetFirstImageFromPexelsTool extends BaseTool {
   name = 'getFirstImageFromPexels';
 
-  description = 'Search Pexels and get only the first matching image result, perfect for quick image retrieval';
+  description =
+    'Search Pexels and get only the first matching image result, perfect for quick image retrieval';
 
   requiredParams = {
     query: 'The search query for the image',
@@ -15,7 +16,8 @@ export class GetFirstImageFromPexelsTool extends BaseTool {
   optionalParams = {
     orientation: 'The orientation of the image (landscape, portrait, square)',
     size: 'Which size to return (tiny, small, medium, large, large2x, original, portrait, landscape). Default: large',
-    color: 'Dominant color to filter by (e.g., "red", "blue", "green", "black", etc.)',
+    color:
+      'Dominant color to filter by (e.g., "red", "blue", "green", "black", etc.)',
     minWidth: 'Minimum width of image to return',
     minHeight: 'Minimum height of image to return',
   };
@@ -25,15 +27,15 @@ export class GetFirstImageFromPexelsTool extends BaseTool {
     presentationService: PresentationService,
   ): Promise<AIToolResult> {
     try {
-      const { 
-        query, 
-        orientation, 
+      const {
+        query,
+        orientation,
         size = 'large',
         color,
         minWidth,
-        minHeight
+        minHeight,
       } = params;
-      
+
       // Validate required parameters
       if (!query) {
         return {
@@ -41,16 +43,25 @@ export class GetFirstImageFromPexelsTool extends BaseTool {
           error: 'Missing required parameter: query is required',
         };
       }
-      
+
       // Validate size parameter if provided
-      const validSizes = ['tiny', 'small', 'medium', 'large', 'large2x', 'original', 'portrait', 'landscape'];
+      const validSizes = [
+        'tiny',
+        'small',
+        'medium',
+        'large',
+        'large2x',
+        'original',
+        'portrait',
+        'landscape',
+      ];
       if (size && !validSizes.includes(size)) {
         return {
           success: false,
           error: `Invalid size parameter. Must be one of: ${validSizes.join(', ')}`,
         };
       }
-      
+
       // Validate orientation if provided
       if (orientation) {
         const validOrientations = ['landscape', 'portrait', 'square'];
@@ -61,7 +72,7 @@ export class GetFirstImageFromPexelsTool extends BaseTool {
           };
         }
       }
-      
+
       // Get the API key from environment variables
       const apiKey = process.env.PEXELS_API_KEY;
       if (!apiKey) {
@@ -70,20 +81,20 @@ export class GetFirstImageFromPexelsTool extends BaseTool {
           error: 'Pexels API key not found in environment variables',
         };
       }
-      
+
       // Prepare request parameters
       const requestParams: Record<string, any> = {
         query,
         per_page: 1, // We only need the first result
         page: 1,
       };
-      
+
       // Add optional parameters if provided
       if (orientation) requestParams.orientation = orientation;
       if (minWidth) requestParams.min_width = minWidth;
       if (minHeight) requestParams.min_height = minHeight;
       if (color) requestParams.color = color;
-      
+
       // Make the API request to Pexels
       const response = await axios.get('https://api.pexels.com/v1/search', {
         headers: {
@@ -91,9 +102,13 @@ export class GetFirstImageFromPexelsTool extends BaseTool {
         },
         params: requestParams,
       });
-      
+
       // Check if we got any results
-      if (!response.data || !response.data.photos || !response.data.photos.length) {
+      if (
+        !response.data ||
+        !response.data.photos ||
+        !response.data.photos.length
+      ) {
         return {
           success: true,
           data: {
@@ -103,16 +118,16 @@ export class GetFirstImageFromPexelsTool extends BaseTool {
           },
         };
       }
-      
+
       // Get the first photo
       const photo = response.data.photos[0];
-      
+
       // Get the requested size URL
       let imageUrl = photo.src.large; // Default to large
       if (size && photo.src[size]) {
         imageUrl = photo.src[size];
       }
-      
+
       // Return formatted result
       return {
         success: true,
@@ -139,7 +154,7 @@ export class GetFirstImageFromPexelsTool extends BaseTool {
               portrait: photo.src.portrait,
               landscape: photo.src.landscape,
               tiny: photo.src.tiny,
-            }
+            },
           },
           query,
           message: `Found an image matching "${query}"`,
@@ -149,9 +164,10 @@ export class GetFirstImageFromPexelsTool extends BaseTool {
       console.error('Error fetching first image from Pexels:', error);
       return {
         success: false,
-        error: error instanceof Error 
-          ? `Error fetching image from Pexels: ${error.message}`
-          : 'Unknown error occurred while fetching image from Pexels',
+        error:
+          error instanceof Error
+            ? `Error fetching image from Pexels: ${error.message}`
+            : 'Unknown error occurred while fetching image from Pexels',
       };
     }
   }

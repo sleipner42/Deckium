@@ -176,13 +176,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (message.role !== 'assistant') {
       if (typeof message.content === 'string') {
         // Remove [CRITIC] prefix if it exists
-        let content = message.content;
+        let { content } = message;
         if (content.startsWith('[CRITIC]')) {
           content = content.substring('[CRITIC]'.length).trim();
         }
-        
+
         return {
-          content: content,
+          content,
           isUsingTool: false,
           hasImages: false,
         };
@@ -191,7 +191,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         const textContents = message.content
           .filter((item) => item.type === 'text' && item.text)
           .map((item) => {
-            let text = (item as { type: 'text'; text: string }).text;
+            let { text } = item as { type: 'text'; text: string };
             // Remove [CRITIC] prefix if it exists
             if (text.startsWith('[CRITIC]')) {
               text = text.substring('[CRITIC]'.length).trim();
@@ -397,29 +397,35 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }}
       >
         {currentThread ? (
-          currentThread.messages.filter((msg: Message) => 
-            msg.role === 'user' || 
-            msg.role === 'assistant' || 
-            (msg.role === 'system' && typeof msg.content === 'string' && msg.content.startsWith('[CRITIC]')))
-            .length > 0 ? (
+          currentThread.messages.filter(
+            (msg: Message) =>
+              msg.role === 'user' ||
+              msg.role === 'assistant' ||
+              (msg.role === 'system' &&
+                typeof msg.content === 'string' &&
+                msg.content.startsWith('[CRITIC]')),
+          ).length > 0 ? (
             <>
               {currentThread.messages
                 // Only show user, assistant and critic messages (including system messages with [CRITIC] prefix)
-                .filter((message: Message) => 
-                  message.role === 'user' || 
-                  message.role === 'assistant' || 
-                  message.role === 'critic' || 
-                  (message.role === 'system' && 
-                   typeof message.content === 'string' && 
-                   message.content.startsWith('[CRITIC]')))
+                .filter(
+                  (message: Message) =>
+                    message.role === 'user' ||
+                    message.role === 'assistant' ||
+                    message.role === 'critic' ||
+                    (message.role === 'system' &&
+                      typeof message.content === 'string' &&
+                      message.content.startsWith('[CRITIC]')),
+                )
                 .map((message: Message) => {
                   const isUser = message.role === 'user';
                   const isAssistant = message.role === 'assistant';
                   // Check for system messages with [CRITIC] prefix
-                  const isCritic = message.role === 'critic' || 
-                    (message.role === 'system' && 
-                     typeof message.content === 'string' && 
-                     message.content.startsWith('[CRITIC]'));
+                  const isCritic =
+                    message.role === 'critic' ||
+                    (message.role === 'system' &&
+                      typeof message.content === 'string' &&
+                      message.content.startsWith('[CRITIC]'));
 
                   const { content, isUsingTool, hasImages } =
                     processMessageContent(message);
@@ -454,7 +460,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 : isCritic
                                   ? '#FDF7E2'
                                   : 'grey.300',
-                            border: (isAssistant || isCritic) ? '1px solid' : 'none',
+                            border:
+                              isAssistant || isCritic ? '1px solid' : 'none',
                             borderColor: isCritic ? '#F0B432' : 'divider',
                           }}
                         >
@@ -494,8 +501,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                               mr: isUser ? 0 : 'auto',
                             }}
                           >
-                            {isUser ? 'You' : isAssistant ? 'AI Assistant' : isCritic ? 'Presentation Critic' : 'System'} •{' '}
-                            {formatTimestamp(message.timestamp)}
+                            {isUser
+                              ? 'You'
+                              : isAssistant
+                                ? 'AI Assistant'
+                                : isCritic
+                                  ? 'Presentation Critic'
+                                  : 'System'}{' '}
+                            • {formatTimestamp(message.timestamp)}
                             {isUsingTool && (
                               <Tooltip title="Using a tool">
                                 <BuildCircleIcon
@@ -537,7 +550,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                     ? alpha('#F0B432', 0.1)
                                     : alpha('#000', 0.02),
                               border: !isUser ? '1px solid' : 'none',
-                              borderColor: isCritic ? alpha('#F0B432', 0.5) : 'divider',
+                              borderColor: isCritic
+                                ? alpha('#F0B432', 0.5)
+                                : 'divider',
                             }}
                           >
                             <Typography
@@ -546,7 +561,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 whiteSpace: 'pre-wrap',
                                 wordBreak: 'break-word',
                                 overflow: 'visible',
-                                color: isUser ? 'white' : isCritic ? '#6B4700' : 'text.primary',
+                                color: isUser
+                                  ? 'white'
+                                  : isCritic
+                                    ? '#6B4700'
+                                    : 'text.primary',
                                 fontSize: '0.85rem',
                                 lineHeight: 1.5,
                               }}

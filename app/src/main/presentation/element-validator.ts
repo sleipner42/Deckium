@@ -29,7 +29,7 @@ export class ElementValidator {
     const dimensions = estimateTextDimensions(content, fontSize, width);
     return {
       width: dimensions.width,
-      height: dimensions.height
+      height: dimensions.height,
     };
   }
 
@@ -92,7 +92,12 @@ export class ElementValidator {
         if (estimatedDimensions.width < size.width) {
           elementWidth = estimatedDimensions.width;
         }
-        console.log('Estimated dimensions for new textbox:', elementWidth, 'x', elementHeight);
+        console.log(
+          'Estimated dimensions for new textbox:',
+          elementWidth,
+          'x',
+          elementHeight,
+        );
       }
     }
 
@@ -164,11 +169,18 @@ export class ElementValidator {
         if (estimatedDimensions.width < element.size.width) {
           elementWidth = estimatedDimensions.width;
         }
-        console.log('Other elem. Estimated dimensions for textbox:', elementWidth, 'x', elementHeight);
+        console.log(
+          'Other elem. Estimated dimensions for textbox:',
+          elementWidth,
+          'x',
+          elementHeight,
+        );
       } else {
         console.log(
           'Other elem. Dimensions for non-textbox element:',
-          elementWidth, 'x', elementHeight,
+          elementWidth,
+          'x',
+          elementHeight,
         );
       }
 
@@ -369,12 +381,16 @@ export class ElementValidator {
           }
           console.log(
             'Sug new pos. Estimated dimensions for textbox:',
-            elementWidth, 'x', elementHeight,
+            elementWidth,
+            'x',
+            elementHeight,
           );
         } else {
           console.log(
             'Sug new pos. Dimensions for non-textbox element:',
-            elementWidth, 'x', elementHeight,
+            elementWidth,
+            'x',
+            elementHeight,
           );
         }
 

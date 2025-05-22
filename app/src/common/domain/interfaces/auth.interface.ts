@@ -38,4 +38,4 @@ export interface IAuthEvents {
   'auth:get-user': (event: IpcMainInvokeEvent) => Promise<IUser | null>;
   'auth:refresh-tokens': (event: IpcMainInvokeEvent) => Promise<boolean>;
   'auth:get-balance': (event: IpcMainInvokeEvent) => Promise<number>;
-} 
+}

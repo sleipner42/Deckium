@@ -17,7 +17,8 @@ export class UpdateImageElementTool extends BaseTool {
     y: 'New Y position (optional)',
     width: 'New width (optional)',
     height: 'New height (optional)',
-    zIndex: 'The new z-index value (optional) - controls stacking order with higher values appearing on top',
+    zIndex:
+      'The new z-index value (optional) - controls stacking order with higher values appearing on top',
   };
 
   optionalParams = {
@@ -139,11 +140,16 @@ export class UpdateImageElementTool extends BaseTool {
         });
 
         // Check if we got any results
-        if (!response.data || !response.data.photos || !response.data.photos.length) {
+        if (
+          !response.data ||
+          !response.data.photos ||
+          !response.data.photos.length
+        ) {
           return {
             success: true,
             data: {
-              message: 'No images found for the given query. The image was not updated.',
+              message:
+                'No images found for the given query. The image was not updated.',
             },
           };
         }
@@ -174,7 +180,8 @@ export class UpdateImageElementTool extends BaseTool {
       if (width !== undefined || height !== undefined) {
         updates.size = {
           width: width !== undefined ? Number(width) : targetElement.size.width,
-          height: height !== undefined ? Number(height) : targetElement.size.height,
+          height:
+            height !== undefined ? Number(height) : targetElement.size.height,
         };
       }
 
@@ -196,13 +203,16 @@ export class UpdateImageElementTool extends BaseTool {
             slide,
             newPosition,
             newSize,
-            elementId // Exclude this element ID from overlap detection
+            elementId, // Exclude this element ID from overlap detection
           );
         }
       }
 
       // Update the element
-      const updatedSlide = presentationService.updateElement(elementId, updates);
+      const updatedSlide = presentationService.updateElement(
+        elementId,
+        updates,
+      );
 
       if (!updatedSlide) {
         return {

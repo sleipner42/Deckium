@@ -27,7 +27,7 @@ export class ToolsService {
     const log_res = JSON.stringify(result, null, 2);
     console.log(
       'Result:',
-      log_res.length > 1000 ? log_res.slice(0, 1000) + '...' : log_res,
+      log_res.length > 1000 ? `${log_res.slice(0, 1000)}...` : log_res,
     );
   }
 

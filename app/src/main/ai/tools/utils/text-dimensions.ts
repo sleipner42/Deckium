@@ -36,7 +36,7 @@ export function estimateTextDimensions(
   const lines = content.split('\n');
   let totalLines = 0;
   let lineBreakDetected = false;
-  let longLines: { text: string; length: number; maxLength: number }[] = [];
+  const longLines: { text: string; length: number; maxLength: number }[] = [];
 
   // Average character width for the given font size (approximation)
   const averageCharWidth = fontSize * 0.6;
@@ -63,7 +63,7 @@ export function estimateTextDimensions(
         if (longLines.length < 3) {
           // If line is too long, add it to our tracking array with truncated preview
           const truncatedText =
-            line.length > 50 ? line.substring(0, 47) + '...' : line;
+            line.length > 50 ? `${line.substring(0, 47)}...` : line;
           longLines.push({
             text: truncatedText,
             length: line.length,
@@ -108,13 +108,12 @@ export function estimateTextDimensions(
   if (lineBreakDetected) {
     lineBreakInfo =
       `Note: Text will be broken across lines due to box width constraints. If this was not intended, consider increasing the width of the text box, but remember that this can change alignment.\n` +
-      `Current box width (${width}px) can fit ~${maxCharsPerLine} characters at ${fontSize}px font size.\n` +
-      longLines
+      `Current box width (${width}px) can fit ~${maxCharsPerLine} characters at ${fontSize}px font size.\n${longLines
         .map(
           (line) =>
             `- Line "${line.text}" has ${line.length} characters but only ${line.maxLength} will fit per line`,
         )
-        .join('\n');
+        .join('\n')}`;
   }
 
   return {

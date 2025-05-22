@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { IAuthState, IUser } from '../../../common/domain/interfaces/auth.interface';
+import {
+  IAuthState,
+  IUser,
+} from '../../../common/domain/interfaces/auth.interface';
 
 interface AuthContextProps {
   authState: IAuthState;
@@ -26,7 +29,9 @@ const AuthContext = createContext<AuthContextProps>({
 
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+export const AuthProvider: React.FC<React.PropsWithChildren> = ({
+  children,
+}) => {
   const [authState, setAuthState] = useState<IAuthState>(initialState);
 
   useEffect(() => {
@@ -60,15 +65,18 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
     checkAuthStatus();
 
-    const unsubscribe = window.electron.ipcRenderer.on('auth:user-updated', (data: unknown) => {
-      const user = data as IUser | null;
-      setAuthState((prev) => ({
-        ...prev,
-        isAuthenticated: !!user,
-        user,
-        loading: false,
-      }));
-    });
+    const unsubscribe = window.electron.ipcRenderer.on(
+      'auth:user-updated',
+      (data: unknown) => {
+        const user = data as IUser | null;
+        setAuthState((prev) => ({
+          ...prev,
+          isAuthenticated: !!user,
+          user,
+          loading: false,
+        }));
+      },
+    );
 
     return () => {
       unsubscribe();
@@ -156,17 +164,19 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
       if (!authState.isAuthenticated || !authState.user) {
         return 0;
       }
-      
+
       if (!window.electron.auth.getBalance) {
-        console.warn('getBalance function is not available in the electron API');
+        console.warn(
+          'getBalance function is not available in the electron API',
+        );
         return 0;
       }
-      
+
       const response = await window.electron.auth.getBalance();
       if (response.success && response.balance !== undefined) {
         return response.balance;
       }
-      
+
       return 0;
     } catch (error) {
       console.error('Error fetching balance:', error);
@@ -175,8 +185,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ authState, login, logout, refreshTokens, getBalance }}>
+    <AuthContext.Provider
+      value={{ authState, login, logout, refreshTokens, getBalance }}
+    >
       {children}
     </AuthContext.Provider>
   );
-}; 
+};

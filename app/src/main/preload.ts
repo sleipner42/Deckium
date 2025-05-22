@@ -60,7 +60,11 @@ export type CriticChannels =
   | 'critic:processing-error'
   | 'critic:message-chunk-received';
 
-type IpcChannels = PresentationChannels | AIChannels | CriticChannels | AuthChannels;
+type IpcChannels =
+  | PresentationChannels
+  | AIChannels
+  | CriticChannels
+  | AuthChannels;
 
 const electronHandler = {
   ipcRenderer: {
@@ -80,7 +84,7 @@ const electronHandler = {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
     },
   },
-  
+
   auth: {
     login() {
       return ipcRenderer.invoke('auth:login');
@@ -96,9 +100,9 @@ const electronHandler = {
     },
     getBalance() {
       return ipcRenderer.invoke('auth:get-balance');
-    }
+    },
   },
-  
+
   ai: {
     createThread(title: string, presentationId: string) {
       return ipcRenderer.invoke('ai:create-thread', title, presentationId);
@@ -122,7 +126,7 @@ const electronHandler = {
       return ipcRenderer.invoke('ai:send-message', request);
     },
   },
-  
+
   critic: {
     createThread(title: string, presentationId: string) {
       return ipcRenderer.invoke('critic:create-thread', title, presentationId);

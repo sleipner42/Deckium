@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { usePresentation } from '../../context/PresentationContext';
-import { useAuth } from '../../context/AuthContext';
-import { 
-  Box, 
-  Button, 
-  Divider, 
-  IconButton, 
+import {
+  Box,
+  Button,
+  Divider,
+  IconButton,
   Tooltip,
   Typography,
   alpha,
@@ -28,6 +26,8 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PresentationIcon from '@mui/icons-material/Slideshow';
+import { useAuth } from '../../context/AuthContext';
+import { usePresentation } from '../../context/PresentationContext';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
 
 interface ToolbarProps {
@@ -35,10 +35,7 @@ interface ToolbarProps {
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
-  const {
-    selectedSlide,
-    addElement,
-  } = usePresentation();
+  const { selectedSlide, addElement } = usePresentation();
 
   const [shapeAnchorEl, setShapeAnchorEl] = useState<null | HTMLElement>(null);
   const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
@@ -77,7 +74,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
     setUserAnchorEl(event.currentTarget);
     fetchUserBalance();
   };
-  
+
   const handleUserMenuClose = () => {
     setUserAnchorEl(null);
   };
@@ -90,7 +87,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
       console.error('Logout failed:', error);
     }
   };
-  
+
   const addTextElement = async () => {
     if (!selectedSlide) return;
     console.log('addTextElement', selectedSlide.id);
@@ -159,7 +156,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
         ...style,
       }}
     >
-
       <Box
         sx={{
           display: 'flex',
@@ -170,10 +166,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
           gap: 1,
         }}
       >
-        <Typography 
-          variant="subtitle2" 
-          sx={{ 
-            fontWeight: 600, 
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontWeight: 600,
             color: 'text.secondary',
             mr: 1,
           }}
@@ -332,59 +328,49 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
         </Typography>
 
         <Tooltip title="Bold">
-          <IconButton
-            size="small"
-            sx={{ color: 'text.secondary' }}
-          >
+          <IconButton size="small" sx={{ color: 'text.secondary' }}>
             <FormatBoldIcon fontSize="small" />
           </IconButton>
         </Tooltip>
 
         <Tooltip title="Italic">
-          <IconButton
-            size="small"
-            sx={{ color: 'text.secondary' }}
-          >
+          <IconButton size="small" sx={{ color: 'text.secondary' }}>
             <FormatItalicIcon fontSize="small" />
           </IconButton>
         </Tooltip>
 
         <Tooltip title="Underline">
-          <IconButton
-            size="small"
-            sx={{ color: 'text.secondary' }}
-          >
+          <IconButton size="small" sx={{ color: 'text.secondary' }}>
             <FormatUnderlinedIcon fontSize="small" />
           </IconButton>
         </Tooltip>
 
         <Tooltip title="Fill Color">
-          <IconButton
-            size="small"
-            sx={{ color: 'text.secondary' }}
-          >
+          <IconButton size="small" sx={{ color: 'text.secondary' }}>
             <FormatColorFillIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       </Box>
-      
-      <Box sx={{ 
-        position: 'absolute', 
-        right: 16, 
-        display: 'flex',
-        alignItems: 'center',
-        WebkitAppRegion: 'no-drag'
-      }}>
+
+      <Box
+        sx={{
+          position: 'absolute',
+          right: 16,
+          display: 'flex',
+          alignItems: 'center',
+          WebkitAppRegion: 'no-drag',
+        }}
+      >
         <Tooltip title="User Account">
-          <IconButton 
-            size="small" 
+          <IconButton
+            size="small"
             onClick={handleUserMenuOpen}
             sx={{ color: 'text.secondary' }}
           >
             <AccountCircleIcon />
           </IconButton>
         </Tooltip>
-        
+
         <Menu
           anchorEl={userAnchorEl}
           open={Boolean(userAnchorEl)}
@@ -400,8 +386,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
         >
           {authState.user && (
             <Box sx={{ px: 2, py: 1 }}>
-              <Typography variant="subtitle1">{authState.user.username}</Typography>
-              <Typography variant="body2" color="text.secondary">{authState.user.email}</Typography>
+              <Typography variant="subtitle1">
+                {authState.user.username}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {authState.user.email}
+              </Typography>
               <Typography variant="body2" color="text.secondary">
                 Balance: {balanceError ? 'Not available' : balance.toFixed(2)}
               </Typography>

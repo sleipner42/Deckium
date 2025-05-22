@@ -20,7 +20,7 @@ export class PresentationService {
   private currentFilePath: string | null = null;
 
   private fullscreenWindow: BrowserWindow | null = null;
-  
+
   private selectedSlideId: string | null = null;
 
   constructor() {
@@ -120,13 +120,6 @@ export class PresentationService {
       );
     }
     return updatedSlide;
-  }
-
-  setSelectedSlideInViewer(slideId: string): void {
-    this.eventBus.broadcastToWindows(
-      PresentationEventBus.events.SET_SELECTED_SLIDE,
-      slideId,
-    );
   }
 
   onEvent(eventName: string, listener: (...args: any[]) => void): void {
@@ -297,20 +290,23 @@ export class PresentationService {
       x: primaryDisplay.bounds.x,
       y: primaryDisplay.bounds.y,
       webPreferences: {
-        preload: process.env.NODE_ENV === 'production'
-          ? path.join(__dirname, 'preload.js')
-          : path.join(__dirname, '../../.erb/dll/preload.js'),
+        preload:
+          process.env.NODE_ENV === 'production'
+            ? path.join(__dirname, 'preload.js')
+            : path.join(__dirname, '../../.erb/dll/preload.js'),
         partition: 'persist:main',
-      }
+      },
     });
 
     // Maximize to ensure it covers the full screen
     this.fullscreenWindow.maximize();
-    
+
     // Hide the menu bar
     this.fullscreenWindow.setMenuBarVisibility(false);
 
-    this.fullscreenWindow.loadURL(`${resolveHtmlPath('index.html')}#/?layout=fullscreen`);
+    this.fullscreenWindow.loadURL(
+      `${resolveHtmlPath('index.html')}#/?layout=fullscreen`,
+    );
 
     this.fullscreenWindow.on('closed', () => {
       this.fullscreenWindow = null;
@@ -318,7 +314,7 @@ export class PresentationService {
 
     this.eventBus.broadcastToWindows(
       PresentationEventBus.events.FULLSCREEN_OPENED,
-      null
+      null,
     );
   }
 
@@ -329,10 +325,10 @@ export class PresentationService {
     if (this.fullscreenWindow) {
       this.fullscreenWindow.close();
       this.fullscreenWindow = null;
-      
+
       this.eventBus.broadcastToWindows(
         PresentationEventBus.events.FULLSCREEN_CLOSED,
-        null
+        null,
       );
     }
   }
@@ -343,15 +339,18 @@ export class PresentationService {
   isFullscreenOpen(): boolean {
     return this.fullscreenWindow !== null;
   }
-  
+
   /**
    * Sets the selected slide ID for the presentation viewer
    */
   setSelectedSlideInViewer(slideId: string): void {
     this.selectedSlideId = slideId;
-    this.eventBus.broadcastToWindows('presentation:selected-slide-changed', slideId);
+    this.eventBus.broadcastToWindows(
+      'presentation:selected-slide-changed',
+      slideId,
+    );
   }
-  
+
   /**
    * Gets the current selected slide ID
    */

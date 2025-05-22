@@ -14,9 +14,13 @@ interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
 
 export default class MenuBuilder {
   mainWindow: BrowserWindow;
+
   presentationService: PresentationService | null;
 
-  constructor(mainWindow: BrowserWindow, presentationService?: PresentationService) {
+  constructor(
+    mainWindow: BrowserWindow,
+    presentationService?: PresentationService,
+  ) {
     this.mainWindow = mainWindow;
     this.presentationService = presentationService || null;
   }
@@ -227,7 +231,14 @@ export default class MenuBuilder {
         ? subMenuViewDev
         : subMenuViewProd;
 
-    return [subMenuAbout, subMenuFile, subMenuEdit, subMenuView, subMenuWindow, subMenuHelp];
+    return [
+      subMenuAbout,
+      subMenuFile,
+      subMenuEdit,
+      subMenuView,
+      subMenuWindow,
+      subMenuHelp,
+    ];
   }
 
   buildDefaultTemplate() {
@@ -259,7 +270,10 @@ export default class MenuBuilder {
             accelerator: 'Ctrl+Shift+S',
             click: () => {
               if (this.presentationService) {
-                this.presentationService.savePresentation(this.mainWindow, true);
+                this.presentationService.savePresentation(
+                  this.mainWindow,
+                  true,
+                );
               }
             },
           },

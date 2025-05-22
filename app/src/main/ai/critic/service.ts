@@ -17,9 +17,13 @@ import { PresentationService } from '../../presentation/service';
 
 export class CriticService {
   private state: AIState;
+
   private eventBus: AIEventBus;
+
   private toolsService: AIToolsService;
+
   private aiClient: IAIService;
+
   private presentationService: PresentationService;
 
   constructor(aiClient: IAIService, presentationService: PresentationService) {
@@ -34,11 +38,7 @@ export class CriticService {
     const presentation = this.presentationService.getPresentation();
     const criticPrompt = CriticPrompt;
 
-    const thread = this.state.createThread(
-      title,
-      presentationId,
-      criticPrompt,
-    );
+    const thread = this.state.createThread(title, presentationId, criticPrompt);
     this.eventBus.broadcastThreadCreated(thread);
     return thread;
   }
@@ -78,38 +78,34 @@ export class CriticService {
       const infoToolCall: AIToolCall = {
         toolId: 'getInfo',
         toolName: 'getAllInfoAboutSlide',
-        params: { slideId }
+        params: { slideId },
       };
 
       // Get screenshot of the slide
       const screenshotToolCall: AIToolCall = {
         toolId: 'getScreenshot',
         toolName: 'getScreenshotOfSlide',
-        params: { slideId }
+        params: { slideId },
       };
 
       // Execute both tool calls
       const toolResults = await this.toolsService.executeToolCalls(
         [infoToolCall, screenshotToolCall],
-        this.presentationService
+        this.presentationService,
       );
 
       // Format the results
       const formattedResults = this.toolsService.formatToolResults(toolResults);
-      
+
       let updatedThread: Thread;
-      
+
       if (Array.isArray(formattedResults)) {
         const textContent = formattedResults.find(
           (item) => item.type === 'text',
         )?.text;
 
         if (textContent) {
-          updatedThread = this.state.addMessage(
-            thread,
-            textContent,
-            'system',
-          );
+          updatedThread = this.state.addMessage(thread, textContent, 'system');
         }
 
         const hasImages = formattedResults.some(
@@ -139,16 +135,17 @@ export class CriticService {
           'system',
         );
       }
-      
+
       // Generate the critic review by asking a question
-      const reviewRequest = "Provide a detailed critique of this slide. Analyze the visual design, content organization, text clarity, and overall effectiveness. Identify specific issues and suggest improvements. Focus on actionable feedback that would help improve the slide.";
-      
+      const reviewRequest =
+        'Provide a detailed critique of this slide. Analyze the visual design, content organization, overall effectiveness, and especially aligment and overlap. Identify specific issues and suggest improvements. Focus on actionable feedback that would help improve the slide.';
+
       updatedThread = this.state.addMessage(
         updatedThread,
         reviewRequest,
         'user',
       );
-      
+
       // Get AI response
       const assistantMessageId = crypto.randomUUID();
       updatedThread = this.state.addMessageWithState(
@@ -158,60 +155,60 @@ export class CriticService {
         assistantMessageId,
         'streaming',
       );
-      
+
       this.saveThread(updatedThread);
       this.eventBus.broadcastThreadUpdated(updatedThread);
-      
+
       let streamingContent = '';
-      
+
       const onChunk = (chunk: string) => {
         streamingContent += chunk;
-        
+
         updatedThread = this.state.updateMessageContent(
           updatedThread,
           assistantMessageId,
           streamingContent,
         );
-        
+
         this.eventBus.broadcastMessageChunkReceived(
           updatedThread.id,
           assistantMessageId,
           chunk,
           streamingContent,
         );
-        
+
         this.eventBus.broadcastThreadUpdated(updatedThread);
       };
-      
+
       const aiResponse = await this.aiClient.chatStream(
         updatedThread.messages,
         onChunk,
         process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini',
       );
-      
+
       updatedThread = this.state.setMessageStreamingState(
         updatedThread,
         assistantMessageId,
         'completed',
       );
-      
+
       this.eventBus.broadcastThreadUpdated(updatedThread);
       this.eventBus.broadcastMessageReceived(
         updatedThread.id,
         aiResponse,
         updatedThread,
       );
-      
+
       this.eventBus.broadcastProcessingCompleted(updatedThread.id);
-      
+
       return aiResponse;
     } catch (error) {
       console.error('Error generating critic review:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error occurred';
-      
+
       this.eventBus.broadcastProcessingError(threadId, errorMessage);
-      
+
       return `Error: ${errorMessage}`;
     }
   }

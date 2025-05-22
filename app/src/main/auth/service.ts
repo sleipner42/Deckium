@@ -18,6 +18,7 @@ const CONFIG = {
 
 export default class AuthService implements IAuthService {
   private authWindow: BrowserWindow | null = null;
+
   private user: IUser | null = null;
 
   constructor() {
@@ -50,7 +51,7 @@ export default class AuthService implements IAuthService {
   async login(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.closeAuthWindow();
-      
+
       this.authWindow = new BrowserWindow({
         width: CONFIG.windowWidth,
         height: CONFIG.windowHeight,
@@ -66,7 +67,7 @@ export default class AuthService implements IAuthService {
 
       const ses = this.authWindow.webContents.session;
       this.authWindow.loadURL(`${CONFIG.apiBaseUrl}/auth/login`);
-      
+
       this.authWindow.webContents.on('did-navigate', (_, url) => {
         if (url.includes('login_success')) {
           this.processAuthSuccess(url, ses, resolve, reject);
@@ -74,7 +75,7 @@ export default class AuthService implements IAuthService {
           reject(new Error('Authentication failed'));
         }
       });
-      
+
       this.authWindow.on('closed', () => {
         this.authWindow = null;
         if (!this.user) {
@@ -83,23 +84,24 @@ export default class AuthService implements IAuthService {
       });
     });
   }
-  
+
   private async processAuthSuccess(
-    url: string, 
+    url: string,
     ses: Electron.Session,
-    resolve: () => void, 
-    reject: (error: Error) => void
+    resolve: () => void,
+    reject: (error: Error) => void,
   ): Promise<void> {
     try {
       const accessTokenCookie = await this.findAccessTokenCookie(ses);
-      
+
       if (accessTokenCookie) {
         const tokenValue = accessTokenCookie.value.replace('Bearer ', '');
         const userData = await this.fetchUserData(accessTokenCookie.value);
-        
-        const expirationDate = accessTokenCookie.expirationDate || 
-          (Date.now() / 1000) + CONFIG.tokenExpiry;
-        
+
+        const expirationDate =
+          accessTokenCookie.expirationDate ||
+          Date.now() / 1000 + CONFIG.tokenExpiry;
+
         this.saveUserToFile({
           id: userData.id,
           username: userData.name || userData.email.split('@')[0],
@@ -107,7 +109,7 @@ export default class AuthService implements IAuthService {
           accessToken: tokenValue,
           expiresAt: new Date(expirationDate * 1000).getTime(),
         });
-        
+
         this.closeAuthWindow();
         resolve();
       } else if (url.includes('auth_error=')) {
@@ -121,7 +123,7 @@ export default class AuthService implements IAuthService {
       reject(error instanceof Error ? error : new Error(String(error)));
     }
   }
-  
+
   private async fetchUserData(accessToken: string): Promise<any> {
     const userResponse = await fetch(`${CONFIG.apiBaseUrl}/auth/me`, {
       headers: {
@@ -135,43 +137,47 @@ export default class AuthService implements IAuthService {
 
     return userResponse.json();
   }
-  
-  private async findAccessTokenCookie(ses: Electron.Session): Promise<Electron.Cookie | null> {
+
+  private async findAccessTokenCookie(
+    ses: Electron.Session,
+  ): Promise<Electron.Cookie | null> {
     const apiUrl = new URL(CONFIG.apiBaseUrl);
     const domains = ['localhost', apiUrl.hostname];
-    
+
     for (const domain of domains) {
       const domainCookies = await ses.cookies.get({
         url: `${apiUrl.protocol}//${domain}:${apiUrl.port}`,
       });
-      
-      const tokenCookie = domainCookies.find(cookie => cookie.name === 'access_token');
+
+      const tokenCookie = domainCookies.find(
+        (cookie) => cookie.name === 'access_token',
+      );
       if (tokenCookie) {
         return tokenCookie;
       }
     }
-    
+
     return null;
   }
 
   async logout(): Promise<void> {
     this.user = null;
-    
+
     if (fs.existsSync(CONFIG.userDataFile)) {
       fs.unlinkSync(CONFIG.userDataFile);
     }
-    
+
     const mainSession = session.fromPartition(CONFIG.sessionPartition);
     const apiUrl = new URL(CONFIG.apiBaseUrl);
     const domains = ['localhost', apiUrl.hostname];
-    
+
     for (const domain of domains) {
       await mainSession.cookies.remove(
-        `${apiUrl.protocol}//${domain}:${apiUrl.port}`, 
-        'access_token'
+        `${apiUrl.protocol}//${domain}:${apiUrl.port}`,
+        'access_token',
       );
     }
-    
+
     try {
       await fetch(`${CONFIG.apiBaseUrl}/auth/logout`, {
         credentials: 'include',
@@ -196,21 +202,24 @@ export default class AuthService implements IAuthService {
       if (!user) {
         return 0;
       }
-      
-      const response = await fetch(`${CONFIG.apiBaseUrl}/transactions/balance`, {
-        headers: {
-          Cookie: `access_token=Bearer ${user.accessToken}`,
+
+      const response = await fetch(
+        `${CONFIG.apiBaseUrl}/transactions/balance`,
+        {
+          headers: {
+            Cookie: `access_token=Bearer ${user.accessToken}`,
+          },
+          credentials: 'include',
         },
-        credentials: 'include',
-      });
-      
+      );
+
       if (!response.ok) {
         throw new Error(`Failed to get balance: ${response.statusText}`);
       }
-      
+
       const data = await response.text();
       const balance = parseFloat(data);
-      
+
       return isNaN(balance) ? 0 : balance;
     } catch (error) {
       console.error('Error fetching balance:', error);

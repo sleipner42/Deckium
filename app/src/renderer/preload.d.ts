@@ -1,4 +1,8 @@
-import { PresentationChannels, AIChannels, CriticChannels } from '../main/preload';
+import {
+  PresentationChannels,
+  AIChannels,
+  CriticChannels,
+} from '../main/preload';
 import { AuthChannels } from '../common/domain/interfaces/auth.interface';
 
 declare global {
@@ -8,21 +12,29 @@ declare global {
       ipcRenderer: {
         sendMessage(channel: string, args: unknown[]): void;
         on(
-          channel: PresentationChannels | AIChannels | CriticChannels | AuthChannels,
-          func: (...args: unknown[]) => void
+          channel:
+            | PresentationChannels
+            | AIChannels
+            | CriticChannels
+            | AuthChannels,
+          func: (...args: unknown[]) => void,
         ): () => void;
         once(channel: string, func: (...args: unknown[]) => void): void;
       };
       auth: {
         login(): Promise<{ success: boolean; error?: string }>;
         logout(): Promise<{ success: boolean; error?: string }>;
-        getUser(): Promise<{ 
+        getUser(): Promise<{
           success: boolean;
           user?: unknown;
           error?: string;
         }>;
         refreshTokens(): Promise<{ success: boolean; error?: string }>;
-        getBalance(): Promise<{ success: boolean; balance?: number; error?: string }>;
+        getBalance(): Promise<{
+          success: boolean;
+          balance?: number;
+          error?: string;
+        }>;
       };
       ai: {
         createThread(title: string, presentationId: string): Promise<unknown>;

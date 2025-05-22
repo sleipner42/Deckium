@@ -54,7 +54,7 @@ export const CriticProvider: React.FC<CriticProviderProps> = ({ children }) => {
       // Create a thread automatically if none exists
       await createThread('Critic Thread');
     }
-    
+
     return await reviewSlideInMainProcess(slideId);
   };
 

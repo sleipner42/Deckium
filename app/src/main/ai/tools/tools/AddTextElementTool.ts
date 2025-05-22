@@ -99,7 +99,7 @@ export class AddTextElementTool extends BaseTool {
       width,
     );
     const estimatedContentHeight = textDimensions.height;
-    const lineBreakInfo = textDimensions.lineBreakInfo;
+    const { lineBreakInfo } = textDimensions;
 
     // Check for potential overlaps using a more realistic height estimate
     const elementPosition = { x: xPos, y: yPos };
@@ -136,7 +136,7 @@ export class AddTextElementTool extends BaseTool {
       content,
       position: { x: xPos, y: yPos },
       size: {
-        width: width,
+        width,
         height: Math.max(height, estimatedContentHeight), // Use estimated height if larger
       },
       fontSize: Number(fontSize) || 12,

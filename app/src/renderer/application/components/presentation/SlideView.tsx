@@ -74,8 +74,8 @@ export const SlideView: React.FC<{
         }}
       >
         {selectedSlide ? (
-          <SlideRenderer 
-            slide={selectedSlideOverride || selectedSlide} 
+          <SlideRenderer
+            slide={selectedSlideOverride || selectedSlide}
             selectableElements={selectableElements}
           />
         ) : (

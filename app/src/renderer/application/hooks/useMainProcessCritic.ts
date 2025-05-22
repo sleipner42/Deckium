@@ -39,9 +39,8 @@ export const useMainProcessCritic = (presentationId: UUID) => {
 
     try {
       setIsLoading(true);
-      const loadedThreads = await electronAPI.critic.getThreadsForPresentation(
-        presentationId
-      );
+      const loadedThreads =
+        await electronAPI.critic.getThreadsForPresentation(presentationId);
       setThreads(loadedThreads);
       if (loadedThreads.length > 0 && !currentThread) {
         setCurrentThread(loadedThreads[0]);
@@ -74,7 +73,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
         const newThread = args[0] as Thread;
         setThreads((prev) => [...prev, newThread]);
         setCurrentThread(newThread);
-      }
+      },
     );
 
     const threadUpdatedUnsubscribe = electronAPI.ipcRenderer.on(
@@ -94,7 +93,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
         if (currentThread?.id === updatedThread.id) {
           setCurrentThread(updatedThread);
         }
-      }
+      },
     );
 
     const threadDeletedUnsubscribe = electronAPI.ipcRenderer.on(
@@ -103,18 +102,18 @@ export const useMainProcessCritic = (presentationId: UUID) => {
         const deletedThreadId = args[0] as UUID;
         setThreads((prev) => {
           const updatedThreads = prev.filter(
-            (thread) => thread.id !== deletedThreadId
+            (thread) => thread.id !== deletedThreadId,
           );
           if (currentThread?.id === deletedThreadId) {
             setTimeout(() => {
               setCurrentThread(
-                updatedThreads.length > 0 ? updatedThreads[0] : null
+                updatedThreads.length > 0 ? updatedThreads[0] : null,
               );
             }, 0);
           }
           return updatedThreads;
         });
-      }
+      },
     );
 
     const messageReceivedUnsubscribe = electronAPI.ipcRenderer.on(
@@ -139,7 +138,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
             setCurrentThread(data.updatedThread);
           }
         }
-      }
+      },
     );
 
     const messageChunkReceivedUnsubscribe = electronAPI.ipcRenderer.on(
@@ -161,7 +160,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
             const thread = { ...updatedThreads[threadIndex] };
 
             const messageIndex = thread.messages.findIndex(
-              (m) => m.id === data.messageId
+              (m) => m.id === data.messageId,
             );
             if (messageIndex === -1) return prev;
 
@@ -184,7 +183,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
 
               const updatedThread = { ...prev };
               const messageIndex = updatedThread.messages.findIndex(
-                (m) => m.id === data.messageId
+                (m) => m.id === data.messageId,
               );
               if (messageIndex === -1) return prev;
 
@@ -200,7 +199,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
             });
           }
         }
-      }
+      },
     );
 
     const processingStartedUnsubscribe = electronAPI.ipcRenderer.on(
@@ -210,7 +209,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
         if (currentThread?.id === threadId) {
           setIsLoading(true);
         }
-      }
+      },
     );
 
     const processingCompletedUnsubscribe = electronAPI.ipcRenderer.on(
@@ -220,7 +219,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
         if (currentThread?.id === threadId) {
           setIsLoading(false);
         }
-      }
+      },
     );
 
     const processingErrorUnsubscribe = electronAPI.ipcRenderer.on(
@@ -231,7 +230,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
           setError(data.error);
           setIsLoading(false);
         }
-      }
+      },
     );
 
     return () => {
@@ -269,7 +268,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
         setIsLoading(false);
       }
     },
-    [presentationId]
+    [presentationId],
   );
 
   const loadThread = useCallback(async (threadId: UUID) => {
@@ -321,7 +320,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
     async (slideId: UUID) => {
       if (!currentThread) {
         setError(
-          'No active critic thread. Please create a thread first before reviewing.'
+          'No active critic thread. Please create a thread first before reviewing.',
         );
         throw new Error('No active critic thread');
       }
@@ -332,7 +331,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
 
         const response = await electronAPI.critic.reviewSlide(
           currentThread.id,
-          slideId
+          slideId,
         );
 
         return response;
@@ -345,7 +344,7 @@ export const useMainProcessCritic = (presentationId: UUID) => {
         setIsLoading(false);
       }
     },
-    [currentThread]
+    [currentThread],
   );
 
   return {

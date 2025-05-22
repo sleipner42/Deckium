@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { Box, Typography, IconButton, Paper, Stack, Chip, Menu, MenuItem } from '@mui/material';
+import {
+  Box,
+  Typography,
+  IconButton,
+  Paper,
+  Stack,
+  Chip,
+  Menu,
+  MenuItem,
+} from '@mui/material';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { SlideRenderer } from './SlideRenderer';
@@ -23,10 +32,16 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
     deleteSlide,
   } = usePresentation();
 
-  const [contextMenuAnchorEl, setContextMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [contextMenuSlideId, setContextMenuSlideId] = useState<null | string>(null);
+  const [contextMenuAnchorEl, setContextMenuAnchorEl] =
+    useState<null | HTMLElement>(null);
+  const [contextMenuSlideId, setContextMenuSlideId] = useState<null | string>(
+    null,
+  );
 
-  const handleContextMenuOpen = (event: React.MouseEvent<HTMLDivElement>, slideId: string) => {
+  const handleContextMenuOpen = (
+    event: React.MouseEvent<HTMLDivElement>,
+    slideId: string,
+  ) => {
     event.preventDefault();
     setContextMenuAnchorEl(event.currentTarget);
     setContextMenuSlideId(slideId);
@@ -47,8 +62,8 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
   return (
     <Box
       className={className}
-      sx={{ 
-        display: 'flex', 
+      sx={{
+        display: 'flex',
         flexDirection: 'column',
         height: '100%',
         width: '100%',
@@ -170,7 +185,11 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
                 pointerEvents: 'none',
               }}
             >
-              <SlideView defaultScale={0.2} selectedSlideOverride={slide} selectableElements={false} />
+              <SlideView
+                defaultScale={0.2}
+                selectedSlideOverride={slide}
+                selectableElements={false}
+              />
             </Box>
             <Box
               sx={{

@@ -21,13 +21,13 @@ export function getProtocolArgs(): string | null {
       return url;
     }
   }
-  
+
   if (process.platform === 'win32' && process.argv.length >= 2) {
     const url = process.argv[1];
     if (url && url.startsWith('kraftpo://')) {
       return url;
     }
   }
-  
+
   return null;
 }

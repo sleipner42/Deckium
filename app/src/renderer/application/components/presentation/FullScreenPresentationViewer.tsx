@@ -8,7 +8,7 @@ const FullScreenPresentationViewer: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    switch(e.key) {
+    switch (e.key) {
       case 'ArrowRight':
       case 'Space':
         // Move to next slide if available
@@ -39,7 +39,7 @@ const FullScreenPresentationViewer: React.FC = () => {
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
@@ -58,8 +58,8 @@ const FullScreenPresentationViewer: React.FC = () => {
       }}
     >
       {slides.length > 0 && (
-        <SlideView 
-          defaultScale={1} 
+        <SlideView
+          defaultScale={1}
           selectedSlideOverride={slides[currentIndex]}
         />
       )}
@@ -67,4 +67,4 @@ const FullScreenPresentationViewer: React.FC = () => {
   );
 };
 
-export default FullScreenPresentationViewer; 
+export default FullScreenPresentationViewer;

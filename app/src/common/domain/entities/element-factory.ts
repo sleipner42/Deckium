@@ -78,7 +78,7 @@ export class ElementFactory {
       zIndex: options.zIndex || 1,
     };
   }
-  
+
   static createImage(options: {
     content: string; // URL or base64
     position: { x: number; y: number };

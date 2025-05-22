@@ -9,7 +9,7 @@ export class AIState {
   getThreadIds(): Set<UUID> {
     return new Set(this.threads.keys());
   }
-  
+
   getThread(threadId: UUID): Thread | null {
     return this.threads.get(threadId) || null;
   }
@@ -17,17 +17,17 @@ export class AIState {
   saveThread(thread: Thread): Thread {
     // Create a deep copy to avoid reference issues
     const threadCopy = JSON.parse(JSON.stringify(thread)) as Thread;
-    
+
     // Restore Date objects since JSON.parse converts them to strings
     threadCopy.createdAt = new Date(threadCopy.createdAt);
     threadCopy.updatedAt = new Date(threadCopy.updatedAt);
-    threadCopy.messages.forEach(msg => {
+    threadCopy.messages.forEach((msg) => {
       msg.timestamp = new Date(msg.timestamp);
     });
-    
+
     // Store the thread copy
     this.threads.set(thread.id, threadCopy);
-    
+
     // Return the copy, not the original
     return threadCopy;
   }

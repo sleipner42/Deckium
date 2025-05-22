@@ -25,13 +25,13 @@ export class BackendAIService implements IAIService {
       const originalSize = JSON.stringify(messages).length;
 
       const accessToken = await this.getAuthToken();
-      
+
       const apiCallStartTime = performance.now();
       const response = await fetch(`${API_URL}/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cookie': `access_token=Bearer ${accessToken}`,
+          Cookie: `access_token=Bearer ${accessToken}`,
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -79,7 +79,7 @@ export class BackendAIService implements IAIService {
       const formatEndTime = performance.now();
 
       const accessToken = await this.getAuthToken();
-      
+
       const apiCallStartTime = performance.now();
 
       console.log('accessToken', accessToken);
@@ -89,7 +89,7 @@ export class BackendAIService implements IAIService {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Cookie': `access_token=Bearer ${accessToken}`,
+            Cookie: `access_token=Bearer ${accessToken}`,
           },
           credentials: 'include',
           body: JSON.stringify({

@@ -36,7 +36,7 @@ export const CriticFeedback: React.FC<CriticFeedbackProps> = ({ slideId }) => {
     try {
       setExpanded(true);
       setShowFeedbackButton(false);
-      
+
       const response = await critic.reviewSlide(slideId);
       setFeedback(response);
     } catch (error) {
@@ -46,10 +46,10 @@ export const CriticFeedback: React.FC<CriticFeedbackProps> = ({ slideId }) => {
 
   const handleSendFeedbackToAI = async () => {
     if (!feedback || !ai.currentThread) return;
-    
+
     try {
       await ai.sendMessage(
-        `I have received feedback from a presentation critic about the slide I just created. Please review the feedback and make appropriate adjustments to the slide:\n\n${feedback}`
+        `I have received feedback from a presentation critic about the slide I just created. Please review the feedback and make appropriate adjustments to the slide:\n\n${feedback}`,
       );
       setExpanded(false);
     } catch (error) {
@@ -75,11 +75,11 @@ export const CriticFeedback: React.FC<CriticFeedbackProps> = ({ slideId }) => {
 
   if (critic.isLoading && !feedback) {
     return (
-      <Box 
-        sx={{ 
-          position: 'fixed', 
-          bottom: 16, 
-          right: 16, 
+      <Box
+        sx={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16,
           zIndex: 1000,
           p: 2,
           borderRadius: 2,
@@ -87,7 +87,7 @@ export const CriticFeedback: React.FC<CriticFeedbackProps> = ({ slideId }) => {
           boxShadow: 3,
           display: 'flex',
           alignItems: 'center',
-          gap: 1
+          gap: 1,
         }}
       >
         <CircularProgress size={20} />
@@ -110,8 +110,8 @@ export const CriticFeedback: React.FC<CriticFeedbackProps> = ({ slideId }) => {
             boxShadow: 3,
             '&:hover': {
               bgcolor: 'primary.light',
-              color: 'white'
-            }
+              color: 'white',
+            },
           }}
           onClick={handleReviewSlide}
         >
@@ -127,7 +127,7 @@ export const CriticFeedback: React.FC<CriticFeedbackProps> = ({ slideId }) => {
           right: 16,
           zIndex: 1000,
           maxWidth: 400,
-          width: '100%'
+          width: '100%',
         }}
       >
         <Paper
@@ -136,10 +136,17 @@ export const CriticFeedback: React.FC<CriticFeedbackProps> = ({ slideId }) => {
             p: 2,
             borderRadius: 2,
             maxHeight: '60vh',
-            overflow: 'auto'
+            overflow: 'auto',
           }}
         >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 1,
+            }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <RateReviewIcon color="primary" />
               <Typography variant="subtitle1" fontWeight="medium">
@@ -156,7 +163,7 @@ export const CriticFeedback: React.FC<CriticFeedbackProps> = ({ slideId }) => {
             </Box>
           </Box>
           <Divider sx={{ mb: 2 }} />
-          
+
           {critic.isLoading && !feedback ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 2 }}>
               <CircularProgress size={20} />
@@ -164,12 +171,15 @@ export const CriticFeedback: React.FC<CriticFeedbackProps> = ({ slideId }) => {
             </Box>
           ) : feedback ? (
             <>
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>
+              <Typography
+                variant="body2"
+                sx={{ whiteSpace: 'pre-wrap', mb: 2 }}
+              >
                 {feedback}
               </Typography>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   startIcon={<SendIcon />}
                   size="small"
                   onClick={handleSendFeedbackToAI}
@@ -180,7 +190,9 @@ export const CriticFeedback: React.FC<CriticFeedbackProps> = ({ slideId }) => {
                       <CircularProgress size={16} sx={{ mr: 1 }} />
                       Sending...
                     </>
-                  ) : 'Send to AI'}
+                  ) : (
+                    'Send to AI'
+                  )}
                 </Button>
               </Box>
             </>
