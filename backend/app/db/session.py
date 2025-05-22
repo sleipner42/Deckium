@@ -22,38 +22,61 @@ async def get_db() -> aiosqlite.Connection:
 async def init_db():
     try:
         db_dir = os.path.dirname(DATABASE_URL)
+        logger.info(f"Creating database directory: {db_dir}")
         os.makedirs(db_dir, mode=0o755, exist_ok=True)
-        logger.info(f"Ensuring database directory exists: {db_dir}")
+        logger.info(f"Database directory created successfully")
+
+        logger.info(f"Connecting to database at: {DATABASE_URL}")
     except Exception as e:
         logger.error(f"Failed to create database directory: {e}")
         raise
 
-    async with aiosqlite.connect(DATABASE_URL) as db:
-        await db.execute(
-            """
-            CREATE TABLE IF NOT EXISTS user (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT UNIQUE NOT NULL,
-                hashed_password TEXT NOT NULL,
-                full_name TEXT,
-                is_active BOOLEAN DEFAULT 1,
-                is_superuser BOOLEAN DEFAULT 0
-            )
-        """
-        )
+    try:
+        async with aiosqlite.connect(DATABASE_URL) as db:
+            logger.info("Connected to database successfully")
 
-        await db.execute(
+            logger.info("Creating user table...")
+            await db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS user (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT UNIQUE NOT NULL,
+                    hashed_password TEXT NOT NULL,
+                    full_name TEXT,
+                    is_active BOOLEAN DEFAULT 1,
+                    is_superuser BOOLEAN DEFAULT 0
+                )
             """
-            CREATE TABLE IF NOT EXISTS "transaction" (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                amount REAL NOT NULL,
-                description TEXT,
-                created_at TEXT NOT NULL,
-                FOREIGN KEY (user_id) REFERENCES user(id)
             )
-        """
-        )
+            logger.info("User table created successfully")
 
-        await db.commit()
-        logger.info("Database initialized.")
+            logger.info("Creating transaction table...")
+            await db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS "transaction" (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    amount REAL NOT NULL,
+                    description TEXT,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES user(id)
+                )
+            """
+            )
+            logger.info("Transaction table created successfully")
+
+            await db.commit()
+            logger.info("Database tables committed successfully")
+
+            cursor = await db.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )
+            tables = await cursor.fetchall()
+            logger.info(f"Tables in database: {[table[0] for table in tables]}")
+
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        logger.exception("Database error details:")
+        raise
+
+    logger.info("Database initialized successfully!")
