@@ -1,15 +1,17 @@
 import logging
+import os
 
 import aiosqlite
 
-DATABASE_URL = "./test.db"  
+os.makedirs("/app/data", exist_ok=True)
+DATABASE_URL = "/app/data/app.db"
 
 logger = logging.getLogger(__name__)
 
 
 async def get_db() -> aiosqlite.Connection:
     db = await aiosqlite.connect(DATABASE_URL)
-    db.row_factory = aiosqlite.Row  
+    db.row_factory = aiosqlite.Row
     try:
         yield db
     finally:
