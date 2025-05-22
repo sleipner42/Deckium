@@ -27,7 +27,11 @@ export abstract class AITool {
   ): void {
     console.log(`Tool execution: ${this.name}`);
     console.log('Params:', JSON.stringify(params, null, 2));
-    console.log('Result:', JSON.stringify(result, null, 2));
+    const log_res = JSON.stringify(result, null, 2);
+    console.log(
+      'Result:',
+      log_res.length > 1000 ? `${log_res.slice(0, 1000)}...` : log_res,
+    );
     console.log('\n');
   }
 }
