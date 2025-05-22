@@ -71,8 +71,9 @@ export class AddTextElementTool extends BaseTool {
     const width = Number(params.width) || 400;
     const height = Number(params.height) || 200;
 
-    const xPos = Number(x) || 100;
-    const yPos = Number(y) || 100;
+    // Use consistent default positioning - center the element if no position provided
+    const xPos = x !== undefined ? Number(x) : 1280 / 2 - width / 2;
+    const yPos = y !== undefined ? Number(y) : 720 / 2 - height / 2;
 
     // if (positionReference === 'center') {
     //   xPos = xPos - (width / 2);
