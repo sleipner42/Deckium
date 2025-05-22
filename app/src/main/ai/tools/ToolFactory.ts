@@ -22,6 +22,7 @@ import { AddImageFromPexelsResultTool } from './tools/AddImageFromPexelsResultTo
 import { GetFirstImageFromPexelsTool } from './tools/GetFirstImageFromPexelsTool';
 import { DeleteElementTool } from './tools/DeleteElementTool';
 import { CriticTool } from './tools/CriticTool';
+import { AlignToSlideTool } from './tools/AlignToSlideTool';
 
 export class ToolFactory {
   static getBuiltInTools(): AITool[] {
@@ -49,6 +50,7 @@ export class ToolFactory {
       new GetFirstImageFromPexelsTool(),
       new DeleteElementTool(),
       new CriticTool(),
+      new AlignToSlideTool(),
     ];
   }
 }
