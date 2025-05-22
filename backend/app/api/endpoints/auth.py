@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 AUTHORIZED_EMAILS = [
     "kristoffer.nordstrom42@gmail.com",
     "elias.aronson@gmail.com",
+    "victor@lagerfors.com",
 ]
 
 config_data = {
@@ -45,7 +46,9 @@ async def login(request: Request):
     state = secrets.token_urlsafe(16)
     request.session["oauth_state"] = state
     logger.info(f"Starting OAuth login flow with state: {state[:5]}...")
-    return await oauth.google.authorize_redirect(request, redirect_uri, state=state)
+    return await oauth.google.authorize_redirect(
+        request, redirect_uri, state=state
+    )
 
 
 @router.get("/callback")
@@ -61,7 +64,9 @@ async def auth_callback(
 
         user_info = token.get("userinfo")
         if not user_info:
-            raise HTTPException(status_code=400, detail="Could not fetch user info")
+            raise HTTPException(
+                status_code=400, detail="Could not fetch user info"
+            )
 
         email = user_info["email"]
         if email not in AUTHORIZED_EMAILS:
@@ -126,7 +131,9 @@ async def login_failed(error: str = ""):
 async def get_user(request: Request):
     """Returns user information from the auth cookie"""
     cookie_authorization = request.cookies.get("access_token")
-    if not cookie_authorization or not cookie_authorization.startswith("Bearer "):
+    if not cookie_authorization or not cookie_authorization.startswith(
+        "Bearer "
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
         )
