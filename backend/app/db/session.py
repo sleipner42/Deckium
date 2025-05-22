@@ -3,8 +3,9 @@ import os
 
 import aiosqlite
 
-os.makedirs("/app/data", exist_ok=True)
-DATABASE_URL = "/app/data/app.db"
+from app.core.config import settings
+
+DATABASE_URL = settings.DATABASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,14 @@ async def get_db() -> aiosqlite.Connection:
 
 
 async def init_db():
+    try:
+        db_dir = os.path.dirname(DATABASE_URL)
+        os.makedirs(db_dir, mode=0o755, exist_ok=True)
+        logger.info(f"Ensuring database directory exists: {db_dir}")
+    except Exception as e:
+        logger.error(f"Failed to create database directory: {e}")
+        raise
+
     async with aiosqlite.connect(DATABASE_URL) as db:
         await db.execute(
             """
