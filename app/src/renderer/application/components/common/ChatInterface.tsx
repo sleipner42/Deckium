@@ -175,8 +175,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   ): { content: string; isUsingTool: boolean; hasImages: boolean } => {
     if (message.role !== 'assistant') {
       if (typeof message.content === 'string') {
+        // Remove [CRITIC] prefix if it exists
+        let content = message.content;
+        if (content.startsWith('[CRITIC]')) {
+          content = content.substring('[CRITIC]'.length).trim();
+        }
+        
         return {
-          content: message.content,
+          content: content,
           isUsingTool: false,
           hasImages: false,
         };
@@ -184,7 +190,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       if (Array.isArray(message.content)) {
         const textContents = message.content
           .filter((item) => item.type === 'text' && item.text)
-          .map((item) => (item as { type: 'text'; text: string }).text)
+          .map((item) => {
+            let text = (item as { type: 'text'; text: string }).text;
+            // Remove [CRITIC] prefix if it exists
+            if (text.startsWith('[CRITIC]')) {
+              text = text.substring('[CRITIC]'.length).trim();
+            }
+            return text;
+          })
           .join('\n');
 
         const hasImages = message.content.some(
@@ -384,16 +397,29 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }}
       >
         {currentThread ? (
-          currentThread.messages.filter((msg: Message) => msg.role !== 'system')
+          currentThread.messages.filter((msg: Message) => 
+            msg.role === 'user' || 
+            msg.role === 'assistant' || 
+            (msg.role === 'system' && typeof msg.content === 'string' && msg.content.startsWith('[CRITIC]')))
             .length > 0 ? (
             <>
               {currentThread.messages
-                // Only show user, assistant and critic messages
-                .filter((message: Message) => message.role === 'user' || message.role === 'assistant' || message.role === 'critic')
+                // Only show user, assistant and critic messages (including system messages with [CRITIC] prefix)
+                .filter((message: Message) => 
+                  message.role === 'user' || 
+                  message.role === 'assistant' || 
+                  message.role === 'critic' || 
+                  (message.role === 'system' && 
+                   typeof message.content === 'string' && 
+                   message.content.startsWith('[CRITIC]')))
                 .map((message: Message) => {
                   const isUser = message.role === 'user';
                   const isAssistant = message.role === 'assistant';
-                  const isCritic = message.role === 'critic';
+                  // Check for system messages with [CRITIC] prefix
+                  const isCritic = message.role === 'critic' || 
+                    (message.role === 'system' && 
+                     typeof message.content === 'string' && 
+                     message.content.startsWith('[CRITIC]'));
 
                   const { content, isUsingTool, hasImages } =
                     processMessageContent(message);

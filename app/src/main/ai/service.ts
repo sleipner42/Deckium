@@ -78,11 +78,46 @@ export class AIService {
 
   async sendMessage(request: AIRequest): Promise<AIResponse> {
     try {
-      const thread = this.getThread(request.threadId);
+      console.log(`Sending message to thread: ${request.threadId}`);
+      console.log(`Available threads: ${Array.from(this.state.getThreadIds()).join(', ')}`);
+      let thread = this.getThread(request.threadId);
 
+      // If thread not found but there are threads for the same presentation, use the first one
       if (!thread) {
-        throw new Error(`Thread not found: ${request.threadId}`);
+        console.error(`Thread ${request.threadId} not found, looking for alternative threads`);
+        
+        // Try to find threads for the same presentation if presentationId is provided in the content
+        if (request.content && Array.isArray(request.content)) {
+          const presentationId = request.content.find(item => 
+            item.type === 'text' && item.text && item.text.includes('presentationId'))?.text;
+          
+          if (presentationId) {
+            const threadsForPresentation = this.state.getThreadsForPresentation(presentationId);
+            if (threadsForPresentation.length > 0) {
+              thread = threadsForPresentation[0];
+              console.log(`Using alternative thread ${thread.id} for presentation ${presentationId}`);
+            }
+          }
+        }
+        
+        // If still no thread, check if there are any threads at all
+        if (!thread) {
+          const allThreads = Array.from(this.state.getThreadIds());
+          if (allThreads.length > 0) {
+            thread = this.getThread(allThreads[0]);
+            console.log(`Using first available thread: ${thread?.id}`);
+          }
+        }
+        
+        // If still no thread, throw error
+        if (!thread) {
+          console.error(`No suitable thread found for request`);
+          throw new Error(`Thread not found: ${request.threadId}`);
+        }
       }
+      
+      console.log(`Using thread ${thread.id} with ${thread.messages.length} messages`);
+      
 
       let updatedThread: Thread;
 
@@ -463,8 +498,14 @@ export class AIService {
       `AI loop completed after ${iterationCount} iterations in ${loopEndTime - loopStartTime}ms`,
     );
 
-    // If we have a critic service and the AI created or modified slides, run the critic
-    if (this.criticService && presentation.slides.length > 0) {
+    // Check if this is a response to critic or a regular user message
+    const isResponseToCritic = updatedThread.messages.some(msg => 
+      (msg.role === 'system' && typeof msg.content === 'string' && msg.content.startsWith('[CRITIC]')) ||
+      (msg.role === 'system' && typeof msg.content === 'string' && msg.content.includes("implement the changes"))
+    );
+    
+    // Only run critic if this is not a response to a critique and we have slides
+    if (!isResponseToCritic && this.criticService && presentation.slides.length > 0) {
       try {
         await this.runCriticOnLatestSlide(updatedThread);
       } catch (error) {
@@ -499,31 +540,168 @@ export class AIService {
       // Get critique from the critic service
       const critique = await this.criticService.reviewSlide(criticThread.id, slideId);
       
-      // Get the thread again in case it was updated while the critic was running
-      const currentThread = this.getThread(thread.id);
-      if (!currentThread) {
+      // Always get the latest version of the thread
+      const latestThread = this.getThread(thread.id);
+      if (!latestThread) {
         console.error(`Thread ${thread.id} not found after critic review`);
         return;
       }
       
-      // Add the critique to the main AI thread as a critic message (new role)
+      // Add the critique as a system message but with a special prefix to display as critic in UI
       const updatedThread = this.state.addMessage(
-        currentThread,
-        `I've reviewed the slide and have the following feedback:\n\n${critique}\n\nPlease consider these suggestions when refining the slide.`,
-        'critic'
+        latestThread,
+        `[CRITIC] I've reviewed the slide and have the following feedback:\n\n${critique}\n\nPlease implement these suggestions to improve the slide.`,
+        'system'
       );
       
-      this.saveThread(updatedThread);
+      // Save the updated thread
+      const savedThread = this.saveThread(updatedThread);
       
-      // No need to force AI to respond immediately - let the user decide when to continue
-      this.eventBus.broadcastThreadUpdated(updatedThread);
+      // Broadcast the updates
+      this.eventBus.broadcastThreadUpdated(savedThread);
       this.eventBus.broadcastMessageReceived(
-        updatedThread.id,
+        savedThread.id,
         critique,
-        updatedThread
+        savedThread
       );
+      
+      // Now let the AI respond to the critique automatically
+      // Always use the saved thread to ensure we have the latest state
+      await this.generateAIResponseToCritique(savedThread);
     } catch (error) {
       console.error('Error running critic review:', error);
+    }
+  }
+  
+  private async generateAIResponseToCritique(thread: Thread): Promise<void> {
+    try {
+      // First, ensure the thread is properly stored in state
+      const storedThread = this.saveThread(thread);
+      
+      // Always get the latest version of the thread
+      const latestThread = this.getThread(storedThread.id);
+      if (!latestThread) {
+        console.error(`Thread ${storedThread.id} not found during AI response generation`);
+        // Create a new copy to work with if we can't find the thread
+        console.log("Creating a new thread copy for critic response");
+        const newThread = { ...storedThread, id: storedThread.id };
+        this.saveThread(newThread);
+        return;
+      }
+      
+      console.log(`Critic response using thread ${latestThread.id} with ${latestThread.messages.length} messages`);
+      
+      // Create a filtered list of messages for the AI
+      // This will convert any 'critic' role messages to 'system' to avoid API errors
+      const filteredMessages = latestThread.messages.map(msg => {
+        if (msg.role === 'critic') {
+          return {
+            ...msg,
+            role: 'system' as const
+          };
+        }
+        return msg;
+      });
+      
+      const assistantMessageId = crypto.randomUUID();
+      let streamingThread = this.state.addMessageWithState(
+        latestThread,
+        '',
+        'assistant',
+        assistantMessageId,
+        'streaming'
+      );
+      
+      // Always save and use the result to ensure we have the latest state
+      streamingThread = this.saveThread(streamingThread);
+      this.eventBus.broadcastThreadUpdated(streamingThread);
+      
+      let streamingContent = '';
+      
+      const onChunk = (chunk: string) => {
+        streamingContent += chunk;
+        streamingThread = this.state.updateMessageContent(
+          streamingThread,
+          assistantMessageId,
+          streamingContent
+        );
+        this.eventBus.broadcastMessageChunkReceived(
+          streamingThread.id,
+          assistantMessageId,
+          chunk,
+          streamingContent
+        );
+        this.eventBus.broadcastThreadUpdated(streamingThread);
+      };
+      
+      // Use the filtered messages array instead of the thread messages directly
+      // This ensures we only send valid roles to the AI
+      const aiResponse = await this.aiClient.chatStream(
+        filteredMessages,
+        onChunk,
+        process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini'
+      );
+      
+      streamingThread = this.state.setMessageStreamingState(
+        streamingThread,
+        assistantMessageId,
+        'completed'
+      );
+      
+      // Always save and use the result to ensure we have the latest state
+      streamingThread = this.saveThread(streamingThread);
+      this.eventBus.broadcastThreadUpdated(streamingThread);
+      
+      // Add a short delay before proceeding with the implementation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Get the latest thread state again
+      const currentThread = this.getThread(streamingThread.id);
+      if (!currentThread) {
+        console.error(`Thread ${streamingThread.id} not found after AI response`);
+        return;
+      }
+      
+      // Add a system message encouraging the AI to implement the changes
+      const presentation = this.presentationService.getPresentation();
+      const selectedSlideId = this.presentationService.getSelectedSlideId();
+      const slideId = selectedSlideId || (presentation.slides.length > 0 ? presentation.slides[presentation.slides.length - 1].id : 'unknown');
+      
+      const updatedThread = this.state.addMessage(
+        currentThread,
+        `Now implement the changes you described to improve slide #${slideId} based on the critique. Use the appropriate tools to update the slide.`,
+        'system'
+      );
+      
+      // Always save and use the result to ensure we have the latest state
+      const savedThread = this.saveThread(updatedThread);
+      
+      // Process the AI loop one more time to implement the changes
+      // Mark this as a response to critique to prevent further critique loops
+      try {
+        // Explicitly broadcast the current thread before processing
+        this.eventBus.broadcastThreadUpdated(savedThread);
+        
+        // Small delay to ensure thread state is synchronized
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Process the AI response to implement changes
+        await this.processAILoopWithStreaming(
+          savedThread,
+          "Please implement the changes to the slide now."
+        );
+        
+        // Broadcast the current thread ID again after processing
+        const finalThread = this.getThread(savedThread.id);
+        if (finalThread) {
+          console.log(`Final thread after critic cycle: ${finalThread.id} with ${finalThread.messages.length} messages`);
+          this.eventBus.broadcastThreadUpdated(finalThread);
+        }
+      } catch (error) {
+        console.error("Error implementing changes:", error);
+      }
+    } catch (error) {
+      console.error('Error generating AI response to critique:', error);
     }
   }
 

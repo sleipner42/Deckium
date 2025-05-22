@@ -28,7 +28,7 @@ export function estimateTextDimensions(
     return {
       height: fontSize * 1.2,
       width: fontSize * 2, // Minimal width for empty content
-      lineBreakInfo: null
+      lineBreakInfo: null,
     };
   }
 
@@ -107,7 +107,7 @@ export function estimateTextDimensions(
   let lineBreakInfo = null;
   if (lineBreakDetected) {
     lineBreakInfo =
-      `Note: Text will be broken across lines due to box width constraints. If this was not intended, consider increasing the width of the text box.\n` +
+      `Note: Text will be broken across lines due to box width constraints. If this was not intended, consider increasing the width of the text box, but remember that this can change alignment.\n` +
       `Current box width (${width}px) can fit ~${maxCharsPerLine} characters at ${fontSize}px font size.\n` +
       longLines
         .map(
@@ -120,6 +120,6 @@ export function estimateTextDimensions(
   return {
     height: estimatedHeight,
     width: estimatedWidth,
-    lineBreakInfo
+    lineBreakInfo,
   };
 }

@@ -80,17 +80,25 @@ export const useMainProcessAI = (presentationId: UUID) => {
       'ai:thread-updated',
       (...args: unknown[]) => {
         const updatedThread = args[0] as Thread;
+        
+        console.log(`Thread updated event for thread: ${updatedThread.id}`);
 
         setThreads((prev) => {
           const index = prev.findIndex((t) => t.id === updatedThread.id);
-          if (index === -1) return prev;
+          if (index === -1) {
+            console.log(`Adding thread in update event: ${updatedThread.id}`);
+            return [...prev, updatedThread];
+          }
 
+          console.log(`Updating thread in threads array: ${updatedThread.id}`);
           const newThreads = [...prev];
           newThreads[index] = updatedThread;
           return newThreads;
         });
 
-        if (currentThread?.id === updatedThread.id) {
+        // Always update current thread if it matches or if none is selected
+        if (!currentThread || currentThread.id === updatedThread.id) {
+          console.log(`Setting current thread in update event: ${updatedThread.id}`);
           setCurrentThread(updatedThread);
         }
       },
@@ -124,17 +132,30 @@ export const useMainProcessAI = (presentationId: UUID) => {
           message: string;
           updatedThread: Thread;
         };
+        
+        console.log(`Message received for thread: ${data.threadId}`);
+        
         if (data.updatedThread) {
           setThreads((prev) => {
+            // Find the thread index
             const index = prev.findIndex((t) => t.id === data.threadId);
-            if (index === -1) return prev;
+            
+            // If thread not found, add it to threads
+            if (index === -1) {
+              console.log(`Adding new thread: ${data.updatedThread.id}`);
+              return [...prev, data.updatedThread];
+            }
 
+            // Otherwise update the existing thread
+            console.log(`Updating existing thread: ${data.threadId}`);
             const newThreads = [...prev];
             newThreads[index] = data.updatedThread;
             return newThreads;
           });
 
-          if (currentThread?.id === data.threadId) {
+          // Always update current thread if it matches or if none is selected
+          if (!currentThread || currentThread.id === data.threadId) {
+            console.log(`Setting current thread to: ${data.updatedThread.id}`);
             setCurrentThread(data.updatedThread);
           }
         }
@@ -331,8 +352,22 @@ export const useMainProcessAI = (presentationId: UUID) => {
         setIsLoading(true);
         setError(null);
 
+        // First, refresh the threads list to ensure we have the latest data
+        const updatedThreads = await electronAPI.ai.getThreadsForPresentation(presentationId);
+        setThreads(updatedThreads);
+        
+        // If the current thread doesn't exist in the updated list, use the first thread
+        const threadExists = updatedThreads.some(t => t.id === currentThread.id);
+        let threadToUse = currentThread;
+        
+        if (!threadExists && updatedThreads.length > 0) {
+          console.log(`Current thread ${currentThread.id} not found in updated list. Using thread ${updatedThreads[0].id} instead.`);
+          threadToUse = updatedThreads[0];
+          setCurrentThread(threadToUse);
+        }
+
         const request: AIRequest = {
-          threadId: currentThread.id,
+          threadId: threadToUse.id,
           message,
           content,
         };
@@ -351,7 +386,7 @@ export const useMainProcessAI = (presentationId: UUID) => {
         setIsLoading(false);
       }
     },
-    [currentThread],
+    [currentThread, presentationId],
   );
 
   return {
