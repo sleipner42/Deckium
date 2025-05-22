@@ -51,8 +51,8 @@ export class GridAlignTool extends BaseTool {
     }
 
     // Parse grid origin
-    const originParts = gridOrigin.split(',').map(s => s.trim());
-    if (originParts.length !== 2 || originParts.some(p => isNaN(Number(p)))) {
+    const originParts = gridOrigin.split(',').map((s: string) => s.trim());
+    if (originParts.length !== 2 || originParts.some((p: string) => isNaN(Number(p)))) {
       return {
         success: false,
         error: 'gridOrigin must be in format "x,y" (e.g., "0,0" or "10,20")',

@@ -8,7 +8,11 @@
 * Resize ability
 * Move image tools to backend
 * Overlap detection images
-* Delete images? One tool to delete any object?
+* Add info about user focus
+* Margin/padding controls - More sophisticated spacing options
+* Is the critic getting the correct slide?
+* Is the grid layout tool working?
+
 
 ## Future features
 * Get images from URLs
@@ -22,4 +26,5 @@
 * Get images from stock image site
 * Presentation mode
 * Fix toolbar layouting
+* Delete images? One tool to delete any object?
 

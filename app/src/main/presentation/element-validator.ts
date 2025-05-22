@@ -70,8 +70,8 @@ export class ElementValidator {
     // The position parameter might actually be a ContentElement
     const fallbackZIndex = 1; // NOTE: Should this be 0?
     const zIndex =
-      position.hasOwnProperty('zIndex') && position.zIndex !== undefined
-        ? position.zIndex
+      (position as any).hasOwnProperty('zIndex') && (position as any).zIndex !== undefined
+        ? (position as any).zIndex
         : fallbackZIndex;
 
     // Check if we're dealing with a text element and can get more accurate dimensions
@@ -79,7 +79,7 @@ export class ElementValidator {
     let elementWidth = size.width;
 
     // If the position parameter is actually a ContentElement and it's a textbox
-    if (position.hasOwnProperty('type') && position.type === 'textbox') {
+    if ((position as any).hasOwnProperty('type') && (position as any).type === 'textbox') {
       const textElement = position as unknown as TextBox;
       if (textElement.content && textElement.fontSize) {
         const estimatedDimensions = this.estimateTextDimensions(
