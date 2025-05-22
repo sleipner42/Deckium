@@ -1,6 +1,114 @@
-# FastAPI Backend with Google OAuth Authentication
+# FastAPI Backend
 
-This is a FastAPI backend application with Google OAuth authentication integration.
+A modern FastAPI backend with Google OAuth authentication and Azure OpenAI integration.
+
+## Features
+
+- FastAPI with async support
+- Google OAuth authentication
+- SQLite database with SQLAlchemy
+- Azure OpenAI integration
+- Docker containerization
+- Health checks and monitoring
+
+## Quick Start
+
+### Local Development
+
+1. Install dependencies with uv:
+```bash
+uv sync
+```
+
+2. Copy environment variables:
+```bash
+cp .env.example .env
+```
+
+3. Run with Docker Compose (development):
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+4. Or run directly:
+```bash
+uv run uvicorn app.main:app --reload
+```
+
+### Production Deployment
+
+The backend is automatically deployed via GitHub Actions when changes are pushed to the main branch.
+
+#### Automated Deployment (Recommended)
+
+1. **Set up GitHub Secrets** in your repository settings:
+   - `SERVER_HOST`: Your server's IP address or hostname
+   - `SERVER_USER`: SSH username for your server
+   - `SERVER_SSH_KEY`: Private SSH key for server access
+   - `SERVER_PATH`: Path to your project on the server (e.g., `/home/user/keynotai2/backend`)
+
+2. **Push to main branch**: The GitHub Action will automatically:
+   - Build the Docker image
+   - Push to GitHub Container Registry
+   - Deploy to your server via SSH
+   - Pull the latest image and restart services
+
+#### Manual Deployment
+
+1. **On your server**, clone the repository:
+```bash
+git clone https://github.com/kristoffer/keynotai2.git
+cd keynotai2/backend
+```
+
+2. **Set up environment variables**:
+```bash
+cp .env.example .env
+# Edit .env with your production values
+```
+
+3. **Deploy using the script**:
+```bash
+./deploy.sh <your-github-username> <your-github-token>
+```
+
+Or manually:
+```bash
+export GITHUB_REPOSITORY="kristoffer/keynotai2"
+docker compose pull backend
+docker compose up -d backend
+```
+
+### Development vs Production
+
+- **Development**: Use `docker-compose.dev.yml` for local development with hot reloading
+- **Production**: Use `docker-compose.yml` which pulls pre-built images from the registry
+
+```bash
+# Development
+docker compose -f docker-compose.dev.yml up --build
+
+# Production
+docker compose up -d
+```
+
+## API Documentation
+
+Once running, visit:
+- Swagger UI: `http://localhost:8123/docs`
+- ReDoc: `http://localhost:8123/redoc`
+
+## Environment Variables
+
+See `.env.example` for all required environment variables.
+
+## Monitoring
+
+The application includes health checks accessible at `http://localhost:8123/health`.
+
+## Troubleshooting
+
+For deployment issues, see `DEPLOYMENT.md` for detailed troubleshooting steps.
 
 ## Setup
 

@@ -1,18 +1,17 @@
 from app.repositories.sqlite_user_repository import SQLiteUserRepository
 from app.repositories.sqlite_transaction_repository import (
-    SQLiteTransactionRepository
+    SQLiteTransactionRepository,
 )
 from app.services.transaction_service import TransactionService
-
-DATABASE_PATH = "./test.db"
+from app.core.config import settings
 
 
 async def get_user_repo() -> SQLiteUserRepository:
-    return SQLiteUserRepository(DATABASE_PATH)
+    return SQLiteUserRepository(settings.DATABASE_URL)
 
 
 async def get_transaction_repo() -> SQLiteTransactionRepository:
-    return SQLiteTransactionRepository(DATABASE_PATH)
+    return SQLiteTransactionRepository(settings.DATABASE_URL)
 
 
 async def get_transaction_service() -> TransactionService:
