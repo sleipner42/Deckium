@@ -7,39 +7,7 @@ on:
       - master
 
 jobs:
-  build-and-deploy:
-    runs-on: macos-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: app/package-lock.json
-
-      - name: Install dependencies
-        working-directory: app
-        run: npm ci
-
-      - name: Build application
-        working-directory: app
-        run: npm run make
-
-      - name: Upload to Azure Blob Storage
-        run: |
-          az storage blob upload-batch \
-            --destination 'releases' \
-            --source app/out \
-            --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} \
-            --account-key ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }} \
-            --overwrite true
-
   build-multiplatform:
-    if: github.event_name == 'push'
     strategy:
       matrix:
         include:
@@ -71,12 +39,12 @@ jobs:
         working-directory: app
         run: npm run make
 
-      - name: Upload to Azure Blob Storage
+      - name: Upload distributables to Azure Blob Storage
         run: |
           az storage blob upload-batch \
             --destination 'releases' \
             --destination-path '${{ matrix.platform }}' \
-            --source app/out \
+            --source app/out/make \
             --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} \
             --account-key ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }} \
             --overwrite true 

@@ -46,8 +46,11 @@ module.exports = {
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
+      platforms: ['win32'],
       config: {
         name: 'deckium',
+        setupExe: 'Deckium-Setup.exe',
+        setupIcon: './assets/icon.ico',
       },
     },
     {
@@ -56,20 +59,44 @@ module.exports = {
     },
     {
       name: '@electron-forge/maker-dmg',
+      platforms: ['darwin'],
       config: {
         format: 'ULFO',
+        name: 'Deckium',
+        title: 'Deckium ${version}',
+        icon: './assets/icon.icns',
+        background: './assets/dmg-background.png',
+        iconSize: 100,
+        contents: [
+          { x: 192, y: 344 },
+          { x: 448, y: 344, type: 'link', path: '/Applications' },
+        ],
+        additionalDMGOptions: {
+          window: { size: { width: 640, height: 500 } },
+        },
       },
     },
     {
       name: '@electron-forge/maker-deb',
+      platforms: ['linux'],
       config: {
-        categories: ['Development'],
+        categories: ['Development', 'Office'],
+        maintainer: 'Deckium Team',
+        homepage: 'https://deckium.xyz',
+        description: 'AI-powered presentation tool',
+        genericName: 'Presentation Tool',
+        mimeType: ['application/x-deckium'],
       },
     },
     {
       name: '@electron-forge/maker-rpm',
+      platforms: ['linux'],
       config: {
-        categories: ['Development'],
+        categories: ['Development', 'Office'],
+        maintainer: 'Deckium Team',
+        homepage: 'https://deckium.com',
+        description: 'AI-powered presentation tool',
+        genericName: 'Presentation Tool',
       },
     },
   ],
