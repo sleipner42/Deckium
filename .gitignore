@@ -30,6 +30,14 @@ npm-debug.log.*
 
 # Environment variables
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Electron Forge environment files
+.env.forge
+.env.forge.local
 
 **/.claude/settings.local.json
 
@@ -39,6 +47,54 @@ app/.erb/dll/*.dll
 app/.erb/dll/*.json
 app/.erb/dll/*.bundle.dev.js
 app/.erb/dll/*.bundle.*.js
+
+# Electron Forge build outputs
+app/out/
+app/dist/
+app/.webpack/
+
+# Packaged applications (Electron Forge)
+app/release/
+app/release/app/dist/
+app/release/app/node_modules/
+app/release/build/
+
+# Platform-specific distributions
+*.app
+*.dmg
+*.exe
+*.deb
+*.rpm
+*.zip
+*.tar.gz
+*.msi
+*.AppImage
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Code signing artifacts
+*.p12
+*.pem
+*.crt
+*.key
+*.provisionprofile
 
 *.db
 .firebase/
