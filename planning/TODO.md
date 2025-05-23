@@ -2,13 +2,9 @@
 * Search for information
 * Look into positioning of objects. Why is it so bad at placing shapes.
 * Undo redo - edit tree
-* Deploy backend
-* Build and distribute app
-* Landing page
 * Resize ability
 * Move image tools to backend
 * Overlap detection images
-* Add info about user focus
 * Margin/padding controls - More sophisticated spacing options
 * Is the critic getting the correct slide?
 * Is the grid layout tool working?
@@ -28,4 +24,8 @@
 * Presentation mode
 * Fix toolbar layouting
 * Delete images? One tool to delete any object?
+* Build and distribute app
+* Deploy backend
+* Landing page
+* Add info about user focus
 
