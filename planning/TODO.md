@@ -12,6 +12,7 @@
 * Margin/padding controls - More sophisticated spacing options
 * Is the critic getting the correct slide?
 * Is the grid layout tool working?
+* Duplicate/copy slide tool
 
 
 ## Future features

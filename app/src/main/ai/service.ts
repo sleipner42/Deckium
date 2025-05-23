@@ -36,7 +36,10 @@ export class AIService {
 
   createThread(title: string, presentationId: UUID): Thread {
     const presentation = this.presentationService.getPresentation();
-    const developerPrompt = getDeveloperPrompt(presentation, this.presentationService);
+    const developerPrompt = getDeveloperPrompt(
+      presentation,
+      this.presentationService,
+    );
 
     const thread = this.state.createThread(
       title,
@@ -183,6 +186,7 @@ export class AIService {
   private async processAILoopWithStreaming(
     thread: Thread,
     userMessage: string,
+    responseToCritic = false,
   ): Promise<Thread> {
     // console.log(`AI streaming loop started for thread ${thread.id}`);
     const loopStartTime = performance.now();
@@ -194,7 +198,10 @@ export class AIService {
     // console.timeEnd('getPresentation');
 
     // console.time('getDeveloperPrompt');
-    const developerPrompt = getDeveloperPrompt(presentation, this.presentationService);
+    const developerPrompt = getDeveloperPrompt(
+      presentation,
+      this.presentationService,
+    );
     // console.timeEnd('getDeveloperPrompt');
 
     // console.time('updateSystemMessage');
@@ -503,30 +510,7 @@ export class AIService {
       `AI loop completed after ${iterationCount} iterations in ${loopEndTime - loopStartTime}ms`,
     );
 
-    // Check if this is part of a critic cycle to prevent infinite loops
-    let isInCriticCycle = false;
-    const recentMessages = updatedThread.messages.slice(-10); // Check last 10 messages
-
-    for (const msg of recentMessages) {
-      if (
-        msg.role === 'system' &&
-        typeof msg.content === 'string' &&
-        (msg.content.includes('## Slide Feedback') ||
-          msg.content.includes('criticism:') ||
-          msg.content.includes('feedback:') ||
-          msg.content.includes('implement the feedback') ||
-          msg.content.includes('Implement the recommended changes'))
-      ) {
-        isInCriticCycle = true;
-        break;
-      }
-    }
-
-    // Only run critic if we're not already in a critic cycle and we have slides
-    // Check if there was a user message that started this interaction
-    const hasUserMessage = updatedThread.messages.some(msg => msg.role === 'user');
-
-    if (!isInCriticCycle && presentation.slides.length > 0 && hasUserMessage) {
+    if (!responseToCritic) {
       try {
         await this.runAutomaticCritic(updatedThread);
       } catch (error) {
@@ -636,6 +620,7 @@ export class AIService {
       await this.processAILoopWithStreaming(
         savedThread,
         'Implement the recommended changes to improve the slide.',
+        true,
       );
     } catch (error) {
       console.error('Error generating AI response to critique:', error);
@@ -656,7 +641,10 @@ export class AIService {
     // console.timeEnd('getPresentation');
 
     // console.time('getDeveloperPrompt');
-    const developerPrompt = getDeveloperPrompt(presentation, this.presentationService);
+    const developerPrompt = getDeveloperPrompt(
+      presentation,
+      this.presentationService,
+    );
     // console.timeEnd('getDeveloperPrompt');
 
     // console.time('updateSystemMessage');
