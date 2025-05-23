@@ -47,6 +47,7 @@ app/.erb/dll/*.dll
 app/.erb/dll/*.json
 app/.erb/dll/*.bundle.dev.js
 app/.erb/dll/*.bundle.*.js
+app/.erb/dll
 
 # Electron Forge build outputs
 app/out/
