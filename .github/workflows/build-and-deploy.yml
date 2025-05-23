@@ -5,6 +5,9 @@ on:
     branches:
       - main
       - master
+    paths:
+      - 'app/**'
+      - '.github/workflows/build-and-deploy.yml'
 
 jobs:
   build-multiplatform:
