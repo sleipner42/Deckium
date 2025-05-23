@@ -16,11 +16,13 @@ jobs:
         include:
           - os: macos-latest
             platform: darwin
+            shell: bash
           - os: windows-latest  
             platform: win32
             shell: bash
           - os: ubuntu-latest
             platform: linux
+            shell: bash
     
     runs-on: ${{ matrix.os }}
     defaults:
