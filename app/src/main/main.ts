@@ -1,5 +1,6 @@
 import path from 'path';
 import { app, BrowserWindow, shell, protocol, session } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import * as dotenv from 'dotenv';
 import MenuBuilder from './menu';
@@ -15,6 +16,14 @@ import { BackendAIServiceFactory } from './ai/external/backend-ai-service';
 import AuthService from './auth/service';
 
 dotenv.config();
+
+class AppUpdater {
+  constructor() {
+    log.transports.file.level = 'info';
+    autoUpdater.logger = log;
+    autoUpdater.checkForUpdatesAndNotify();
+  }
+}
 
 let mainWindow: BrowserWindow | null = null;
 let secondWindow: BrowserWindow | null = null;
@@ -110,15 +119,15 @@ const createWindow = async () => {
     mainWindow = null;
   });
 
-  if (presentationService) {
-    const menuBuilder = new MenuBuilder(mainWindow, presentationService);
-    menuBuilder.buildMenu();
-  }
+  const menuBuilder = new MenuBuilder(mainWindow, presentationService);
+  menuBuilder.buildMenu();
 
   mainWindow.webContents.setWindowOpenHandler((edata) => {
     shell.openExternal(edata.url);
     return { action: 'deny' };
   });
+
+  new AppUpdater();
 };
 
 const createSecondWindow = async () => {
