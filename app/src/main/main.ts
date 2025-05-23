@@ -200,7 +200,9 @@ const createWindow = async () => {
     return { action: 'deny' };
   });
 
-  new AppUpdater();
+  if (app.isPackaged) {
+    new AppUpdater();
+  }
 };
 
 const createSecondWindow = async () => {

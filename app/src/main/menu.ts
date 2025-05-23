@@ -197,13 +197,13 @@ export default class MenuBuilder {
     const subMenuHelp: MenuItemConstructorOptions = {
       label: 'Help',
       submenu: [
-        {
+        ...(app.isPackaged ? [{
           label: 'Check for Updates',
           click() {
             autoUpdater.checkForUpdatesAndNotify();
           },
         },
-        { type: 'separator' },
+        { type: 'separator' as const }] : []),
         {
           label: 'Learn More',
           click() {
@@ -340,13 +340,13 @@ export default class MenuBuilder {
       {
         label: 'Help',
         submenu: [
-          {
+          ...(app.isPackaged ? [{
             label: 'Check for Updates',
             click() {
               autoUpdater.checkForUpdatesAndNotify();
             },
           },
-          { type: 'separator' as const },
+          { type: 'separator' as const }] : []),
           {
             label: 'Learn More',
             click() {
