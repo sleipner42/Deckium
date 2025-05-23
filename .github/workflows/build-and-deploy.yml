@@ -32,7 +32,7 @@ jobs:
       - name: Upload to Azure Blob Storage
         run: |
           az storage blob upload-batch \
-            --destination '$web' \
+            --destination 'releases' \
             --source app/out \
             --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} \
             --account-key ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }} \
@@ -74,7 +74,8 @@ jobs:
       - name: Upload to Azure Blob Storage
         run: |
           az storage blob upload-batch \
-            --destination 'releases/${{ matrix.platform }}' \
+            --destination 'releases' \
+            --destination-path '${{ matrix.platform }}' \
             --source app/out \
             --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} \
             --account-key ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }} \
