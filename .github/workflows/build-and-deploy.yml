@@ -46,8 +46,8 @@ jobs:
 
       - name: Build application
         working-directory: app
-        run: npm run make
+        run: npm run package
 
       - name: Upload distributables to Azure Blob Storage
         run: |
-          az storage blob upload-batch --destination 'releases' --destination-path '${{ matrix.platform }}' --source app/out/make --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} --account-key ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }} --overwrite true 
+          az storage blob upload-batch --destination 'releases' --destination-path '${{ matrix.platform }}' --source app/release/build --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} --account-key ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }} --overwrite true 
