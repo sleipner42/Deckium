@@ -29,17 +29,13 @@ jobs:
         working-directory: app
         run: npm run make
 
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Upload to Azure Blob Storage
         run: |
           az storage blob upload-batch \
             --destination '$web' \
             --source app/out \
             --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} \
+            --account-key ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }} \
             --overwrite true
 
   build-multiplatform:
@@ -75,15 +71,11 @@ jobs:
         working-directory: app
         run: npm run make
 
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Upload to Azure Blob Storage
         run: |
           az storage blob upload-batch \
             --destination 'releases/${{ matrix.platform }}' \
             --source app/out \
             --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} \
+            --account-key ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }} \
             --overwrite true 
