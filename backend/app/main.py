@@ -83,7 +83,9 @@ async def health_check_db():
             }
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Database error: {str(e)}"
+        )
 
 
 app.include_router(api_router)

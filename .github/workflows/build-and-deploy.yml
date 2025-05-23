@@ -18,10 +18,14 @@ jobs:
             platform: darwin
           - os: windows-latest  
             platform: win32
+            shell: bash
           - os: ubuntu-latest
             platform: linux
     
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     
     steps:
       - name: Checkout code
@@ -42,12 +46,49 @@ jobs:
         working-directory: app
         run: npm run make
 
+      - name: Create update metadata files
+        working-directory: app
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          
+          if [ "${{ matrix.platform }}" = "darwin" ]; then
+            cat > out/make/latest-mac.yml << EOF
+          version: $VERSION
+          files:
+            - url: Deckium-$VERSION-arm64.dmg
+              sha512: $(shasum -a 512 out/make/*/*.dmg | cut -d' ' -f1)
+              size: $(stat -c%s out/make/*/*.dmg || stat -f%z out/make/*/*.dmg)
+          path: Deckium-$VERSION-arm64.dmg
+          sha512: $(shasum -a 512 out/make/*/*.dmg | cut -d' ' -f1)
+          releaseDate: $(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+          EOF
+          elif [ "${{ matrix.platform }}" = "win32" ]; then
+            cat > out/make/latest.yml << EOF
+          version: $VERSION
+          files:
+            - url: Deckium-Setup.exe
+              sha512: $(sha512sum out/make/*/*.exe | cut -d' ' -f1)
+              size: $(stat -c%s out/make/*/*.exe)
+          path: Deckium-Setup.exe
+          sha512: $(sha512sum out/make/*/*.exe | cut -d' ' -f1)
+          releaseDate: $(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+          EOF
+          elif [ "${{ matrix.platform }}" = "linux" ]; then
+            cat > out/make/latest-linux.yml << EOF
+          version: $VERSION
+          files:
+            - url: deckium_$VERSION_amd64.deb
+              sha512: $(sha512sum out/make/*/*.deb | cut -d' ' -f1)
+              size: $(stat -c%s out/make/*/*.deb)
+            - url: deckium-$VERSION-1.x86_64.rpm
+              sha512: $(sha512sum out/make/*/*.rpm | cut -d' ' -f1)
+              size: $(stat -c%s out/make/*/*.rpm)
+          path: deckium_$VERSION_amd64.deb
+          sha512: $(sha512sum out/make/*/*.deb | cut -d' ' -f1)
+          releaseDate: $(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+          EOF
+          fi
+
       - name: Upload distributables to Azure Blob Storage
         run: |
-          az storage blob upload-batch \
-            --destination 'releases' \
-            --destination-path '${{ matrix.platform }}' \
-            --source app/out/make \
-            --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} \
-            --account-key ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }} \
-            --overwrite true 
+          az storage blob upload-batch --destination 'releases' --destination-path '${{ matrix.platform }}' --source app/out/make --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} --account-key ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }} --overwrite true 

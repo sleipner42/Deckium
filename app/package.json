@@ -1,6 +1,6 @@
 {
   "name": "deckium",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Deckium - AI-powered presentation tool",
   "keywords": [
     "electron",
@@ -37,26 +37,26 @@
   "main": "./release/app/dist/main/main.js",
   "scripts": {
     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
-    "build:dll": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.ts",
-    "build:main": "cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack --config ./.erb/configs/webpack.config.main.prod.ts",
-    "build:renderer": "cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack --config ./.erb/configs/webpack.config.renderer.prod.ts",
-    "postinstall": "ts-node .erb/scripts/check-native-dep.js && npm run build:dll",
+    "build:dll": "cross-env NODE_ENV=development TS_NODE_PROJECT='./.erb/configs/tsconfig.webpack.json' webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.ts",
+    "build:main": "cross-env NODE_ENV=production TS_NODE_PROJECT='./.erb/configs/tsconfig.webpack.json' webpack --config ./.erb/configs/webpack.config.main.prod.ts",
+    "build:renderer": "cross-env NODE_ENV=production TS_NODE_PROJECT='./.erb/configs/tsconfig.webpack.json' webpack --config ./.erb/configs/webpack.config.renderer.prod.ts",
+    "postinstall": "ts-node .erb/scripts/check-native-dep.js && electron-builder install-app-deps && npm run build:dll",
     "lint": "cross-env NODE_ENV=development eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "cross-env NODE_ENV=development eslint . --ext .js,.jsx,.ts,.tsx --fix",
-    "package": "npm run build && electron-forge package",
-    "make": "npm run build && electron-forge make",
-    "publish": "npm run build && electron-forge publish",
+    "package": "ts-node ./.erb/scripts/clean.js dist && npm run build && electron-builder build --publish=never && npm run build:dll",
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir release/app",
     "prestart": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack --config ./.erb/configs/webpack.config.main.dev.ts",
     "start": "ts-node ./.erb/scripts/check-port-in-use.js && npm run prestart && npm run start:renderer",
-    "start:main": "concurrently -k \"cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --watch --config ./.erb/configs/webpack.config.main.dev.ts\" \"electronmon .\"",
-    "start:preload": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack --config ./.erb/configs/webpack.config.preload.dev.ts",
-    "start:renderer": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack serve --config ./.erb/configs/webpack.config.renderer.dev.ts",
+    "start:main": "cross-env NODE_ENV=development electronmon -r ts-node/register/transpile-only .",
+    "start:preload": "cross-env NODE_ENV=development TS_NODE_PROJECT='./.erb/configs/tsconfig.webpack.json' webpack --config ./.erb/configs/webpack.config.preload.dev.ts",
+    "start:renderer": "cross-env NODE_ENV=development TS_NODE_PROJECT='./.erb/configs/tsconfig.webpack.json' webpack serve --config ./.erb/configs/webpack.config.renderer.dev.ts",
     "test": "jest",
     "deploy:setup": "node scripts/deploy.js setup",
     "deploy:package": "node scripts/deploy.js package",
     "deploy:make": "node scripts/deploy.js make",
-    "deploy:publish": "node scripts/deploy.js publish"
+    "deploy:publish": "node scripts/deploy.js publish",
+    "prepare": "husky install",
+    "make": "electron-forge make"
   },
   "browserslist": [
     "extends browserslist-config-erb"
@@ -122,7 +122,7 @@
     "dotenv": "^16.4.7",
     "electron-debug": "^4.1.0",
     "electron-log": "^5.3.2",
-    "electron-updater": "^6.3.9",
+    "electron-updater": "^6.6.2",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "openai": "^4.93.0",
@@ -281,9 +281,8 @@
       "./assets/**"
     ],
     "publish": {
-      "provider": "github",
-      "owner": "electron-react-boilerplate",
-      "repo": "electron-react-boilerplate"
+      "provider": "generic",
+      "url": "https://deckiumpublic.blob.core.windows.net/releases/"
     }
   },
   "collective": {
