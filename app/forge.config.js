@@ -11,16 +11,16 @@ module.exports = {
       /^\/src/,
       /^\/\.erb/,
       /^\/scripts/,
-      /^\/node_modules/,
+      /^\/\.git/,
+      /^\/release\/app\/node_modules/,
       /\.ts$/,
       /\.tsx$/,
       /tsconfig\.json$/,
       /webpack\.config/,
       /\.eslint/,
       /\.prettier/,
-      /^\/DEPLOYMENT\.md/,
-      /^\/forge\.config\.js/,
-      /^\/\.env\.forge/,
+      /forge\.config\.js/,
+      /\.env\.forge/,
     ],
     protocols: [
       {
@@ -30,6 +30,46 @@ module.exports = {
     ],
   },
   rebuildConfig: {},
+  hooks: {
+    prePackage: async (forgeConfig, platform, arch) => {
+      const fs = require('fs');
+      const path = require('path');
+      
+      console.log('Setting up packaging from release/app structure...');
+      
+      const releaseAppPath = path.join(__dirname, 'release', 'app');
+      const productionMainPath = path.join(releaseAppPath, 'dist', 'main', 'main.js');
+      
+      if (!fs.existsSync(productionMainPath)) {
+        throw new Error('Production build not found. Please run "npm run build" first.');
+      }
+      
+      const tempMainPath = path.join(__dirname, 'main.js');
+      const tempPackageJsonPath = path.join(__dirname, 'package.json.backup');
+      const packageJsonPath = path.join(__dirname, 'package.json');
+      
+      fs.copyFileSync(packageJsonPath, tempPackageJsonPath);
+      
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      packageJson.main = './release/app/dist/main/main.js';
+      fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+      
+      console.log('✓ Temporarily updated package.json main field for packaging');
+    },
+    postPackage: async (forgeConfig, result) => {
+      const fs = require('fs');
+      const path = require('path');
+      
+      const tempPackageJsonPath = path.join(__dirname, 'package.json.backup');
+      const packageJsonPath = path.join(__dirname, 'package.json');
+      
+      if (fs.existsSync(tempPackageJsonPath)) {
+        fs.copyFileSync(tempPackageJsonPath, packageJsonPath);
+        fs.unlinkSync(tempPackageJsonPath);
+        console.log('✓ Restored original package.json');
+      }
+    }
+  },
   makers: [
     {
       name: '@electron-forge/maker-squirrel',

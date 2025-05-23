@@ -34,7 +34,7 @@
       "url": "https://github.com/amilajack"
     }
   ],
-  "main": "./.erb/dll/main.bundle.dev.js",
+  "main": ".erb/dll/main.bundle.dev.js",
   "scripts": {
     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
     "build:dll": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.ts",
@@ -56,7 +56,8 @@
     "deploy:make": "node scripts/deploy.js make",
     "deploy:publish": "node scripts/deploy.js publish",
     "make": "npm run build && electron-forge make",
-    "publish": "npm run build && electron-forge publish"
+    "publish": "npm run build && electron-forge publish",
+    "ef": "electron-forge make"
   },
   "browserslist": [
     "extends browserslist-config-erb"
