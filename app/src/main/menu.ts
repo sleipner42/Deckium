@@ -5,7 +5,6 @@ import {
   BrowserWindow,
   MenuItemConstructorOptions,
 } from 'electron';
-import { autoUpdater } from 'electron-updater';
 import { PresentationService } from './presentation/service';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
@@ -197,13 +196,6 @@ export default class MenuBuilder {
     const subMenuHelp: MenuItemConstructorOptions = {
       label: 'Help',
       submenu: [
-        ...(app.isPackaged ? [{
-          label: 'Check for Updates',
-          click() {
-            autoUpdater.checkForUpdatesAndNotify();
-          },
-        },
-        { type: 'separator' as const }] : []),
         {
           label: 'Learn More',
           click() {
@@ -340,13 +332,6 @@ export default class MenuBuilder {
       {
         label: 'Help',
         submenu: [
-          ...(app.isPackaged ? [{
-            label: 'Check for Updates',
-            click() {
-              autoUpdater.checkForUpdatesAndNotify();
-            },
-          },
-          { type: 'separator' as const }] : []),
           {
             label: 'Learn More',
             click() {

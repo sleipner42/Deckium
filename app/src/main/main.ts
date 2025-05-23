@@ -1,6 +1,5 @@
 import path from 'path';
-import { app, BrowserWindow, shell, protocol, session, dialog } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import { app, BrowserWindow, shell, protocol, session } from 'electron';
 import log from 'electron-log';
 import * as dotenv from 'dotenv';
 import MenuBuilder from './menu';
@@ -16,85 +15,6 @@ import { BackendAIServiceFactory } from './ai/external/backend-ai-service';
 import AuthService from './auth/service';
 
 dotenv.config();
-
-class AppUpdater {
-  private updateCheckInterval: NodeJS.Timeout | null = null;
-
-  constructor() {
-    log.transports.file.level = 'info';
-    autoUpdater.logger = log;
-    
-    autoUpdater.setFeedURL({
-      provider: 'generic',
-      url: 'https://deckiumpublic.blob.core.windows.net/releases/',
-    });
-
-    autoUpdater.checkForUpdatesAndNotify();
-
-    this.setupUpdateHandlers();
-    this.startPeriodicCheck();
-  }
-
-  private setupUpdateHandlers() {
-    autoUpdater.on('checking-for-update', () => {
-      log.info('Checking for update...');
-    });
-
-    autoUpdater.on('update-available', (info) => {
-      log.info('Update available:', info);
-      dialog.showMessageBox(mainWindow!, {
-        type: 'info',
-        title: 'Update Available',
-        message: `A new version (${info.version}) is available. It will be downloaded in the background.`,
-        buttons: ['OK']
-      });
-    });
-
-    autoUpdater.on('update-not-available', (info) => {
-      log.info('Update not available:', info);
-    });
-
-    autoUpdater.on('error', (err) => {
-      log.error('Error in auto-updater:', err);
-    });
-
-    autoUpdater.on('download-progress', (progressObj) => {
-      const logMessage = `Download speed: ${progressObj.bytesPerSecond} - Downloaded ${progressObj.percent}% (${progressObj.transferred}/${progressObj.total})`;
-      log.info(logMessage);
-    });
-
-    autoUpdater.on('update-downloaded', (info) => {
-      log.info('Update downloaded:', info);
-      dialog.showMessageBox(mainWindow!, {
-        type: 'info',
-        title: 'Update Ready',
-        message: `Update has been downloaded. The application will restart to apply the update.`,
-        buttons: ['Restart Now', 'Later']
-      }).then((result) => {
-        if (result.response === 0) {
-          autoUpdater.quitAndInstall();
-        }
-      });
-    });
-  }
-
-  private startPeriodicCheck() {
-    this.updateCheckInterval = setInterval(() => {
-      autoUpdater.checkForUpdatesAndNotify();
-    }, 60 * 60 * 1000);
-  }
-
-  public checkForUpdates() {
-    autoUpdater.checkForUpdatesAndNotify();
-  }
-
-  public destroy() {
-    if (this.updateCheckInterval) {
-      clearInterval(this.updateCheckInterval);
-      this.updateCheckInterval = null;
-    }
-  }
-}
 
 let mainWindow: BrowserWindow | null = null;
 let secondWindow: BrowserWindow | null = null;
@@ -199,10 +119,6 @@ const createWindow = async () => {
     shell.openExternal(edata.url);
     return { action: 'deny' };
   });
-
-  if (app.isPackaged) {
-    new AppUpdater();
-  }
 };
 
 const createSecondWindow = async () => {

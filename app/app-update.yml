@@ -1,3 +1,0 @@
-provider: generic
-url: https://deckiumpublic.blob.core.windows.net/releases/
-updaterCacheDirName: deckium-updater 
