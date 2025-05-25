@@ -79,7 +79,7 @@ const AIDemo = () => {
         clearTimeout(timeout);
       }
     };
-  }, [currentPrompt]);
+  }, [currentPrompt, prompts]);
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -324,9 +324,9 @@ const LandingPage = () => {
             <nav className="mb-4 md:mb-0">
               <ul className="flex flex-wrap space-x-6">
                 <li>
-                  <a href="#" className="hover:text-indigo-400">
+                  <button className="hover:text-indigo-400">
                     Home
-                  </a>
+                  </button>
                 </li>
                 <li>
                   <a href="#features" className="hover:text-indigo-400">
