@@ -9,7 +9,9 @@
 * Is the critic getting the correct slide?
 * Is the grid layout tool working?
 * Duplicate/copy slide tool
-* Instruction about how a good slide looks. Do not but boxes as highlights.
+* Instruction about how a good slide looks. Do not put boxes as highlights.
+* Emojis like slack
+* Something is wrong in the closet non-overlapping positioning.
 
 
 ## Future features

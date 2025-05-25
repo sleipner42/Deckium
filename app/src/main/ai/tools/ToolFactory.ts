@@ -25,6 +25,7 @@ import { CriticTool } from './tools/CriticTool';
 import { AlignToSlideTool } from './tools/AlignToSlideTool';
 import { GridAlignTool } from './tools/GridAlignTool';
 import { MatchSizeTool } from './tools/MatchSizeTool';
+import { CreateSVGImageTool } from './tools/CreateSVGImageTool';
 
 export class ToolFactory {
   static getBuiltInTools(): AITool[] {
@@ -55,6 +56,7 @@ export class ToolFactory {
       new AlignToSlideTool(),
       new GridAlignTool(),
       new MatchSizeTool(),
+      new CreateSVGImageTool(),
     ];
   }
 }
