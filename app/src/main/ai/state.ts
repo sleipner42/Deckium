@@ -127,15 +127,20 @@ export class AIState {
     };
 
     // Log the message being added with streaming state
-    logger.logConversation(`Message added to thread [${role}] with state [${streamingState}]`, {
-      threadId: thread.id,
-      messageId,
-      role,
-      content,
-      streamingState,
-      contentType: typeof content,
-      messageCount: threadToUpdate.messages.length + 1
-    });
+    // Skip logging empty assistant messages that will be filled via streaming
+    const shouldLog = !(role === 'assistant' && streamingState === 'streaming' && (!content || content === ''));
+    
+    if (shouldLog) {
+      logger.logConversation(`Message added to thread [${role}] with state [${streamingState}]`, {
+        threadId: thread.id,
+        messageId,
+        role,
+        content,
+        streamingState,
+        contentType: typeof content,
+        messageCount: threadToUpdate.messages.length + 1
+      });
+    }
 
     const updatedThread = {
       ...threadToUpdate,
@@ -163,10 +168,14 @@ export class AIState {
     }
 
     const updatedMessages = [...threadToUpdate.messages];
+    const originalMessage = updatedMessages[messageIndex];
     updatedMessages[messageIndex] = {
-      ...updatedMessages[messageIndex],
+      ...originalMessage,
       content,
     };
+
+    // Content updates during streaming are logged when streaming completes
+    // via setMessageStreamingState, so we don't need to log here to avoid spam
 
     const updatedThread = {
       ...threadToUpdate,
@@ -194,10 +203,24 @@ export class AIState {
     }
 
     const updatedMessages = [...threadToUpdate.messages];
+    const originalMessage = updatedMessages[messageIndex];
     updatedMessages[messageIndex] = {
-      ...updatedMessages[messageIndex],
+      ...originalMessage,
       streamingState,
     };
+
+    // Log completed assistant messages to conversation file
+    if (streamingState === 'completed' && originalMessage.role === 'assistant' && originalMessage.content) {
+      logger.logConversation(`Assistant message completed [${originalMessage.role}]`, {
+        threadId: thread.id,
+        messageId,
+        role: originalMessage.role,
+        content: originalMessage.content,
+        streamingState,
+        contentType: typeof originalMessage.content,
+        messageCount: updatedMessages.length
+      });
+    }
 
     const updatedThread = {
       ...threadToUpdate,

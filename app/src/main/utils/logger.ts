@@ -227,6 +227,16 @@ export class Logger {
 
     // Also write to clean conversation log file
     this.writeCleanConversationEntry(data);
+    
+    // Debug logging to help troubleshoot missing messages
+    if (this.logLevel === 'debug' && this.logToConsole) {
+      console.log(`[CONVERSATION-DEBUG] ${message}`, {
+        role: data?.role,
+        hasContent: !!data?.content,
+        contentLength: data?.content ? 
+          (typeof data.content === 'string' ? data.content.length : JSON.stringify(data.content).length) : 0
+      });
+    }
   }
 
   private writeCleanConversationEntry(data: any): void {
