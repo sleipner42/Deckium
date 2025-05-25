@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { AIToolResult } from '../../../common/domain/entities/ai-types';
 import { UUID } from '../../../common/domain/entities/types';
 import { PresentationService } from '../../presentation/service';
+import { logger } from '../../utils/logger';
 
 export abstract class AITool {
   id: UUID;
@@ -25,6 +26,10 @@ export abstract class AITool {
     params: Record<string, any>,
     result: AIToolResult,
   ): void {
+    // Use the new logging system
+    logger.logToolExecution(this.name, params, result);
+
+    // Keep console logging for backwards compatibility (can be disabled via LOG_TO_CONSOLE=false)
     console.log(`Tool execution: ${this.name}`);
     console.log('Params:', JSON.stringify(params, null, 2));
     const log_res = JSON.stringify(result, null, 2);

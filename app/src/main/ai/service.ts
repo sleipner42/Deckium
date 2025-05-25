@@ -14,6 +14,7 @@ import { AIEventBus } from './event-bus';
 import { AIToolsService } from './tools/tools';
 import { getDeveloperPrompt } from './prompt/systemPrompt';
 import { PresentationService } from '../presentation/service';
+import { logger } from '../utils/logger';
 
 export class AIService {
   private state: AIState;
@@ -74,6 +75,16 @@ export class AIService {
 
   async sendMessage(request: AIRequest): Promise<AIResponse> {
     try {
+      // Log the incoming AI request
+      logger.logAIRequest('Received AI message request', {
+        threadId: request.threadId,
+        message: request.message,
+        contentType: Array.isArray(request.content) ? 'multi-content' : 'text',
+        contentLength: request.content ? 
+          (Array.isArray(request.content) ? request.content.length : request.content.length) : 
+          (request.message?.length || 0)
+      });
+
       console.log(`Sending message to thread: ${request.threadId}`);
       console.log(
         `Available threads: ${Array.from(this.state.getThreadIds()).join(', ')}`,
@@ -159,6 +170,15 @@ export class AIService {
 
       const aiResponse = lastAssistantMessage.content;
 
+      // Log the AI response
+      logger.logAIResponse('AI response generated', {
+        threadId: updatedThread.id,
+        responseType: typeof aiResponse,
+        responseLength: typeof aiResponse === 'string' ? aiResponse.length : JSON.stringify(aiResponse).length,
+        processingTimeMs: endTime - startTime,
+        messageCount: updatedThread.messages.length
+      });
+
       this.eventBus.broadcastMessageReceived(
         updatedThread.id,
         aiResponse,
@@ -174,6 +194,13 @@ export class AIService {
       console.error('Error sending message to AI:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error occurred';
+
+      // Log the error
+      logger.logSystem('AI request failed', 'error', {
+        threadId: request.threadId,
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
 
       this.eventBus.broadcastProcessingError(request.threadId, errorMessage);
 
@@ -374,12 +401,29 @@ export class AIService {
         consecutiveEmptyIterations = 0;
 
         console.log(`Executing tool call: ${toolCall.toolName}`);
+        
+        // Log tool execution start
+        logger.logSystem('Tool execution started', 'debug', {
+          toolName: toolCall.toolName,
+          toolId: toolCall.toolId,
+          params: toolCall.params,
+          iteration: iterationCount + 1
+        });
+
         // console.time('executeToolCalls');
         const toolResults = await this.toolsService.executeToolCalls(
           [toolCall],
           this.presentationService,
         );
         // console.timeEnd('executeToolCalls');
+
+        // Log tool execution results
+        logger.logSystem('Tool execution completed', 'debug', {
+          toolName: toolCall.toolName,
+          results: toolResults,
+          resultCount: toolResults.length,
+          iteration: iterationCount + 1
+        });
 
         // console.time('formatToolResults');
         const toolResultsFormatted =
