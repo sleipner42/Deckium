@@ -2,23 +2,21 @@ import React, { useRef, useEffect, useState, lazy, Suspense } from 'react';
 import { TextBox } from '../../../../../common/domain/entities/types';
 
 const ReactMarkdownWithPlugins = lazy(() =>
-  Promise.all([import('react-markdown'), import('remark-gfm'), import('rehype-raw')]).then(
-    ([reactMarkdown, remarkGfm, rehypeRaw]) => {
-      const ReactMarkdown = reactMarkdown.default;
-      const gfm = remarkGfm.default;
-      const raw = rehypeRaw.default;
+  Promise.all([
+    import('react-markdown'),
+    import('remark-gfm'),
+    import('rehype-raw'),
+  ]).then(([reactMarkdown, remarkGfm, rehypeRaw]) => {
+    const ReactMarkdown = reactMarkdown.default;
+    const gfm = remarkGfm.default;
+    const raw = rehypeRaw.default;
 
-      return {
-        default: (props: any) => (
-          <ReactMarkdown 
-            remarkPlugins={[gfm]} 
-            rehypePlugins={[raw]}
-            {...props} 
-          />
-        ),
-      };
-    },
-  ),
+    return {
+      default: (props: any) => (
+        <ReactMarkdown remarkPlugins={[gfm]} rehypePlugins={[raw]} {...props} />
+      ),
+    };
+  }),
 );
 
 interface TextElementProps {
