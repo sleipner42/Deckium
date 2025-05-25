@@ -5,6 +5,7 @@ import { ElementFactory } from '../../../../common/domain/entities/element-facto
 import { TextBox } from '../../../../common/domain/entities/types';
 import { ElementValidator } from '../../../presentation/element-validator';
 import { estimateTextDimensions } from '../utils/text-dimensions';
+import { textMeasurementService } from '../../../text-measurement/service';
 
 export class AddTextElementTool extends BaseTool {
   name = 'addTextElement';
@@ -91,14 +92,29 @@ export class AddTextElementTool extends BaseTool {
       };
     }
 
-    // Calculate a more realistic height based on content for overlap checking
-    // Text height is often overestimated in the element size
+    // Calculate precise text dimensions using frontend measurement
     const fontSizeValue = Number(fontSize) || 12;
-    const textDimensions = estimateTextDimensions(
-      content,
-      fontSizeValue,
-      width,
-    );
+    const fontFamilyValue = fontFamily || 'Arial';
+    
+    let textDimensions;
+    try {
+      // Try to get precise measurements from the frontend
+      textDimensions = await textMeasurementService.measureText(
+        content,
+        fontSizeValue,
+        fontFamilyValue,
+        width
+      );
+    } catch (error) {
+      console.warn('Failed to get precise text measurements, falling back to estimation:', error);
+      // Fallback to estimation if precise measurement fails
+      textDimensions = estimateTextDimensions(
+        content,
+        fontSizeValue,
+        width,
+      );
+    }
+    
     const estimatedContentHeight = textDimensions.height;
     const { lineBreakInfo } = textDimensions;
 
@@ -112,7 +128,7 @@ export class AddTextElementTool extends BaseTool {
       width: estimatedWidth < width ? estimatedWidth : width + 10,
       height: estimatedContentHeight, // Use exact estimated height without additional buffer
     };
-    const overlapCheck = ElementValidator.checkOverlap(
+    const overlapCheck = await ElementValidator.checkOverlapPrecise(
       slide,
       elementPosition,
       elementSize,

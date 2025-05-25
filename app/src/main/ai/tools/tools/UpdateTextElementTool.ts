@@ -4,6 +4,7 @@ import { PresentationService } from '../../../presentation/service';
 import { TextBox } from '../../../../common/domain/entities/types';
 import { ElementValidator } from '../../../presentation/element-validator';
 import { estimateTextDimensions } from '../utils/text-dimensions';
+import { textMeasurementService } from '../../../text-measurement/service';
 
 export class UpdateTextElementTool extends BaseTool {
   name = 'updateTextElement';
@@ -146,7 +147,7 @@ export class UpdateTextElementTool extends BaseTool {
         const newPosition = updates.position || targetElement.position;
         const newSize = updates.size || targetElement.size;
 
-        // If we're updating content and font size, estimate a more accurate height
+        // If we're updating content and font size, get precise measurements
         let estimatedHeight = newSize.height;
         if (updates.content || updates.fontSize) {
           const contentToCheck =
@@ -157,11 +158,30 @@ export class UpdateTextElementTool extends BaseTool {
             updates.fontSize !== undefined
               ? Number(updates.fontSize)
               : targetElement.fontSize;
-          const textDimensions = estimateTextDimensions(
-            contentToCheck,
-            fontSizeToCheck,
-            newSize.width,
-          );
+          const fontFamilyToCheck =
+            updates.fontFamily !== undefined
+              ? updates.fontFamily
+              : targetElement.fontFamily || 'Arial';
+
+          let textDimensions;
+          try {
+            // Try to get precise measurements from the frontend
+            textDimensions = await textMeasurementService.measureText(
+              contentToCheck,
+              fontSizeToCheck,
+              fontFamilyToCheck,
+              newSize.width
+            );
+          } catch (error) {
+            console.warn('Failed to get precise text measurements in UpdateTextElementTool, falling back to estimation:', error);
+            // Fallback to estimation if precise measurement fails
+            textDimensions = estimateTextDimensions(
+              contentToCheck,
+              fontSizeToCheck,
+              newSize.width,
+            );
+          }
+
           estimatedHeight = textDimensions.height;
           lineBreakInfo = textDimensions.lineBreakInfo;
         }
@@ -174,9 +194,9 @@ export class UpdateTextElementTool extends BaseTool {
             (updates.fontSize || targetElement.fontSize) * 0.5, // Add a bit of extra height for partial overlaps
         };
 
-        // Check for overlaps with the new position/size
+        // Check for overlaps with the new position/size using precise measurements
         // Pass the element ID to exclude the current element from overlap detection
-        overlapCheck = ElementValidator.checkOverlap(
+        overlapCheck = await ElementValidator.checkOverlapPrecise(
           slide,
           newPosition,
           elementSize,

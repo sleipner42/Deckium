@@ -13,6 +13,8 @@ import { setupAIIPC } from './ai/ipc-handler';
 import { setupAuthIPC } from './auth/ipc-handler';
 import { BackendAIServiceFactory } from './ai/external/backend-ai-service';
 import AuthService from './auth/service';
+import { textMeasurementService } from './text-measurement/service';
+import { setupTextMeasurementIPC } from './text-measurement/ipc-handler';
 
 dotenv.config();
 
@@ -104,6 +106,9 @@ const createWindow = async () => {
     } else {
       mainWindow.show();
     }
+    
+    // Set up text measurement service with the main window
+    textMeasurementService.setMainWindow(mainWindow);
   });
 
   mainWindow.on('closed', () => {
@@ -178,5 +183,6 @@ app
     setupAuthIPC(authService);
     setupAIIPC(aiService);
     setupPresentationIPC(presentationService);
+    setupTextMeasurementIPC();
   })
   .catch(console.log);
