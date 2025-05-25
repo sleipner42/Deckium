@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Thread, Message } from '../../common/domain/entities/ai-types';
 import { UUID } from '../../common/domain/entities/types';
 import { MessageContent } from '../../common/domain/interfaces/ai-service.interface';
+import { logger } from '../utils/logger';
 
 export class AIState {
   private threads: Map<UUID, Thread> = new Map<UUID, Thread>();
@@ -87,6 +88,16 @@ export class AIState {
       threadId: thread.id,
     };
 
+    // Log the message being added to the conversation
+    logger.logConversation(`Message added to thread [${role}]`, {
+      threadId: thread.id,
+      messageId: newMessage.id,
+      role,
+      content,
+      contentType: typeof content,
+      messageCount: threadToUpdate.messages.length + 1
+    });
+
     const updatedThread = {
       ...threadToUpdate,
       messages: [...threadToUpdate.messages, newMessage],
@@ -114,6 +125,17 @@ export class AIState {
       threadId: thread.id,
       streamingState,
     };
+
+    // Log the message being added with streaming state
+    logger.logConversation(`Message added to thread [${role}] with state [${streamingState}]`, {
+      threadId: thread.id,
+      messageId,
+      role,
+      content,
+      streamingState,
+      contentType: typeof content,
+      messageCount: threadToUpdate.messages.length + 1
+    });
 
     const updatedThread = {
       ...threadToUpdate,

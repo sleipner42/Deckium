@@ -4,7 +4,7 @@ import * as path from 'path';
 export interface LogEntry {
   timestamp: string;
   level: 'info' | 'debug' | 'warn' | 'error';
-  category: 'ai-request' | 'ai-response' | 'tool-execution' | 'system' | 'user-action';
+  category: 'ai-request' | 'ai-response' | 'ai-conversation' | 'tool-execution' | 'system' | 'user-action';
   message: string;
   data?: any;
   sessionId?: string;
@@ -18,6 +18,7 @@ export class Logger {
   private logLevel: string = 'info';
   private logDirectory: string;
   private currentSessionId: string;
+  private conversationLogEnabled: boolean = false;
 
   private constructor() {
     this.loadConfiguration();
@@ -63,6 +64,9 @@ export class Logger {
     if (aiLoggingEnabled) {
       this.isEnabled = true;
     }
+
+    // Conversation-only log file configuration
+    this.conversationLogEnabled = this.parseBooleanEnv('CONVERSATION_LOG_ENABLED', true);
   }
 
   private parseEnvFile(content: string): Record<string, string> {
@@ -140,6 +144,27 @@ export class Logger {
     }
   }
 
+  private writeToConversationFile(entry: string): void {
+    if (!this.logToFile || !this.conversationLogEnabled) return;
+    
+    try {
+      const fileName = `conversation-${new Date().toISOString().split('T')[0]}.log`;
+      const filePath = path.join(this.logDirectory, fileName);
+      
+      // Add header if file doesn't exist
+      if (!fs.existsSync(filePath)) {
+        const header = `# AI Agent Conversation Log - ${new Date().toISOString().split('T')[0]}\n` +
+                      `# Format: TIMESTAMP | ROLE      | MESSAGE CONTENT\n` +
+                      `# ======================================================\n`;
+        fs.writeFileSync(filePath, header, 'utf-8');
+      }
+      
+      fs.appendFileSync(filePath, entry + '\n', 'utf-8');
+    } catch (error) {
+      console.error('Failed to write to conversation log file:', error);
+    }
+  }
+
   private log(entry: LogEntry): void {
     if (!this.shouldLog(entry.level)) return;
 
@@ -187,6 +212,57 @@ export class Logger {
       data,
       sessionId: this.currentSessionId
     });
+  }
+
+  public logConversation(message: string, data?: any): void {
+    // Log to main log file
+    this.log({
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      category: 'ai-conversation',
+      message,
+      data,
+      sessionId: this.currentSessionId
+    });
+
+    // Also write to clean conversation log file
+    this.writeCleanConversationEntry(data);
+  }
+
+  private writeCleanConversationEntry(data: any): void {
+    if (!data || !data.role || !data.content) return;
+
+    const timestamp = new Date().toISOString().replace('T', ' ').split('.')[0];
+    const role = data.role.toUpperCase().padEnd(9); // Pad for alignment
+    
+    // Format content based on type
+    let content = '';
+    if (typeof data.content === 'string') {
+      content = data.content;
+    } else if (Array.isArray(data.content)) {
+      // Handle multi-content (text + images)
+      const textParts = data.content
+        .filter(item => item.type === 'text')
+        .map(item => item.text)
+        .join(' ');
+      const imageParts = data.content
+        .filter(item => item.type === 'image_url')
+        .map(() => '[IMAGE]');
+      content = textParts + (imageParts.length > 0 ? ' ' + imageParts.join(' ') : '');
+    } else {
+      content = JSON.stringify(data.content);
+    }
+
+    // Truncate very long content for readability
+    if (content.length > 500) {
+      content = content.substring(0, 500) + '... [TRUNCATED]';
+    }
+
+    // Clean up content for single-line display
+    content = content.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+
+    const conversationEntry = `${timestamp} | ${role} | ${content}`;
+    this.writeToConversationFile(conversationEntry);
   }
 
   public logToolExecution(toolName: string, params: any, result?: any): void {
@@ -239,6 +315,11 @@ export class Logger {
 
   public getLogDirectory(): string {
     return this.logDirectory;
+  }
+
+  public getConversationLogPath(): string {
+    const fileName = `conversation-${new Date().toISOString().split('T')[0]}.log`;
+    return path.join(this.logDirectory, fileName);
   }
 
   // Configuration reload

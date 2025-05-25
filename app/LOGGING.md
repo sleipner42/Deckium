@@ -27,6 +27,9 @@ LOG_TO_CONSOLE=true
 
 # Log level: debug, info, warn, error (default: info)
 LOG_LEVEL=debug
+
+# Create separate conversation-only log file with clean format (default: true when logging enabled)
+CONVERSATION_LOG_ENABLED=true
 ```
 
 ### No .env File Handling
@@ -40,23 +43,30 @@ The logging system gracefully handles cases where no `.env` file exists:
 
 ### 1. AI Requests
 - User messages sent to the AI
-- Message content and metadata
-- Thread information
-- Request timestamps
+- **Full message content** (user input)
+- Message metadata and thread information
+- Request timestamps and content type
 
 ### 2. AI Responses
-- Complete AI responses
-- Processing time
-- Response metadata
-- Thread state
+- **Complete AI response content** (agent messages)
+- Streaming response chunks and final content
+- Processing time and response metadata
+- Thread state and message count
 
-### 3. Tool Executions
+### 3. Conversation Flow
+- **All messages added to conversation threads**
+- Message roles (user, assistant, system)
+- **Full message content for each participant**
+- Streaming states and message updates
+- Thread message counts and timestamps
+
+### 4. Tool Executions
 - Tool name and parameters
 - Execution results
 - Success/failure status
 - Processing time
 
-### 4. System Events
+### 5. System Events
 - Session start/end
 - Configuration changes
 - Error conditions
@@ -65,11 +75,22 @@ The logging system gracefully handles cases where no `.env` file exists:
 ## Log Files
 
 When `LOG_TO_FILE=true`, logs are stored in:
+
+### Main Debug Log
 ```
 app/logs/ai-debug-YYYY-MM-DD.log
 ```
+Contains detailed logs with full metadata for debugging.
 
-### Log Format
+### Clean Conversation Log
+```
+app/logs/conversation-YYYY-MM-DD.log
+```
+Contains only conversation messages in a clean, readable format - perfect for reviewing agent interactions.
+
+### Log Formats
+
+#### Main Debug Log Format
 ```
 [timestamp] [session_id] [LEVEL] [category] message
 Data: {json object with additional details}
@@ -86,6 +107,22 @@ Data: {
 }
 ```
 
+#### Conversation Log Format
+```
+TIMESTAMP | ROLE      | MESSAGE CONTENT
+```
+
+Example:
+```
+# AI Agent Conversation Log - 2024-01-15
+# Format: TIMESTAMP | ROLE      | MESSAGE CONTENT
+# ======================================================
+2024-01-15 10:30:45 | USER      | Create a new slide about AI trends
+2024-01-15 10:30:47 | ASSISTANT | I'll create a slide about AI trends for you. Let me start by adding a title and some key points...
+2024-01-15 10:30:50 | SYSTEM    | Tool execution completed successfully. Please continue with the task.
+2024-01-15 10:30:52 | ASSISTANT | Perfect! I've created your AI trends slide with the following elements...
+```
+
 ## Usage
 
 ### Basic Usage
@@ -100,12 +137,28 @@ The logging system is automatically initialized and works transparently:
 
 2. **Run your application** - logs will automatically be created
 
-3. **View logs** in the console or check the `logs/` directory
+3. **View logs** in multiple formats:
+   - **Console output** (if `LOG_TO_CONSOLE=true`)
+   - **Detailed debug logs**: `logs/ai-debug-YYYY-MM-DD.log`
+   - **Clean conversation logs**: `logs/conversation-YYYY-MM-DD.log` ⭐ **Easy to read!**
+
+### Quick Start for Agent Debugging
+
+**Want to see just the conversation?** Use the clean conversation log:
+
+```bash
+# View today's conversations in clean format
+cat logs/conversation-$(date +%Y-%m-%d).log
+
+# Watch conversations in real-time
+tail -f logs/conversation-$(date +%Y-%m-%d).log
+```
 
 ### Log Categories
 
-- `ai-request` - Incoming requests to the AI service
-- `ai-response` - Responses from the AI service
+- `ai-request` - Incoming requests to the AI service (includes full user message content)
+- `ai-response` - Responses from the AI service (includes full agent response content)
+- `ai-conversation` - All conversation messages (user, assistant, system) with full content
 - `tool-execution` - AI tool executions and results
 - `system` - System events and debug information
 - `user-action` - User interactions (future expansion)
@@ -124,11 +177,28 @@ The logging system is automatically initialized and works transparently:
 ```typescript
 import { logger } from '../utils/logger';
 
-// Log AI requests
-logger.logAIRequest('Received request', { threadId, message });
+// Log AI requests (includes full user message content)
+logger.logAIRequest('Received request', { 
+  threadId, 
+  message: userMessage,
+  content: userContent 
+});
 
-// Log AI responses
-logger.logAIResponse('Response generated', { threadId, response });
+// Log AI responses (includes full agent response content)
+logger.logAIResponse('Response generated', { 
+  threadId, 
+  response: fullAgentResponse,
+  processingTimeMs: 1250 
+});
+
+// Log conversation messages (all participants with full content)
+logger.logConversation('Message added to thread [user]', {
+  threadId,
+  messageId,
+  role: 'user',
+  content: fullMessageContent,
+  messageCount: 5
+});
 
 // Log tool executions
 logger.logToolExecution('toolName', params, result);
@@ -192,7 +262,14 @@ logger.reloadConfiguration();
 
 2. **Filter by category** to focus on specific aspects:
    ```bash
+   # View all conversation messages (user + agent)
+   grep "\[ai-conversation\]" logs/ai-debug-*.log
+   
+   # View only tool executions
    grep "\[tool-execution\]" logs/ai-debug-*.log
+   
+   # View only agent responses
+   grep "\[ai-response\]" logs/ai-debug-*.log
    ```
 
 3. **Filter by error level**:

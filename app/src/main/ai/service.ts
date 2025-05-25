@@ -75,10 +75,11 @@ export class AIService {
 
   async sendMessage(request: AIRequest): Promise<AIResponse> {
     try {
-      // Log the incoming AI request
+      // Log the incoming AI request with full message content
       logger.logAIRequest('Received AI message request', {
         threadId: request.threadId,
         message: request.message,
+        content: request.content,
         contentType: Array.isArray(request.content) ? 'multi-content' : 'text',
         contentLength: request.content ? 
           (Array.isArray(request.content) ? request.content.length : request.content.length) : 
@@ -146,8 +147,20 @@ export class AIService {
         request.content.length > 0
       ) {
         updatedThread = this.state.addMessage(thread, request.content, 'user');
+        // Log user message being added to thread
+        logger.logSystem('User message added to thread', 'debug', {
+          threadId: thread.id,
+          messageType: 'multi-content',
+          content: request.content
+        });
       } else {
         updatedThread = this.state.addMessage(thread, request.message, 'user');
+        // Log user message being added to thread
+        logger.logSystem('User message added to thread', 'debug', {
+          threadId: thread.id,
+          messageType: 'text',
+          message: request.message
+        });
       }
 
       this.eventBus.broadcastProcessingStarted(updatedThread.id);
@@ -170,9 +183,10 @@ export class AIService {
 
       const aiResponse = lastAssistantMessage.content;
 
-      // Log the AI response
+      // Log the AI response with full content
       logger.logAIResponse('AI response generated', {
         threadId: updatedThread.id,
+        response: aiResponse,
         responseType: typeof aiResponse,
         responseLength: typeof aiResponse === 'string' ? aiResponse.length : JSON.stringify(aiResponse).length,
         processingTimeMs: endTime - startTime,
@@ -276,6 +290,13 @@ export class AIService {
           'streaming',
         );
 
+        // Log streaming start
+        logger.logSystem('AI streaming response started', 'debug', {
+          threadId: updatedThread.id,
+          messageId: assistantMessageId,
+          iteration: iterationCount + 1
+        });
+
         this.saveThread(updatedThread);
 
         this.eventBus.broadcastThreadUpdated(updatedThread);
@@ -285,10 +306,24 @@ export class AIService {
         // console.log( `Starting streaming request to AI with ${messages.length} messages`,);
 
         let streamingContent = '';
+        let chunkCount = 0;
 
         const onChunk = (chunk: string) => {
           // console.log(`Received chunk: "${chunk}"`);
           streamingContent += chunk;
+          chunkCount++;
+
+          // Log every 10th chunk or when content reaches certain milestones to avoid spam
+          if (chunkCount % 10 === 0 || streamingContent.length % 500 === 0) {
+            logger.logSystem('AI streaming content update', 'debug', {
+              threadId: updatedThread.id,
+              messageId: assistantMessageId,
+              chunkCount,
+              currentLength: streamingContent.length,
+              recentChunk: chunk,
+              iteration: iterationCount + 1
+            });
+          }
 
           updatedThread = this.state.updateMessageContent(
             updatedThread,
@@ -312,6 +347,16 @@ export class AIService {
           deploymentName,
         );
         // console.timeEnd('aiClientChatStream');
+
+        // Log completed streaming response
+        logger.logAIResponse('AI streaming response completed', {
+          threadId: updatedThread.id,
+          messageId: assistantMessageId,
+          response: aiResponse,
+          finalLength: aiResponse?.length || 0,
+          chunkCount,
+          iteration: iterationCount + 1
+        });
 
         // Check if we're getting the same response repeatedly
         const lastMessages = messages

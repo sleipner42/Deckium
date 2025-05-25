@@ -9,6 +9,7 @@
 * Is the critic getting the correct slide?
 * Is the grid layout tool working?
 * Duplicate/copy slide tool
+* Instruction about how a good slide looks. Do not but boxes as highlights.
 
 
 ## Future features
