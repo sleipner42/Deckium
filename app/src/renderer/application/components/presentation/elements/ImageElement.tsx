@@ -73,6 +73,8 @@ export const ImageElement: React.FC<ImageElementProps> = ({
 
   return (
     <div
+      data-element-id={element.id}
+      data-element-type="image"
       style={{
         position: 'absolute',
         left: `${position.x}px`,

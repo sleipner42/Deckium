@@ -101,6 +101,8 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
   return (
     <>
       <div
+        data-element-id={element.id}
+        data-element-type="barChart"
         style={{
           position: 'absolute',
           left: `${position.x}px`,

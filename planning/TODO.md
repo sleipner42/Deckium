@@ -12,6 +12,8 @@
 * Instruction about how a good slide looks. Do not put boxes as highlights.
 * Emojis like slack
 * Something is wrong in the closet non-overlapping positioning.
+* Selecting an element and then writing to the agent and pressing backspace
+  results in the element being deleted.
 
 
 ## Future features

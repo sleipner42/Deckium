@@ -102,6 +102,8 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
       case 'rectangle':
         return (
           <div
+            data-element-id={element.id}
+            data-element-type="shape"
             style={commonStyles}
             onClick={handleClick}
             onMouseDown={handleMouseDown}
@@ -110,6 +112,8 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
       case 'circle':
         return (
           <div
+            data-element-id={element.id}
+            data-element-type="shape"
             style={{
               ...commonStyles,
               borderRadius: '50%',
@@ -121,6 +125,8 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
       case 'triangle':
         return (
           <div
+            data-element-id={element.id}
+            data-element-type="shape"
             style={{
               ...commonStyles,
               clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',

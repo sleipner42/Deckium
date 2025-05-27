@@ -107,8 +107,8 @@ export class TextMeasurementService {
       return {
         height: result.actualHeight,
         width: Math.min(result.naturalWidth, width), // Use natural width if it fits
-        lineBreakInfo: result.hasOverflow 
-          ? `Text overflows container. Natural width: ${result.naturalWidth}px, Container width: ${width}px, Lines: ${result.lineCount}`
+        lineBreakInfo: result.lineCount > 1
+          ? `Text spans ${result.lineCount} lines. ${result.hasOverflow ? `Overflows container (Natural: ${result.naturalWidth}px, Container: ${width}px)` : `Fits within container width.`}`
           : null
       };
     } catch (error) {
@@ -144,6 +144,128 @@ export class TextMeasurementService {
       ...measurement,
       suggestedHeight
     };
+  }
+
+  /**
+   * Checks for overlaps using actual DOM bounding boxes from the frontend
+   * This is more accurate than calculation-based methods as it uses real rendered elements
+   */
+  async checkOverlapWithDOM(
+    newElementPosition: { x: number; y: number },
+    newElementSize: { width: number; height: number },
+    excludeElementId?: string
+  ): Promise<{
+    hasOverlap: boolean;
+    overlappingElements: Array<{
+      id: string;
+      type: string;
+      position: { x: number; y: number };
+      bounds: { left: number; top: number; right: number; bottom: number };
+    }>;
+    isOutsideSlide: boolean;
+  }> {
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+      console.warn('Main window not available for DOM-based overlap detection');
+      return {
+        hasOverlap: false,
+        overlappingElements: [],
+        isOutsideSlide: false
+      };
+    }
+
+    try {
+      const result = await this.mainWindow.webContents.executeJavaScript(`
+        (() => {
+          const SLIDE_WIDTH = 1280;
+          const SLIDE_HEIGHT = 720;
+          
+          const newElementBounds = {
+            left: ${newElementPosition.x},
+            top: ${newElementPosition.y},
+            right: ${newElementPosition.x + newElementSize.width},
+            bottom: ${newElementPosition.y + newElementSize.height}
+          };
+          
+          // Check if new element is outside slide boundaries
+          const isOutsideSlide = 
+            newElementBounds.left < 0 || 
+            newElementBounds.top < 0 || 
+            newElementBounds.right > SLIDE_WIDTH || 
+            newElementBounds.bottom > SLIDE_HEIGHT;
+          
+          const overlappingElements = [];
+          
+          // Find all rendered elements in the slide
+          // Look for elements with data-element-id attribute (or similar identifier)
+          const slideElements = document.querySelectorAll('[data-element-id]');
+          
+          slideElements.forEach(element => {
+            const elementId = element.getAttribute('data-element-id');
+            const elementType = element.getAttribute('data-element-type') || 'unknown';
+            
+            // Skip the element being excluded (e.g., the one being updated)
+            if (${excludeElementId ? `elementId === '${excludeElementId}'` : 'false'}) {
+              return;
+            }
+            
+            // Get actual bounding box from DOM
+            const rect = element.getBoundingClientRect();
+            
+            // Convert to slide coordinates (assuming slide container is at 0,0)
+            // You may need to adjust this based on your slide container's position
+            const slideContainer = document.querySelector('[data-slide-container]') || document.body;
+            const containerRect = slideContainer.getBoundingClientRect();
+            
+            const elementBounds = {
+              left: rect.left - containerRect.left,
+              top: rect.top - containerRect.top,
+              right: rect.right - containerRect.left,
+              bottom: rect.bottom - containerRect.top
+            };
+            
+            // Check for overlap using actual bounding boxes
+            const hasOverlap = !(
+              newElementBounds.right <= elementBounds.left ||
+              newElementBounds.left >= elementBounds.right ||
+              newElementBounds.bottom <= elementBounds.top ||
+              newElementBounds.top >= elementBounds.bottom
+            );
+            
+            if (hasOverlap) {
+              console.log('DOM overlap detected:', {
+                newElement: newElementBounds,
+                existingElement: { id: elementId, type: elementType, bounds: elementBounds }
+              });
+              
+              overlappingElements.push({
+                id: elementId,
+                type: elementType,
+                position: {
+                  x: elementBounds.left,
+                  y: elementBounds.top
+                },
+                bounds: elementBounds
+              });
+            }
+          });
+          
+          return {
+            hasOverlap: overlappingElements.length > 0,
+            overlappingElements,
+            isOutsideSlide
+          };
+        })()
+      `);
+
+      return result;
+    } catch (error) {
+      console.error('Error checking overlap with DOM:', error);
+      return {
+        hasOverlap: false,
+        overlappingElements: [],
+        isOutsideSlide: false
+      };
+    }
   }
 }
 

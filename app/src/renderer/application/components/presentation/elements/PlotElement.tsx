@@ -75,6 +75,8 @@ export const PlotElement: React.FC<PlotElementProps> = ({
   // You would typically use a charting library like Chart.js, Recharts, or D3.js
   return (
     <div
+      data-element-id={element.id}
+      data-element-type="plot"
       style={{
         position: 'absolute',
         left: `${position.x}px`,

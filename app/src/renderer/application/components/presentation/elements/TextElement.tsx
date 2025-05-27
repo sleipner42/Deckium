@@ -251,6 +251,8 @@ export const TextElement: React.FC<TextElementProps> = ({
   return (
     <div
       ref={textRef}
+      data-element-id={element.id}
+      data-element-type="textbox"
       style={{
         position: 'absolute',
         left: `${position.x}px`,

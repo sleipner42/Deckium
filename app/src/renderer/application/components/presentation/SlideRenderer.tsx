@@ -168,6 +168,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
   return (
     <div
+      data-slide-container
       style={{
         width: PRESENTATION_DIMENSIONS.WIDTH,
         height: PRESENTATION_DIMENSIONS.HEIGHT,
