@@ -218,9 +218,16 @@ export class UpdateTextElementTool extends BaseTool {
     // Create appropriate message based on whether there was an overlap
     let message = 'Text element updated successfully';
 
-    // Add line break warning if detected
+    // Add line break information with specific guidance
     if (lineBreakInfo) {
       message += `\n\n${lineBreakInfo}`;
+      
+      // Add specific guidance based on the type of text layout
+      if (lineBreakInfo.includes('TEXT OVERFLOW')) {
+        message += ` Use the updateTextElement tool to increase the width if single-line text is desired.`;
+      } else if (lineBreakInfo.includes('TEXT WRAPPING')) {
+        message += ` This is expected behavior for multi-line text content.`;
+      }
     }
 
     if (overlapCheck) {

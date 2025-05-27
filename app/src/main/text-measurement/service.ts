@@ -103,13 +103,23 @@ export class TextMeasurementService {
         })()
       `);
 
-      // Convert to our expected format
+      // Convert to our expected format and provide specific feedback
+      let lineBreakInfo = null;
+      
+      if (result.lineCount > 1) {
+        if (result.hasOverflow) {
+          // Text overflows AND wraps - needs wider container
+          lineBreakInfo = `⚠️ TEXT OVERFLOW: Text spans ${result.lineCount} lines and overflows container. Natural width needed: ${result.naturalWidth}px (current: ${width}px). Consider increasing container width to ${Math.ceil(result.naturalWidth + 20)}px to fit on one line.`;
+        } else {
+          // Text wraps but fits - just informational
+          lineBreakInfo = `ℹ️ TEXT WRAPPING: Text naturally spans ${result.lineCount} lines within the ${width}px container. This is normal text wrapping behavior.`;
+        }
+      }
+      
       return {
         height: result.actualHeight,
         width: Math.min(result.naturalWidth, width), // Use natural width if it fits
-        lineBreakInfo: result.lineCount > 1
-          ? `Text spans ${result.lineCount} lines. ${result.hasOverflow ? `Overflows container (Natural: ${result.naturalWidth}px, Container: ${width}px)` : `Fits within container width.`}`
-          : null
+        lineBreakInfo
       };
     } catch (error) {
       console.error('Error measuring text with renderer:', error);

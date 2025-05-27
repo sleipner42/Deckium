@@ -11,6 +11,15 @@ export class ElementValidator {
   /**
    * Checks if a new element would overlap with existing elements using DOM-based detection
    * This is more accurate than calculation-based methods as it uses actual rendered bounding boxes
+   * 
+   * WHAT THIS CHECKS:
+   * - Uses getBoundingClientRect() which returns the complete visual element area including:
+   *   • Text content area
+   *   • CSS padding (4px on all sides for TextElement)
+   *   • Borders, margins, visual decorations
+   *   • Any other styling that affects the visual footprint
+   * - This is the correct approach because users see visual overlap of elements, not just text content
+   * 
    * @param slide The slide to check for overlaps
    * @param position The position of the new element
    * @param size The size of the new element
