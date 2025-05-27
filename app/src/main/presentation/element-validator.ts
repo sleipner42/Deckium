@@ -35,12 +35,13 @@ export class ElementValidator {
       const domResult = await textMeasurementService.checkOverlapWithDOM(
         { x: position.x, y: position.y },
         { width: size.width, height: size.height },
-        excludeElementId
+        excludeElementId,
       );
 
       // Convert DOM result to expected format
       const overlappingElements = domResult.overlappingElements.map(
-        element => `${element.type} at position (${element.position.x}, ${element.position.y})`
+        (element) =>
+          `${element.type} with id "$(element.id)" at position (${element.position.x}, ${element.position.y})`,
       );
 
       // Generate suggested position if there are overlaps
@@ -51,7 +52,7 @@ export class ElementValidator {
           size,
           slide,
           excludeElementId,
-          padding
+          padding,
         );
       } else if (domResult.isOutsideSlide) {
         // Suggest position that ensures element is inside slide
@@ -65,7 +66,7 @@ export class ElementValidator {
         hasOverlap: domResult.hasOverlap,
         overlappingCount: domResult.overlappingElements.length,
         isOutsideSlide: domResult.isOutsideSlide,
-        suggestedPosition
+        suggestedPosition,
       });
 
       return {
@@ -75,8 +76,11 @@ export class ElementValidator {
         suggestedPosition,
       };
     } catch (error) {
-      console.error('DOM-based overlap detection failed, using fallback:', error);
-      
+      console.error(
+        'DOM-based overlap detection failed, using fallback:',
+        error,
+      );
+
       // Fallback to basic boundary checking if DOM detection fails
       const isOutsideSlide =
         position.x < 0 ||
@@ -117,8 +121,10 @@ export class ElementValidator {
     isOutsideSlide: boolean;
     suggestedPosition?: Position;
   } {
-    console.warn('Using legacy synchronous overlap detection - consider migrating to checkOverlapPrecise for DOM-based accuracy');
-    
+    console.warn(
+      'Using legacy synchronous overlap detection - consider migrating to checkOverlapPrecise for DOM-based accuracy',
+    );
+
     // For synchronous calls, we can only do basic boundary checking
     const isOutsideSlide =
       position.x < 0 ||
@@ -161,7 +167,7 @@ export class ElementValidator {
   ): Position {
     // Use the first overlapping element as reference
     const conflictingElement = overlappingElements[0];
-    
+
     // Try to place below the conflicting element
     let suggestedX = conflictingElement.bounds.left;
     let suggestedY = conflictingElement.bounds.bottom + padding;
@@ -170,7 +176,9 @@ export class ElementValidator {
       suggestedX + newElementSize.width <= 1280 &&
       suggestedY + newElementSize.height <= 720
     ) {
-      console.log('DOM-based: Found suitable position below conflicting element');
+      console.log(
+        'DOM-based: Found suitable position below conflicting element',
+      );
       return { x: suggestedX, y: suggestedY };
     }
 
@@ -182,12 +190,14 @@ export class ElementValidator {
       suggestedX + newElementSize.width <= 1280 &&
       suggestedY + newElementSize.height <= 720
     ) {
-      console.log('DOM-based: Found suitable position to the right of conflicting element');
+      console.log(
+        'DOM-based: Found suitable position to the right of conflicting element',
+      );
       return { x: suggestedX, y: suggestedY };
     }
 
     console.log('DOM-based: Using grid-based position suggestion as fallback');
-    
+
     // Fall back to grid-based positioning
     return this.generateGridPositionFallback(newElementSize);
   }
@@ -208,10 +218,7 @@ export class ElementValidator {
         const y = row * cellHeight + margin;
 
         // Ensure the element fits within slide bounds
-        if (
-          x + elementSize.width <= 1280 &&
-          y + elementSize.height <= 720
-        ) {
+        if (x + elementSize.width <= 1280 && y + elementSize.height <= 720) {
           return { x, y };
         }
       }
@@ -224,3 +231,4 @@ export class ElementValidator {
     };
   }
 }
+

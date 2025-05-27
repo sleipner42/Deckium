@@ -14,6 +14,7 @@
 * Something is wrong in the closet non-overlapping positioning.
 * Selecting an element and then writing to the agent and pressing backspace
   results in the element being deleted.
+* Messages disappearing after the critic response.
 
 
 ## Future features
