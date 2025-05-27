@@ -133,19 +133,21 @@ export class ElementValidator {
     if ((position as any).hasOwnProperty('type') && (position as any).type === 'textbox') {
       const textElement = position as unknown as TextBox;
       if (textElement.content && textElement.fontSize) {
+        // Account for TextElement component's 4px padding on all sides
+        const TEXT_ELEMENT_PADDING = 4;
+        const availableContentWidth = size.width - (TEXT_ELEMENT_PADDING * 2);
+        
         const preciseDimensions = await this.measureTextDimensions(
           textElement.content,
           textElement.fontSize,
           textElement.fontFamily || 'Arial',
-          size.width,
+          availableContentWidth,
         );
-        elementHeight = preciseDimensions.height;
-        // Only use measured width if it's smaller than the container width
-        if (preciseDimensions.width < size.width) {
-          elementWidth = preciseDimensions.width;
-        }
+        // Add padding to get total element dimensions
+        elementHeight = preciseDimensions.height + (TEXT_ELEMENT_PADDING * 2);
+        elementWidth = Math.min(preciseDimensions.width + (TEXT_ELEMENT_PADDING * 2), size.width);
         console.log(
-          'Precise dimensions for new textbox:',
+          'Precise dimensions for new textbox (with padding):',
           elementWidth,
           'x',
           elementHeight,
@@ -201,19 +203,21 @@ export class ElementValidator {
     if ((position as any).hasOwnProperty('type') && (position as any).type === 'textbox') {
       const textElement = position as unknown as TextBox;
       if (textElement.content && textElement.fontSize) {
+        // Account for TextElement component's 4px padding on all sides
+        const TEXT_ELEMENT_PADDING = 4;
+        const availableContentWidth = size.width - (TEXT_ELEMENT_PADDING * 2);
+        
         const estimatedDimensions = this.estimateTextDimensions(
           textElement.content,
           textElement.fontSize,
-          size.width,
+          availableContentWidth,
           textElement.fontFamily || 'Arial',
         );
-        elementHeight = estimatedDimensions.height;
-        // Only use estimated width if it's smaller than the container width
-        if (estimatedDimensions.width < size.width) {
-          elementWidth = estimatedDimensions.width;
-        }
+        // Add padding to get total element dimensions
+        elementHeight = estimatedDimensions.height + (TEXT_ELEMENT_PADDING * 2);
+        elementWidth = Math.min(estimatedDimensions.width + (TEXT_ELEMENT_PADDING * 2), size.width);
         console.log(
-          'Estimated dimensions for new textbox:',
+          'Estimated dimensions for new textbox (with padding):',
           elementWidth,
           'x',
           elementHeight,
@@ -302,16 +306,20 @@ export class ElementValidator {
       // For textbox elements, use only estimation in sync mode
       if (element.type === 'textbox') {
         const textElement = element as TextBox;
+        
+        // Account for TextElement component's 4px padding on all sides
+        const TEXT_ELEMENT_PADDING = 4;
+        const availableContentWidth = textElement.size.width - (TEXT_ELEMENT_PADDING * 2);
+        
         const estimatedDimensions = this.estimateTextDimensions(
           textElement.content,
           textElement.fontSize,
-          textElement.size.width,
+          availableContentWidth,
           textElement.fontFamily || 'Arial',
         );
-        elementHeight = estimatedDimensions.height;
-        if (estimatedDimensions.width < element.size.width) {
-          elementWidth = estimatedDimensions.width;
-        }
+        // Add padding to get total element dimensions
+        elementHeight = estimatedDimensions.height + (TEXT_ELEMENT_PADDING * 2);
+        elementWidth = Math.min(estimatedDimensions.width + (TEXT_ELEMENT_PADDING * 2), element.size.width);
       }
 
       const elementBox: BoundingBox = {
@@ -445,45 +453,44 @@ export class ElementValidator {
       if (element.type === 'textbox') {
         const textElement = element as TextBox;
         
+        // Account for TextElement component's 4px padding on all sides
+        const TEXT_ELEMENT_PADDING = 4;
+        const availableContentWidth = textElement.size.width - (TEXT_ELEMENT_PADDING * 2);
+        
         if (usePreciseMeasurements) {
           try {
             const preciseDimensions = await this.measureTextDimensions(
               textElement.content,
               textElement.fontSize,
               textElement.fontFamily || 'Arial',
-              textElement.size.width,
+              availableContentWidth,
             );
-            elementHeight = preciseDimensions.height;
-            if (preciseDimensions.width < element.size.width) {
-              elementWidth = preciseDimensions.width;
-            }
-            console.log('Precise dimensions for existing textbox:', elementWidth, 'x', elementHeight);
+            // Add padding to get total element dimensions
+            elementHeight = preciseDimensions.height + (TEXT_ELEMENT_PADDING * 2);
+            elementWidth = Math.min(preciseDimensions.width + (TEXT_ELEMENT_PADDING * 2), element.size.width);
+            console.log('Precise dimensions for existing textbox (with padding):', elementWidth, 'x', elementHeight);
           } catch (error) {
             // Fallback to estimation if precise measurement fails
             const estimatedDimensions = this.estimateTextDimensions(
               textElement.content,
               textElement.fontSize,
-              textElement.size.width,
+              availableContentWidth,
               textElement.fontFamily || 'Arial',
             );
-            elementHeight = estimatedDimensions.height;
-            if (estimatedDimensions.width < element.size.width) {
-              elementWidth = estimatedDimensions.width;
-            }
-            console.log('Estimated dimensions for existing textbox (fallback):', elementWidth, 'x', elementHeight);
+            elementHeight = estimatedDimensions.height + (TEXT_ELEMENT_PADDING * 2);
+            elementWidth = Math.min(estimatedDimensions.width + (TEXT_ELEMENT_PADDING * 2), element.size.width);
+            console.log('Estimated dimensions for existing textbox (with padding, fallback):', elementWidth, 'x', elementHeight);
           }
         } else {
           const estimatedDimensions = this.estimateTextDimensions(
             textElement.content,
             textElement.fontSize,
-            textElement.size.width,
+            availableContentWidth,
             textElement.fontFamily || 'Arial',
           );
-          elementHeight = estimatedDimensions.height;
-          if (estimatedDimensions.width < element.size.width) {
-            elementWidth = estimatedDimensions.width;
-          }
-          console.log('Estimated dimensions for existing textbox:', elementWidth, 'x', elementHeight);
+          elementHeight = estimatedDimensions.height + (TEXT_ELEMENT_PADDING * 2);
+          elementWidth = Math.min(estimatedDimensions.width + (TEXT_ELEMENT_PADDING * 2), element.size.width);
+          console.log('Estimated dimensions for existing textbox (with padding):', elementWidth, 'x', elementHeight);
         }
       }
 
@@ -661,18 +668,21 @@ export class ElementValidator {
         // For textbox elements, use the estimated dimensions for more accurate overlap detection
         if (element.type === 'textbox') {
           const textElement = element as TextBox;
+          
+          // Account for TextElement component's 4px padding on all sides
+          const TEXT_ELEMENT_PADDING = 4;
+          const availableContentWidth = textElement.size.width - (TEXT_ELEMENT_PADDING * 2);
+          
           const estimatedDimensions = this.estimateTextDimensions(
             textElement.content,
             textElement.fontSize,
-            textElement.size.width,
+            availableContentWidth,
           );
-          elementHeight = estimatedDimensions.height;
-          // Only use estimated width if it's smaller than the container width
-          if (estimatedDimensions.width < element.size.width) {
-            elementWidth = estimatedDimensions.width;
-          }
+          // Add padding to get total element dimensions
+          elementHeight = estimatedDimensions.height + (TEXT_ELEMENT_PADDING * 2);
+          elementWidth = Math.min(estimatedDimensions.width + (TEXT_ELEMENT_PADDING * 2), element.size.width);
           console.log(
-            'Sug new pos. Estimated dimensions for textbox:',
+            'Sug new pos. Estimated dimensions for textbox (with padding):',
             elementWidth,
             'x',
             elementHeight,
