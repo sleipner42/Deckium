@@ -24,6 +24,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { keyframes } from '@mui/system';
 import { Message } from '../../../../common/domain/entities/ai-types';
 import { useAI } from '../../context/AIContext';
+import { usePresentation } from '../../context/PresentationContext';
 
 interface ChatInterfaceProps {
   className?: string;
@@ -51,6 +52,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     loadThread,
     deleteThread,
   } = useAI();
+
+  const { selectElement } = usePresentation();
 
   const [inputValue, setInputValue] = useState('');
   const [pastedImages, setPastedImages] = useState<string[]>([]);
@@ -161,6 +164,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleThreadSelect = async (threadId: string) => {
     await loadThread(threadId);
+  };
+
+  const handleInputFocus = () => {
+    selectElement(null);
   };
 
   const formatTimestamp = (date: Date) => {
@@ -739,6 +746,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           }
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
+          onFocus={handleInputFocus}
           disabled={isLoading || !currentThread}
           variant="outlined"
           inputRef={inputRef}

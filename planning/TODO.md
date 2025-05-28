@@ -10,7 +10,6 @@
 * Duplicate/copy slide tool
 * Instruction about how a good slide looks. Do not put boxes as highlights.
 * Emojis like slack
-* Selecting an element and then writing to the agent and pressing backspace
   results in the element being deleted.
 * Messages disappearing after the critic response.
 * Is the critic getting the correct slide?
@@ -36,4 +35,4 @@
 * Landing page
 * Add info about user focus
 * Something is wrong in the closet non-overlapping positioning.
-
+* Selecting an element and then writing to the agent and pressing backspace

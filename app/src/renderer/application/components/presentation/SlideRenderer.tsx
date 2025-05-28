@@ -51,11 +51,20 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     if (readOnly) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent deletion if focus is on an input, textarea, or contenteditable element
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.contentEditable === 'true'
+      );
+
       if (
         (e.key === 'Backspace' || e.key === 'Delete') &&
         selectedElementId &&
         !editingElementId &&
-        selectableElements
+        selectableElements &&
+        !isInputFocused
       ) {
         const elementToDelete = slide.elements.find(
           (el) => el.id === selectedElementId,
