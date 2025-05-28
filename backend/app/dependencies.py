@@ -1,19 +1,25 @@
+from app.core.config import settings
 from app.repositories.sqlite_user_repository import SQLiteUserRepository
 from app.repositories.sqlite_transaction_repository import (
-    SQLiteTransactionRepository,
+    SQLiteTransactionRepository
+)
+from app.repositories.sqlite_auth_repository import (
+    SQLiteAuthorizedEmailRepository
 )
 from app.services.transaction_service import TransactionService
-from app.core.config import settings
 
 
-async def get_user_repo() -> SQLiteUserRepository:
+def get_user_repo():
     return SQLiteUserRepository(settings.DATABASE_URL)
 
 
-async def get_transaction_repo() -> SQLiteTransactionRepository:
+def get_transaction_repo():
     return SQLiteTransactionRepository(settings.DATABASE_URL)
 
 
-async def get_transaction_service() -> TransactionService:
-    transaction_repo = await get_transaction_repo()
-    return TransactionService(transaction_repo)
+def get_auth_repo():
+    return SQLiteAuthorizedEmailRepository(settings.DATABASE_URL)
+
+
+def get_transaction_service():
+    return TransactionService(get_transaction_repo())

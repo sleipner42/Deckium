@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""  # Will be overridden from .env
     GOOGLE_CLIENT_SECRET: str = ""  # Will be overridden from .env
     SECRET_KEY: str = "development_secret_key"  # For state param in OAuth
-    REDIRECT_URL: str = "http://localhost:8000/api/v1/auth/callback"
+    REDIRECT_URL: str = "http://localhost:8000/auth/callback"
     FRONTEND_URL: str = "http://localhost:3000"
 
     # JWT settings
