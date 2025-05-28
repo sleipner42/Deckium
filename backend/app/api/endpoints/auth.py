@@ -2,26 +2,32 @@ import logging
 import secrets
 
 from authlib.integrations.starlette_client import OAuth
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import (
+    APIRouter, 
+    Depends, 
+    HTTPException, 
+    Request, 
+    Response, 
+    status
+)
 from fastapi.responses import RedirectResponse
 from starlette.config import Config
 
 from app.core.auth import create_access_token
 from app.core.config import settings
-from app.dependencies import get_transaction_repo, get_user_repo
+from app.dependencies import (
+    get_transaction_repo, 
+    get_user_repo, 
+    get_auth_repo
+)
 from app.factories.user_factory import create_oauth_user
 from app.repositories.transaction import TransactionRepository
 from app.repositories.user import UserRepository
+from app.repositories.auth import AuthorizedEmailRepository
 
 router = APIRouter()
 
 logger = logging.getLogger(__name__)
-
-AUTHORIZED_EMAILS = [
-    "kristoffer.nordstrom42@gmail.com",
-    "elias.aronson@gmail.com",
-    "victor@lagerfors.com",
-]
 
 config_data = {
     "GOOGLE_CLIENT_ID": str(settings.GOOGLE_CLIENT_ID),
@@ -57,6 +63,7 @@ async def auth_callback(
     response: Response,
     repo: UserRepository = Depends(get_user_repo),
     transaction_repo: TransactionRepository = Depends(get_transaction_repo),
+    auth_repo: AuthorizedEmailRepository = Depends(get_auth_repo),
 ):
     """Callback route from Google OAuth, creates JWT and sets cookie"""
     try:
@@ -69,7 +76,8 @@ async def auth_callback(
             )
 
         email = user_info["email"]
-        if email not in AUTHORIZED_EMAILS:
+        is_authorized = await auth_repo.is_authorized(email)
+        if not is_authorized:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Email not authorized to access this application",
@@ -135,7 +143,8 @@ async def get_user(request: Request):
         "Bearer "
     ):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Not authenticated"
         )
     token = cookie_authorization.replace("Bearer ", "")
     print("token", token)

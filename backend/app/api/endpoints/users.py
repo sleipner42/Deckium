@@ -4,6 +4,8 @@ from typing import List
 from app.models.user import User, UserCreate, UserUpdate
 from app.repositories.user import UserRepository
 from app.dependencies import get_user_repo
+from app.api.deps import get_admin_user
+from app.core.auth import TokenData
 
 router = APIRouter()
 
@@ -12,7 +14,8 @@ router = APIRouter()
 async def read_users(
     skip: int = 0, 
     limit: int = 100,
-    repo: UserRepository = Depends(get_user_repo)
+    repo: UserRepository = Depends(get_user_repo),
+    admin_user: TokenData = Depends(get_admin_user)
 ):
     return await repo.list(skip=skip, limit=limit)
 
@@ -20,7 +23,8 @@ async def read_users(
 @router.post("/", response_model=User, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user_in: UserCreate, 
-    repo: UserRepository = Depends(get_user_repo)
+    repo: UserRepository = Depends(get_user_repo),
+    admin_user: TokenData = Depends(get_admin_user)
 ):
     user = await repo.get_by_email(email=user_in.email)
     if user:
@@ -34,7 +38,8 @@ async def create_user(
 @router.get("/{user_id}", response_model=User)
 async def read_user(
     user_id: int, 
-    repo: UserRepository = Depends(get_user_repo)
+    repo: UserRepository = Depends(get_user_repo),
+    admin_user: TokenData = Depends(get_admin_user)
 ):
     user = await repo.get(user_id=user_id)
     if not user:
@@ -49,7 +54,8 @@ async def read_user(
 async def update_user(
     user_id: int,
     user_in: UserUpdate,
-    repo: UserRepository = Depends(get_user_repo)
+    repo: UserRepository = Depends(get_user_repo),
+    admin_user: TokenData = Depends(get_admin_user)
 ):
     user = await repo.update(user_id=user_id, user_in=user_in)
     if not user:
@@ -63,7 +69,8 @@ async def update_user(
 @router.delete("/{user_id}", response_model=User)
 async def delete_user(
     user_id: int,
-    repo: UserRepository = Depends(get_user_repo)
+    repo: UserRepository = Depends(get_user_repo),
+    admin_user: TokenData = Depends(get_admin_user)
 ):
     user = await repo.delete(user_id=user_id)
     if not user:

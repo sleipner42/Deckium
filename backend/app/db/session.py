@@ -44,7 +44,8 @@ async def init_db():
                     hashed_password TEXT NOT NULL,
                     full_name TEXT,
                     is_active BOOLEAN DEFAULT 1,
-                    is_superuser BOOLEAN DEFAULT 0
+                    is_superuser BOOLEAN DEFAULT 0,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
             """
             )
@@ -58,12 +59,44 @@ async def init_db():
                     user_id INTEGER NOT NULL,
                     amount REAL NOT NULL,
                     description TEXT,
-                    created_at TEXT NOT NULL,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES user(id)
                 )
             """
             )
             logger.info("Transaction table created successfully")
+
+            logger.info("Creating authorized_emails table...")
+            await db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS authorized_emails (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT UNIQUE NOT NULL,
+                    is_active BOOLEAN DEFAULT 1,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    created_by INTEGER,
+                    FOREIGN KEY (created_by) REFERENCES user(id)
+                )
+            """
+            )
+            logger.info("Authorized emails table created successfully")
+
+            logger.info("Seeding initial authorized emails...")
+            initial_emails = [
+                "kristoffer.nordstrom42@gmail.com",
+                "elias.aronson@gmail.com", 
+                "victor@lagerfors.com"
+            ]
+            
+            for email in initial_emails:
+                await db.execute(
+                    """
+                    INSERT OR IGNORE INTO authorized_emails (email, is_active)
+                    VALUES (?, 1)
+                    """,
+                    (email,)
+                )
+            logger.info("Initial authorized emails seeded")
 
             await db.commit()
             logger.info("Database tables committed successfully")
@@ -72,7 +105,9 @@ async def init_db():
                 "SELECT name FROM sqlite_master WHERE type='table'"
             )
             tables = await cursor.fetchall()
-            logger.info(f"Tables in database: {[table[0] for table in tables]}")
+            logger.info(
+                f"Tables in database: {[table[0] for table in tables]}"
+            )
 
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
