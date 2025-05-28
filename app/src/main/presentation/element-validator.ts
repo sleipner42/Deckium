@@ -53,7 +53,7 @@ export class ElementValidator {
       // Convert DOM result to expected format
       const overlappingElements = domResult.overlappingElements.map(
         (element) =>
-          `${element.type} with id "$(element.id)" at position (${element.position.x}, ${element.position.y})`,
+          `${element.type} with id "${element.id}" at position (${element.position.x}, ${element.position.y})`,
       );
 
       // Generate suggested position if there are overlaps

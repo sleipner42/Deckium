@@ -19,6 +19,7 @@ export class AddTextElementTool extends BaseTool {
     y: 'Y position of the element (optional, defaults to 100)',
     // positionReference: 'The reference position of the element (optional, defaults to top left), choose from top left or center',
     width: 'The width of the element (optional, defaults to 400)',
+    height: 'The height of the element (optional, defaults to 200)',
     fontSize: 'The font size of the element (optional, defaults to 12)',
     fontFamily: 'The font family of the element (optional, defaults to Arial)',
     color: 'The color of the element (optional, defaults to black)',
