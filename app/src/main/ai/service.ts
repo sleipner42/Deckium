@@ -81,9 +81,11 @@ export class AIService {
         message: request.message,
         content: request.content,
         contentType: Array.isArray(request.content) ? 'multi-content' : 'text',
-        contentLength: request.content ? 
-          (Array.isArray(request.content) ? request.content.length : request.content.length) : 
-          (request.message?.length || 0)
+        contentLength: request.content
+          ? Array.isArray(request.content)
+            ? request.content.length
+            : request.content.length
+          : request.message?.length || 0,
       });
 
       console.log(`Sending message to thread: ${request.threadId}`);
@@ -151,7 +153,7 @@ export class AIService {
         logger.logSystem('User message added to thread', 'debug', {
           threadId: thread.id,
           messageType: 'multi-content',
-          content: request.content
+          content: request.content,
         });
       } else {
         updatedThread = this.state.addMessage(thread, request.message, 'user');
@@ -159,7 +161,7 @@ export class AIService {
         logger.logSystem('User message added to thread', 'debug', {
           threadId: thread.id,
           messageType: 'text',
-          message: request.message
+          message: request.message,
         });
       }
 
@@ -188,9 +190,12 @@ export class AIService {
         threadId: updatedThread.id,
         response: aiResponse,
         responseType: typeof aiResponse,
-        responseLength: typeof aiResponse === 'string' ? aiResponse.length : JSON.stringify(aiResponse).length,
+        responseLength:
+          typeof aiResponse === 'string'
+            ? aiResponse.length
+            : JSON.stringify(aiResponse).length,
         processingTimeMs: endTime - startTime,
-        messageCount: updatedThread.messages.length
+        messageCount: updatedThread.messages.length,
       });
 
       this.eventBus.broadcastMessageReceived(
@@ -213,7 +218,7 @@ export class AIService {
       logger.logSystem('AI request failed', 'error', {
         threadId: request.threadId,
         error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
       });
 
       this.eventBus.broadcastProcessingError(request.threadId, errorMessage);
@@ -294,7 +299,7 @@ export class AIService {
         logger.logSystem('AI streaming response started', 'debug', {
           threadId: updatedThread.id,
           messageId: assistantMessageId,
-          iteration: iterationCount + 1
+          iteration: iterationCount + 1,
         });
 
         this.saveThread(updatedThread);
@@ -321,7 +326,7 @@ export class AIService {
               chunkCount,
               currentLength: streamingContent.length,
               recentChunk: chunk,
-              iteration: iterationCount + 1
+              iteration: iterationCount + 1,
             });
           }
 
@@ -355,7 +360,7 @@ export class AIService {
           response: aiResponse,
           finalLength: aiResponse?.length || 0,
           chunkCount,
-          iteration: iterationCount + 1
+          iteration: iterationCount + 1,
         });
 
         // Check if we're getting the same response repeatedly
@@ -446,13 +451,13 @@ export class AIService {
         consecutiveEmptyIterations = 0;
 
         console.log(`Executing tool call: ${toolCall.toolName}`);
-        
+
         // Log tool execution start
         logger.logSystem('Tool execution started', 'debug', {
           toolName: toolCall.toolName,
           toolId: toolCall.toolId,
           params: toolCall.params,
-          iteration: iterationCount + 1
+          iteration: iterationCount + 1,
         });
 
         // console.time('executeToolCalls');
@@ -467,7 +472,7 @@ export class AIService {
           toolName: toolCall.toolName,
           results: toolResults,
           resultCount: toolResults.length,
-          iteration: iterationCount + 1
+          iteration: iterationCount + 1,
         });
 
         // console.time('formatToolResults');

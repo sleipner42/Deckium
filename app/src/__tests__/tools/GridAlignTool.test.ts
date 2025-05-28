@@ -1,12 +1,12 @@
 import { GridAlignTool } from '../../main/ai/tools/tools/GridAlignTool';
 import { MockPresentationService } from './MockPresentationService';
-import { 
-  createSlideWithElements, 
-  expectToolSuccess, 
+import {
+  createSlideWithElements,
+  expectToolSuccess,
   expectToolError,
   createTextElement,
   createImageElement,
-  createShapeElement
+  createShapeElement,
 } from './test-utils';
 
 describe('GridAlignTool', () => {
@@ -25,64 +25,94 @@ describe('GridAlignTool', () => {
     });
 
     it('should return error when elementIds is missing', async () => {
-      const result = await tool.execute({ slideId: 'test-slide' }, mockService as any);
+      const result = await tool.execute(
+        { slideId: 'test-slide' },
+        mockService as any,
+      );
       expectToolError(result, 'elementIds is required');
     });
 
     it('should return error when gridSize is missing', async () => {
-      const result = await tool.execute({ 
-        slideId: 'test-slide', 
-        elementIds: 'element1' 
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: 'test-slide',
+          elementIds: 'element1',
+        },
+        mockService as any,
+      );
       expectToolError(result, 'gridSize is required and must be a number');
     });
 
     it('should return error when gridSize is not a number', async () => {
-      const result = await tool.execute({ 
-        slideId: 'test-slide', 
-        elementIds: 'element1',
-        gridSize: 'invalid' 
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: 'test-slide',
+          elementIds: 'element1',
+          gridSize: 'invalid',
+        },
+        mockService as any,
+      );
       expectToolError(result, 'gridSize is required and must be a number');
     });
 
     it('should return error when snapMode is missing', async () => {
-      const result = await tool.execute({ 
-        slideId: 'test-slide', 
-        elementIds: 'element1',
-        gridSize: '20' 
-      }, mockService as any);
-      expectToolError(result, 'snapMode must be one of: top-left, center, nearest-corner');
+      const result = await tool.execute(
+        {
+          slideId: 'test-slide',
+          elementIds: 'element1',
+          gridSize: '20',
+        },
+        mockService as any,
+      );
+      expectToolError(
+        result,
+        'snapMode must be one of: top-left, center, nearest-corner',
+      );
     });
 
     it('should return error when snapMode is invalid', async () => {
-      const result = await tool.execute({ 
-        slideId: 'test-slide', 
-        elementIds: 'element1',
-        gridSize: '20',
-        snapMode: 'invalid-mode'
-      }, mockService as any);
-      expectToolError(result, 'snapMode must be one of: top-left, center, nearest-corner');
+      const result = await tool.execute(
+        {
+          slideId: 'test-slide',
+          elementIds: 'element1',
+          gridSize: '20',
+          snapMode: 'invalid-mode',
+        },
+        mockService as any,
+      );
+      expectToolError(
+        result,
+        'snapMode must be one of: top-left, center, nearest-corner',
+      );
     });
 
     it('should return error when gridOrigin format is invalid', async () => {
-      const result = await tool.execute({ 
-        slideId: 'test-slide', 
-        elementIds: 'element1',
-        gridSize: '20',
-        snapMode: 'top-left',
-        gridOrigin: 'invalid'
-      }, mockService as any);
-      expectToolError(result, 'gridOrigin must be in format "x,y" (e.g., "0,0" or "10,20")');
+      const result = await tool.execute(
+        {
+          slideId: 'test-slide',
+          elementIds: 'element1',
+          gridSize: '20',
+          snapMode: 'top-left',
+          gridOrigin: 'invalid',
+        },
+        mockService as any,
+      );
+      expectToolError(
+        result,
+        'gridOrigin must be in format "x,y" (e.g., "0,0" or "10,20")',
+      );
     });
 
     it('should return error when slide does not exist', async () => {
-      const result = await tool.execute({ 
-        slideId: 'non-existent-slide', 
-        elementIds: 'element1',
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: 'non-existent-slide',
+          elementIds: 'element1',
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
       expectToolError(result, 'Slide with ID non-existent-slide not found');
     });
 
@@ -90,13 +120,19 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: 'non-existent-element',
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
-      expectToolError(result, 'Some elements were not found: non-existent-element');
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: 'non-existent-element',
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
+      expectToolError(
+        result,
+        'Some elements were not found: non-existent-element',
+      );
     });
 
     it('should return error when some elements do not exist', async () => {
@@ -104,13 +140,19 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element1]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: `${element1.id},non-existent-element`,
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
-      expectToolError(result, 'Some elements were not found: non-existent-element');
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: `${element1.id},non-existent-element`,
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
+      expectToolError(
+        result,
+        'Some elements were not found: non-existent-element',
+      );
     });
   });
 
@@ -121,18 +163,24 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       expect(result.data?.gridInfo.cellSize).toBe(20);
       expect(result.data?.gridInfo.snapMode).toBe('top-left');
       expect(result.data?.updates).toHaveLength(1);
-      expect(result.data?.updates[0].updates.position).toEqual({ x: 100, y: 120 });
+      expect(result.data?.updates[0].updates.position).toEqual({
+        x: 100,
+        y: 120,
+      });
     });
 
     it('should handle custom grid origin', async () => {
@@ -143,17 +191,23 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'top-left',
-        gridOrigin: '5,5'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'top-left',
+          gridOrigin: '5,5',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       expect(result.data?.gridInfo.origin).toEqual({ x: 5, y: 5 });
-      expect(result.data?.updates[0].updates.position).toEqual({ x: 105, y: 105 });
+      expect(result.data?.updates[0].updates.position).toEqual({
+        x: 105,
+        y: 105,
+      });
     });
 
     it('should handle multiple elements', async () => {
@@ -162,17 +216,26 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element1, element2]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: `${element1.id},${element2.id}`,
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: `${element1.id},${element2.id}`,
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       expect(result.data?.updates).toHaveLength(2);
-      expect(result.data?.updates[0].updates.position).toEqual({ x: 100, y: 120 });
-      expect(result.data?.updates[1].updates.position).toEqual({ x: 140, y: 180 });
+      expect(result.data?.updates[0].updates.position).toEqual({
+        x: 100,
+        y: 120,
+      });
+      expect(result.data?.updates[1].updates.position).toEqual({
+        x: 140,
+        y: 180,
+      });
     });
   });
 
@@ -185,15 +248,21 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'center'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'center',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
-      expect(result.data?.updates[0].updates.position).toEqual({ x: 100, y: 110 });
+      expect(result.data?.updates[0].updates.position).toEqual({
+        x: 100,
+        y: 110,
+      });
     });
 
     it('should handle different grid sizes', async () => {
@@ -201,17 +270,23 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '50',
-        snapMode: 'center'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '50',
+          snapMode: 'center',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       // Center at (200, 150) should snap to (200, 150) with 50px grid - no movement needed
       if (result.data?.updates) {
-        expect(result.data?.updates[0].updates.position).toEqual({ x: 100, y: 100 });
+        expect(result.data?.updates[0].updates.position).toEqual({
+          x: 100,
+          y: 100,
+        });
       } else {
         // Element was already aligned, no updates needed
         expect(result.data?.message).toContain('already aligned');
@@ -229,15 +304,21 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'nearest-corner'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'nearest-corner',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
-      expect(result.data?.updates[0].updates.position).toEqual({ x: 100, y: 100 });
+      expect(result.data?.updates[0].updates.position).toEqual({
+        x: 100,
+        y: 100,
+      });
     });
 
     it('should snap bottom-right corner when it is nearest', async () => {
@@ -250,15 +331,21 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'nearest-corner'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'nearest-corner',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
-      expect(result.data?.updates[0].updates.position).toEqual({ x: 140, y: 140 });
+      expect(result.data?.updates[0].updates.position).toEqual({
+        x: 140,
+        y: 140,
+      });
     });
   });
 
@@ -269,16 +356,21 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       // Should be constrained to stay within 1280px slide width
-      expect(result.data?.updates[0].updates.position.x).toBeLessThanOrEqual(1080); // 1280 - 200
+      expect(result.data?.updates[0].updates.position.x).toBeLessThanOrEqual(
+        1080,
+      ); // 1280 - 200
     });
 
     it('should keep elements within slide bounds vertically', async () => {
@@ -287,16 +379,21 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       // Should be constrained to stay within 720px slide height
-      expect(result.data?.updates[0].updates.position.y).toBeLessThanOrEqual(520); // 720 - 200
+      expect(result.data?.updates[0].updates.position.y).toBeLessThanOrEqual(
+        520,
+      ); // 720 - 200
     });
   });
 
@@ -307,15 +404,20 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
-      expect(result.data?.message).toBe('Elements are already aligned to the grid');
+      expect(result.data?.message).toBe(
+        'Elements are already aligned to the grid',
+      );
       expect(result.data?.updates).toBeUndefined();
     });
 
@@ -325,15 +427,20 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
-      expect(result.data?.message).toBe('Elements are already aligned to the grid');
+      expect(result.data?.message).toBe(
+        'Elements are already aligned to the grid',
+      );
     });
   });
 
@@ -343,15 +450,21 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
-      expect(result.data?.updates[0].updates.position).toEqual({ x: 100, y: 120 });
+      expect(result.data?.updates[0].updates.position).toEqual({
+        x: 100,
+        y: 120,
+      });
     });
 
     it('should work with image elements', async () => {
@@ -359,15 +472,21 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
-      expect(result.data?.updates[0].updates.position).toEqual({ x: 100, y: 120 });
+      expect(result.data?.updates[0].updates.position).toEqual({
+        x: 100,
+        y: 120,
+      });
     });
 
     it('should work with shape elements', async () => {
@@ -375,30 +494,43 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
-      expect(result.data?.updates[0].updates.position).toEqual({ x: 100, y: 120 });
+      expect(result.data?.updates[0].updates.position).toEqual({
+        x: 100,
+        y: 120,
+      });
     });
 
     it('should work with mixed element types', async () => {
       const textElement = createTextElement('Test', 107, 113, 200, 100);
       const imageElement = createImageElement('test.jpg', 147, 173, 150, 80);
       const shapeElement = createShapeElement('circle', 87, 93, 100, 100);
-      const slide = createSlideWithElements([textElement, imageElement, shapeElement]);
+      const slide = createSlideWithElements([
+        textElement,
+        imageElement,
+        shapeElement,
+      ]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: `${textElement.id},${imageElement.id},${shapeElement.id}`,
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: `${textElement.id},${imageElement.id},${shapeElement.id}`,
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       expect(result.data?.updates).toHaveLength(3);
@@ -412,16 +544,22 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '10',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '10',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       expect(result.data?.gridInfo.cellSize).toBe(10);
-      expect(result.data?.updates[0].updates.position).toEqual({ x: 110, y: 110 });
+      expect(result.data?.updates[0].updates.position).toEqual({
+        x: 110,
+        y: 110,
+      });
     });
 
     it('should work with large grid sizes', async () => {
@@ -429,16 +567,22 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '50',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '50',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       expect(result.data?.gridInfo.cellSize).toBe(50);
-      expect(result.data?.updates[0].updates.position).toEqual({ x: 100, y: 100 });
+      expect(result.data?.updates[0].updates.position).toEqual({
+        x: 100,
+        y: 100,
+      });
     });
   });
 
@@ -448,17 +592,23 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'top-left',
-        gridOrigin: '-5,-5'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'top-left',
+          gridOrigin: '-5,-5',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       expect(result.data?.gridInfo.origin).toEqual({ x: -5, y: -5 });
-      expect(result.data?.updates[0].updates.position).toEqual({ x: 115, y: 115 });
+      expect(result.data?.updates[0].updates.position).toEqual({
+        x: 115,
+        y: 115,
+      });
     });
 
     it('should handle fractional grid origins', async () => {
@@ -466,13 +616,16 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: element.id,
-        gridSize: '20',
-        snapMode: 'top-left',
-        gridOrigin: '2.5,7.5'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: element.id,
+          gridSize: '20',
+          snapMode: 'top-left',
+          gridOrigin: '2.5,7.5',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       expect(result.data?.gridInfo.origin).toEqual({ x: 2.5, y: 7.5 });
@@ -481,20 +634,23 @@ describe('GridAlignTool', () => {
 
   describe('Performance and Edge Cases', () => {
     it('should handle large numbers of elements', async () => {
-      const elements = Array.from({ length: 20 }, (_, i) => 
-        createTextElement(`Element ${i}`, 100 + i * 30, 100 + i * 20, 50, 30)
+      const elements = Array.from({ length: 20 }, (_, i) =>
+        createTextElement(`Element ${i}`, 100 + i * 30, 100 + i * 20, 50, 30),
       );
       const slide = createSlideWithElements(elements);
       mockService.addSlide(slide);
 
-      const elementIds = elements.map(e => e.id).join(',');
+      const elementIds = elements.map((e) => e.id).join(',');
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds,
-        gridSize: '25',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds,
+          gridSize: '25',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       expect(result.data?.updates.length).toBeGreaterThan(0);
@@ -504,12 +660,15 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: '  ,  ,  ',
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: '  ,  ,  ',
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolError(result, 'At least one element is required');
     });
@@ -519,12 +678,15 @@ describe('GridAlignTool', () => {
       const slide = createSlideWithElements([element]);
       mockService.addSlide(slide);
 
-      const result = await tool.execute({ 
-        slideId: slide.id, 
-        elementIds: `  ${element.id}  `,
-        gridSize: '20',
-        snapMode: 'top-left'
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          slideId: slide.id,
+          elementIds: `  ${element.id}  `,
+          gridSize: '20',
+          snapMode: 'top-left',
+        },
+        mockService as any,
+      );
 
       expectToolSuccess(result);
       expect(result.data?.updates).toHaveLength(1);

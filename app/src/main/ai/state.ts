@@ -95,7 +95,7 @@ export class AIState {
       role,
       content,
       contentType: typeof content,
-      messageCount: threadToUpdate.messages.length + 1
+      messageCount: threadToUpdate.messages.length + 1,
     });
 
     const updatedThread = {
@@ -128,18 +128,25 @@ export class AIState {
 
     // Log the message being added with streaming state
     // Skip logging empty assistant messages that will be filled via streaming
-    const shouldLog = !(role === 'assistant' && streamingState === 'streaming' && (!content || content === ''));
-    
+    const shouldLog = !(
+      role === 'assistant' &&
+      streamingState === 'streaming' &&
+      (!content || content === '')
+    );
+
     if (shouldLog) {
-      logger.logConversation(`Message added to thread [${role}] with state [${streamingState}]`, {
-        threadId: thread.id,
-        messageId,
-        role,
-        content,
-        streamingState,
-        contentType: typeof content,
-        messageCount: threadToUpdate.messages.length + 1
-      });
+      logger.logConversation(
+        `Message added to thread [${role}] with state [${streamingState}]`,
+        {
+          threadId: thread.id,
+          messageId,
+          role,
+          content,
+          streamingState,
+          contentType: typeof content,
+          messageCount: threadToUpdate.messages.length + 1,
+        },
+      );
     }
 
     const updatedThread = {
@@ -210,16 +217,23 @@ export class AIState {
     };
 
     // Log completed assistant messages to conversation file
-    if (streamingState === 'completed' && originalMessage.role === 'assistant' && originalMessage.content) {
-      logger.logConversation(`Assistant message completed [${originalMessage.role}]`, {
-        threadId: thread.id,
-        messageId,
-        role: originalMessage.role,
-        content: originalMessage.content,
-        streamingState,
-        contentType: typeof originalMessage.content,
-        messageCount: updatedMessages.length
-      });
+    if (
+      streamingState === 'completed' &&
+      originalMessage.role === 'assistant' &&
+      originalMessage.content
+    ) {
+      logger.logConversation(
+        `Assistant message completed [${originalMessage.role}]`,
+        {
+          threadId: thread.id,
+          messageId,
+          role: originalMessage.role,
+          content: originalMessage.content,
+          streamingState,
+          contentType: typeof originalMessage.content,
+          messageCount: updatedMessages.length,
+        },
+      );
     }
 
     const updatedThread = {

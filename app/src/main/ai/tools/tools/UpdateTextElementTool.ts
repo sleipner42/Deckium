@@ -138,74 +138,7 @@ export class UpdateTextElementTool extends BaseTool {
       };
     }
 
-    // Check for potential overlaps if position or size is updated
-    let overlapCheck = null;
-    let lineBreakInfo = null;
-    if (updates.position || updates.size) {
-      const slide = currentPresentation.slides.find((s) => s.id === slideId);
-      if (slide) {
-        const newPosition = updates.position || targetElement.position;
-        const newSize = updates.size || targetElement.size;
-
-        // If we're updating content and font size, get precise measurements
-        let estimatedHeight = newSize.height;
-        if (updates.content || updates.fontSize) {
-          const contentToCheck =
-            updates.content !== undefined
-              ? updates.content
-              : targetElement.content;
-          const fontSizeToCheck =
-            updates.fontSize !== undefined
-              ? Number(updates.fontSize)
-              : targetElement.fontSize;
-          const fontFamilyToCheck =
-            updates.fontFamily !== undefined
-              ? updates.fontFamily
-              : targetElement.fontFamily || 'Arial';
-
-          let textDimensions;
-          try {
-            // Try to get precise measurements from the frontend
-            textDimensions = await textMeasurementService.measureText(
-              contentToCheck,
-              fontSizeToCheck,
-              fontFamilyToCheck,
-              newSize.width
-            );
-          } catch (error) {
-            console.warn('Failed to get precise text measurements in UpdateTextElementTool, falling back to estimation:', error);
-            // Fallback to estimation if precise measurement fails
-            textDimensions = estimateTextDimensions(
-              contentToCheck,
-              fontSizeToCheck,
-              newSize.width,
-            );
-          }
-
-          estimatedHeight = textDimensions.height;
-          lineBreakInfo = textDimensions.lineBreakInfo;
-        }
-
-        // For collision detection, use a more precise estimation of text bounding box
-        const elementSize = {
-          width: newSize.width + 10, // Add slight padding to width
-          height:
-            estimatedHeight +
-            (updates.fontSize || targetElement.fontSize) * 0.5, // Add a bit of extra height for partial overlaps
-        };
-
-        // Check for overlaps with the new position/size using precise measurements
-        // Pass the element ID to exclude the current element from overlap detection
-        overlapCheck = await ElementValidator.checkOverlapPrecise(
-          slide,
-          newPosition,
-          elementSize,
-          0, // Default padding
-          elementId, // Exclude this element ID from overlap detection
-        );
-      }
-    }
-
+    // Update the element first
     const updatedSlide = presentationService.updateElement(elementId, updates);
 
     if (!updatedSlide) {
@@ -215,13 +148,55 @@ export class UpdateTextElementTool extends BaseTool {
       };
     }
 
+    // Run post-update overlap detection and text measurement on the actual rendered element
+    let overlapCheck = null;
+    let lineBreakInfo = null;
+
+    try {
+      // Small delay to ensure DOM updates
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Get text dimensions if content, fontSize, or size was updated
+      if (updates.content || updates.fontSize || updates.size) {
+        const updatedElement = updatedSlide.elements.find(
+          (el) => el.id === elementId,
+        ) as TextBox;
+        if (updatedElement) {
+          const textDimensions = await textMeasurementService.measureText(
+            updatedElement.content,
+            updatedElement.fontSize,
+            updatedElement.fontFamily || 'Arial',
+            updatedElement.size.width,
+          );
+          lineBreakInfo = textDimensions.lineBreakInfo;
+        }
+      }
+
+      // Check for overlaps using the actual rendered element ID
+      overlapCheck = await ElementValidator.checkElementOverlap(
+        elementId,
+        0, // no padding
+      );
+    } catch (error) {
+      console.warn(
+        'Post-update overlap detection and measurement failed:',
+        error,
+      );
+      // Create fallback results
+      overlapCheck = {
+        hasOverlap: false,
+        overlappingElements: [],
+        isOutsideSlide: false,
+      };
+    }
+
     // Create appropriate message based on whether there was an overlap
     let message = 'Text element updated successfully';
 
     // Add line break information with specific guidance
     if (lineBreakInfo) {
       message += `\n\n${lineBreakInfo}`;
-      
+
       // Add specific guidance based on the type of text layout
       if (lineBreakInfo.includes('TEXT OVERFLOW')) {
         message += ` Use the updateTextElement tool to increase the width if single-line text is desired.`;

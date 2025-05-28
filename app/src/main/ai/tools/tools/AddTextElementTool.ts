@@ -92,70 +92,14 @@ export class AddTextElementTool extends BaseTool {
       };
     }
 
-    // Calculate precise text dimensions using frontend measurement
-    const fontSizeValue = Number(fontSize) || 12;
-    const fontFamilyValue = fontFamily || 'Arial';
-    
-    let textDimensions;
-    try {
-      // Try to get precise measurements from the frontend
-      textDimensions = await textMeasurementService.measureText(
-        content,
-        fontSizeValue,
-        fontFamilyValue,
-        width
-      );
-    } catch (error) {
-      console.warn('Failed to get precise text measurements, falling back to estimation:', error);
-      // Fallback to estimation if precise measurement fails
-      textDimensions = estimateTextDimensions(
-        content,
-        fontSizeValue,
-        width,
-      );
-    }
-    
-    const estimatedContentHeight = textDimensions.height;
-    const { lineBreakInfo } = textDimensions;
-
-    // Check for potential overlaps using a more realistic height estimate
-    const elementPosition = { x: xPos, y: yPos };
-    // For collision detection, use a more precise estimation of text bounding box
-    // Include minimal margin around the text for better readability detection
-    const estimatedWidth = textDimensions.width;
-    const elementSize = {
-      // If the estimated width is smaller than the container, use it
-      width: estimatedWidth < width ? estimatedWidth : width + 10,
-      height: estimatedContentHeight, // Use exact estimated height without additional buffer
-    };
-    const overlapCheck = await ElementValidator.checkOverlapPrecise(
-      slide,
-      elementPosition,
-      elementSize,
-    );
-
-    // We'll warn about overlap but not force repositioning to allow for intentional overlaps
-    // if (overlapCheck.hasOverlap && overlapCheck.suggestedPosition) {
-    //   xPos = overlapCheck.suggestedPosition.x;
-    //   yPos = overlapCheck.suggestedPosition.y;
-    // }
-
     // Use the provided z-index or default to 1
     const zIndex = params.zIndex !== undefined ? Number(params.zIndex) : 1;
 
-    if (Math.max(height, estimatedContentHeight) !== height) {
-      console.log(
-        'Estimated height is larger than provided height, using estimated height',
-      );
-    }
-
+    // Create element first
     const element = ElementFactory.createTextBox({
       content,
       position: { x: xPos, y: yPos },
-      size: {
-        width,
-        height: Math.max(height, estimatedContentHeight), // Use estimated height if larger
-      },
+      size: { width, height },
       fontSize: Number(fontSize) || 12,
       fontFamily: fontFamily || 'Arial',
       color: color || '#000000',
@@ -167,6 +111,7 @@ export class AddTextElementTool extends BaseTool {
       zIndex,
     });
 
+    // Add element to slide
     const updatedSlide = presentationService.addElement(slideId, element);
 
     if (!updatedSlide) {
@@ -176,36 +121,68 @@ export class AddTextElementTool extends BaseTool {
       };
     }
 
-    // Create appropriate message based on whether there was an overlap
+    // Run DOM-based measurement and overlap detection on the actual rendered element
+    let textDimensions = null;
+    let overlapCheck = null;
+
+    try {
+      // Small delay to ensure DOM updates
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Get actual text dimensions from the rendered element
+      textDimensions = await textMeasurementService.measureText(
+        content,
+        Number(fontSize) || 12,
+        fontFamily || 'Arial',
+        width,
+      );
+
+      // Check for overlaps using the actual rendered element ID
+      overlapCheck = await ElementValidator.checkElementOverlap(
+        element.id,
+        0, // no padding
+      );
+    } catch (error) {
+      console.warn(
+        'Post-creation measurement and overlap detection failed:',
+        error,
+      );
+      // Create fallback results
+      textDimensions = { height, width, lineBreakInfo: null };
+      overlapCheck = {
+        hasOverlap: false,
+        overlappingElements: [],
+        isOutsideSlide: false,
+      };
+    }
+
+    // Create message with text layout feedback
     let message = `Text element added successfully.\n${ElementFactory.calculateBoxAroundTextElement(
       element as TextBox,
     )}`;
 
     // Add line break information with specific guidance
-    if (lineBreakInfo) {
-      message += `\n\n${lineBreakInfo}`;
-      
+    if (textDimensions && textDimensions.lineBreakInfo) {
+      message += `\n\n${textDimensions.lineBreakInfo}`;
+
       // Add specific guidance based on the type of text layout
-      if (lineBreakInfo.includes('TEXT OVERFLOW')) {
+      if (textDimensions.lineBreakInfo.includes('TEXT OVERFLOW')) {
         message += ` Use the updateTextElement tool to increase the width if single-line text is desired.`;
-      } else if (lineBreakInfo.includes('TEXT WRAPPING')) {
+      } else if (textDimensions.lineBreakInfo.includes('TEXT WRAPPING')) {
         message += ` This is expected behavior for multi-line text content.`;
       }
     }
 
+    // Add DOM-based overlap and boundary feedback
     if (overlapCheck.isOutsideSlide) {
-      message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). `;
-
-      if (overlapCheck.suggestedPosition) {
-        message += `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to ensure visibility.`;
-      }
+      message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). Consider adjusting the position to ensure visibility.`;
     }
 
     if (overlapCheck.hasOverlap) {
       message += `\n\nWARNING: OVERLAP DETECTED. This text element visually overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}. `;
 
       if (overlapCheck.suggestedPosition) {
-        message += `Closes non overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}).`;
+        message += `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}).`;
       } else {
         message += `Please check the text placement to ensure readability.`;
       }

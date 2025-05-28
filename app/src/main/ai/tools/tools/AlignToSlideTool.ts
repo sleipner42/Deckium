@@ -5,12 +5,14 @@ import { PresentationService } from '../../../presentation/service';
 export class AlignToSlideTool extends BaseTool {
   name = 'alignToSlide';
 
-  description = 'Align elements to the slide boundaries (center of slide, slide edges, etc.)';
+  description =
+    'Align elements to the slide boundaries (center of slide, slide edges, etc.)';
 
   requiredParams = {
     slideId: 'The ID of the slide containing the elements',
     elementIds: 'Comma-separated list of element IDs to align to slide',
-    alignType: 'Type of alignment: "center", "center-horizontal", "center-vertical", "top", "bottom", "left", "right"',
+    alignType:
+      'Type of alignment: "center", "center-horizontal", "center-vertical", "top", "bottom", "left", "right"',
     margin: 'Optional margin from slide edges in pixels (defaults to 0)',
   };
 
@@ -43,12 +45,12 @@ export class AlignToSlideTool extends BaseTool {
 
     const validAlignTypes = [
       'center',
-      'center-horizontal', 
+      'center-horizontal',
       'center-vertical',
       'top',
       'bottom',
-      'left', 
-      'right'
+      'left',
+      'right',
     ];
 
     if (!validAlignTypes.includes(alignType)) {

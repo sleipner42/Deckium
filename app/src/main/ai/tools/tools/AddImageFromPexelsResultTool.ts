@@ -89,14 +89,11 @@ export class AddImageFromPexelsResultTool extends BaseTool {
       const xPos = x !== undefined ? Number(x) : 1280 / 2 - width / 2;
       const yPos = y !== undefined ? Number(y) : 720 / 2 - height / 2;
 
-      // Check for potential overlaps
+      // Check if element is outside slide boundaries
       const elementPosition = { x: xPos, y: yPos };
       const elementSize = { width, height };
-      const overlapCheck = ElementValidator.checkOverlap(
-        slide,
-        elementPosition,
-        elementSize,
-      );
+      const isOutsideSlide =
+        xPos < 0 || yPos < 0 || xPos + width > 1280 || yPos + height > 720;
 
       // Create the image element
       const element = ElementFactory.createImage({
@@ -113,6 +110,25 @@ export class AddImageFromPexelsResultTool extends BaseTool {
         return {
           success: false,
           error: `Failed to add image to slide with ID ${slideId}`,
+        };
+      }
+
+      // Run DOM-based overlap detection after element creation for accuracy
+      let overlapCheck = null;
+      try {
+        // Small delay to ensure DOM updates
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        overlapCheck = await ElementValidator.checkElementOverlap(
+          element.id,
+          0,
+        );
+      } catch (error) {
+        console.warn('Post-creation overlap detection failed:', error);
+        // Create a fallback empty result
+        overlapCheck = {
+          hasOverlap: false,
+          overlappingElements: [],
+          isOutsideSlide: false,
         };
       }
 
@@ -140,24 +156,18 @@ Image details:
         message += `\n- Source URL: ${sourceUrl}`;
       }
 
-      // Add warnings about positioning if needed
+      // Add DOM-based overlap and boundary feedback
       if (overlapCheck.isOutsideSlide) {
-        message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). `;
-
-        if (overlapCheck.suggestedPosition) {
-          message += `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to ensure visibility.`;
-        }
+        message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). Consider adjusting the position to ensure visibility.`;
       }
 
       if (overlapCheck.hasOverlap) {
-        message += `\n\nWARNING: OVERLAP DETECTED. This image overlaps with other elements: ${overlapCheck.overlappingElements.join(
-          ', ',
-        )}. `;
+        message += `\n\nWARNING: OVERLAP DETECTED. This image visually overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}. `;
 
         if (overlapCheck.suggestedPosition) {
-          message += `To avoid overlap, consider using position (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) or increase the z-index of this element to make it appear on top.`;
+          message += `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}).`;
         } else {
-          message += `Please check the image placement to ensure all elements are visible. You can also use the changeElementZIndex tool to adjust which elements appear on top of others.`;
+          message += `Please check the image placement to avoid visual conflicts.`;
         }
       }
 

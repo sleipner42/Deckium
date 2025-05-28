@@ -18,16 +18,21 @@ export interface TextMeasurementResult {
 }
 
 export function setupTextMeasurementIPC() {
-  ipcMain.handle('text-measurement:measure', async (event, request: TextMeasurementRequest): Promise<TextMeasurementResult> => {
-    // This will be handled by the renderer process
-    // We'll forward this to the main window
-    const mainWindow = global.mainWindow;
-    if (!mainWindow) {
-      throw new Error('Main window not available for text measurement');
-    }
+  ipcMain.handle(
+    'text-measurement:measure',
+    async (
+      event,
+      request: TextMeasurementRequest,
+    ): Promise<TextMeasurementResult> => {
+      // This will be handled by the renderer process
+      // We'll forward this to the main window
+      const { mainWindow } = global;
+      if (!mainWindow) {
+        throw new Error('Main window not available for text measurement');
+      }
 
-    try {
-      const result = await mainWindow.webContents.executeJavaScript(`
+      try {
+        const result = await mainWindow.webContents.executeJavaScript(`
         (() => {
           const measureText = (content, fontSize, fontFamily, width, lineHeight) => {
             // Create a temporary div for measurement
@@ -99,12 +104,13 @@ export function setupTextMeasurementIPC() {
           return measureText('${request.content.replace(/'/g, "\\'")}', ${request.fontSize}, '${request.fontFamily}', ${request.width}, ${request.lineHeight || 1.2});
         })()
       `);
-      
-      return result;
-    } catch (error) {
-      console.error('Error measuring text:', error);
-      // Fallback to estimation
-      throw error;
-    }
-  });
+
+        return result;
+      } catch (error) {
+        console.error('Error measuring text:', error);
+        // Fallback to estimation
+        throw error;
+      }
+    },
+  );
 }

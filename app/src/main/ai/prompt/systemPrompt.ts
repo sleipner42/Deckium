@@ -2,7 +2,10 @@ import { Presentation, Slide } from '../../../common/domain/entities/types';
 import { ToolsService } from '../tools/builtInTools';
 import { PresentationService } from '../../presentation/service';
 
-export function getDeveloperPrompt(presentation: Presentation, presentationService?: PresentationService): string {
+export function getDeveloperPrompt(
+  presentation: Presentation,
+  presentationService?: PresentationService,
+): string {
   const tools = ToolsService.getBuiltInTools();
 
   return `
@@ -89,7 +92,10 @@ Remember that you are helping to create professional, visually appealing present
 `;
 }
 
-function getCurrentSlideContext(presentation: Presentation, presentationService?: PresentationService): string {
+function getCurrentSlideContext(
+  presentation: Presentation,
+  presentationService?: PresentationService,
+): string {
   if (!presentationService) {
     return '';
   }
@@ -99,32 +105,34 @@ function getCurrentSlideContext(presentation: Presentation, presentationService?
     return '\n- No slide is currently selected';
   }
 
-  const currentSlide = presentation.slides?.find(slide => slide.id === currentSlideId);
+  const currentSlide = presentation.slides?.find(
+    (slide) => slide.id === currentSlideId,
+  );
   if (!currentSlide) {
     return `\n- Selected slide ID: ${currentSlideId} (slide not found)`;
   }
 
   const slideIndex = presentation.slides?.indexOf(currentSlide) + 1 || 0;
   const elementCount = currentSlide.elements?.length || 0;
-  
+
   let slideDescription = `\n- CURRENTLY VIEWING: Slide ${slideIndex} (ID: ${currentSlideId.substring(0, 8)}...)`;
   slideDescription += `\n- This slide has ${elementCount} element${elementCount !== 1 ? 's' : ''}`;
-  
+
   if (elementCount > 0) {
-    const elementTypes = currentSlide.elements.map(el => el.type);
+    const elementTypes = currentSlide.elements.map((el) => el.type);
     const typeCount: Record<string, number> = {};
-    elementTypes.forEach(type => {
+    elementTypes.forEach((type) => {
       typeCount[type] = (typeCount[type] || 0) + 1;
     });
-    
+
     const typeSummary = Object.entries(typeCount)
       .map(([type, count]) => `${count} ${type}${count !== 1 ? 's' : ''}`)
       .join(', ');
-    
+
     slideDescription += ` (${typeSummary})`;
   }
-  
+
   slideDescription += `\n- When the user refers to "this slide" or "current slide", they mean slide ${slideIndex}`;
-  
+
   return slideDescription;
 }

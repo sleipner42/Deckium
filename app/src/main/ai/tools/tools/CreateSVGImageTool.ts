@@ -86,14 +86,14 @@ export class CreateSVGImageTool extends BaseTool {
       };
     }
 
-    // Check for potential overlaps before adding the element
+    // Check if element is outside slide boundaries
     const elementPosition = { x: xPos, y: yPos };
     const elementSize = { width: widthValue, height: heightValue };
-    const overlapCheck = ElementValidator.checkOverlap(
-      slide,
-      elementPosition,
-      elementSize,
-    );
+    const isOutsideSlide =
+      xPos < 0 ||
+      yPos < 0 ||
+      xPos + widthValue > 1280 ||
+      yPos + heightValue > 720;
 
     // Convert SVG to data URI for the image content
     const svgDataUri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
@@ -117,24 +117,37 @@ export class CreateSVGImageTool extends BaseTool {
       };
     }
 
+    // Run DOM-based overlap detection after element creation for accuracy
+    let overlapCheck = null;
+    try {
+      // Small delay to ensure DOM updates
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      overlapCheck = await ElementValidator.checkElementOverlap(element.id, 0);
+    } catch (error) {
+      console.warn('Post-creation overlap detection failed:', error);
+      // Create a fallback empty result
+      overlapCheck = {
+        hasOverlap: false,
+        overlappingElements: [],
+        isOutsideSlide: false,
+      };
+    }
+
     // Create appropriate message based on whether there was an overlap
     let message = 'SVG image added successfully';
 
-    // Only warn about elements outside slide boundaries
+    // Add DOM-based overlap and boundary feedback
     if (overlapCheck.isOutsideSlide) {
-      message += `\n\nWARNING: This SVG image is positioned outside the slide boundaries (1280x720). `;
-
-      if (overlapCheck.suggestedPosition) {
-        message += `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to ensure visibility.`;
-      }
+      message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). Consider adjusting the position to ensure visibility.`;
     }
 
-    // Mention overlaps with other elements
     if (overlapCheck.hasOverlap) {
-      message += `\n\nWARNING: OVERLAP DETECTED. This SVG image overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}. `;
+      message += `\n\nWARNING: OVERLAP DETECTED. This SVG image visually overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}. `;
 
       if (overlapCheck.suggestedPosition) {
-        message += `The closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}). Alternatively, you can adjust the z-index to control which element appears on top.`;
+        message += `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}).`;
+      } else {
+        message += `Please check the SVG placement to avoid visual conflicts.`;
       }
     }
 

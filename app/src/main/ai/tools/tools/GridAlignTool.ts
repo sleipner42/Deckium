@@ -5,21 +5,31 @@ import { PresentationService } from '../../../presentation/service';
 export class GridAlignTool extends BaseTool {
   name = 'gridAlign';
 
-  description = 'Snap elements to an invisible grid for clean, organized layouts';
+  description =
+    'Snap elements to an invisible grid for clean, organized layouts';
 
   requiredParams = {
     slideId: 'The ID of the slide containing the elements',
     elementIds: 'Comma-separated list of element IDs to align to grid',
-    gridSize: 'Grid cell size in pixels (e.g., 20 for 20px grid cells). Common values: 10, 20, 25, 40, 50',
-    snapMode: 'How to snap elements: "top-left" (snap top-left corner), "center" (snap center point), "nearest-corner" (snap to nearest grid intersection)',
-    gridOrigin: 'Optional grid origin point as "x,y" (defaults to "0,0"). Use this to offset the entire grid.',
+    gridSize:
+      'Grid cell size in pixels (e.g., 20 for 20px grid cells). Common values: 10, 20, 25, 40, 50',
+    snapMode:
+      'How to snap elements: "top-left" (snap top-left corner), "center" (snap center point), "nearest-corner" (snap to nearest grid intersection)',
+    gridOrigin:
+      'Optional grid origin point as "x,y" (defaults to "0,0"). Use this to offset the entire grid.',
   };
 
   protected async executeImpl(
     params: Record<string, any>,
     presentationService: PresentationService,
   ): Promise<AIToolResult> {
-    const { slideId, elementIds, gridSize, snapMode, gridOrigin = '0,0' } = params;
+    const {
+      slideId,
+      elementIds,
+      gridSize,
+      snapMode,
+      gridOrigin = '0,0',
+    } = params;
 
     if (!slideId) {
       return {
@@ -52,7 +62,10 @@ export class GridAlignTool extends BaseTool {
 
     // Parse grid origin
     const originParts = gridOrigin.split(',').map((s: string) => s.trim());
-    if (originParts.length !== 2 || originParts.some((p: string) => isNaN(Number(p)))) {
+    if (
+      originParts.length !== 2 ||
+      originParts.some((p: string) => isNaN(Number(p)))
+    ) {
       return {
         success: false,
         error: 'gridOrigin must be in format "x,y" (e.g., "0,0" or "10,20")',
@@ -102,7 +115,12 @@ export class GridAlignTool extends BaseTool {
       };
     }
 
-    const updates: Array<{ id: string; updates: any; originalPos: { x: number; y: number }; newPos: { x: number; y: number } }> = [];
+    const updates: Array<{
+      id: string;
+      updates: any;
+      originalPos: { x: number; y: number };
+      newPos: { x: number; y: number };
+    }> = [];
 
     // Snap each element to the grid
     elementsToAlign.forEach((element) => {
@@ -130,9 +148,18 @@ export class GridAlignTool extends BaseTool {
           // Find the corner that's closest to a grid intersection and snap that
           const corners = [
             { x: element.position.x, y: element.position.y }, // top-left
-            { x: element.position.x + element.size.width, y: element.position.y }, // top-right
-            { x: element.position.x, y: element.position.y + element.size.height }, // bottom-left
-            { x: element.position.x + element.size.width, y: element.position.y + element.size.height }, // bottom-right
+            {
+              x: element.position.x + element.size.width,
+              y: element.position.y,
+            }, // top-right
+            {
+              x: element.position.x,
+              y: element.position.y + element.size.height,
+            }, // bottom-left
+            {
+              x: element.position.x + element.size.width,
+              y: element.position.y + element.size.height,
+            }, // bottom-right
           ];
 
           let minDistance = Infinity;
@@ -142,7 +169,7 @@ export class GridAlignTool extends BaseTool {
             const snappedX = this.snapToGrid(corner.x, cellSize, originX);
             const snappedY = this.snapToGrid(corner.y, cellSize, originY);
             const distance = Math.sqrt(
-              Math.pow(corner.x - snappedX, 2) + Math.pow(corner.y - snappedY, 2)
+              (corner.x - snappedX) ** 2 + (corner.y - snappedY) ** 2,
             );
 
             if (distance < minDistance) {
@@ -159,7 +186,10 @@ export class GridAlignTool extends BaseTool {
                   bestSnap = { x: snappedX, y: snappedY - element.size.height };
                   break;
                 case 3: // bottom-right
-                  bestSnap = { x: snappedX - element.size.width, y: snappedY - element.size.height };
+                  bestSnap = {
+                    x: snappedX - element.size.width,
+                    y: snappedY - element.size.height,
+                  };
                   break;
               }
             }
@@ -179,8 +209,10 @@ export class GridAlignTool extends BaseTool {
       snapY = Math.max(0, Math.min(snapY, 720 - element.size.height));
 
       // Only add update if position actually changes
-      const positionChanged = Math.abs(snapX - element.position.x) > 0.5 || Math.abs(snapY - element.position.y) > 0.5;
-      
+      const positionChanged =
+        Math.abs(snapX - element.position.x) > 0.5 ||
+        Math.abs(snapY - element.position.y) > 0.5;
+
       if (positionChanged) {
         updates.push({
           id: element.id,
@@ -213,8 +245,9 @@ export class GridAlignTool extends BaseTool {
     }
 
     // Create detailed feedback about the grid alignment
-    const movementSummary = updates.map(update => 
-      `${update.id.substring(0, 8)}... moved from (${update.originalPos.x}, ${update.originalPos.y}) to (${update.newPos.x}, ${update.newPos.y})`
+    const movementSummary = updates.map(
+      (update) =>
+        `${update.id.substring(0, 8)}... moved from (${update.originalPos.x}, ${update.originalPos.y}) to (${update.newPos.x}, ${update.newPos.y})`,
     );
 
     return {
@@ -236,7 +269,11 @@ export class GridAlignTool extends BaseTool {
   /**
    * Snaps a coordinate to the nearest grid line
    */
-  private snapToGrid(coordinate: number, gridSize: number, origin: number): number {
+  private snapToGrid(
+    coordinate: number,
+    gridSize: number,
+    origin: number,
+  ): number {
     const relativeCoord = coordinate - origin;
     const snappedRelative = Math.round(relativeCoord / gridSize) * gridSize;
     return snappedRelative + origin;

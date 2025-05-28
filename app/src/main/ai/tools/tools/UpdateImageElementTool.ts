@@ -190,25 +190,7 @@ export class UpdateImageElementTool extends BaseTool {
         updates.zIndex = Number(zIndex);
       }
 
-      // Check for potential overlaps if position or size is updated
-      let overlapCheck = null;
-      if (updates.position || updates.size) {
-        const slide = currentPresentation.slides.find((s) => s.id === slideId);
-        if (slide) {
-          const newPosition = updates.position || targetElement.position;
-          const newSize = updates.size || targetElement.size;
-
-          // Check for overlaps with the new position/size
-          overlapCheck = ElementValidator.checkOverlap(
-            slide,
-            newPosition,
-            newSize,
-            elementId, // Exclude this element ID from overlap detection
-          );
-        }
-      }
-
-      // Update the element
+      // Update the element first
       const updatedSlide = presentationService.updateElement(
         elementId,
         updates,
@@ -219,6 +201,16 @@ export class UpdateImageElementTool extends BaseTool {
           success: false,
           error: `Failed to update image element with ID ${elementId}`,
         };
+      }
+
+      // Run post-update overlap detection on the actual rendered element
+      let overlapCheck = null;
+      try {
+        // Allow time for DOM to update
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        overlapCheck = await ElementValidator.checkElementOverlap(elementId, 0);
+      } catch (error) {
+        console.warn('Could not perform overlap detection:', error);
       }
 
       // Create response message

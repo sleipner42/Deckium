@@ -1,5 +1,11 @@
 import { MockPresentationService } from './MockPresentationService';
-import { ContentElement, Slide, TextBox, Image, Shape } from '../../common/domain/entities/types';
+import {
+  ContentElement,
+  Slide,
+  TextBox,
+  Image,
+  Shape,
+} from '../../common/domain/entities/types';
 import { AIToolResult } from '../../common/domain/entities/ai-types';
 
 /**
@@ -9,9 +15,11 @@ import { AIToolResult } from '../../common/domain/entities/ai-types';
 /**
  * Creates a test scenario with multiple elements for alignment/distribution testing
  */
-export function createAlignmentTestScenario(mockService: MockPresentationService) {
+export function createAlignmentTestScenario(
+  mockService: MockPresentationService,
+) {
   const slide = mockService.addSlide();
-  
+
   const elements = [
     mockService.createMockTextElement({
       position: { x: 100, y: 100 },
@@ -30,11 +38,11 @@ export function createAlignmentTestScenario(mockService: MockPresentationService
     }),
   ];
 
-  elements.forEach(el => mockService.addElement(slide.id, el));
+  elements.forEach((el) => mockService.addElement(slide.id, el));
 
   return {
     slideId: slide.id,
-    elementIds: elements.map(el => el.id),
+    elementIds: elements.map((el) => el.id),
     elements,
   };
 }
@@ -42,9 +50,11 @@ export function createAlignmentTestScenario(mockService: MockPresentationService
 /**
  * Creates a test scenario with overlapping elements
  */
-export function createOverlapTestScenario(mockService: MockPresentationService) {
+export function createOverlapTestScenario(
+  mockService: MockPresentationService,
+) {
   const slide = mockService.addSlide();
-  
+
   const elements = [
     mockService.createMockTextElement({
       position: { x: 100, y: 100 },
@@ -58,11 +68,11 @@ export function createOverlapTestScenario(mockService: MockPresentationService) 
     }),
   ];
 
-  elements.forEach(el => mockService.addElement(slide.id, el));
+  elements.forEach((el) => mockService.addElement(slide.id, el));
 
   return {
     slideId: slide.id,
-    elementIds: elements.map(el => el.id),
+    elementIds: elements.map((el) => el.id),
     elements,
   };
 }
@@ -70,10 +80,14 @@ export function createOverlapTestScenario(mockService: MockPresentationService) 
 /**
  * Creates a grid of elements for testing complex layouts
  */
-export function createGridTestScenario(mockService: MockPresentationService, rows: number = 2, cols: number = 3) {
+export function createGridTestScenario(
+  mockService: MockPresentationService,
+  rows: number = 2,
+  cols: number = 3,
+) {
   const slide = mockService.addSlide();
   const elements: ContentElement[] = [];
-  
+
   const cellWidth = 200;
   const cellHeight = 100;
   const startX = 50;
@@ -82,14 +96,14 @@ export function createGridTestScenario(mockService: MockPresentationService, row
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const element = mockService.createMockTextElement({
-        position: { 
-          x: startX + col * (cellWidth + 20), 
-          y: startY + row * (cellHeight + 20) 
+        position: {
+          x: startX + col * (cellWidth + 20),
+          y: startY + row * (cellHeight + 20),
         },
         size: { width: cellWidth, height: cellHeight },
         content: `Element ${row}-${col}`,
       });
-      
+
       elements.push(element);
       mockService.addElement(slide.id, element);
     }
@@ -97,7 +111,7 @@ export function createGridTestScenario(mockService: MockPresentationService, row
 
   return {
     slideId: slide.id,
-    elementIds: elements.map(el => el.id),
+    elementIds: elements.map((el) => el.id),
     elements,
     grid: { rows, cols, cellWidth, cellHeight },
   };
@@ -107,9 +121,15 @@ export function createGridTestScenario(mockService: MockPresentationService, row
  * Asserts that elements are aligned correctly
  */
 export function assertElementsAligned(
-  elements: ContentElement[], 
-  alignType: 'left' | 'right' | 'top' | 'bottom' | 'center-horizontal' | 'center-vertical',
-  tolerance: number = 1
+  elements: ContentElement[],
+  alignType:
+    | 'left'
+    | 'right'
+    | 'top'
+    | 'bottom'
+    | 'center-horizontal'
+    | 'center-vertical',
+  tolerance: number = 1,
 ) {
   if (elements.length < 2) return;
 
@@ -133,7 +153,7 @@ export function assertElementsAligned(
   };
 
   const firstValue = getAlignValue(elements[0]);
-  
+
   elements.forEach((element, index) => {
     const value = getAlignValue(element);
     expect(Math.abs(value - firstValue)).toBeLessThanOrEqual(tolerance);
@@ -146,37 +166,36 @@ export function assertElementsAligned(
 export function assertElementsDistributedEvenly(
   elements: ContentElement[],
   direction: 'horizontal' | 'vertical',
-  tolerance: number = 1
+  tolerance: number = 1,
 ) {
   if (elements.length < 3) return;
 
   const sortedElements = [...elements].sort((a, b) => {
     if (direction === 'horizontal') {
       return a.position.x - b.position.x;
-    } else {
-      return a.position.y - b.position.y;
     }
+    return a.position.y - b.position.y;
   });
 
   const gaps: number[] = [];
-  
+
   for (let i = 0; i < sortedElements.length - 1; i++) {
     const current = sortedElements[i];
     const next = sortedElements[i + 1];
-    
+
     let gap: number;
     if (direction === 'horizontal') {
       gap = next.position.x - (current.position.x + current.size.width);
     } else {
       gap = next.position.y - (current.position.y + current.size.height);
     }
-    
+
     gaps.push(gap);
   }
 
   // All gaps should be approximately equal
   const firstGap = gaps[0];
-  gaps.forEach(gap => {
+  gaps.forEach((gap) => {
     expect(Math.abs(gap - firstGap)).toBeLessThanOrEqual(tolerance);
   });
 }
@@ -184,26 +203,29 @@ export function assertElementsDistributedEvenly(
 /**
  * Creates a performance test with many elements
  */
-export function createPerformanceTestScenario(mockService: MockPresentationService, elementCount: number = 100) {
+export function createPerformanceTestScenario(
+  mockService: MockPresentationService,
+  elementCount: number = 100,
+) {
   const slide = mockService.addSlide();
   const elements: ContentElement[] = [];
-  
+
   for (let i = 0; i < elementCount; i++) {
     const element = mockService.createMockTextElement({
-      position: { 
-        x: Math.random() * 1000, 
-        y: Math.random() * 600 
+      position: {
+        x: Math.random() * 1000,
+        y: Math.random() * 600,
       },
       content: `Performance Test Element ${i}`,
     });
-    
+
     elements.push(element);
     mockService.addElement(slide.id, element);
   }
 
   return {
     slideId: slide.id,
-    elementIds: elements.map(el => el.id),
+    elementIds: elements.map((el) => el.id),
     elements,
   };
 }
@@ -211,11 +233,13 @@ export function createPerformanceTestScenario(mockService: MockPresentationServi
 /**
  * Measures execution time of a function
  */
-export async function measureExecutionTime<T>(fn: () => Promise<T>): Promise<{ result: T; timeMs: number }> {
+export async function measureExecutionTime<T>(
+  fn: () => Promise<T>,
+): Promise<{ result: T; timeMs: number }> {
   const start = performance.now();
   const result = await fn();
   const end = performance.now();
-  
+
   return {
     result,
     timeMs: end - start,
@@ -228,7 +252,7 @@ export async function measureExecutionTime<T>(fn: () => Promise<T>): Promise<{ r
 export function validateToolResult(result: any) {
   expect(result).toHaveProperty('success');
   expect(typeof result.success).toBe('boolean');
-  
+
   if (result.success) {
     expect(result).toHaveProperty('data');
   } else {
@@ -242,14 +266,14 @@ export function validateToolResult(result: any) {
  */
 export function setupMockEnvironment() {
   const originalEnv = process.env;
-  
+
   beforeAll(() => {
     process.env = {
       ...originalEnv,
       PEXELS_API_KEY: 'mock-pexels-api-key',
     };
   });
-  
+
   afterAll(() => {
     process.env = originalEnv;
   });
@@ -262,7 +286,7 @@ export function createSlideWithElements(elements: ContentElement[]): Slide {
   const slideId = `slide-${Date.now()}-${Math.random()}`;
   return {
     id: slideId,
-    elements: elements.map(el => ({ ...el })),
+    elements: elements.map((el) => ({ ...el })),
     background: '#ffffff',
   };
 }
@@ -271,15 +295,15 @@ export function createSlideWithElements(elements: ContentElement[]): Slide {
  * Creates a text element for testing
  */
 export function createTextElement(
-  content: string, 
-  x: number, 
-  y: number, 
-  width: number = 400, 
+  content: string,
+  x: number,
+  y: number,
+  width: number = 400,
   height: number = 200,
   fontSize: number = 12,
   fontFamily: string = 'Arial',
   color: string = '#000000',
-  zIndex: number = 1
+  zIndex: number = 1,
 ): TextBox {
   return {
     id: `element-${Date.now()}-${Math.random()}`,
@@ -303,7 +327,7 @@ export function createImageElement(
   y: number,
   width: number = 200,
   height: number = 150,
-  zIndex: number = 1
+  zIndex: number = 1,
 ): Image {
   return {
     id: `element-${Date.now()}-${Math.random()}`,
@@ -325,7 +349,7 @@ export function createShapeElement(
   width: number = 100,
   height: number = 100,
   fillColor: string = '#0066cc',
-  zIndex: number = 1
+  zIndex: number = 1,
 ): Shape {
   return {
     id: `element-${Date.now()}-${Math.random()}`,
@@ -355,7 +379,7 @@ export function expectToolError(result: AIToolResult, expectedError?: string) {
   expect(result.success).toBe(false);
   expect(result.error).toBeDefined();
   expect(result.data).toBeUndefined();
-  
+
   if (expectedError) {
     expect(result.error).toBe(expectedError);
   }

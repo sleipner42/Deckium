@@ -106,7 +106,7 @@ const createWindow = async () => {
     } else {
       mainWindow.show();
     }
-    
+
     // Set up text measurement service with the main window
     textMeasurementService.setMainWindow(mainWindow);
   });

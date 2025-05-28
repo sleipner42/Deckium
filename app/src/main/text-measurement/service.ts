@@ -1,9 +1,13 @@
 import { BrowserWindow } from 'electron';
 import { TextMeasurementRequest, TextMeasurementResult } from './ipc-handler';
-import { estimateTextDimensions, TextDimensionResult } from '../ai/tools/utils/text-dimensions';
+import {
+  estimateTextDimensions,
+  TextDimensionResult,
+} from '../ai/tools/utils/text-dimensions';
 
 export class TextMeasurementService {
   private static instance: TextMeasurementService;
+
   private mainWindow: BrowserWindow | null = null;
 
   private constructor() {}
@@ -24,10 +28,12 @@ export class TextMeasurementService {
     fontSize: number,
     fontFamily: string = 'Arial',
     width: number,
-    lineHeight?: number
+    lineHeight?: number,
   ): Promise<TextDimensionResult> {
     if (!this.mainWindow || this.mainWindow.isDestroyed()) {
-      console.warn('Main window not available for precise text measurement, falling back to estimation');
+      console.warn(
+        'Main window not available for precise text measurement, falling back to estimation',
+      );
       return estimateTextDimensions(content, fontSize, width);
     }
 
@@ -93,8 +99,18 @@ export class TextMeasurementService {
             }
           };
           
+          // Simulate markdown processing to match TextElement rendering
+          let processedContent = ${JSON.stringify(content)};
+          
+          // Remove markdown headers (# ## ### etc.) as they get processed by ReactMarkdown
+          processedContent = processedContent.replace(/^#+\\s+/gm, '');
+          
+          // Remove bold/italic markdown that gets processed
+          processedContent = processedContent.replace(/\\*\\*(.*?)\\*\\*/g, '$1');
+          processedContent = processedContent.replace(/\\*(.*?)\\*/g, '$1');
+          
           return measureText(
-            ${JSON.stringify(content)}, 
+            processedContent, 
             ${fontSize}, 
             ${JSON.stringify(fontFamily)}, 
             ${width}, 
@@ -105,26 +121,28 @@ export class TextMeasurementService {
 
       // Convert to our expected format and provide specific feedback
       let lineBreakInfo = null;
-      
+
       if (result.lineCount > 1) {
         if (result.hasOverflow) {
           // Text overflows AND wraps - needs wider container
-          lineBreakInfo = `⚠️ TEXT OVERFLOW: Text spans ${result.lineCount} lines and overflows container. Natural width needed: ${result.naturalWidth}px (current: ${width}px). Consider increasing container width to ${Math.ceil(result.naturalWidth + 20)}px to fit on one line.`;
+          // Account for TextElement's 4px padding on each side (8px total) plus 10px margin
+          const recommendedWidth = Math.ceil(result.naturalWidth + 18);
+          lineBreakInfo = `⚠️ TEXT OVERFLOW: Text spans ${result.lineCount} lines and overflows container. Natural text width: ${result.naturalWidth}px (current container: ${width}px). Consider increasing container width to ${recommendedWidth}px to fit on one line.`;
         } else {
           // Text wraps but fits - just informational
           lineBreakInfo = `ℹ️ TEXT WRAPPING: Text naturally spans ${result.lineCount} lines within the ${width}px container. This is normal text wrapping behavior.`;
         }
       }
-      
+
       return {
         height: result.actualHeight,
         width: Math.min(result.naturalWidth, width), // Use natural width if it fits
-        lineBreakInfo
+        lineBreakInfo,
       };
     } catch (error) {
       console.error('Error measuring text with renderer:', error);
       console.log('Falling back to estimation for text measurement');
-      
+
       // Fallback to estimation if renderer measurement fails
       return estimateTextDimensions(content, fontSize, width);
     }
@@ -140,10 +158,15 @@ export class TextMeasurementService {
     width: number,
     height: number,
     align: 'left' | 'center' | 'right' = 'left',
-    verticalAlign: 'top' | 'middle' | 'bottom' = 'top'
+    verticalAlign: 'top' | 'middle' | 'bottom' = 'top',
   ): Promise<TextDimensionResult & { suggestedHeight?: number }> {
-    const measurement = await this.measureText(content, fontSize, fontFamily, width);
-    
+    const measurement = await this.measureText(
+      content,
+      fontSize,
+      fontFamily,
+      width,
+    );
+
     // Suggest height adjustment if current height is too small
     let suggestedHeight: number | undefined;
     if (measurement.height > height) {
@@ -152,8 +175,155 @@ export class TextMeasurementService {
 
     return {
       ...measurement,
-      suggestedHeight
+      suggestedHeight,
     };
+  }
+
+  /**
+   * Checks for overlaps using an element ID to find the actual DOM element
+   * This is the most accurate method as it uses the real rendered element bounds
+   */
+  async checkOverlapWithElementId(
+    elementId: string,
+    padding: number = 0,
+  ): Promise<{
+    hasOverlap: boolean;
+    overlappingElements: Array<{
+      id: string;
+      type: string;
+      position: { x: number; y: number };
+      bounds: { left: number; top: number; right: number; bottom: number };
+    }>;
+    isOutsideSlide: boolean;
+    elementBounds?: {
+      left: number;
+      top: number;
+      right: number;
+      bottom: number;
+      width: number;
+      height: number;
+    };
+  }> {
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+      console.warn(
+        'Main window not available for DOM-based element overlap detection',
+      );
+      return {
+        hasOverlap: false,
+        overlappingElements: [],
+        isOutsideSlide: false,
+      };
+    }
+
+    try {
+      const result = await this.mainWindow.webContents.executeJavaScript(`
+        (() => {
+          const SLIDE_WIDTH = 1280;
+          const SLIDE_HEIGHT = 720;
+          
+          // Find the target element by its data-element-id
+          const targetElement = document.querySelector('[data-element-id="${elementId}"]');
+          if (!targetElement) {
+            console.warn('Element with ID ${elementId} not found in DOM');
+            return {
+              hasOverlap: false,
+              overlappingElements: [],
+              isOutsideSlide: false,
+              elementBounds: null
+            };
+          }
+          
+          // Get actual bounding box of the target element
+          const targetRect = targetElement.getBoundingClientRect();
+          
+          // Convert to slide coordinates
+          const slideContainer = document.querySelector('[data-slide-container]') || document.body;
+          const containerRect = slideContainer.getBoundingClientRect();
+          
+          const targetBounds = {
+            left: targetRect.left - containerRect.left - ${padding},
+            top: targetRect.top - containerRect.top - ${padding},
+            right: targetRect.right - containerRect.left + ${padding},
+            bottom: targetRect.bottom - containerRect.top + ${padding},
+            width: targetRect.width + ${padding * 2},
+            height: targetRect.height + ${padding * 2}
+          };
+          
+          // Check if target element is outside slide boundaries
+          const isOutsideSlide = 
+            targetBounds.left < 0 || 
+            targetBounds.top < 0 || 
+            targetBounds.right > SLIDE_WIDTH || 
+            targetBounds.bottom > SLIDE_HEIGHT;
+          
+          const overlappingElements = [];
+          
+          // Find all other rendered elements in the slide
+          const slideElements = document.querySelectorAll('[data-element-id]');
+          
+          slideElements.forEach(element => {
+            const elementId = element.getAttribute('data-element-id');
+            const elementType = element.getAttribute('data-element-type') || 'unknown';
+            
+            // Skip the target element itself
+            if (elementId === '${elementId}') {
+              return;
+            }
+            
+            // Get actual bounding box from DOM
+            const rect = element.getBoundingClientRect();
+            
+            const elementBounds = {
+              left: rect.left - containerRect.left,
+              top: rect.top - containerRect.top,
+              right: rect.right - containerRect.left,
+              bottom: rect.bottom - containerRect.top
+            };
+            
+            // Check for overlap using actual bounding boxes
+            const hasOverlap = !(
+              targetBounds.right <= elementBounds.left ||
+              targetBounds.left >= elementBounds.right ||
+              targetBounds.bottom <= elementBounds.top ||
+              targetBounds.top >= elementBounds.bottom
+            );
+            
+            if (hasOverlap) {
+              console.log('DOM element overlap detected:', {
+                targetElement: '${elementId}',
+                overlappingElement: { id: elementId, type: elementType, bounds: elementBounds }
+              });
+              
+              overlappingElements.push({
+                id: elementId,
+                type: elementType,
+                position: {
+                  x: elementBounds.left,
+                  y: elementBounds.top
+                },
+                bounds: elementBounds
+              });
+            }
+          });
+          
+          return {
+            hasOverlap: overlappingElements.length > 0,
+            overlappingElements,
+            isOutsideSlide,
+            elementBounds: targetBounds
+          };
+        })()
+      `);
+
+      return result;
+    } catch (error) {
+      console.error('Error checking element overlap with DOM:', error);
+      return {
+        hasOverlap: false,
+        overlappingElements: [],
+        isOutsideSlide: false,
+      };
+    }
   }
 
   /**
@@ -163,7 +333,7 @@ export class TextMeasurementService {
   async checkOverlapWithDOM(
     newElementPosition: { x: number; y: number },
     newElementSize: { width: number; height: number },
-    excludeElementId?: string
+    excludeElementId?: string,
   ): Promise<{
     hasOverlap: boolean;
     overlappingElements: Array<{
@@ -179,7 +349,7 @@ export class TextMeasurementService {
       return {
         hasOverlap: false,
         overlappingElements: [],
-        isOutsideSlide: false
+        isOutsideSlide: false,
       };
     }
 
@@ -273,7 +443,7 @@ export class TextMeasurementService {
       return {
         hasOverlap: false,
         overlappingElements: [],
-        isOutsideSlide: false
+        isOutsideSlide: false,
       };
     }
   }

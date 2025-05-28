@@ -24,7 +24,7 @@ export const TextElementMeasurement: React.FC<TextElementMeasurementProps> = ({
   fontSize,
   fontFamily,
   width,
-  onMeasurementUpdate
+  onMeasurementUpdate,
 }) => {
   const { measureTextWithSuggestions } = useTextMeasurement();
   const [measurement, setMeasurement] = useState<any>(null);
@@ -37,15 +37,22 @@ export const TextElementMeasurement: React.FC<TextElementMeasurementProps> = ({
         content,
         fontSize,
         fontFamily,
-        width
+        width,
       });
-      
+
       setMeasurement(result);
       onMeasurementUpdate?.(result);
     } catch (error) {
       console.error('Error measuring text:', error);
     }
-  }, [content, fontSize, fontFamily, width, measureTextWithSuggestions, onMeasurementUpdate]);
+  }, [
+    content,
+    fontSize,
+    fontFamily,
+    width,
+    measureTextWithSuggestions,
+    onMeasurementUpdate,
+  ]);
 
   if (!measurement) {
     return null;
@@ -54,20 +61,18 @@ export const TextElementMeasurement: React.FC<TextElementMeasurementProps> = ({
   return (
     <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
       <div>
-        Measured: {measurement.actualWidth}×{measurement.actualHeight}px 
-        ({measurement.lineCount} lines)
+        Measured: {measurement.actualWidth}×{measurement.actualHeight}px (
+        {measurement.lineCount} lines)
       </div>
-      
+
       {measurement.hasOverflow && (
         <div style={{ color: '#ff6b35' }}>
           ⚠️ Text overflows! Suggested width: {measurement.suggestedWidth}px
         </div>
       )}
-      
+
       {measurement.isOptimalSize && (
-        <div style={{ color: '#28a745' }}>
-          ✓ Optimal size
-        </div>
+        <div style={{ color: '#28a745' }}>✓ Optimal size</div>
       )}
     </div>
   );

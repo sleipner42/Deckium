@@ -119,24 +119,7 @@ export class UpdateShapeTool extends BaseTool {
       };
     }
 
-    // Check for potential overlaps if position or size is updated
-    let overlapCheck = null;
-    if (updates.position || updates.size) {
-      const slide = currentPresentation.slides.find((s) => s.id === slideId);
-      if (slide) {
-        const newPosition = updates.position || shape.position;
-        const newSize = updates.size || shape.size;
-
-        // Check for overlaps with the new position/size
-        overlapCheck = ElementValidator.checkOverlap(
-          slide,
-          newPosition,
-          newSize,
-        );
-      }
-    }
-
-    // Update the element
+    // Update the element first
     const updatedElement = presentationService.updateElement(
       elementId,
       updates,
@@ -147,6 +130,16 @@ export class UpdateShapeTool extends BaseTool {
         success: false,
         error: `Failed to update shape with ID ${elementId}`,
       };
+    }
+
+    // Run post-update overlap detection on the actual rendered element
+    let overlapCheck = null;
+    try {
+      // Allow time for DOM to update
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      overlapCheck = await ElementValidator.checkElementOverlap(elementId, 0);
+    } catch (error) {
+      console.warn('Could not perform overlap detection:', error);
     }
 
     // Create appropriate message based on whether there was an overlap

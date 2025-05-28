@@ -363,9 +363,10 @@ export class AlignElementsTool extends BaseTool {
         } else {
           // Calculate even spacing across available space
           const numberOfGaps = middleElements.length + 1; // gaps before, between, and after elements
-          gapWidth = totalWidth > totalElementsWidth 
-            ? (totalWidth - totalElementsWidth) / numberOfGaps
-            : 10; // minimum gap if elements are too large
+          gapWidth =
+            totalWidth > totalElementsWidth
+              ? (totalWidth - totalElementsWidth) / numberOfGaps
+              : 10; // minimum gap if elements are too large
         }
 
         let currentX = startX;

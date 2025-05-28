@@ -86,20 +86,7 @@ export class CreateShapeTool extends BaseTool {
       };
     }
 
-    // Check for potential overlaps before adding the element
-    const elementPosition = { x: xPos, y: yPos };
-    const elementSize = { width: widthValue, height: heightValue };
-    const overlapCheck = ElementValidator.checkOverlap(
-      slide,
-      elementPosition,
-      elementSize,
-    );
-
-    // We'll warn about overlap but not force repositioning to allow for intentional overlaps with shapes
-    // if (overlapCheck.hasOverlap && overlapCheck.suggestedPosition) {
-    //   xPos = overlapCheck.suggestedPosition.x;
-    //   yPos = overlapCheck.suggestedPosition.y;
-    // }
+    // Create shape element and check overlaps after DOM updates
 
     const element = ElementFactory.createShape({
       shapeType: shapeType as 'rectangle' | 'circle' | 'triangle',
@@ -123,24 +110,40 @@ export class CreateShapeTool extends BaseTool {
       };
     }
 
-    // Create appropriate message based on whether there was an overlap
-    let message = `${shapeType} shape added successfully`;
-
-    // Only warn about elements outside slide boundaries - shape overlaps are fine
-    if (overlapCheck.isOutsideSlide) {
-      message += `\n\nWARNING: This shape is positioned outside the slide boundaries (1280x720). `;
-
-      if (overlapCheck.suggestedPosition) {
-        message += `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to ensure visibility.`;
-      }
+    // Run DOM-based overlap detection on the actual rendered element
+    let overlapCheck = null;
+    try {
+      // Small delay to ensure DOM updates
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      overlapCheck = await ElementValidator.checkElementOverlap(
+        element.id,
+        0, // no padding
+      );
+    } catch (error) {
+      console.warn('Post-creation overlap detection failed:', error);
+      // Create a fallback empty result
+      overlapCheck = {
+        hasOverlap: false,
+        overlappingElements: [],
+        isOutsideSlide: false,
+      };
     }
 
-    // Only mention text overlaps, not shape overlaps
+    // Create success message
+    let message = `${shapeType} shape added successfully`;
+
+    // Add DOM-based overlap and boundary feedback
+    if (overlapCheck.isOutsideSlide) {
+      message += `\n\nWARNING: This shape is positioned outside the slide boundaries (1280x720). Consider adjusting the position to ensure visibility.`;
+    }
+
     if (overlapCheck.hasOverlap) {
-      message += `\n\nWARNING: OVERLAP DETECTED. This shape overlaps with text elements: ${overlapCheck.overlappingElements.join(', ')}. `;
+      message += `\n\nWARNING: OVERLAP DETECTED. This shape visually overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}. `;
 
       if (overlapCheck.suggestedPosition) {
-        message += `The closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}). Alternatively, you can adjust the z-index to control which element appears on top.`;
+        message += `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}). You can also adjust z-index to control layering.`;
+      } else {
+        message += `Consider adjusting position or z-index to control element layering.`;
       }
     }
 

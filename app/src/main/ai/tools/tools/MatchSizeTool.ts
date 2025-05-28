@@ -5,21 +5,31 @@ import { PresentationService } from '../../../presentation/service';
 export class MatchSizeTool extends BaseTool {
   name = 'matchSize';
 
-  description = 'Make elements the same size by matching width, height, or both dimensions';
+  description =
+    'Make elements the same size by matching width, height, or both dimensions';
 
   requiredParams = {
     slideId: 'The ID of the slide containing the elements',
     elementIds: 'Comma-separated list of element IDs to resize',
-    sizeMode: 'What to match: "width", "height", "both", "largest-width", "largest-height", "largest-both", "smallest-width", "smallest-height", "smallest-both"',
-    referenceElementId: 'Optional ID of the element to use as size reference. If not provided, behavior depends on sizeMode (e.g., largest/smallest modes use automatic selection)',
-    maintainAspectRatio: 'Optional boolean (true/false) to maintain aspect ratio when resizing. Defaults to false for individual width/height, true for "both" modes',
+    sizeMode:
+      'What to match: "width", "height", "both", "largest-width", "largest-height", "largest-both", "smallest-width", "smallest-height", "smallest-both"',
+    referenceElementId:
+      'Optional ID of the element to use as size reference. If not provided, behavior depends on sizeMode (e.g., largest/smallest modes use automatic selection)',
+    maintainAspectRatio:
+      'Optional boolean (true/false) to maintain aspect ratio when resizing. Defaults to false for individual width/height, true for "both" modes',
   };
 
   protected async executeImpl(
     params: Record<string, any>,
     presentationService: PresentationService,
   ): Promise<AIToolResult> {
-    const { slideId, elementIds, sizeMode, referenceElementId, maintainAspectRatio } = params;
+    const {
+      slideId,
+      elementIds,
+      sizeMode,
+      referenceElementId,
+      maintainAspectRatio,
+    } = params;
 
     if (!slideId) {
       return {
@@ -36,9 +46,15 @@ export class MatchSizeTool extends BaseTool {
     }
 
     const validSizeModes = [
-      'width', 'height', 'both',
-      'largest-width', 'largest-height', 'largest-both',
-      'smallest-width', 'smallest-height', 'smallest-both'
+      'width',
+      'height',
+      'both',
+      'largest-width',
+      'largest-height',
+      'largest-both',
+      'smallest-width',
+      'smallest-height',
+      'smallest-both',
     ];
 
     if (!sizeMode || !validSizeModes.includes(sizeMode)) {
@@ -93,7 +109,9 @@ export class MatchSizeTool extends BaseTool {
     let targetHeight: number;
 
     if (referenceElementId) {
-      referenceElement = elementsToResize.find((el) => el.id === referenceElementId);
+      referenceElement = elementsToResize.find(
+        (el) => el.id === referenceElementId,
+      );
       if (!referenceElement) {
         return {
           success: false,
@@ -104,7 +122,8 @@ export class MatchSizeTool extends BaseTool {
       targetHeight = referenceElement.size.height;
     } else {
       // Determine target size based on mode
-      const { width: autoTargetWidth, height: autoTargetHeight } = this.calculateTargetSize(elementsToResize, sizeMode);
+      const { width: autoTargetWidth, height: autoTargetHeight } =
+        this.calculateTargetSize(elementsToResize, sizeMode);
       targetWidth = autoTargetWidth;
       targetHeight = autoTargetHeight;
     }
@@ -112,16 +131,17 @@ export class MatchSizeTool extends BaseTool {
     // Determine if we should maintain aspect ratio
     let shouldMaintainAspectRatio = false;
     if (maintainAspectRatio !== undefined) {
-      shouldMaintainAspectRatio = maintainAspectRatio === 'true' || maintainAspectRatio === true;
+      shouldMaintainAspectRatio =
+        maintainAspectRatio === 'true' || maintainAspectRatio === true;
     } else {
       // Default behavior: maintain aspect ratio for 'both' modes
       shouldMaintainAspectRatio = sizeMode.includes('both');
     }
 
-    const updates: Array<{ 
-      id: string; 
-      updates: any; 
-      originalSize: { width: number; height: number }; 
+    const updates: Array<{
+      id: string;
+      updates: any;
+      originalSize: { width: number; height: number };
       newSize: { width: number; height: number };
       sizeChange: string;
     }> = [];
@@ -187,8 +207,9 @@ export class MatchSizeTool extends BaseTool {
       newHeight = Math.min(newHeight, 720 - element.position.y);
 
       // Only add update if size actually changes
-      const sizeChanged = Math.abs(newWidth - element.size.width) > 0.5 || 
-                         Math.abs(newHeight - element.size.height) > 0.5;
+      const sizeChanged =
+        Math.abs(newWidth - element.size.width) > 0.5 ||
+        Math.abs(newHeight - element.size.height) > 0.5;
 
       if (sizeChanged) {
         const widthChange = newWidth - element.size.width;
@@ -200,7 +221,10 @@ export class MatchSizeTool extends BaseTool {
           updates: {
             size: { width: newWidth, height: newHeight },
           },
-          originalSize: { width: element.size.width, height: element.size.height },
+          originalSize: {
+            width: element.size.width,
+            height: element.size.height,
+          },
           newSize: { width: newWidth, height: newHeight },
           sizeChange: sizeChangeDesc,
         });
@@ -225,8 +249,9 @@ export class MatchSizeTool extends BaseTool {
     }
 
     // Create detailed feedback
-    const sizeSummary = updates.map(update => 
-      `${update.id.substring(0, 8)}... ${update.originalSize.width}×${update.originalSize.height} → ${update.newSize.width}×${update.newSize.height} (${update.sizeChange})`
+    const sizeSummary = updates.map(
+      (update) =>
+        `${update.id.substring(0, 8)}... ${update.originalSize.width}×${update.originalSize.height} → ${update.newSize.width}×${update.newSize.height} (${update.sizeChange})`,
     );
 
     let referenceDescription = '';
@@ -253,9 +278,12 @@ export class MatchSizeTool extends BaseTool {
   /**
    * Calculates target size based on automatic mode selection
    */
-  private calculateTargetSize(elements: any[], sizeMode: string): { width: number; height: number } {
-    const widths = elements.map(el => el.size.width);
-    const heights = elements.map(el => el.size.height);
+  private calculateTargetSize(
+    elements: any[],
+    sizeMode: string,
+  ): { width: number; height: number } {
+    const widths = elements.map((el) => el.size.width);
+    const heights = elements.map((el) => el.size.height);
 
     let targetWidth = widths[0];
     let targetHeight = heights[0];

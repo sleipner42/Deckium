@@ -9,7 +9,7 @@ describe('DeleteElementTool', () => {
   beforeEach(() => {
     tool = new DeleteElementTool();
     mockService = new MockPresentationService();
-    
+
     // Add a test slide
     const slide = mockService.addSlide();
     slideId = slide.id;
@@ -24,12 +24,17 @@ describe('DeleteElementTool', () => {
     });
 
     it('should return error when element does not exist', async () => {
-      const result = await tool.execute({
-        elementId: 'non-existent-element',
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          elementId: 'non-existent-element',
+        },
+        mockService as any,
+      );
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Element with ID non-existent-element not found');
+      expect(result.error).toBe(
+        'Element with ID non-existent-element not found',
+      );
     });
   });
 
@@ -46,9 +51,12 @@ describe('DeleteElementTool', () => {
       expect(slideBeforeDeletion?.elements).toHaveLength(1);
 
       // Delete the element
-      const result = await tool.execute({
-        elementId: element.id,
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          elementId: element.id,
+        },
+        mockService as any,
+      );
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({
@@ -71,9 +79,12 @@ describe('DeleteElementTool', () => {
       mockService.addElement(slideId, element);
 
       // Delete the element
-      const result = await tool.execute({
-        elementId: element.id,
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          elementId: element.id,
+        },
+        mockService as any,
+      );
 
       expect(result.success).toBe(true);
       expect(result.data.elementType).toBe('image');
@@ -86,8 +97,12 @@ describe('DeleteElementTool', () => {
 
     it('should delete specific element from multiple elements', async () => {
       // Add multiple elements
-      const element1 = mockService.createMockTextElement({ content: 'Element 1' });
-      const element2 = mockService.createMockTextElement({ content: 'Element 2' });
+      const element1 = mockService.createMockTextElement({
+        content: 'Element 1',
+      });
+      const element2 = mockService.createMockTextElement({
+        content: 'Element 2',
+      });
       const element3 = mockService.createMockImageElement();
 
       mockService.addElement(slideId, element1);
@@ -99,17 +114,21 @@ describe('DeleteElementTool', () => {
       expect(slideBeforeDeletion?.elements).toHaveLength(3);
 
       // Delete middle element
-      const result = await tool.execute({
-        elementId: element2.id,
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          elementId: element2.id,
+        },
+        mockService as any,
+      );
 
       expect(result.success).toBe(true);
 
       // Verify only the target element was removed
       const slideAfterDeletion = mockService.getSlideById(slideId);
       expect(slideAfterDeletion?.elements).toHaveLength(2);
-      
-      const remainingIds = slideAfterDeletion?.elements.map(el => el.id) || [];
+
+      const remainingIds =
+        slideAfterDeletion?.elements.map((el) => el.id) || [];
       expect(remainingIds).toContain(element1.id);
       expect(remainingIds).toContain(element3.id);
       expect(remainingIds).not.toContain(element2.id);
@@ -123,16 +142,23 @@ describe('DeleteElementTool', () => {
       const slide2 = mockService.addSlide();
 
       // Add elements to different slides
-      const element1 = mockService.createMockTextElement({ content: 'Slide 1 element' });
-      const element2 = mockService.createMockTextElement({ content: 'Slide 2 element' });
+      const element1 = mockService.createMockTextElement({
+        content: 'Slide 1 element',
+      });
+      const element2 = mockService.createMockTextElement({
+        content: 'Slide 2 element',
+      });
 
       mockService.addElement(slide1.id, element1);
       mockService.addElement(slide2.id, element2);
 
       // Delete element from slide 2
-      const result = await tool.execute({
-        elementId: element2.id,
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          elementId: element2.id,
+        },
+        mockService as any,
+      );
 
       expect(result.success).toBe(true);
       expect(result.data.slideId).toBe(slide2.id);
@@ -156,15 +182,22 @@ describe('DeleteElementTool', () => {
       const failingService = {
         ...mockService,
         deleteElement: jest.fn().mockReturnValue(null),
-        getPresentation: jest.fn().mockReturnValue(mockService.getPresentation()),
+        getPresentation: jest
+          .fn()
+          .mockReturnValue(mockService.getPresentation()),
       };
 
-      const result = await tool.execute({
-        elementId: element.id,
-      }, failingService as any);
+      const result = await tool.execute(
+        {
+          elementId: element.id,
+        },
+        failingService as any,
+      );
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe(`Failed to delete element with ID ${element.id}`);
+      expect(result.error).toBe(
+        `Failed to delete element with ID ${element.id}`,
+      );
     });
 
     it('should call deleteElement method on service', async () => {
@@ -174,9 +207,12 @@ describe('DeleteElementTool', () => {
       // Spy on the deleteElement method
       const deleteElementSpy = jest.spyOn(mockService, 'deleteElement');
 
-      const result = await tool.execute({
-        elementId: element.id,
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          elementId: element.id,
+        },
+        mockService as any,
+      );
 
       expect(result.success).toBe(true);
       expect(deleteElementSpy).toHaveBeenCalledWith(element.id);
@@ -186,15 +222,15 @@ describe('DeleteElementTool', () => {
   describe('Element Type Detection', () => {
     it('should correctly identify different element types in response', async () => {
       const testCases = [
-        { 
-          element: mockService.createMockTextElement(), 
+        {
+          element: mockService.createMockTextElement(),
           expectedType: 'textbox',
-          expectedMessage: 'textbox element deleted successfully'
+          expectedMessage: 'textbox element deleted successfully',
         },
-        { 
-          element: mockService.createMockImageElement(), 
+        {
+          element: mockService.createMockImageElement(),
           expectedType: 'image',
-          expectedMessage: 'image element deleted successfully'
+          expectedMessage: 'image element deleted successfully',
         },
       ];
 
@@ -204,9 +240,12 @@ describe('DeleteElementTool', () => {
         const slide = mockService.addSlide();
         mockService.addElement(slide.id, testCase.element);
 
-        const result = await tool.execute({
-          elementId: testCase.element.id,
-        }, mockService as any);
+        const result = await tool.execute(
+          {
+            elementId: testCase.element.id,
+          },
+          mockService as any,
+        );
 
         expect(result.success).toBe(true);
         expect(result.data.elementType).toBe(testCase.expectedType);
@@ -218,9 +257,12 @@ describe('DeleteElementTool', () => {
   describe('Edge Cases', () => {
     it('should handle deletion from empty slide gracefully', async () => {
       // Try to delete from empty slide
-      const result = await tool.execute({
-        elementId: 'non-existent',
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          elementId: 'non-existent',
+        },
+        mockService as any,
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Element with ID non-existent not found');
@@ -230,9 +272,12 @@ describe('DeleteElementTool', () => {
       // Reset to have no slides
       mockService.reset();
 
-      const result = await tool.execute({
-        elementId: 'any-id',
-      }, mockService as any);
+      const result = await tool.execute(
+        {
+          elementId: 'any-id',
+        },
+        mockService as any,
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Element with ID any-id not found');

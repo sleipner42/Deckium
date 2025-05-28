@@ -9,9 +9,11 @@ import { textMeasurementService } from '../text-measurement/service';
 
 export class ElementValidator {
   /**
-   * Checks if a new element would overlap with existing elements using DOM-based detection
+   * Checks if an element overlaps with other elements using DOM-based detection
    * This is more accurate than calculation-based methods as it uses actual rendered bounding boxes
-   * 
+   *
+   * @deprecated Use checkElementOverlap() instead for cleaner API with element ID-based detection
+   *
    * WHAT THIS CHECKS:
    * - Uses getBoundingClientRect() which returns the complete visual element area including:
    *   • Text content area
@@ -19,10 +21,11 @@ export class ElementValidator {
    *   • Borders, margins, visual decorations
    *   • Any other styling that affects the visual footprint
    * - This is the correct approach because users see visual overlap of elements, not just text content
-   * 
+   *
    * @param slide The slide to check for overlaps
-   * @param position The position of the new element
-   * @param size The size of the new element
+   * @param elementId The ID of the element to check for overlaps (preferred method)
+   * @param position Optional position for fallback if elementId not found
+   * @param size Optional size for fallback if elementId not found
    * @param padding Optional padding around elements to create some spacing
    * @param excludeElementId Optional element ID to exclude from overlap checks
    * @returns Object containing overlap status and details for feedback
@@ -115,48 +118,73 @@ export class ElementValidator {
   }
 
   /**
-   * Synchronous version for backward compatibility
-   * @deprecated Use checkOverlapPrecise for better accuracy with DOM-based detection
+   * Checks if an element overlaps with other elements using its DOM element ID
+   * This is the most accurate method as it uses the actual rendered element bounds
+   *
+   * @param elementId The ID of the element to check for overlaps
+   * @param padding Optional padding around elements to create some spacing
+   * @returns Object containing overlap status and details for feedback
    */
-  static checkOverlap(
-    slide: Slide,
-    position: Position,
-    size: Size,
+  static async checkElementOverlap(
+    elementId: string,
     padding: number = 0,
-    excludeElementId?: string,
-  ): {
+  ): Promise<{
     hasOverlap: boolean;
     overlappingElements: string[];
     isOutsideSlide: boolean;
     suggestedPosition?: Position;
-  } {
-    console.warn(
-      'Using legacy synchronous overlap detection - consider migrating to checkOverlapPrecise for DOM-based accuracy',
-    );
+  }> {
+    try {
+      // Use DOM-based overlap detection with element ID
+      const domResult = await textMeasurementService.checkOverlapWithElementId(
+        elementId,
+        padding,
+      );
 
-    // For synchronous calls, we can only do basic boundary checking
-    const isOutsideSlide =
-      position.x < 0 ||
-      position.y < 0 ||
-      position.x + size.width > 1280 ||
-      position.y + size.height > 720;
+      // Convert DOM result to expected format
+      const overlappingElements = domResult.overlappingElements.map(
+        (element) =>
+          `${element.type} with id "${element.id}" at position (${element.position.x}, ${element.position.y})`,
+      );
 
-    let suggestedPosition: Position | undefined;
-    if (isOutsideSlide) {
-      suggestedPosition = {
-        x: Math.max(0, Math.min(position.x, 1280 - size.width)),
-        y: Math.max(0, Math.min(position.y, 720 - size.height)),
+      // Generate suggested position if there are overlaps
+      let suggestedPosition: Position | undefined;
+      if (domResult.hasOverlap && domResult.overlappingElements.length > 0) {
+        suggestedPosition = this.suggestNewPositionFromDOMElements(
+          domResult.overlappingElements,
+          {
+            width: domResult.elementBounds?.width || 100,
+            height: domResult.elementBounds?.height || 100,
+          },
+          null as any, // slide not needed for position suggestion
+          undefined,
+          padding,
+        );
+      }
+
+      console.log('DOM-based element overlap detection result:', {
+        elementId,
+        hasOverlap: domResult.hasOverlap,
+        overlappingCount: domResult.overlappingElements.length,
+        isOutsideSlide: domResult.isOutsideSlide,
+        suggestedPosition,
+      });
+
+      return {
+        hasOverlap: domResult.hasOverlap,
+        overlappingElements,
+        isOutsideSlide: domResult.isOutsideSlide,
+        suggestedPosition,
+      };
+    } catch (error) {
+      console.error('DOM-based element overlap detection failed:', error);
+
+      return {
+        hasOverlap: false,
+        overlappingElements: [],
+        isOutsideSlide: false,
       };
     }
-
-    // For sync version, we return minimal overlap detection
-    // This encourages migration to the async DOM-based version
-    return {
-      hasOverlap: false, // Always false for sync version
-      overlappingElements: [],
-      isOutsideSlide,
-      suggestedPosition,
-    };
   }
 
   /**
@@ -240,4 +268,3 @@ export class ElementValidator {
     };
   }
 }
-

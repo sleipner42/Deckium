@@ -6,7 +6,6 @@
 * Move image tools to backend
 * Overlap detection images
 * Margin/padding controls - More sophisticated spacing options
-* Is the critic getting the correct slide?
 * Is the grid layout tool working?
 * Duplicate/copy slide tool
 * Instruction about how a good slide looks. Do not put boxes as highlights.
@@ -15,6 +14,9 @@
 * Selecting an element and then writing to the agent and pressing backspace
   results in the element being deleted.
 * Messages disappearing after the critic response.
+* Is the critic getting the correct slide?
+* Change order of slides
+* This slide is not clear to the agent
 
 
 ## Future features

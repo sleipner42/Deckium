@@ -1,12 +1,17 @@
 // @ts-nocheck
 import { PresentationService } from '../../main/presentation/service';
-import { Presentation, Slide, ContentElement } from '../../common/domain/entities/types';
+import {
+  Presentation,
+  Slide,
+  ContentElement,
+} from '../../common/domain/entities/types';
 
 /**
  * Mock PresentationService for testing tools
  */
 export class MockPresentationService {
   private mockPresentation: Presentation;
+
   private selectedSlideId: string | null = null;
 
   constructor(initialPresentation?: Partial<Presentation>) {
@@ -76,7 +81,9 @@ export class MockPresentationService {
   }
 
   updateSlide(slideId: string, updates: Partial<Slide>): Slide | null {
-    const slideIndex = this.mockPresentation.slides.findIndex(s => s.id === slideId);
+    const slideIndex = this.mockPresentation.slides.findIndex(
+      (s) => s.id === slideId,
+    );
     if (slideIndex === -1) return null;
 
     this.mockPresentation.slides[slideIndex] = {
@@ -88,7 +95,9 @@ export class MockPresentationService {
   }
 
   deleteSlide(slideId: string): string | null {
-    const slideIndex = this.mockPresentation.slides.findIndex(s => s.id === slideId);
+    const slideIndex = this.mockPresentation.slides.findIndex(
+      (s) => s.id === slideId,
+    );
     if (slideIndex === -1) return null;
 
     this.mockPresentation.slides.splice(slideIndex, 1);
@@ -97,7 +106,7 @@ export class MockPresentationService {
   }
 
   addElement(slideId: string, element: ContentElement): Slide | null {
-    const slide = this.mockPresentation.slides.find(s => s.id === slideId);
+    const slide = this.mockPresentation.slides.find((s) => s.id === slideId);
     if (!slide) return null;
 
     slide.elements.push(element);
@@ -105,9 +114,12 @@ export class MockPresentationService {
     return slide;
   }
 
-  updateElement(elementId: string, updates: Partial<ContentElement>): Slide | null {
+  updateElement(
+    elementId: string,
+    updates: Partial<ContentElement>,
+  ): Slide | null {
     for (const slide of this.mockPresentation.slides) {
-      const elementIndex = slide.elements.findIndex(e => e.id === elementId);
+      const elementIndex = slide.elements.findIndex((e) => e.id === elementId);
       if (elementIndex !== -1) {
         slide.elements[elementIndex] = {
           ...slide.elements[elementIndex],
@@ -122,7 +134,7 @@ export class MockPresentationService {
 
   deleteElement(elementId: string): Slide | null {
     for (const slide of this.mockPresentation.slides) {
-      const elementIndex = slide.elements.findIndex(e => e.id === elementId);
+      const elementIndex = slide.elements.findIndex((e) => e.id === elementId);
       if (elementIndex !== -1) {
         slide.elements.splice(elementIndex, 1);
         this.mockPresentation.updatedAt = new Date();
@@ -142,12 +154,14 @@ export class MockPresentationService {
 
   // Helper methods for testing
   getSlideById(slideId: string): Slide | undefined {
-    return this.mockPresentation.slides.find(s => s.id === slideId);
+    return this.mockPresentation.slides.find((s) => s.id === slideId);
   }
 
-  getElementById(elementId: string): { element: ContentElement; slide: Slide } | null {
+  getElementById(
+    elementId: string,
+  ): { element: ContentElement; slide: Slide } | null {
     for (const slide of this.mockPresentation.slides) {
-      const element = slide.elements.find(e => e.id === elementId);
+      const element = slide.elements.find((e) => e.id === elementId);
       if (element) {
         return { element, slide };
       }
