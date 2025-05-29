@@ -1,13 +1,14 @@
 name: Build and Deploy to Azure Blob Storage
 
 on:
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - 'app/**'
-      - '.github/workflows/build-and-deploy.yml'
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
+  #     - master
+  #   paths:
+  #     - 'app/**'
+  #     - '.github/workflows/build-and-deploy.yml'
 
 jobs:
   build-multiplatform:
