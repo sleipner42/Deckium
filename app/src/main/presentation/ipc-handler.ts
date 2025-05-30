@@ -31,6 +31,13 @@ export function setupPresentationIPC(service: PresentationService) {
   });
 
   ipcMain.handle(
+    'presentation:reorder-slides',
+    (_, fromIndex: number, toIndex: number) => {
+      return service.reorderSlides(fromIndex, toIndex);
+    },
+  );
+
+  ipcMain.handle(
     'presentation:add-element',
     (_, slideId: string, element: ContentElement) => {
       return service.addElement(slideId, element);

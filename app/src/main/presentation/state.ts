@@ -123,6 +123,30 @@ export class PresentationState {
     return slideId;
   }
 
+  reorderSlides(fromIndex: number, toIndex: number): Presentation {
+    if (
+      fromIndex < 0 ||
+      fromIndex >= this.presentation.slides.length ||
+      toIndex < 0 ||
+      toIndex >= this.presentation.slides.length ||
+      fromIndex === toIndex
+    ) {
+      return this.presentation;
+    }
+
+    const newSlides = [...this.presentation.slides];
+    const [movedSlide] = newSlides.splice(fromIndex, 1);
+    newSlides.splice(toIndex, 0, movedSlide);
+
+    this.presentation = {
+      ...this.presentation,
+      slides: newSlides,
+      updatedAt: new Date(),
+    };
+
+    return this.presentation;
+  }
+
   addElement(slideId: string, element: ContentElement): Slide | null {
     const slideIndex = this.findSlideIndex(slideId);
     if (slideIndex === -1) return null;

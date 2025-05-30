@@ -86,6 +86,15 @@ export class PresentationService {
     return deletedSlideId;
   }
 
+  reorderSlides(fromIndex: number, toIndex: number): Presentation {
+    const updatedPresentation = this.state.reorderSlides(fromIndex, toIndex);
+    this.eventBus.broadcastToWindows(
+      PresentationEventBus.events.SLIDES_REORDERED,
+      updatedPresentation,
+    );
+    return updatedPresentation;
+  }
+
   addElement(slideId: string, element: ContentElement): Slide | null {
     const updatedSlide = this.state.addElement(slideId, element);
     if (updatedSlide) {

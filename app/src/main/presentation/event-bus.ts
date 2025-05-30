@@ -8,6 +8,7 @@ export class PresentationEventBus extends EventEmitter {
     SLIDE_ADDED: 'presentation:slide-added',
     SLIDE_UPDATED: 'presentation:slide-updated',
     SLIDE_DELETED: 'presentation:slide-deleted',
+    SLIDES_REORDERED: 'presentation:slides-reordered',
     SET_SELECTED_SLIDE: 'presentation:set-selected-slide',
     SAVED: 'presentation:saved',
     LOADED: 'presentation:loaded',

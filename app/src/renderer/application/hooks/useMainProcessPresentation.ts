@@ -28,6 +28,7 @@ interface ElectronWindow {
       addSlide: (title?: string) => Promise<Slide>;
       updateSlide: (slideId: string, updates: Partial<Slide>) => Promise<Slide>;
       deleteSlide: (slideId: string) => Promise<string>;
+      reorderSlides: (fromIndex: number, toIndex: number) => Promise<Presentation>;
       addElement: (slideId: string, element: ContentElement) => Promise<Slide>;
       updateElement: (
         elementId: string,
@@ -222,6 +223,23 @@ export const useMainProcessPresentation = () => {
       },
     );
 
+    const slidesReorderedUnsubscribe = electronAPI.ipcRenderer.on(
+      'presentation:slides-reordered',
+      (...args: unknown[]) => {
+        const presentation = args[0] as Presentation;
+        setSlides(presentation.slides);
+        setUpdatedAt(new Date(presentation.updatedAt));
+        
+        // Update selected slide if it still exists
+        if (selectedSlide) {
+          const updatedSelectedSlide = presentation.slides.find(s => s.id === selectedSlide.id);
+          if (updatedSelectedSlide) {
+            setSelectedSlide(updatedSelectedSlide);
+          }
+        }
+      },
+    );
+
     return () => {
       metaUpdatedUnsubscribe();
       slideAddedUnsubscribe();
@@ -231,6 +249,7 @@ export const useMainProcessPresentation = () => {
       setSlideUnsubscribe();
       presentationSavedUnsubscribe();
       presentationLoadedUnsubscribe();
+      slidesReorderedUnsubscribe();
     };
   }, [selectedSlide]);
 
@@ -519,6 +538,26 @@ export const useMainProcessPresentation = () => {
     }
   }, []);
 
+  const reorderSlides = useCallback(async (fromIndex: number, toIndex: number) => {
+    try {
+      console.log('reorderSlides hook called:', { fromIndex, toIndex });
+      setIsLoading(true);
+      setError(null);
+
+      const presentation = await electronAPI.presentation.reorderSlides(fromIndex, toIndex);
+      console.log('reorderSlides response:', presentation);
+      return presentation;
+    } catch (err) {
+      console.error('reorderSlides error:', err);
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const presentation = {
     id: 'singleton',
     title,
@@ -548,6 +587,7 @@ export const useMainProcessPresentation = () => {
     selectElement,
     addElement,
     updateElement,
+    reorderSlides,
     savePresentation,
     savePresentationAs,
     loadPresentation,

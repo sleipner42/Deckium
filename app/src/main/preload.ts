@@ -8,6 +8,7 @@ export type PresentationChannels =
   | 'presentation:add-slide'
   | 'presentation:update-slide'
   | 'presentation:delete-slide'
+  | 'presentation:reorder-slides'
   | 'presentation:add-element'
   | 'presentation:update-element'
   | 'presentation:save'
@@ -16,6 +17,7 @@ export type PresentationChannels =
   | 'presentation:slide-added'
   | 'presentation:slide-updated'
   | 'presentation:slide-deleted'
+  | 'presentation:slides-reordered'
   | 'presentation:meta-updated'
   | 'presentation:initialized'
   | 'presentation:set-selected-slide'
@@ -171,6 +173,9 @@ const electronHandler = {
     },
     deleteSlide(slideId: string) {
       return ipcRenderer.invoke('presentation:delete-slide', slideId);
+    },
+    reorderSlides(fromIndex: number, toIndex: number) {
+      return ipcRenderer.invoke('presentation:reorder-slides', fromIndex, toIndex);
     },
     addElement(slideId: string, element: unknown) {
       return ipcRenderer.invoke('presentation:add-element', slideId, element);

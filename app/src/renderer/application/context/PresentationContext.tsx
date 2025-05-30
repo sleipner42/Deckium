@@ -42,6 +42,7 @@ interface PresentationContextActions {
   selectElement: (elementId: string | null) => void;
   addElement: (element: ContentElement) => void;
   updateElement: (elementId: string, updates: Partial<ContentElement>) => void;
+  reorderSlides: (fromIndex: number, toIndex: number) => Promise<Presentation>;
   startEditingElement: (elementId: string) => void;
   stopEditingElement: (elementId: string, content?: string) => void;
   moveElement: (elementId: string, x: number, y: number) => void;
@@ -95,6 +96,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
     selectElement,
     addElement,
     updateElement,
+    reorderSlides,
     savePresentation,
     savePresentationAs,
     loadPresentation,
@@ -132,6 +134,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
         selectElement,
         addElement,
         updateElement,
+        reorderSlides,
         savePresentation,
         savePresentationAs,
         loadPresentation,
