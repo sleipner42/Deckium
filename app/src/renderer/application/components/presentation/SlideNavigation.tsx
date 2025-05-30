@@ -103,16 +103,31 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
     }
   };
 
-  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+  const handleDrop = async (e: React.DragEvent, slideIndex: number) => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('Drop triggered on slide:', { draggedIndex, dropIndex });
+    // Use the calculated dragOverIndex instead of the slideIndex
+    let targetIndex = dragOverIndex !== null ? dragOverIndex : slideIndex;
     
-    if (draggedIndex !== null && draggedIndex !== dropIndex) {
+    // Clamp target index to valid bounds - if targeting beyond last slide, move to last position
+    const maxIndex = currentPresentation.slides.length - 1;
+    if (targetIndex > maxIndex) {
+      targetIndex = maxIndex;
+    }
+    
+    console.log('Drop triggered on slide:', { 
+      draggedIndex, 
+      slideIndex, 
+      dragOverIndex, 
+      targetIndex,
+      maxIndex 
+    });
+    
+    if (draggedIndex !== null && draggedIndex !== targetIndex) {
       try {
-        console.log('Calling reorderSlides:', draggedIndex, '→', dropIndex);
-        await reorderSlides(draggedIndex, dropIndex);
+        console.log('Calling reorderSlides:', draggedIndex, '→', targetIndex);
+        await reorderSlides(draggedIndex, targetIndex);
         console.log('Reorder completed successfully');
       } catch (error) {
         console.error('Error reordering slides:', error);
