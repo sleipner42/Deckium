@@ -72,23 +72,28 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    console.log('DragOver triggered');
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDragEnter = (e: React.DragEvent, index: number) => {
-    console.log('DragEnter triggered for index:', index);
     e.preventDefault();
     if (draggedIndex !== null && draggedIndex !== index) {
-      setDragOverIndex(index);
+      // Determine if we should insert before or after based on mouse position
+      const rect = e.currentTarget.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      const mouseY = e.clientY;
+      
+      // If mouse is in the top half, insert before (same index)
+      // If mouse is in the bottom half, insert after (index + 1)
+      const insertIndex = mouseY < midpoint ? index : index + 1;
+      setDragOverIndex(insertIndex);
     }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    console.log('DragLeave triggered');
     e.preventDefault();
-    // Only clear drag over if we're leaving the container entirely
+    // Only clear if we're leaving the entire container
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
@@ -102,7 +107,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('Drop triggered:', { draggedIndex, dropIndex });
+    console.log('Drop triggered on slide:', { draggedIndex, dropIndex });
     
     if (draggedIndex !== null && draggedIndex !== dropIndex) {
       try {
@@ -118,6 +123,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
     
     setDraggedIndex(null);
     setDragOverIndex(null);
+    setIsDragging(false);
   };
 
   const handleDragEnd = () => {
@@ -219,31 +225,22 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
           },
         }}
       >
+        {/* Drop indicator at the top */}
+        {dragOverIndex === 0 && draggedIndex !== null && (
+          <Box
+            sx={{
+              height: '4px',
+              backgroundColor: 'primary.main',
+              borderRadius: '2px',
+              mx: 1,
+              mb: -0.75,
+              zIndex: 1000,
+            }}
+          />
+        )}
+
         {currentPresentation.slides.map((slide, index) => (
           <React.Fragment key={slide.id}>
-            {/* Drop zone before first slide */}
-            {index === 0 && (
-              <Box
-                onDragOver={handleDragOver}
-                onDragEnter={(e) => handleDragEnter(e, 0)}
-                onDrop={(e) => {
-                  console.log('DROP EVENT FIRED ON TOP ZONE!', 0);
-                  handleDrop(e, 0);
-                }}
-                sx={{
-                  height: dragOverIndex === 0 && draggedIndex !== 0 ? '8px' : '4px',
-                  backgroundColor: 
-                    dragOverIndex === 0 && draggedIndex !== 0 
-                      ? 'primary.main' 
-                      : 'transparent',
-                  transition: 'all 0.2s ease-in-out',
-                  borderRadius: '2px',
-                  mx: 1,
-                  minHeight: '8px', // Ensure minimum clickable area
-                }}
-              />
-            )}
-            
             <Paper
               elevation={0}
               draggable
@@ -252,11 +249,9 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
               onDragStart={(e) => handleDragStart(e, index)}
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
-              onDrop={(e) => {
-                console.log('DROP EVENT FIRED ON SLIDE!', index);
-                // Drop on slide means insert before this slide
-                handleDrop(e, index);
-              }}
+              onDragEnter={(e) => handleDragEnter(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
               sx={{
                 position: 'relative',
                 width: '100%',
@@ -264,8 +259,13 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
                 borderRadius: 1,
                 overflow: 'hidden',
                 cursor: draggedIndex === index ? 'grabbing' : 'grab',
-                border: '1px solid',
-                borderColor: selectedSlide?.id === slide.id ? 'primary.main' : 'divider',
+                border: '2px solid',
+                borderColor: 
+                  dragOverIndex === index && draggedIndex !== null && draggedIndex !== index
+                    ? 'primary.main'
+                    : selectedSlide?.id === slide.id 
+                      ? 'primary.main' 
+                      : 'divider',
                 boxShadow: selectedSlide?.id === slide.id
                   ? '0 0 0 2px rgba(0, 122, 255, 0.2)'
                   : 'none',
@@ -280,71 +280,64 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
                 },
               }}
             >
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                bgcolor: 'background.paper',
-                pointerEvents: 'none',
-              }}
-            >
-              <SlideView
-                defaultScale={0.2}
-                selectedSlideOverride={slide}
-                selectableElements={false}
-              />
-            </Box>
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                py: 0.5,
-                px: 1,
-                bgcolor: 'rgba(0,0,0,0.03)',
-                borderTop: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <Typography
-                variant="caption"
+              <Box
                 sx={{
-                  fontSize: '0.65rem',
-                  color: 'text.secondary',
-                  fontWeight: selectedSlide?.id === slide.id ? 600 : 400,
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  bgcolor: 'background.paper',
+                  pointerEvents: 'none',
                 }}
               >
-                Slide {index + 1}
-              </Typography>
-            </Box>
-          </Paper>
-          
-          {/* Drop zone after each slide */}
-          <Box
-            onDragOver={handleDragOver}
-            onDragEnter={(e) => handleDragEnter(e, index + 1)}
-            onDrop={(e) => {
-              console.log('DROP EVENT FIRED ON ZONE!', index + 1);
-              handleDrop(e, index + 1);
-            }}
-            sx={{
-              height: dragOverIndex === index + 1 && draggedIndex !== index + 1 ? '8px' : '4px',
-              backgroundColor: 
-                dragOverIndex === index + 1 && draggedIndex !== index + 1 
-                  ? 'primary.main' 
-                  : 'transparent',
-              transition: 'all 0.2s ease-in-out',
-              borderRadius: '2px',
-              mx: 1,
-              mb: index === currentPresentation.slides.length - 1 ? 0 : 1,
-              minHeight: '8px', // Ensure minimum clickable area
-            }}
-          />
-        </React.Fragment>
+                <SlideView
+                  defaultScale={0.2}
+                  selectedSlideOverride={slide}
+                  selectableElements={false}
+                />
+              </Box>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  py: 0.5,
+                  px: 1,
+                  bgcolor: 'rgba(0,0,0,0.03)',
+                  borderTop: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontSize: '0.65rem',
+                    color: 'text.secondary',
+                    fontWeight: selectedSlide?.id === slide.id ? 600 : 400,
+                  }}
+                >
+                  Slide {index + 1}
+                </Typography>
+              </Box>
+            </Paper>
+
+            {/* Drop indicator after each slide */}
+            {dragOverIndex === index + 1 && draggedIndex !== null && (
+              <Box
+                sx={{
+                  height: '4px',
+                  backgroundColor: 'primary.main',
+                  borderRadius: '2px',
+                  mx: 1,
+                  mt: -0.75,
+                  mb: -0.75,
+                  zIndex: 1000,
+                }}
+              />
+            )}
+          </React.Fragment>
         ))}
       </Box>
 

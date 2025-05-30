@@ -14,6 +14,8 @@
 * Is the critic getting the correct slide?
 * Change order of slides
 * This slide is not clear to the agent
+* Writing in a textbox pressing ctrl+a and then backspace and then esc results
+  in a crash
 
 
 ## Future features
