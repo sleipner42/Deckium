@@ -105,7 +105,12 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
           <div
             data-element-id={element.id}
             data-element-type="shape"
-            style={commonStyles}
+            style={{
+              width: '100%',
+              height: '100%',
+              backgroundColor: fillColor,
+              border: `${strokeWidth}px solid ${strokeColor}`,
+            }}
             onClick={handleClick}
             onMouseDown={handleMouseDown}
           />
@@ -116,7 +121,10 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
             data-element-id={element.id}
             data-element-type="shape"
             style={{
-              ...commonStyles,
+              width: '100%',
+              height: '100%',
+              backgroundColor: fillColor,
+              border: `${strokeWidth}px solid ${strokeColor}`,
               borderRadius: '50%',
             }}
             onClick={handleClick}
@@ -129,7 +137,8 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
             data-element-id={element.id}
             data-element-type="shape"
             style={{
-              ...commonStyles,
+              width: '100%',
+              height: '100%',
               clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
               backgroundColor: fillColor,
             }}
@@ -143,7 +152,20 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
   };
 
   return (
-    <>
+    <div
+      style={{
+        position: 'absolute',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        width: `${size.width}px`,
+        height: `${size.height}px`,
+        cursor: readOnly ? 'default' : isSelected ? 'move' : 'pointer',
+        zIndex: zIndex || 1,
+        ...style,
+        outline: isSelected ? '2px solid #0066ff' : 'none',
+        outlineOffset: '2px',
+      }}
+    >
       {renderShape()}
       <ResizeHandles
         isSelected={isSelected}
@@ -155,6 +177,6 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
         minWidth={20}
         minHeight={20}
       />
-    </>
+    </div>
   );
 };
