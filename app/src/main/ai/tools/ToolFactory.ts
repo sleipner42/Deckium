@@ -1,4 +1,5 @@
 import { AITool } from './AITool';
+import AuthService from '../../auth/service';
 import { GetPresentationInfoTool } from './tools/GetPresentationInfoTool';
 import { CreateSlideTool } from './tools/CreateSlideTool';
 import { UpdateSlideTool } from './tools/UpdateSlideTool';
@@ -15,11 +16,8 @@ import { AlignElementsTool } from './tools/AlignElementsTool';
 import { SpaceElementsEvenlyTool } from './tools/SpaceElementsEvenlyTool';
 import { GetDataFromUrl } from './tools/GetDataFromUrl';
 import { ChangeElementZIndexTool } from './tools/ChangeElementZIndexTool';
-import { GetImageFromPexelsTool } from './tools/GetImageFromPexelsTool';
 import { AddImageFromPexelsTool } from './tools/AddImageFromPexelsTool';
 import { UpdateImageElementTool } from './tools/UpdateImageElementTool';
-import { AddImageFromPexelsResultTool } from './tools/AddImageFromPexelsResultTool';
-import { GetFirstImageFromPexelsTool } from './tools/GetFirstImageFromPexelsTool';
 import { DeleteElementTool } from './tools/DeleteElementTool';
 import { CriticTool } from './tools/CriticTool';
 import { AlignToSlideTool } from './tools/AlignToSlideTool';
@@ -28,7 +26,7 @@ import { MatchSizeTool } from './tools/MatchSizeTool';
 import { CreateSVGImageTool } from './tools/CreateSVGImageTool';
 
 export class ToolFactory {
-  static getBuiltInTools(): AITool[] {
+  static getBuiltInTools(authService?: AuthService): AITool[] {
     return [
       new GetPresentationInfoTool(),
       new CreateSlideTool(),
@@ -46,11 +44,8 @@ export class ToolFactory {
       new SpaceElementsEvenlyTool(),
       new GetDataFromUrl(),
       new ChangeElementZIndexTool(),
-      new GetImageFromPexelsTool(),
-      new AddImageFromPexelsTool(),
+      authService ? new AddImageFromPexelsTool(authService) : new AddImageFromPexelsTool(),
       new UpdateImageElementTool(),
-      new AddImageFromPexelsResultTool(),
-      new GetFirstImageFromPexelsTool(),
       new DeleteElementTool(),
       new CriticTool(),
       new AlignToSlideTool(),

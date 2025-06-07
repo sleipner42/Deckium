@@ -5,12 +5,13 @@ import {
   AIToolResult,
 } from '../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../presentation/service';
+import AuthService from '../../auth/service';
 
 export class AIToolsService {
   private tools: AITool[];
 
-  constructor() {
-    this.tools = ToolFactory.getBuiltInTools();
+  constructor(authService?: AuthService) {
+    this.tools = ToolFactory.getBuiltInTools(authService);
   }
 
   getTools(): AITool[] {
