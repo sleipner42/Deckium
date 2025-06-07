@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plot } from '../../../../../common/domain/entities/types';
+import { ResizeHandles } from '../ResizeHandles';
 
 interface PlotElementProps {
   element: Plot;
@@ -100,6 +101,16 @@ export const PlotElement: React.FC<PlotElementProps> = ({
         {plotType} Chart Placeholder
         <pre style={{ fontSize: '10px' }}>{JSON.stringify(data, null, 2)}</pre>
       </div>
+      <ResizeHandles
+        isSelected={isSelected}
+        isEditing={isEditing}
+        elementId={element.id}
+        position={position}
+        size={size}
+        onResize={onElementUpdate ? (id, updates) => onElementUpdate(id, updates) : () => {}}
+        minWidth={100}
+        minHeight={80}
+      />
     </div>
   );
 };

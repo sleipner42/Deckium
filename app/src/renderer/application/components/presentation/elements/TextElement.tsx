@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import Quill from 'quill';
 import { TextBox } from '../../../../../common/domain/entities/types';
 import { useTextEditing } from '../../../context/TextEditingContext';
+import { ResizeHandles } from '../ResizeHandles';
 
 interface TextElementProps {
   element: TextBox;
@@ -81,24 +82,10 @@ export const TextElement: React.FC<TextElementProps> = ({
           }
         });
 
-        // Handle blur events - check for toolbar interactions
-        quill.on('selection-change', (range) => {
-          if (!range && !preventBlur && isEditing && quillRef.current) {
-            // Small delay to allow for focus transitions
-            setTimeout(() => {
-              if (!quillRef.current || !isEditing) return;
-              
-              // Check if focus is still within the editor or toolbar
-              const activeElement = document.activeElement;
-              const quillContainer = textRef.current;
-              const isToolbarElement = activeElement?.closest('.ql-toolbar');
-              
-              if (quillContainer && !quillContainer.contains(activeElement) && !isToolbarElement) {
-                onStopEditing(quillRef.current.root.innerHTML);
-              }
-            }, 100);
-          }
-        });
+        // Remove the problematic selection-change handler
+        // We'll use document-level click detection instead
+
+        // No need for complex toolbar event listeners anymore since we use document click detection
 
         quillRef.current = quill;
       } catch (error) {
@@ -133,10 +120,44 @@ export const TextElement: React.FC<TextElementProps> = ({
     }
   }, [isEditing, content, element.id, onElementUpdate, onStopEditing, preventBlur]);
 
+  // Document-level click detection for exiting edit mode
+  useEffect(() => {
+    if (!isEditing) return;
+
+    const handleDocumentClick = (e: MouseEvent) => {
+      if (preventBlur) return;
+      
+      const target = e.target as HTMLElement;
+      const quillContainer = textRef.current;
+      
+      // Check if click is within the Quill editor or toolbar
+      const isWithinQuill = quillContainer && quillContainer.contains(target);
+      const isToolbarElement = target?.closest('.ql-toolbar') ||
+                             target?.closest('.ql-picker') ||
+                             target?.closest('.ql-picker-options') ||
+                             target?.closest('.ql-picker-item');
+      
+      // If click is outside both editor and toolbar, exit editing
+      if (!isWithinQuill && !isToolbarElement && quillRef.current) {
+        onStopEditing(quillRef.current.root.innerHTML);
+      }
+    };
+
+    // Add listener with a small delay to avoid immediate triggering
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('click', handleDocumentClick, true);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('click', handleDocumentClick, true);
+    };
+  }, [isEditing, preventBlur, onStopEditing]);
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if (readOnly) return;
 
-    // Don't interfere with toolbar clicks
+    // Don't interfere with toolbar clicks  
     const target = e.target as HTMLElement;
     if (target?.closest('.ql-toolbar')) {
       return;
@@ -187,22 +208,18 @@ export const TextElement: React.FC<TextElementProps> = ({
   };
 
   const handleBlur = (e: React.FocusEvent) => {
-    // Don't exit if clicking within the Quill editor or toolbar
+    // Simplified blur handler since we primarily use document click detection
+    // This handles keyboard navigation cases
     if (!preventBlur && isEditing && quillRef.current) {
       const relatedTarget = e.relatedTarget as HTMLElement;
-      const quillContainer = textRef.current;
       
-      // Check if the new focus target is within Quill or is a toolbar element
-      const isWithinQuill = quillContainer && quillContainer.contains(relatedTarget);
-      const isToolbarElement = relatedTarget?.closest('.ql-toolbar');
-      
-      if (!isWithinQuill && !isToolbarElement) {
-        // Add a small delay to allow for focus transitions
+      // Only exit if focus goes to something completely unrelated
+      if (!relatedTarget || (!relatedTarget.closest('[data-element-id]') && !relatedTarget.closest('.ql-toolbar'))) {
         setTimeout(() => {
           if (quillRef.current && isEditing) {
             onStopEditing(quillRef.current.root.innerHTML);
           }
-        }, 50);
+        }, 100);
       }
     }
   };
@@ -217,7 +234,7 @@ export const TextElement: React.FC<TextElementProps> = ({
   const handleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
 
-    // Don't interfere with toolbar clicks
+    // Don't interfere with toolbar clicks  
     const target = e.target as HTMLElement;
     if (target?.closest('.ql-toolbar')) {
       return;
@@ -297,6 +314,16 @@ export const TextElement: React.FC<TextElementProps> = ({
       onClick={handleClick}
     >
       {renderContent()}
+      <ResizeHandles
+        isSelected={isSelected}
+        isEditing={isEditing}
+        elementId={element.id}
+        position={position}
+        size={size}
+        onResize={onElementUpdate ? (id, updates) => onElementUpdate(id, updates) : () => {}}
+        minWidth={50}
+        minHeight={30}
+      />
     </div>
   );
 };

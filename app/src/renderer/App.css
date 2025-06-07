@@ -377,3 +377,29 @@ button:disabled {
 .ql-tooltip.ql-bubble {
   display: none !important;
 }
+
+/* Improve toolbar stability */
+.ql-toolbar {
+  user-select: none;
+  pointer-events: auto;
+}
+
+.ql-toolbar * {
+  user-select: none;
+}
+
+.ql-picker {
+  user-select: none;
+}
+
+.ql-picker-options {
+  user-select: none;
+}
+
+/* Prevent toolbar from losing focus */
+.ql-toolbar button:focus,
+.ql-toolbar select:focus,
+.ql-picker:focus,
+.ql-picker-item:focus {
+  outline: none;
+}

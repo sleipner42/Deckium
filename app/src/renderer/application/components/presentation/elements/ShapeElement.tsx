@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shape } from '../../../../../common/domain/entities/types';
+import { ResizeHandles } from '../ResizeHandles';
 
 interface ShapeElementProps {
   element: Shape;
@@ -141,5 +142,19 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
     }
   };
 
-  return renderShape();
+  return (
+    <>
+      {renderShape()}
+      <ResizeHandles
+        isSelected={isSelected}
+        isEditing={isEditing}
+        elementId={element.id}
+        position={position}
+        size={size}
+        onResize={onElementUpdate ? (id, updates) => onElementUpdate(id, updates) : () => {}}
+        minWidth={20}
+        minHeight={20}
+      />
+    </>
+  );
 };

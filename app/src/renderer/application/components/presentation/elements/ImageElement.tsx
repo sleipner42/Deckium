@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Image } from '../../../../../common/domain/entities/types';
+import { ResizeHandles } from '../ResizeHandles';
 
 interface ImageElementProps {
   element: Image;
@@ -99,6 +100,16 @@ export const ImageElement: React.FC<ImageElementProps> = ({
           ...style,
         }}
         draggable={false}
+      />
+      <ResizeHandles
+        isSelected={isSelected}
+        isEditing={isEditing}
+        elementId={element.id}
+        position={position}
+        size={size}
+        onResize={onElementUpdate ? (id, updates) => onElementUpdate(id, updates) : () => {}}
+        minWidth={20}
+        minHeight={20}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Plot from 'react-plotly.js';
 import { BarChart } from '../../../../../common/domain/entities/types';
 import { BarChartEditor } from './BarChartEditor';
+import { ResizeHandles } from '../ResizeHandles';
 
 interface BarChartElementProps {
   element: BarChart;
@@ -169,6 +170,16 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
             width: '100%',
             height: '100%',
           }}
+        />
+        <ResizeHandles
+          isSelected={isSelected}
+          isEditing={isEditing}
+          elementId={element.id}
+          position={position}
+          size={size}
+          onResize={onElementUpdate ? (id, updates) => onElementUpdate(id, updates) : () => {}}
+          minWidth={200}
+          minHeight={150}
         />
       </div>
 
