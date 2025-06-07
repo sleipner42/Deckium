@@ -151,10 +151,11 @@ export class UpdateTextElementTool extends BaseTool {
     // Run post-update overlap detection and text measurement on the actual rendered element
     let overlapCheck = null;
     let lineBreakInfo = null;
+    let actualDimensions = null;
 
     try {
-      // Small delay to ensure DOM updates
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Longer delay to ensure DOM updates, React rendering, and lazy-loaded components
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Get text dimensions if content, fontSize, or size was updated
       if (updates.content || updates.fontSize || updates.size) {
@@ -171,6 +172,11 @@ export class UpdateTextElementTool extends BaseTool {
           lineBreakInfo = textDimensions.lineBreakInfo;
         }
       }
+
+      // Get the actual DOM element dimensions and text layout
+      actualDimensions = await textMeasurementService.getActualElementDimensions(
+        elementId,
+      );
 
       // Check for overlaps using the actual rendered element ID
       overlapCheck = await ElementValidator.checkElementOverlap(
@@ -193,8 +199,36 @@ export class UpdateTextElementTool extends BaseTool {
     // Create appropriate message based on whether there was an overlap
     let message = 'Text element updated successfully';
 
-    // Add line break information with specific guidance
-    if (lineBreakInfo) {
+    // Add actual DOM dimensions if available
+    if (actualDimensions && actualDimensions.elementFound) {
+      const { containerBounds, textBounds, textOverflow } = actualDimensions;
+      
+      if (textOverflow) {
+        if (textOverflow.overflowsContainer) {
+          message += `\n\n⚠️ TEXT OVERFLOW DETECTED: Text extends outside its container.`;
+          message += `\n  Text size: ${textOverflow.actualTextWidth}x${textOverflow.actualTextHeight}px`;
+          message += `\n  Container size: ${textOverflow.containerWidth}x${textOverflow.containerHeight}px`;
+          message += `\n  Lines: ${textOverflow.lineCount}`;
+          
+          if (textOverflow.actualTextHeight > textOverflow.containerHeight) {
+            message += `\n  Text is ${(textOverflow.actualTextHeight - textOverflow.containerHeight).toFixed(1)}px taller than container.`;
+          }
+          if (textOverflow.actualTextWidth > textOverflow.containerWidth) {
+            message += `\n  Text is ${(textOverflow.actualTextWidth - textOverflow.containerWidth).toFixed(1)}px wider than container.`;
+          }
+          message += `\n  Consider increasing container size or reducing font size.`;
+        } else if (textOverflow.lineCount > 1) {
+          message += `\n\nℹ️ TEXT WRAPPING: Text spans ${textOverflow.lineCount} lines within container. This is normal multi-line behavior.`;
+        }
+        
+        if (textOverflow.overflowsSlide) {
+          message += `\n\n⚠️ SLIDE OVERFLOW: Text extends outside slide boundaries (1280x720).`;
+        }
+      }
+    }
+
+    // Add line break information with specific guidance (fallback if DOM measurement failed)
+    if (lineBreakInfo && (!actualDimensions || !actualDimensions.elementFound)) {
       message += `\n\n${lineBreakInfo}`;
 
       // Add specific guidance based on the type of text layout

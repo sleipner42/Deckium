@@ -11,6 +11,7 @@
 * Instruction about how a good slide looks. Do not put boxes as highlights.
 * Emojis like slack
 * Messages disappearing after the critic response.
+* The agent does not seem to understand this slide properly.
 * Is the critic getting the correct slide?
 * Change order of slides
 * This slide is not clear to the agent

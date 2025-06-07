@@ -447,6 +447,208 @@ export class TextMeasurementService {
       };
     }
   }
+
+  /**
+   * Gets the actual rendered dimensions and text layout from DOM
+   * This provides the most accurate information including all CSS effects
+   */
+  async getActualElementDimensions(
+    elementId: string,
+  ): Promise<{
+    elementFound: boolean;
+    containerBounds?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      left: number;
+      top: number;
+      right: number;
+      bottom: number;
+    };
+    textBounds?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      left: number;
+      top: number;
+      right: number;
+      bottom: number;
+    };
+    textOverflow?: {
+      overflowsContainer: boolean;
+      overflowsSlide: boolean;
+      actualTextHeight: number;
+      actualTextWidth: number;
+      containerHeight: number;
+      containerWidth: number;
+      lineCount: number;
+    };
+    positioning?: {
+      isOutsideSlide: boolean;
+      slideCoordinates: { x: number; y: number; width: number; height: number };
+    };
+  }> {
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+      console.warn('Main window not available for DOM element dimension check');
+      return { elementFound: false };
+    }
+
+    try {
+      const result = await this.mainWindow.webContents.executeJavaScript(`
+        (() => {
+          const SLIDE_WIDTH = 1280;
+          const SLIDE_HEIGHT = 720;
+          
+          // Find the target element by its data-element-id
+          const targetElement = document.querySelector('[data-element-id="${elementId}"]');
+          if (!targetElement) {
+            console.warn('Element with ID ${elementId} not found in DOM');
+            return { elementFound: false };
+          }
+          
+          // Get the slide container for coordinate conversion
+          const slideContainer = document.querySelector('[data-slide-container]') || document.body;
+          const containerRect = slideContainer.getBoundingClientRect();
+          
+          // Get element's bounding box (includes padding, borders, etc.)
+          const elementRect = targetElement.getBoundingClientRect();
+          
+          // Convert to slide coordinates
+          const containerBounds = {
+            left: elementRect.left - containerRect.left,
+            top: elementRect.top - containerRect.top,
+            right: elementRect.right - containerRect.left,
+            bottom: elementRect.bottom - containerRect.top,
+            width: elementRect.width,
+            height: elementRect.height,
+            x: elementRect.left - containerRect.left,
+            y: elementRect.top - containerRect.top
+          };
+          
+          // Now get the actual text content bounds (excluding padding)
+          let textBounds = null;
+          let textOverflow = null;
+          
+          try {
+            // Create a range to measure the actual text content
+            const range = document.createRange();
+            
+            // Try to select all text content within the element
+            // Handle both direct text nodes and nested React components
+            const textNodes = [];
+            const walker = document.createTreeWalker(
+              targetElement,
+              NodeFilter.SHOW_TEXT,
+              null,
+              false
+            );
+            
+            let node;
+            while (node = walker.nextNode()) {
+              if (node.textContent.trim()) {
+                textNodes.push(node);
+              }
+            }
+            
+            if (textNodes.length > 0) {
+              // Select from first to last text node to get the full text bounds
+              range.setStartBefore(textNodes[0]);
+              range.setEndAfter(textNodes[textNodes.length - 1]);
+              
+              const textRect = range.getBoundingClientRect();
+              
+              textBounds = {
+                left: textRect.left - containerRect.left,
+                top: textRect.top - containerRect.top,
+                right: textRect.right - containerRect.left,
+                bottom: textRect.bottom - containerRect.top,
+                width: textRect.width,
+                height: textRect.height,
+                x: textRect.left - containerRect.left,
+                y: textRect.top - containerRect.top
+              };
+              
+              // Check for text overflow
+              const overflowsContainer = (
+                textRect.width > elementRect.width ||
+                textRect.height > elementRect.height ||
+                textRect.left < elementRect.left ||
+                textRect.top < elementRect.top ||
+                textRect.right > elementRect.right ||
+                textRect.bottom > elementRect.bottom
+              );
+              
+              const overflowsSlide = (
+                textBounds.left < 0 ||
+                textBounds.top < 0 ||
+                textBounds.right > SLIDE_WIDTH ||
+                textBounds.bottom > SLIDE_HEIGHT
+              );
+              
+              // Count lines by checking line breaks in the rendered text
+              const computedStyle = window.getComputedStyle(targetElement);
+              const lineHeight = parseFloat(computedStyle.lineHeight) || parseFloat(computedStyle.fontSize) * 1.2;
+              const estimatedLines = Math.ceil(textRect.height / lineHeight);
+              
+              textOverflow = {
+                overflowsContainer,
+                overflowsSlide,
+                actualTextHeight: textRect.height,
+                actualTextWidth: textRect.width,
+                containerHeight: elementRect.height,
+                containerWidth: elementRect.width,
+                lineCount: estimatedLines
+              };
+            }
+          } catch (rangeError) {
+            console.warn('Could not measure text content with range:', rangeError);
+            // Fallback: use element bounds as text bounds
+            textBounds = containerBounds;
+            textOverflow = {
+              overflowsContainer: false,
+              overflowsSlide: containerBounds.right > SLIDE_WIDTH || containerBounds.bottom > SLIDE_HEIGHT,
+              actualTextHeight: containerBounds.height,
+              actualTextWidth: containerBounds.width,
+              containerHeight: containerBounds.height,
+              containerWidth: containerBounds.width,
+              lineCount: 1
+            };
+          }
+          
+          // Check if element is outside slide boundaries
+          const isOutsideSlide = (
+            containerBounds.left < 0 ||
+            containerBounds.top < 0 ||
+            containerBounds.right > SLIDE_WIDTH ||
+            containerBounds.bottom > SLIDE_HEIGHT
+          );
+          
+          return {
+            elementFound: true,
+            containerBounds,
+            textBounds,
+            textOverflow,
+            positioning: {
+              isOutsideSlide,
+              slideCoordinates: {
+                x: containerBounds.x,
+                y: containerBounds.y,
+                width: containerBounds.width,
+                height: containerBounds.height
+              }
+            }
+          };
+        })()
+      `);
+
+      return result;
+    } catch (error) {
+      console.error('Error getting actual element dimensions:', error);
+      return { elementFound: false };
+    }
+  }
 }
 
 export const textMeasurementService = TextMeasurementService.getInstance();
