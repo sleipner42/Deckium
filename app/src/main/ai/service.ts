@@ -16,6 +16,8 @@ import { getDeveloperPrompt } from './prompt/systemPrompt';
 import { PresentationService } from '../presentation/service';
 import { logger } from '../utils/logger';
 
+const USE_CRITIC = false;
+
 export class AIService {
   private state: AIState;
 
@@ -625,50 +627,55 @@ export class AIService {
     const slideId =
       selectedSlideId || presentation.slides[presentation.slides.length - 1].id;
 
-    try {
-      // Execute the critic tool
-      const criticToolCall: AIToolCall = {
-        toolId: 'critic',
-        toolName: 'criticizeSlide',
-        params: { slideId },
-      };
+    if (USE_CRITIC) {
+      try {
+        // Execute the critic tool
+        const criticToolCall: AIToolCall = {
+          toolId: 'critic',
+          toolName: 'criticizeSlide',
+          params: { slideId },
+        };
 
-      const toolResults = await this.toolsService.executeToolCalls(
-        [criticToolCall],
-        this.presentationService,
-      );
-
-      if (toolResults.length > 0 && toolResults[0].result.success) {
-        const criticResult = toolResults[0].result.data;
-
-        // Get the latest version of the thread
-        const latestThread = this.getThread(thread.id);
-        if (!latestThread) {
-          console.error(`Thread ${thread.id} not found after critic review`);
-          return;
-        }
-
-        // Format the criticism and recommendations
-        const criticismMessage = `## Slide Feedback\n\n${criticResult.criticism}\n\n### Recommendations:\n${criticResult.recommendations.map((rec: string) => `• ${rec}`).join('\n')}\n\nPlease implement these suggestions to improve the slide.`;
-
-        // Add the critique as a system message
-        const updatedThread = this.state.addMessage(
-          latestThread,
-          criticismMessage,
-          'system',
+        const toolResults = await this.toolsService.executeToolCalls(
+          [criticToolCall],
+          this.presentationService,
         );
 
-        // Save the updated thread
-        const savedThread = this.saveThread(updatedThread);
+        if (toolResults.length > 0 && toolResults[0].result.success) {
+          const criticResult = toolResults[0].result.data;
 
-        // Broadcast the updates
-        this.eventBus.broadcastThreadUpdated(savedThread);
+          // Get the latest version of the thread
+          const latestThread = this.getThread(thread.id);
+          if (!latestThread) {
+            console.error(`Thread ${thread.id} not found after critic review`);
+            return;
+          }
 
-        // Auto-generate AI response to implement the changes
-        await this.generateAIResponseToCritique(savedThread, criticismMessage);
+          // Format the criticism and recommendations
+          const criticismMessage = `## Slide Feedback\n\n${criticResult.criticism}\n\n### Recommendations:\n${criticResult.recommendations.map((rec: string) => `• ${rec}`).join('\n')}\n\nPlease implement these suggestions to improve the slide.`;
+
+          // Add the critique as a system message
+          const updatedThread = this.state.addMessage(
+            latestThread,
+            criticismMessage,
+            'system',
+          );
+
+          // Save the updated thread
+          const savedThread = this.saveThread(updatedThread);
+
+          // Broadcast the updates
+          this.eventBus.broadcastThreadUpdated(savedThread);
+
+          // Auto-generate AI response to implement the changes
+          await this.generateAIResponseToCritique(
+            savedThread,
+            criticismMessage,
+          );
+        }
+      } catch (error) {
+        console.error('Error running automatic critic:', error);
       }
-    } catch (error) {
-      console.error('Error running automatic critic:', error);
     }
   }
 
