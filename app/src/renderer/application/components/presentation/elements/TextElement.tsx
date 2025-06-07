@@ -1,23 +1,7 @@
-import React, { useRef, useEffect, useState, lazy, Suspense } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import Quill from 'quill';
 import { TextBox } from '../../../../../common/domain/entities/types';
-
-const ReactMarkdownWithPlugins = lazy(() =>
-  Promise.all([
-    import('react-markdown'),
-    import('remark-gfm'),
-    import('rehype-raw'),
-  ]).then(([reactMarkdown, remarkGfm, rehypeRaw]) => {
-    const ReactMarkdown = reactMarkdown.default;
-    const gfm = remarkGfm.default;
-    const raw = rehypeRaw.default;
-
-    return {
-      default: (props: any) => (
-        <ReactMarkdown remarkPlugins={[gfm]} rehypePlugins={[raw]} {...props} />
-      ),
-    };
-  }),
-);
+import { useTextEditing } from '../../../context/TextEditingContext';
 
 interface TextElementProps {
   element: TextBox;
@@ -56,31 +40,107 @@ export const TextElement: React.FC<TextElementProps> = ({
     zIndex,
   } = element;
   const textRef = useRef<HTMLDivElement>(null);
+  const quillRef = useRef<Quill | null>(null);
   const [preventBlur, setPreventBlur] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const { setActiveEditor } = useTextEditing();
 
   useEffect(() => {
-    if (isEditing && textRef.current) {
-      textRef.current.focus();
-      const range = document.createRange();
-      const selection = window.getSelection();
-      range.selectNodeContents(textRef.current);
-      range.collapse(false);
-      selection?.removeAllRanges();
-      selection?.addRange(range);
+    if (textRef.current && !quillRef.current) {
+      // Initialize Quill once and keep it persistent
+      try {
+        const quill = new Quill(textRef.current, {
+          theme: 'snow',
+          modules: {
+            toolbar: [
+              [{ 'header': [1, 2, 3, false] }],
+              ['bold', 'italic', 'underline', 'strike'],
+              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              ['link'],
+              [{ 'align': [] }],
+              ['clean']
+            ],
+          },
+          formats: [
+            'header', 'bold', 'italic', 'underline', 'strike',
+            'list', 'bullet', 'link', 'align'
+          ]
+        });
 
-      setPreventBlur(true);
-      const timer = setTimeout(() => {
-        setPreventBlur(false);
-      }, 200);
+        // Set initial content
+        if (content) {
+          quill.root.innerHTML = content;
+        }
 
-      return () => clearTimeout(timer);
+        // Handle content changes
+        quill.on('text-change', () => {
+          if (onElementUpdate && quillRef.current) {
+            const html = quillRef.current.root.innerHTML;
+            onElementUpdate(element.id, { content: html });
+          }
+        });
+
+        // Handle blur events - check for toolbar interactions
+        quill.on('selection-change', (range) => {
+          if (!range && !preventBlur && isEditing && quillRef.current) {
+            // Small delay to allow for focus transitions
+            setTimeout(() => {
+              if (!quillRef.current || !isEditing) return;
+              
+              // Check if focus is still within the editor or toolbar
+              const activeElement = document.activeElement;
+              const quillContainer = textRef.current;
+              const isToolbarElement = activeElement?.closest('.ql-toolbar');
+              
+              if (quillContainer && !quillContainer.contains(activeElement) && !isToolbarElement) {
+                onStopEditing(quillRef.current.root.innerHTML);
+              }
+            }, 100);
+          }
+        });
+
+        quillRef.current = quill;
+      } catch (error) {
+        console.error('Failed to initialize Quill editor:', error);
+      }
     }
-  }, [isEditing]);
+
+    // Toggle editing mode
+    if (quillRef.current) {
+      if (isEditing) {
+        quillRef.current.enable();
+        const toolbar = quillRef.current.getModule('toolbar');
+        if (toolbar && toolbar.container) {
+          toolbar.container.style.display = 'block';
+        }
+        setActiveEditor(quillRef.current); // Register this editor as active
+        setPreventBlur(true);
+        setTimeout(() => {
+          setPreventBlur(false);
+          if (quillRef.current) {
+            quillRef.current.focus();
+          }
+        }, 200);
+      } else {
+        quillRef.current.disable();
+        const toolbar = quillRef.current.getModule('toolbar');
+        if (toolbar && toolbar.container) {
+          toolbar.container.style.display = 'none';
+        }
+        setActiveEditor(null); // Unregister the editor
+      }
+    }
+  }, [isEditing, content, element.id, onElementUpdate, onStopEditing, preventBlur]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (readOnly) return;
+
+    // Don't interfere with toolbar clicks
+    const target = e.target as HTMLElement;
+    if (target?.closest('.ql-toolbar')) {
+      return;
+    }
 
     if (isSelected && !isEditing) {
       e.stopPropagation();
@@ -127,39 +187,41 @@ export const TextElement: React.FC<TextElementProps> = ({
   };
 
   const handleBlur = (e: React.FocusEvent) => {
-    if (!preventBlur && isEditing) {
-      const newContent = textRef.current?.innerText ?? content;
-      onStopEditing(newContent);
+    // Don't exit if clicking within the Quill editor or toolbar
+    if (!preventBlur && isEditing && quillRef.current) {
+      const relatedTarget = e.relatedTarget as HTMLElement;
+      const quillContainer = textRef.current;
+      
+      // Check if the new focus target is within Quill or is a toolbar element
+      const isWithinQuill = quillContainer && quillContainer.contains(relatedTarget);
+      const isToolbarElement = relatedTarget?.closest('.ql-toolbar');
+      
+      if (!isWithinQuill && !isToolbarElement) {
+        // Add a small delay to allow for focus transitions
+        setTimeout(() => {
+          if (quillRef.current && isEditing) {
+            onStopEditing(quillRef.current.root.innerHTML);
+          }
+        }, 50);
+      }
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-
-      const selection = window.getSelection();
-      const range = selection?.getRangeAt(0);
-
-      if (range) {
-        const lineBreak = document.createTextNode('\n');
-        range.insertNode(lineBreak);
-        range.setStartAfter(lineBreak);
-        range.setEndAfter(lineBreak);
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-      }
-
-      e.stopPropagation();
-    }
-
-    if (e.key === 'Escape') {
+    if (e.key === 'Escape' && quillRef.current) {
       setPreventBlur(false);
-      textRef.current?.blur();
+      onStopEditing(quillRef.current.root.innerHTML);
     }
   };
 
   const handleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
+
+    // Don't interfere with toolbar clicks
+    const target = e.target as HTMLElement;
+    if (target?.closest('.ql-toolbar')) {
+      return;
+    }
 
     e.stopPropagation();
     if (!isEditing) {
@@ -167,73 +229,9 @@ export const TextElement: React.FC<TextElementProps> = ({
     }
   };
 
-  const renderDisplayContent = () => {
-    if (isEditing) {
-      return content.split('\n').map((line, index) => (
-        <React.Fragment key={index}>
-          {index > 0 && <br />}
-          {line}
-        </React.Fragment>
-      ));
-    }
-
-    return (
-      <Suspense
-        fallback={
-          <div>
-            {content.split('\n').map((line, index) => (
-              <React.Fragment key={index}>
-                {index > 0 && <br />}
-                {line}
-              </React.Fragment>
-            ))}
-          </div>
-        }
-      >
-        <ReactMarkdownWithPlugins
-          components={{
-            p: ({ node, ...props }: { node: any; [key: string]: any }) => (
-              <p style={{ margin: 0 }} {...props} />
-            ),
-            a: ({ node, ...props }: { node: any; [key: string]: any }) => (
-              <a style={{ color: 'inherit' }} {...props} />
-            ),
-            ul: ({ node, ...props }: { node: any; [key: string]: any }) => (
-              <ul
-                style={{ margin: '0.5em 0', paddingLeft: '1.5em' }}
-                {...props}
-              />
-            ),
-            ol: ({ node, ...props }: { node: any; [key: string]: any }) => (
-              <ol
-                style={{ margin: '0.5em 0', paddingLeft: '1.5em' }}
-                {...props}
-              />
-            ),
-            h1: ({ node, ...props }: { node: any; [key: string]: any }) => (
-              <h1 style={{ margin: '0.2em 0', fontSize: '1.5em' }} {...props} />
-            ),
-            h2: ({ node, ...props }: { node: any; [key: string]: any }) => (
-              <h2 style={{ margin: '0.2em 0', fontSize: '1.3em' }} {...props} />
-            ),
-            h3: ({ node, ...props }: { node: any; [key: string]: any }) => (
-              <h3 style={{ margin: '0.2em 0', fontSize: '1.2em' }} {...props} />
-            ),
-            h4: ({ node, ...props }: { node: any; [key: string]: any }) => (
-              <h4 style={{ margin: '0.2em 0', fontSize: '1.1em' }} {...props} />
-            ),
-            h5: ({ node, ...props }: { node: any; [key: string]: any }) => (
-              <h5 style={{ margin: '0.2em 0', fontSize: '1em' }} {...props} />
-            ),
-            h6: ({ node, ...props }: { node: any; [key: string]: any }) => (
-              <h6 style={{ margin: '0.2em 0', fontSize: '0.9em' }} {...props} />
-            ),
-          }}
-        >
-          {content}
-        </ReactMarkdownWithPlugins>
-      </Suspense>
-    );
+  const renderContent = () => {
+    // Always return the Quill container - it will be enabled/disabled based on editing state
+    return <div style={{ height: '100%', width: '100%' }} />;
   };
 
   const getVerticalAlignment = () => {
@@ -280,29 +278,25 @@ export const TextElement: React.FC<TextElementProps> = ({
               : 'flex-start',
         justifyContent: getVerticalAlignment(),
         userSelect: isEditing ? 'text' : 'none',
-        outline: isSelected ? '2px solid #0066ff' : 'none',
+        outline: isSelected && !isEditing ? '2px solid #0066ff' : 'none',
         outlineOffset: '2px',
-        padding: '4px',
-        border: isEditing ? '1px solid #ddd' : 'none',
-        backgroundColor: isEditing ? 'white' : backgroundColor || 'transparent',
+        padding: '0',
+        border: 'none',
+        backgroundColor: backgroundColor || 'transparent',
         opacity: backgroundOpacity !== undefined ? backgroundOpacity : 1,
         borderRadius:
           borderRadius !== undefined ? `${borderRadius}px` : undefined,
-        boxShadow: isEditing ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-        whiteSpace: isEditing ? 'pre-wrap' : 'normal',
         textAlign: align || 'left',
         zIndex: zIndex || 1,
         ...style,
       }}
-      contentEditable={isEditing}
-      suppressContentEditableWarning
       onDoubleClick={handleDoubleClick}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
       onMouseDown={handleMouseDown}
       onClick={handleClick}
     >
-      {renderDisplayContent()}
+      {renderContent()}
     </div>
   );
 };

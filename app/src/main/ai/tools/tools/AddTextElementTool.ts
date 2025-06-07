@@ -14,7 +14,8 @@ export class AddTextElementTool extends BaseTool {
 
   requiredParams = {
     slideId: 'The ID of the slide to add the element to',
-    content: 'The text content to display',
+    content:
+      'The text content to display (supports rich text formatting with HTML though the Quill editor)',
     x: 'X position of the element (optional, defaults to 100)',
     y: 'Y position of the element (optional, defaults to 100)',
     // positionReference: 'The reference position of the element (optional, defaults to top left), choose from top left or center',
@@ -140,9 +141,8 @@ export class AddTextElementTool extends BaseTool {
       );
 
       // Get the actual DOM element dimensions and text layout
-      actualDimensions = await textMeasurementService.getActualElementDimensions(
-        element.id,
-      );
+      actualDimensions =
+        await textMeasurementService.getActualElementDimensions(element.id);
 
       // Check for overlaps using the actual rendered element ID
       overlapCheck = await ElementValidator.checkElementOverlap(
@@ -171,21 +171,21 @@ export class AddTextElementTool extends BaseTool {
     // Add actual DOM dimensions if available
     if (actualDimensions && actualDimensions.elementFound) {
       const { containerBounds, textBounds, textOverflow } = actualDimensions;
-      
+
       message += `\n\nActual rendered dimensions:`;
       message += `\n  Container: x: ${containerBounds.x}, y: ${containerBounds.y}, width: ${containerBounds.width}, height: ${containerBounds.height}`;
-      
+
       if (textBounds) {
         message += `\n  Text content: x: ${textBounds.x}, y: ${textBounds.y}, width: ${textBounds.width}, height: ${textBounds.height}`;
       }
-      
+
       if (textOverflow) {
         if (textOverflow.overflowsContainer) {
           message += `\n\n⚠️ TEXT OVERFLOW DETECTED: Text extends outside its container.`;
           message += `\n  Text size: ${textOverflow.actualTextWidth}x${textOverflow.actualTextHeight}px`;
           message += `\n  Container size: ${textOverflow.containerWidth}x${textOverflow.containerHeight}px`;
           message += `\n  Lines: ${textOverflow.lineCount}`;
-          
+
           if (textOverflow.actualTextHeight > textOverflow.containerHeight) {
             message += `\n  Text is ${(textOverflow.actualTextHeight - textOverflow.containerHeight).toFixed(1)}px taller than container.`;
           }
@@ -196,7 +196,7 @@ export class AddTextElementTool extends BaseTool {
         } else if (textOverflow.lineCount > 1) {
           message += `\n\nℹ️ TEXT WRAPPING: Text spans ${textOverflow.lineCount} lines within container. This is normal multi-line behavior.`;
         }
-        
+
         if (textOverflow.overflowsSlide) {
           message += `\n\n⚠️ SLIDE OVERFLOW: Text extends outside slide boundaries (1280x720).`;
         }
@@ -204,7 +204,11 @@ export class AddTextElementTool extends BaseTool {
     }
 
     // Add line break information with specific guidance (fallback if DOM measurement failed)
-    if (textDimensions && textDimensions.lineBreakInfo && (!actualDimensions || !actualDimensions.elementFound)) {
+    if (
+      textDimensions &&
+      textDimensions.lineBreakInfo &&
+      (!actualDimensions || !actualDimensions.elementFound)
+    ) {
       message += `\n\n${textDimensions.lineBreakInfo}`;
 
       // Add specific guidance based on the type of text layout

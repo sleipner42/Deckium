@@ -15,10 +15,6 @@ import {
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import ImageIcon from '@mui/icons-material/Image';
 import ShapesIcon from '@mui/icons-material/Category';
-import FormatBoldIcon from '@mui/icons-material/FormatBold';
-import FormatItalicIcon from '@mui/icons-material/FormatItalic';
-import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
-import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
 import RectangleIcon from '@mui/icons-material/Rectangle';
 import CircleIcon from '@mui/icons-material/RadioButtonUnchecked';
 import TriangleIcon from '@mui/icons-material/ChangeHistory';
@@ -138,6 +134,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
   const handleStartPresentation = () => {
     window.electron.presentation.openFullscreen();
   };
+
 
   return (
     <Box
@@ -314,42 +311,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
           </MenuItem>
         </Menu>
 
-        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-
-        <Typography
-          variant="subtitle2"
-          sx={{
-            fontWeight: 600,
-            color: 'text.secondary',
-            ml: 1,
-          }}
-        >
-          Format
-        </Typography>
-
-        <Tooltip title="Bold">
-          <IconButton size="small" sx={{ color: 'text.secondary' }}>
-            <FormatBoldIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Italic">
-          <IconButton size="small" sx={{ color: 'text.secondary' }}>
-            <FormatItalicIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Underline">
-          <IconButton size="small" sx={{ color: 'text.secondary' }}>
-            <FormatUnderlinedIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Fill Color">
-          <IconButton size="small" sx={{ color: 'text.secondary' }}>
-            <FormatColorFillIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
       </Box>
 
       <Box

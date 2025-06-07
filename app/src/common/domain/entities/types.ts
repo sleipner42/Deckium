@@ -62,7 +62,7 @@ export interface TextBox {
   type: 'textbox';
   position: Position;
   size: Size;
-  content: string;
+  content: string; // HTML content
   fontSize: number;
   fontFamily: string;
   color: string;
