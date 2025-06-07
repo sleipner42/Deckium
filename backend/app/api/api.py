@@ -7,7 +7,8 @@ from app.api.endpoints import (
     protected, 
     ai, 
     transactions, 
-    admin
+    admin,
+    pexels
 )
 
 api_router = APIRouter()
@@ -27,3 +28,4 @@ api_router.include_router(
 )
 
 api_router.include_router(admin.router, prefix="/admin-api", tags=["admin"])
+api_router.include_router(pexels.router, prefix="/pexels", tags=["pexels"])

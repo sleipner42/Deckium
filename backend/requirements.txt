@@ -12,4 +12,5 @@ pyjwt
 itsdangerous
 google-auth
 python-dotenv
-openai 
+openai
+httpx 
