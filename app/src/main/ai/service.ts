@@ -15,6 +15,7 @@ import { AIToolsService } from './tools/tools';
 import { getDeveloperPrompt } from './prompt/systemPrompt';
 import { PresentationService } from '../presentation/service';
 import { logger } from '../utils/logger';
+import AuthService from '../auth/service';
 
 const USE_CRITIC = false;
 
@@ -29,10 +30,10 @@ export class AIService {
 
   private presentationService: PresentationService;
 
-  constructor(aiClient: IAIService, presentationService: PresentationService) {
+  constructor(aiClient: IAIService, presentationService: PresentationService, authService?: AuthService) {
     this.state = new AIState();
     this.eventBus = new AIEventBus();
-    this.toolsService = new AIToolsService();
+    this.toolsService = new AIToolsService(authService);
     this.aiClient = aiClient;
     this.presentationService = presentationService;
   }

@@ -1,29 +1,38 @@
-import axios from 'axios';
 import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
 import { ElementValidator } from '../../../presentation/element-validator';
+import AuthService from '../../../auth/service';
+import { PexelsBackendService, PexelsSearchRequest } from '../../external/pexels-backend-service';
 
 export class AddImageFromPexelsTool extends BaseTool {
-  name = 'addImageFromPexels';
+  name = 'searchAndAddImage';
 
-  description = 'Search for an image on Pexels and add it directly to a slide';
+  description = 'Search for high-quality stock images using Pexels API and add the best matching image directly to a presentation slide. This tool handles the entire process from search to placement, automatically positioning the image and providing detailed feedback about placement and potential overlaps.';
 
   requiredParams = {
-    slideId: 'The ID of the slide to add the image to',
-    query: 'The search query for the image',
-    x: 'X position of the image (optional, defaults to center)',
-    y: 'Y position of the image (optional, defaults to center)',
-    width: 'The width of the image (optional, defaults to 400)',
-    height: 'The height of the image (optional, defaults to 300)',
-    zIndex: 'The z-index of the image (optional, defaults to 1)',
+    slideId: 'The unique identifier of the slide where the image should be added',
+    query: 'The search terms to find relevant images (e.g., "sunset beach", "business meeting", "mountain landscape")',
+    x: 'The horizontal position (in pixels) where the image should be placed on the slide',
+    y: 'The vertical position (in pixels) where the image should be placed on the slide',
+    width: 'The desired width of the image in pixels',
+    height: 'The desired height of the image in pixels',
+    zIndex: 'The stacking order of the image relative to other elements (higher numbers appear on top)',
   };
 
   optionalParams = {
-    orientation: 'The orientation of the image (landscape, portrait, square)',
-    size: 'The size of the image from Pexels (small, medium, large, original, defaults to large)',
+    orientation: 'Filter images by aspect ratio - "landscape" for wide images, "portrait" for tall images, "square" for equal dimensions. Leave empty to allow any orientation.',
+    size: 'The resolution quality from Pexels API. Options: "small" (130px), "medium" (350px), "large" (940px), "original" (full resolution). Defaults to "large" for good quality without excessive file size.',
   };
+
+  private pexelsService: PexelsBackendService;
+
+  constructor(authService?: AuthService) {
+    super();
+    const auth = authService || new AuthService();
+    this.pexelsService = new PexelsBackendService(auth);
+  }
 
   protected async executeImpl(
     params: Record<string, any>,
@@ -42,7 +51,6 @@ export class AddImageFromPexelsTool extends BaseTool {
         zIndex,
       } = params;
 
-      // Validate required parameters
       if (!slideId) {
         return {
           success: false,
@@ -57,7 +65,6 @@ export class AddImageFromPexelsTool extends BaseTool {
         };
       }
 
-      // Validate size parameter
       const validSizes = ['small', 'medium', 'large', 'original'];
       if (!validSizes.includes(size)) {
         return {
@@ -66,7 +73,6 @@ export class AddImageFromPexelsTool extends BaseTool {
         };
       }
 
-      // Validate orientation if provided
       if (orientation) {
         const validOrientations = ['landscape', 'portrait', 'square'];
         if (!validOrientations.includes(orientation)) {
@@ -79,34 +85,16 @@ export class AddImageFromPexelsTool extends BaseTool {
         }
       }
 
-      // Get the API key from environment variables
-      const apiKey = process.env.PEXELS_API_KEY;
-      if (!apiKey) {
-        return {
-          success: false,
-          error: 'Pexels API key not found in environment variables',
-        };
-      }
+      const searchRequest: PexelsSearchRequest = {
+        query,
+        per_page: 1,
+        page: 1,
+        ...(orientation && { orientation }),
+      };
 
-      // Make the API request to Pexels
-      const response = await axios.get('https://api.pexels.com/v1/search', {
-        headers: {
-          Authorization: apiKey,
-        },
-        params: {
-          query,
-          orientation,
-          per_page: 1, // We only need one image
-          page: 1,
-        },
-      });
+      const data = await this.pexelsService.searchImages(searchRequest);
 
-      // Check if we got any results
-      if (
-        !response.data ||
-        !response.data.photos ||
-        !response.data.photos.length
-      ) {
+      if (!data.urls) {
         return {
           success: true,
           data: {
@@ -116,17 +104,14 @@ export class AddImageFromPexelsTool extends BaseTool {
         };
       }
 
-      // Get the first photo from the results
-      const photo = response.data.photos[0];
       const sizeMap: Record<string, string> = {
         small: 'small',
         medium: 'medium',
         large: 'large',
         original: 'original',
       };
-      const imageUrl = photo.src[sizeMap[size]];
+      const imageUrl = data.urls[sizeMap[size] as keyof typeof data.urls];
 
-      // Get the slide to add the image to
       const presentation = presentationService.getPresentation();
       const slide = presentation.slides.find((s) => s.id === slideId);
 
@@ -137,21 +122,17 @@ export class AddImageFromPexelsTool extends BaseTool {
         };
       }
 
-      // Set default width and height
       const width = Number(providedWidth) || 400;
       const height = Number(providedHeight) || 300;
 
-      // Default to center of slide if no position provided
       const xPos = x !== undefined ? Number(x) : 1280 / 2 - width / 2;
       const yPos = y !== undefined ? Number(y) : 720 / 2 - height / 2;
 
-      // Check if element is outside slide boundaries
       const elementPosition = { x: xPos, y: yPos };
       const elementSize = { width, height };
       const isOutsideSlide =
         xPos < 0 || yPos < 0 || xPos + width > 1280 || yPos + height > 720;
 
-      // Create the image element
       const element = ElementFactory.createImage({
         content: imageUrl,
         position: elementPosition,
@@ -159,7 +140,6 @@ export class AddImageFromPexelsTool extends BaseTool {
         zIndex: zIndex !== undefined ? Number(zIndex) : 1,
       });
 
-      // Add the element to the slide
       const updatedSlide = presentationService.addElement(slideId, element);
 
       if (!updatedSlide) {
@@ -169,10 +149,8 @@ export class AddImageFromPexelsTool extends BaseTool {
         };
       }
 
-      // Run DOM-based overlap detection after element creation for accuracy
       let overlapCheck = null;
       try {
-        // Small delay to ensure DOM updates
         await new Promise((resolve) => setTimeout(resolve, 100));
         overlapCheck = await ElementValidator.checkElementOverlap(
           element.id,
@@ -180,7 +158,6 @@ export class AddImageFromPexelsTool extends BaseTool {
         );
       } catch (error) {
         console.warn('Post-creation overlap detection failed:', error);
-        // Create a fallback empty result
         overlapCheck = {
           hasOverlap: false,
           overlappingElements: [],
@@ -188,16 +165,14 @@ export class AddImageFromPexelsTool extends BaseTool {
         };
       }
 
-      // Create response message
       let message = `Image added successfully from Pexels.\n
 Image details:
-- Title: ${photo.alt || query}
-- Photographer: ${photo.photographer}
-- Source URL: ${photo.url}
+- Title: ${data.description || query}
+- Photographer: ${data.photographer}
+- Source URL: ${data.source_url}
 - Position: (${xPos}, ${yPos})
 - Size: ${width} x ${height}`;
 
-      // Add DOM-based overlap and boundary feedback
       if (overlapCheck.isOutsideSlide) {
         message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). Consider adjusting the position to ensure visibility.`;
       }
@@ -218,20 +193,20 @@ Image details:
           elementId: element.id,
           slideId: updatedSlide.id,
           imageUrl,
-          photographer: photo.photographer,
-          photographerUrl: photo.photographer_url,
-          sourceUrl: photo.url,
+          photographer: data.photographer,
+          photographerUrl: data.photographer_url,
+          sourceUrl: data.source_url,
           message,
         },
       };
     } catch (error) {
-      console.error('Error adding image from Pexels:', error);
+      console.error('Error adding image from backend:', error);
       return {
         success: false,
         error:
           error instanceof Error
-            ? `Error adding image from Pexels: ${error.message}`
-            : 'Unknown error occurred while adding image from Pexels',
+            ? `Error adding image from backend: ${error.message}`
+            : 'Unknown error occurred while adding image from backend',
       };
     }
   }

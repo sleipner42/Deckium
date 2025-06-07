@@ -156,10 +156,10 @@ app.on('window-all-closed', () => {
   }
 });
 
-let presentationService: PresentationService | null = null;
-let aiService: AIService | null = null;
-let aiServiceFactory: IAIServiceFactory | null = null;
-let authService: AuthService | null = null;
+let presentationService: PresentationService;
+let aiService: AIService;
+let aiServiceFactory: IAIServiceFactory;
+let authService: AuthService;
 
 app
   .whenReady()
@@ -178,7 +178,7 @@ app
 
     const aiModel = aiServiceFactory.createService();
 
-    aiService = new AIService(aiModel, presentationService);
+    aiService = new AIService(aiModel, presentationService, authService);
 
     setupAuthIPC(authService);
     setupAIIPC(aiService);

@@ -8,7 +8,7 @@ import {
 } from '../../common/domain/interfaces/auth.interface';
 
 const CONFIG = {
-  apiBaseUrl: process.env.API_BASE_URL || 'https://api.deckium.xyz',
+  apiBaseUrl: process.env.BACKEND_API_URL || 'https://api.deckium.xyz',
   sessionPartition: 'persist:main',
   windowWidth: 800,
   windowHeight: 600,

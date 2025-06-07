@@ -13,6 +13,7 @@ services:
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
       - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
+      - PEXELS_API_KEY=${PEXELS_API_KEY}
     volumes:
       - app_data:/app/data
     restart: unless-stopped
