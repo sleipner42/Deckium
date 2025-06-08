@@ -82,10 +82,20 @@ export const TextElement: React.FC<TextElementProps> = ({
           }
         });
 
-        // Remove the problematic selection-change handler
-        // We'll use document-level click detection instead
-
-        // No need for complex toolbar event listeners anymore since we use document click detection
+        // Add event listeners to toolbar to prevent propagation
+        const toolbar = quill.getModule('toolbar');
+        if (toolbar && toolbar.container) {
+          const handleToolbarInteraction = (e: Event) => {
+            e.stopPropagation();
+            setPreventBlur(true);
+            // Reset after a short delay
+            setTimeout(() => setPreventBlur(false), 50);
+          };
+          
+          toolbar.container.addEventListener('mousedown', handleToolbarInteraction, true);
+          toolbar.container.addEventListener('click', handleToolbarInteraction, true);
+          toolbar.container.addEventListener('mouseup', handleToolbarInteraction, true);
+        }
 
         quillRef.current = quill;
       } catch (error) {
@@ -130,15 +140,34 @@ export const TextElement: React.FC<TextElementProps> = ({
       const target = e.target as HTMLElement;
       const quillContainer = textRef.current;
       
-      // Check if click is within the Quill editor or toolbar
+      // Check if click is within the Quill editor
       const isWithinQuill = quillContainer && quillContainer.contains(target);
+      
+      // Get toolbar directly from Quill instance for more reliable detection
+      let isWithinToolbar = false;
+      if (quillRef.current) {
+        const toolbar = quillRef.current.getModule('toolbar');
+        if (toolbar && toolbar.container) {
+          isWithinToolbar = toolbar.container.contains(target);
+        }
+      }
+      
+      // More comprehensive toolbar element detection
       const isToolbarElement = target?.closest('.ql-toolbar') ||
                              target?.closest('.ql-picker') ||
                              target?.closest('.ql-picker-options') ||
-                             target?.closest('.ql-picker-item');
+                             target?.closest('.ql-picker-item') ||
+                             target?.closest('.ql-picker-label') ||
+                             target?.closest('.ql-formats') ||
+                             target?.classList?.contains('ql-picker') ||
+                             target?.classList?.contains('ql-picker-label') ||
+                             target?.classList?.contains('ql-picker-item') ||
+                             target?.classList?.contains('ql-stroke') ||
+                             target?.classList?.contains('ql-fill') ||
+                             target?.tagName === 'svg' && target?.closest('.ql-toolbar');
       
-      // If click is outside both editor and toolbar, exit editing
-      if (!isWithinQuill && !isToolbarElement && quillRef.current) {
+      // If click is outside editor, toolbar container, and toolbar elements, exit editing
+      if (!isWithinQuill && !isWithinToolbar && !isToolbarElement && quillRef.current) {
         onStopEditing(quillRef.current.root.innerHTML);
       }
     };

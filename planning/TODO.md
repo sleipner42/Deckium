@@ -17,6 +17,7 @@
 * This slide is not clear to the agent
 * Writing in a textbox pressing ctrl+a and then backspace and then esc results
   in a crash
+  * Check so user resizing is sync back to the main process.
 
 
 ## Future features
