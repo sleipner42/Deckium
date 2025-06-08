@@ -18,6 +18,7 @@ import { TextElement } from './elements/TextElement';
 import { BarChartElement } from './elements/BarChartElement';
 import { ElementContextMenu } from './ElementContextMenu';
 import { ShapePropertiesDialog } from './ShapePropertiesDialog';
+import { BarChartPropertiesDialog } from './BarChartPropertiesDialog';
 
 interface SlideRendererProps {
   slide: Slide;
@@ -56,6 +57,11 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   } | null>(null);
 
   const [propertiesDialog, setPropertiesDialog] = useState<{
+    open: boolean;
+    elementId: string | null;
+  }>({ open: false, elementId: null });
+
+  const [chartPropertiesDialog, setChartPropertiesDialog] = useState<{
     open: boolean;
     elementId: string | null;
   }>({ open: false, elementId: null });
@@ -175,7 +181,12 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   };
 
   const handleEditProperties = (elementId: string) => {
-    setPropertiesDialog({ open: true, elementId });
+    const element = slide.elements.find(el => el.id === elementId);
+    if (element?.type === 'barchart') {
+      setChartPropertiesDialog({ open: true, elementId });
+    } else {
+      setPropertiesDialog({ open: true, elementId });
+    }
   };
 
   const handleClosePropertiesDialog = () => {
@@ -185,6 +196,16 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   const handleUpdateShapeProperties = (updates: Partial<Shape>) => {
     if (propertiesDialog.elementId) {
       updateElement(propertiesDialog.elementId, updates);
+    }
+  };
+
+  const handleCloseChartPropertiesDialog = () => {
+    setChartPropertiesDialog({ open: false, elementId: null });
+  };
+
+  const handleUpdateChartProperties = (updates: Partial<BarChart>) => {
+    if (chartPropertiesDialog.elementId) {
+      updateElement(chartPropertiesDialog.elementId, updates);
     }
   };
 
@@ -309,6 +330,13 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         onClose={handleClosePropertiesDialog}
         shape={propertiesDialog.elementId ? slide.elements.find(el => el.id === propertiesDialog.elementId) as Shape : null}
         onUpdate={handleUpdateShapeProperties}
+      />
+
+      <BarChartPropertiesDialog
+        open={chartPropertiesDialog.open}
+        onClose={handleCloseChartPropertiesDialog}
+        chart={chartPropertiesDialog.elementId ? slide.elements.find(el => el.id === chartPropertiesDialog.elementId) as BarChart : null}
+        onUpdate={handleUpdateChartProperties}
       />
     </div>
   );

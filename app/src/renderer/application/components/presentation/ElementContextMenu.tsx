@@ -54,8 +54,8 @@ export const ElementContextMenu: React.FC<ElementContextMenuProps> = ({
         horizontal: 'right',
       }}
     >
-      {/* Show Properties option only for shapes */}
-      {(elementType === 'rectangle' || elementType === 'circle' || elementType === 'triangle') && onEditProperties && (
+      {/* Show Properties option for shapes and charts */}
+      {(elementType === 'rectangle' || elementType === 'circle' || elementType === 'triangle' || elementType === 'barchart') && onEditProperties && (
         <>
           <MenuItem onClick={() => handleMenuItemClick(onEditProperties)}>
             <ListItemIcon>
