@@ -86,7 +86,7 @@ async def init_db():
                 "kristoffer.nordstrom42@gmail.com",
                 "elias.aronson@gmail.com", 
                 "victor@lagerfors.com",
-                "madaerodog@gmail.com"
+                "deckium36@gmail.com"
             ]
             
             for email in initial_emails:
