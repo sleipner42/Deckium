@@ -263,6 +263,7 @@ export class GridAlignTool extends BaseTool {
         movements: movementSummary,
         updates,
       },
+      editedSlidesIds: [slideId],
     };
   }
 

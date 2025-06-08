@@ -198,6 +198,7 @@ Image details:
           sourceUrl: data.source_url,
           message,
         },
+        editedSlidesIds: [updatedSlide.id],
       };
     } catch (error) {
       console.error('Error adding image from backend:', error);

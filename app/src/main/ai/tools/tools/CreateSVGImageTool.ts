@@ -165,6 +165,7 @@ export class CreateSVGImageTool extends BaseTool {
           svgContentLength: svgContent.length,
         },
       },
+      editedSlidesIds: [slideId],
     };
   }
 }

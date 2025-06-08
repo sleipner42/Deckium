@@ -241,6 +241,7 @@ export class AddTextElementTool extends BaseTool {
         slideId: updatedSlide.id,
         message,
       },
+      editedSlidesIds: [updatedSlide.id],
     };
   }
 }

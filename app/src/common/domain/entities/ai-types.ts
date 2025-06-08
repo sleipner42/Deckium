@@ -26,6 +26,7 @@ export interface AIToolResult {
   data?: any;
   screenshot?: string;
   error?: string;
+  editedSlidesIds?: string[];
 }
 
 export interface AIRequest {

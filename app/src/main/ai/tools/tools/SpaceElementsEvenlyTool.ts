@@ -223,6 +223,7 @@ export class SpaceElementsEvenlyTool extends BaseTool {
         message: `Successfully spaced ${updates.length + 2} elements evenly in ${direction} direction`,
         updates,
       },
+      editedSlidesIds: [slideId],
     };
   }
 }

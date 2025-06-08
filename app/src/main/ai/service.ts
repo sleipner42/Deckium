@@ -16,6 +16,7 @@ import { getDeveloperPrompt } from './prompt/systemPrompt';
 import { PresentationService } from '../presentation/service';
 import { logger } from '../utils/logger';
 import AuthService from '../auth/service';
+import { generateSlideGrid } from '../presentation/utils';
 
 const USE_CRITIC = false;
 
@@ -78,16 +79,13 @@ export class AIService {
 
   async sendMessage(request: AIRequest): Promise<AIResponse> {
     try {
-      // Log the incoming AI request with full message content
       logger.logAIRequest('Received AI message request', {
         threadId: request.threadId,
         message: request.message,
         content: request.content,
         contentType: Array.isArray(request.content) ? 'multi-content' : 'text',
         contentLength: request.content
-          ? Array.isArray(request.content)
-            ? request.content.length
-            : request.content.length
+          ? request.content.length
           : request.message?.length || 0,
       });
 
@@ -96,48 +94,9 @@ export class AIService {
         `Available threads: ${Array.from(this.state.getThreadIds()).join(', ')}`,
       );
       let thread = this.getThread(request.threadId);
-
-      // If thread not found but there are threads for the same presentation, use the first one
       if (!thread) {
-        console.error(
-          `Thread ${request.threadId} not found, looking for alternative threads`,
-        );
-
-        // Try to find threads for the same presentation if presentationId is provided in the content
-        if (request.content && Array.isArray(request.content)) {
-          const presentationId = request.content.find(
-            (item) =>
-              item.type === 'text' &&
-              item.text &&
-              item.text.includes('presentationId'),
-          )?.text;
-
-          if (presentationId) {
-            const threadsForPresentation =
-              this.state.getThreadsForPresentation(presentationId);
-            if (threadsForPresentation.length > 0) {
-              thread = threadsForPresentation[0];
-              console.log(
-                `Using alternative thread ${thread.id} for presentation ${presentationId}`,
-              );
-            }
-          }
-        }
-
-        // If still no thread, check if there are any threads at all
-        if (!thread) {
-          const allThreads = Array.from(this.state.getThreadIds());
-          if (allThreads.length > 0) {
-            thread = this.getThread(allThreads[0]);
-            console.log(`Using first available thread: ${thread?.id}`);
-          }
-        }
-
-        // If still no thread, throw error
-        if (!thread) {
-          console.error(`No suitable thread found for request`);
-          throw new Error(`Thread not found: ${request.threadId}`);
-        }
+        console.error(`No suitable thread found for request`);
+        throw new Error(`Thread not found: ${request.threadId}`);
       }
 
       console.log(
@@ -152,7 +111,7 @@ export class AIService {
         request.content.length > 0
       ) {
         updatedThread = this.state.addMessage(thread, request.content, 'user');
-        // Log user message being added to thread
+
         logger.logSystem('User message added to thread', 'debug', {
           threadId: thread.id,
           messageType: 'multi-content',
@@ -160,20 +119,20 @@ export class AIService {
         });
       } else {
         updatedThread = this.state.addMessage(thread, request.message, 'user');
-        // Log user message being added to thread
+
         logger.logSystem('User message added to thread', 'debug', {
           threadId: thread.id,
           messageType: 'text',
           message: request.message,
         });
+
       }
 
       this.eventBus.broadcastProcessingStarted(updatedThread.id);
 
       const startTime = performance.now();
       updatedThread = await this.processAILoopWithStreaming(
-        updatedThread,
-        request.message,
+        updatedThread
       );
       const endTime = performance.now();
       console.log(`Total AI loop processing time: ${endTime - startTime}ms`);
@@ -188,7 +147,6 @@ export class AIService {
 
       const aiResponse = lastAssistantMessage.content;
 
-      // Log the AI response with full content
       logger.logAIResponse('AI response generated', {
         threadId: updatedThread.id,
         response: aiResponse,
@@ -201,12 +159,6 @@ export class AIService {
         messageCount: updatedThread.messages.length,
       });
 
-      this.eventBus.broadcastMessageReceived(
-        updatedThread.id,
-        aiResponse,
-        updatedThread,
-      );
-
       this.eventBus.broadcastProcessingCompleted(updatedThread.id);
 
       return {
@@ -217,7 +169,6 @@ export class AIService {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error occurred';
 
-      // Log the error
       logger.logSystem('AI request failed', 'error', {
         threadId: request.threadId,
         error: errorMessage,
@@ -234,388 +185,420 @@ export class AIService {
 
   private async processAILoopWithStreaming(
     thread: Thread,
-    userMessage: string,
     responseToCritic = false,
   ): Promise<Thread> {
-    // console.log(`AI streaming loop started for thread ${thread.id}`);
     const loopStartTime = performance.now();
-
-    let updatedThread = thread;
-
-    // console.time('getPresentation');
-    const presentation = this.presentationService.getPresentation();
-    // console.timeEnd('getPresentation');
-
-    // console.time('getDeveloperPrompt');
-    const developerPrompt = getDeveloperPrompt(
-      presentation,
-      this.presentationService,
-    );
-    // console.timeEnd('getDeveloperPrompt');
-
-    // console.time('updateSystemMessage');
-    updatedThread = this.state.updateSystemMessage(
-      updatedThread,
-      developerPrompt,
-    );
-    // console.timeEnd('updateSystemMessage');
-
-    let currentMessage = userMessage;
+    let updatedThread = this.initializeThreadForLoop(thread);
     let iterationCount = 0;
-    const MAX_ITERATIONS = 20;
-    const MAX_CONSECUTIVE_EMPTY_ITERATIONS = 2;
     let consecutiveEmptyIterations = 0;
 
-    // Add a continuation message to the thread to signal the AI to continue
-    const addContinuationMessage = (thread: Thread): Thread => {
-      return this.state.addMessage(
-        thread,
-        'Continue with the task. If you were in the middle of something, please complete it.',
-        'system',
-      );
+    const constants = {
+      MAX_ITERATIONS: 20,
+      MAX_CONSECUTIVE_EMPTY_ITERATIONS: 2,
+      DEPLOYMENT_NAME: process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini',
     };
 
-    while (iterationCount < MAX_ITERATIONS) {
+    while (iterationCount < constants.MAX_ITERATIONS) {
       const iterationStartTime = performance.now();
-      console.log(`Starting iteration ${iterationCount + 1}/${MAX_ITERATIONS}`);
+      console.log(`Starting iteration ${iterationCount + 1}/${constants.MAX_ITERATIONS}`);
 
       try {
-        const { messages } = updatedThread;
-        const deploymentName =
-          process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini';
-
-        // console.time('createAssistantMessageForStreaming');
-        const assistantMessageId = crypto.randomUUID
-          ? crypto.randomUUID()
-          : Date.now().toString();
-        // console.log( `Creating streaming message with ID: ${assistantMessageId}`,);
-
-        updatedThread = this.state.addMessageWithState(
+        const aiResponse = await this.executeStreamingIteration(
           updatedThread,
-          '',
-          'assistant',
-          assistantMessageId,
-          'streaming',
+          constants.DEPLOYMENT_NAME,
+          iterationCount,
         );
 
-        // Log streaming start
-        logger.logSystem('AI streaming response started', 'debug', {
-          threadId: updatedThread.id,
-          messageId: assistantMessageId,
-          iteration: iterationCount + 1,
-        });
-
-        this.saveThread(updatedThread);
-
-        this.eventBus.broadcastThreadUpdated(updatedThread);
-        // console.timeEnd('createAssistantMessageForStreaming');
-
-        // console.time('aiClientChatStream');
-        // console.log( `Starting streaming request to AI with ${messages.length} messages`,);
-
-        let streamingContent = '';
-        let chunkCount = 0;
-
-        const onChunk = (chunk: string) => {
-          // console.log(`Received chunk: "${chunk}"`);
-          streamingContent += chunk;
-          chunkCount++;
-
-          // Log every 10th chunk or when content reaches certain milestones to avoid spam
-          if (chunkCount % 10 === 0 || streamingContent.length % 500 === 0) {
-            logger.logSystem('AI streaming content update', 'debug', {
-              threadId: updatedThread.id,
-              messageId: assistantMessageId,
-              chunkCount,
-              currentLength: streamingContent.length,
-              recentChunk: chunk,
-              iteration: iterationCount + 1,
-            });
-          }
-
-          updatedThread = this.state.updateMessageContent(
-            updatedThread,
-            assistantMessageId,
-            streamingContent,
-          );
-
-          this.eventBus.broadcastMessageChunkReceived(
-            updatedThread.id,
-            assistantMessageId,
-            chunk,
-            streamingContent,
-          );
-
-          this.eventBus.broadcastThreadUpdated(updatedThread);
-        };
-
-        const aiResponse = await this.aiClient.chatStream(
-          messages,
-          onChunk,
-          deploymentName,
-        );
-        // console.timeEnd('aiClientChatStream');
-
-        // Log completed streaming response
-        logger.logAIResponse('AI streaming response completed', {
-          threadId: updatedThread.id,
-          messageId: assistantMessageId,
-          response: aiResponse,
-          finalLength: aiResponse?.length || 0,
-          chunkCount,
-          iteration: iterationCount + 1,
-        });
-
-        // Check if we're getting the same response repeatedly
-        const lastMessages = messages
-          .slice(-4)
-          .filter((m) => m.role === 'assistant')
-          .map((m) => (typeof m.content === 'string' ? m.content : ''));
-
-        const isRepeatingResponse = lastMessages.some(
-          (msg) =>
-            msg &&
-            aiResponse &&
-            msg.trim() === aiResponse.trim() &&
-            msg.length > 20,
-        );
-
-        if (isRepeatingResponse) {
-          console.log(
-            'Detected repeating responses, adding variation to break the loop',
-          );
-          updatedThread = this.state.addMessage(
-            updatedThread,
-            "Let's try a different approach. Please continue with the next logical step in creating this presentation.",
-            'system',
-          );
+        if (this.isRepeatingResponse(updatedThread.messages, aiResponse)) {
+          updatedThread = this.handleRepeatingResponse(updatedThread);
           iterationCount++;
           continue;
         }
 
-        // console.time('finalizeStreamingMessage');
-        updatedThread = this.state.setMessageStreamingState(
-          updatedThread,
-          assistantMessageId,
-          'completed',
-        );
-        this.eventBus.broadcastThreadUpdated(updatedThread);
-        // console.timeEnd('finalizeStreamingMessage');
-
-        // console.time('extractToolCall');
         const toolCall = this.toolsService.extractToolCall(aiResponse);
-        // console.timeEnd('extractToolCall');
 
         if (!toolCall) {
-          // Check if the response indicates the AI is stopping prematurely
-          const responseEndSignals = [
-            'let me know if',
-            'let me know what',
-            'anything else',
-            'is there anything else',
-            'do you want me to',
-            'how does that sound',
-            'would you like me to',
-          ];
-
-          const containsEndSignal = responseEndSignals.some((signal) =>
-            aiResponse.toLowerCase().includes(signal.toLowerCase()),
+          const shouldContinue = this.shouldContinueWithoutToolCall(
+            aiResponse,
+            consecutiveEmptyIterations,
+            constants.MAX_CONSECUTIVE_EMPTY_ITERATIONS,
           );
 
-          if (
-            containsEndSignal &&
-            !aiResponse.includes('completed') &&
-            !aiResponse.includes('finished')
-          ) {
-            console.log(
-              'AI seems to be stopping prematurely, encouraging continuation',
-            );
-            updatedThread = addContinuationMessage(updatedThread);
+          if (shouldContinue) {
+            updatedThread = this.addContinuationMessage(updatedThread);
             iterationCount++;
             consecutiveEmptyIterations++;
-
-            if (
-              consecutiveEmptyIterations >= MAX_CONSECUTIVE_EMPTY_ITERATIONS
-            ) {
-              console.log(
-                `Reached ${MAX_CONSECUTIVE_EMPTY_ITERATIONS} consecutive empty iterations, breaking loop`,
-              );
-              break;
-            }
-
             continue;
           }
 
-          // console.log( 'No tool call detected and no premature ending, exiting loop',);
           break;
         }
 
-        // Reset empty iterations counter since we got a tool call
         consecutiveEmptyIterations = 0;
-
-        console.log(`Executing tool call: ${toolCall.toolName}`);
-
-        // Log tool execution start
-        logger.logSystem('Tool execution started', 'debug', {
-          toolName: toolCall.toolName,
-          toolId: toolCall.toolId,
-          params: toolCall.params,
-          iteration: iterationCount + 1,
-        });
-
-        // console.time('executeToolCalls');
-        const toolResults = await this.toolsService.executeToolCalls(
-          [toolCall],
-          this.presentationService,
+        updatedThread = await this.executeToolCallAndUpdateThread(
+          updatedThread,
+          toolCall,
+          iterationCount,
         );
-        // console.timeEnd('executeToolCalls');
-
-        // Log tool execution results
-        logger.logSystem('Tool execution completed', 'debug', {
-          toolName: toolCall.toolName,
-          results: toolResults,
-          resultCount: toolResults.length,
-          iteration: iterationCount + 1,
-        });
-
-        // console.time('formatToolResults');
-        const toolResultsFormatted =
-          this.toolsService.formatToolResults(toolResults);
-        // console.timeEnd('formatToolResults');
-
-        if (Array.isArray(toolResultsFormatted)) {
-          const textContent = toolResultsFormatted.find(
-            (item) => item.type === 'text',
-          )?.text;
-
-          if (textContent) {
-            // console.time('addSystemMessage');
-            updatedThread = this.state.addMessage(
-              updatedThread,
-              textContent,
-              'system',
-            );
-            // console.timeEnd('addSystemMessage');
-          }
-
-          const hasImages = toolResultsFormatted.some(
-            (item) => item.type === 'image_url',
-          );
-
-          if (hasImages) {
-            const imageContents = toolResultsFormatted.filter(
-              (item) => item.type === 'image_url',
-            );
-
-            imageContents.unshift({
-              type: 'text',
-              text: 'Here is the screenshot from the tool execution:',
-            });
-
-            // console.time('addImageMessage');
-            updatedThread = this.state.addMessage(
-              updatedThread,
-              imageContents as MessageContent[],
-              'user',
-            );
-            // console.timeEnd('addImageMessage');
-
-            // Vary continuation messages to avoid getting stuck in loops
-            const continuationMessages = [
-              'Tool execution completed successfully. Screenshots have been added to the conversation. Please continue with the task.',
-              'The tool has executed successfully and screenshots are added above. What would be the next step to complete this presentation?',
-              'Above are the screenshots from the tool execution. Please proceed with the next logical step in this workflow.',
-            ];
-            currentMessage =
-              continuationMessages[
-                iterationCount % continuationMessages.length
-              ];
-          } else {
-            // Vary continuation messages to avoid getting stuck in loops
-            const continuationMessages = [
-              'Tool execution completed successfully. Please continue with the task.',
-              'The tool has executed successfully. What would be the next step to complete this presentation?',
-              'Tool execution is complete. Please proceed with the next logical step in this workflow.',
-            ];
-            currentMessage =
-              continuationMessages[
-                iterationCount % continuationMessages.length
-              ];
-          }
-
-          // Add an explicit continuation message after tool execution
-          updatedThread = this.state.addMessage(
-            updatedThread,
-            currentMessage,
-            'system',
-          );
-        } else {
-          // console.time('addSystemMessage');
-          updatedThread = this.state.addMessage(
-            updatedThread,
-            toolResultsFormatted,
-            'system',
-          );
-          // console.timeEnd('addSystemMessage');
-
-          // Vary continuation messages to avoid getting stuck in loops
-          const continuationMessages = [
-            `Tool execution results: ${toolResultsFormatted}. Please continue with the task.`,
-            `Here are the results of the tool execution: ${toolResultsFormatted}. What would be the next step?`,
-            `The tool has completed with the following results: ${toolResultsFormatted}. Please proceed with the next logical step.`,
-          ];
-          currentMessage =
-            continuationMessages[iterationCount % continuationMessages.length];
-
-          // Add an explicit continuation message after tool execution
-          updatedThread = this.state.addMessage(
-            updatedThread,
-            currentMessage,
-            'system',
-          );
-        }
 
         iterationCount++;
-        const iterationEndTime = performance.now();
-        console.log(
-          `Iteration ${iterationCount} completed in ${iterationEndTime - iterationStartTime}ms`,
-        );
+        this.logIterationCompletion(iterationCount, iterationStartTime);
 
-        if (iterationCount === MAX_ITERATIONS) {
-          const warningMessage =
-            'Maximum number of tool call iterations reached. Some actions may not have been completed.';
-          updatedThread = this.state.addMessage(
-            updatedThread,
-            warningMessage,
-            'system',
-          );
+        if (iterationCount === constants.MAX_ITERATIONS) {
+          updatedThread = this.addMaxIterationsWarning(updatedThread);
         }
       } catch (error) {
         console.error('Error in AI loop:', error);
-        const errorMessage = `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`;
-        updatedThread = this.state.addMessage(
-          updatedThread,
-          errorMessage,
-          'system',
-        );
+        updatedThread = this.handleIterationError(updatedThread, error);
         break;
       }
     }
 
-    const loopEndTime = performance.now();
-    console.log(
-      `AI loop completed after ${iterationCount} iterations in ${loopEndTime - loopStartTime}ms`,
-    );
+    this.logLoopCompletion(iterationCount, loopStartTime);
 
     if (!responseToCritic) {
-      try {
-        await this.runAutomaticCritic(updatedThread);
-      } catch (error) {
-        console.error('Error running automatic critic:', error);
-      }
+      await this.runAutomaticCritic(updatedThread).catch(error => 
+        console.error('Error running automatic critic:', error)
+      );
     }
 
     return updatedThread;
+  }
+
+  private initializeThreadForLoop(thread: Thread): Thread {
+    const presentation = this.presentationService.getPresentation();
+    const developerPrompt = getDeveloperPrompt(presentation, this.presentationService);
+    return this.state.updateSystemMessage(thread, developerPrompt);
+  }
+
+  private async executeStreamingIteration(
+    thread: Thread,
+    deploymentName: string,
+    iterationCount: number,
+  ): Promise<string> {
+    const assistantMessageId = crypto.randomUUID?.() || Date.now().toString();
+    
+    let updatedThread = this.state.addMessageWithState(
+      thread,
+      '',
+      'assistant',
+      assistantMessageId,
+      'streaming',
+    );
+
+    this.logStreamingStart(updatedThread.id, assistantMessageId, iterationCount);
+    this.saveThread(updatedThread);
+    this.eventBus.broadcastThreadUpdated(updatedThread);
+
+    const streamingState = {
+      content: '',
+      chunkCount: 0,
+    };
+
+    const onChunk = (chunk: string) => {
+      streamingState.content += chunk;
+      streamingState.chunkCount++;
+
+      if (streamingState.chunkCount % 10 === 0 || streamingState.content.length % 500 === 0) {
+        this.logStreamingUpdate(updatedThread.id, assistantMessageId, streamingState, chunk, iterationCount);
+      }
+
+      updatedThread = this.state.updateMessageContent(
+        updatedThread,
+        assistantMessageId,
+        streamingState.content,
+      );
+
+      this.eventBus.broadcastMessageChunkReceived(
+        updatedThread.id,
+        assistantMessageId,
+        chunk,
+        streamingState.content,
+      );
+
+      this.eventBus.broadcastThreadUpdated(updatedThread);
+    };
+
+    const aiResponse = await this.aiClient.chatStream(
+      thread.messages,
+      onChunk,
+      deploymentName,
+    );
+
+    this.logStreamingCompletion(updatedThread.id, assistantMessageId, aiResponse, streamingState, iterationCount);
+
+    updatedThread = this.state.setMessageStreamingState(
+      updatedThread,
+      assistantMessageId,
+      'completed',
+    );
+    this.eventBus.broadcastThreadUpdated(updatedThread);
+
+    return aiResponse;
+  }
+
+  private isRepeatingResponse(messages: any[], aiResponse: string): boolean {
+    const lastMessages = messages
+      .slice(-4)
+      .filter((m) => m.role === 'assistant')
+      .map((m) => (typeof m.content === 'string' ? m.content : ''));
+
+    return lastMessages.some(
+      (msg) =>
+        msg &&
+        aiResponse &&
+        msg.trim() === aiResponse.trim() &&
+        msg.length > 20,
+    );
+  }
+
+  private handleRepeatingResponse(thread: Thread): Thread {
+    console.log('Detected repeating responses, adding variation to break the loop');
+    return this.state.addMessage(
+      thread,
+      "Let's try a different approach. Please continue with the next logical step in creating this presentation.",
+      'system',
+    );
+  }
+
+  private shouldContinueWithoutToolCall(
+    aiResponse: string,
+    consecutiveEmptyIterations: number,
+    maxEmptyIterations: number,
+  ): boolean {
+    const responseEndSignals = [
+      'let me know if',
+      'let me know what',
+      'anything else',
+      'is there anything else',
+      'do you want me to',
+      'how does that sound',
+      'would you like me to',
+    ];
+
+    const containsEndSignal = responseEndSignals.some((signal) =>
+      aiResponse.toLowerCase().includes(signal.toLowerCase()),
+    );
+
+    const isPrematureStop = containsEndSignal &&
+      !aiResponse.includes('completed') &&
+      !aiResponse.includes('finished');
+
+    if (isPrematureStop) {
+      console.log('AI seems to be stopping prematurely, encouraging continuation');
+      
+      if (consecutiveEmptyIterations >= maxEmptyIterations) {
+        console.log(`Reached ${maxEmptyIterations} consecutive empty iterations, breaking loop`);
+        return false;
+      }
+      
+      return true;
+    }
+
+    return false;
+  }
+
+  private addContinuationMessage(thread: Thread): Thread {
+    return this.state.addMessage(
+      thread,
+      'Continue with the task. If you were in the middle of something, please complete it.',
+      'system',
+    );
+  }
+
+  private async executeToolCallAndUpdateThread(
+    thread: Thread,
+    toolCall: AIToolCall,
+    iterationCount: number,
+  ): Promise<Thread> {
+    console.log(`Executing tool call: ${toolCall.toolName}`);
+    
+    this.logToolExecutionStart(toolCall, iterationCount);
+
+    const toolResults = await this.toolsService.executeToolCalls(
+      [toolCall],
+      this.presentationService,
+    );
+
+    this.logToolExecutionCompletion(toolCall.toolName, toolResults, iterationCount);
+
+    const toolResultsFormatted = this.toolsService.formatToolResults(toolResults);
+    let updatedThread = this.addToolResultsToThread(thread, toolResultsFormatted, iterationCount);
+    
+    updatedThread = this.addSlideGridsIfNeeded(updatedThread, toolResults);
+
+    return updatedThread;
+  }
+
+  private addToolResultsToThread(
+    thread: Thread,
+    toolResultsFormatted: any,
+    iterationCount: number,
+  ): Thread {
+    if (Array.isArray(toolResultsFormatted)) {
+      const textContent = toolResultsFormatted.find((item) => item.type === 'text')?.text;
+      let updatedThread = thread;
+
+      if (textContent) {
+        updatedThread = this.state.addMessage(updatedThread, textContent, 'system');
+      }
+
+      const hasImages = toolResultsFormatted.some((item) => item.type === 'image_url');
+
+      if (hasImages) {
+        const imageContents = toolResultsFormatted.filter((item) => item.type === 'image_url');
+        imageContents.unshift({
+          type: 'text',
+          text: 'Here is the screenshot from the tool execution:',
+        });
+
+        updatedThread = this.state.addMessage(
+          updatedThread,
+          imageContents as MessageContent[],
+          'user',
+        );
+      }
+
+      const continuationMessage = this.getContinuationMessage(hasImages, iterationCount);
+      return this.state.addMessage(updatedThread, continuationMessage, 'system');
+    }
+
+    const continuationMessage = this.getSimpleContinuationMessage(toolResultsFormatted, iterationCount);
+    let updatedThread = this.state.addMessage(thread, toolResultsFormatted, 'system');
+    return this.state.addMessage(updatedThread, continuationMessage, 'system');
+  }
+
+  private getContinuationMessage(hasImages: boolean, iterationCount: number): string {
+    const messages = hasImages
+      ? [
+          'Tool execution completed successfully. Screenshots have been added to the conversation. Please continue with the task.',
+          'The tool has executed successfully and screenshots are added above. What would be the next step to complete this presentation?',
+          'Above are the screenshots from the tool execution. Please proceed with the next logical step in this workflow.',
+        ]
+      : [
+          'Tool execution completed successfully. Please continue with the task.',
+          'The tool has executed successfully. What would be the next step to complete this presentation?',
+          'Tool execution is complete. Please proceed with the next logical step in this workflow.',
+        ];
+
+    return messages[iterationCount % messages.length];
+  }
+
+  private getSimpleContinuationMessage(toolResultsFormatted: string, iterationCount: number): string {
+    const continuationMessages = [
+      `Tool execution results: ${toolResultsFormatted}. Please continue with the task.`,
+      `Here are the results of the tool execution: ${toolResultsFormatted}. What would be the next step?`,
+      `The tool has completed with the following results: ${toolResultsFormatted}. Please proceed with the next logical step.`,
+    ];
+    return continuationMessages[iterationCount % continuationMessages.length];
+  }
+
+  private addSlideGridsIfNeeded(thread: Thread, toolResults: any[]): Thread {
+    const editedSlides = toolResults.reduce((acc, result) => {
+      if (result.editedSlidesIds) {
+        acc.push(...result.editedSlidesIds);
+      }
+      return acc;
+    }, [] as string[]);
+    
+    if (editedSlides.length === 0) return thread;
+
+    const presentation = this.presentationService.getPresentation();
+          const slideGrids = editedSlides.map((slideId: string) => {
+        const slide = presentation.slides.find((s) => s.id === slideId);
+        return slide ? generateSlideGrid(slide, { pixelsPerSquare: 20 }) : '';
+      });
+    
+    const slideGridMessage = `Updated slides visual representation:\n\n${slideGrids.join('\n\n')}`;
+    
+    console.log(slideGridMessage);
+    
+    logger.logSystem('Generated slide grids for edited slides', 'debug', {
+      editedSlideIds: editedSlides,
+      slideGridCount: slideGrids.length,
+    });
+
+    return this.state.addMessage(thread, slideGridMessage, 'system');
+  }
+
+  private addMaxIterationsWarning(thread: Thread): Thread {
+    const warningMessage = 'Maximum number of tool call iterations reached. Some actions may not have been completed.';
+    return this.state.addMessage(thread, warningMessage, 'system');
+  }
+
+  private handleIterationError(thread: Thread, error: unknown): Thread {
+    const errorMessage = `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`;
+    return this.state.addMessage(thread, errorMessage, 'system');
+  }
+
+  private logStreamingStart(threadId: string, messageId: string, iteration: number): void {
+    logger.logSystem('AI streaming response started', 'debug', {
+      threadId,
+      messageId,
+      iteration: iteration + 1,
+    });
+  }
+
+  private logStreamingUpdate(
+    threadId: string,
+    messageId: string,
+    streamingState: { content: string; chunkCount: number },
+    chunk: string,
+    iteration: number,
+  ): void {
+    logger.logSystem('AI streaming content update', 'debug', {
+      threadId,
+      messageId,
+      chunkCount: streamingState.chunkCount,
+      currentLength: streamingState.content.length,
+      recentChunk: chunk,
+      iteration: iteration + 1,
+    });
+  }
+
+  private logStreamingCompletion(
+    threadId: string,
+    messageId: string,
+    aiResponse: string,
+    streamingState: { content: string; chunkCount: number },
+    iteration: number,
+  ): void {
+    logger.logAIResponse('AI streaming response completed', {
+      threadId,
+      messageId,
+      response: aiResponse,
+      finalLength: aiResponse?.length || 0,
+      chunkCount: streamingState.chunkCount,
+      iteration: iteration + 1,
+    });
+  }
+
+  private logToolExecutionStart(toolCall: AIToolCall, iteration: number): void {
+    logger.logSystem('Tool execution started', 'debug', {
+      toolName: toolCall.toolName,
+      toolId: toolCall.toolId,
+      params: toolCall.params,
+      iteration: iteration + 1,
+    });
+  }
+
+  private logToolExecutionCompletion(toolName: string, toolResults: any[], iteration: number): void {
+    logger.logSystem('Tool execution completed', 'debug', {
+      toolName,
+      results: toolResults,
+      resultCount: toolResults.length,
+      iteration: iteration + 1,
+    });
+  }
+
+  private logIterationCompletion(iterationCount: number, iterationStartTime: number): void {
+    const iterationEndTime = performance.now();
+    console.log(`Iteration ${iterationCount} completed in ${iterationEndTime - iterationStartTime}ms`);
+  }
+
+  private logLoopCompletion(iterationCount: number, loopStartTime: number): void {
+    const loopEndTime = performance.now();
+    console.log(`AI loop completed after ${iterationCount} iterations in ${loopEndTime - loopStartTime}ms`);
   }
 
   private async runAutomaticCritic(thread: Thread): Promise<void> {
@@ -721,7 +704,6 @@ export class AIService {
       // Trigger the AI loop to implement the changes
       await this.processAILoopWithStreaming(
         savedThread,
-        'Implement the recommended changes to improve the slide.',
         true,
       );
     } catch (error) {
@@ -729,167 +711,7 @@ export class AIService {
     }
   }
 
-  private async processAILoop(
-    thread: Thread,
-    userMessage: string,
-  ): Promise<Thread> {
-    console.log(`AI loop started for thread ${thread.id}`);
-    const loopStartTime = performance.now();
 
-    let updatedThread = thread;
-
-    // console.time('getPresentation');
-    const presentation = this.presentationService.getPresentation();
-    // console.timeEnd('getPresentation');
-
-    // console.time('getDeveloperPrompt');
-    const developerPrompt = getDeveloperPrompt(
-      presentation,
-      this.presentationService,
-    );
-    // console.timeEnd('getDeveloperPrompt');
-
-    // console.time('updateSystemMessage');
-    updatedThread = this.state.updateSystemMessage(
-      updatedThread,
-      developerPrompt,
-    );
-    // console.timeEnd('updateSystemMessage');
-
-    let currentMessage = userMessage;
-    let iterationCount = 0;
-    const MAX_ITERATIONS = 20;
-
-    while (iterationCount < MAX_ITERATIONS) {
-      const iterationStartTime = performance.now();
-      console.log(`Starting iteration ${iterationCount + 1}/${MAX_ITERATIONS}`);
-
-      try {
-        const { messages } = updatedThread;
-        const deploymentName =
-          process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini';
-
-        // console.time('aiClientChat');
-        // console.log(`Sending request to AI with ${messages.length} messages`);
-        const aiResponse = await this.aiClient.chat(messages, deploymentName);
-        // console.timeEnd('aiClientChat');
-
-        // console.time('addAssistantMessage');
-        updatedThread = this.state.addMessage(
-          updatedThread,
-          aiResponse,
-          'assistant',
-        );
-        // console.timeEnd('addAssistantMessage');
-
-        // console.time('extractToolCall');
-        const toolCall = this.toolsService.extractToolCall(aiResponse);
-        // console.timeEnd('extractToolCall');
-
-        if (!toolCall) {
-          console.log('No tool call detected, exiting loop');
-          break;
-        }
-
-        console.log(`Executing tool call: ${toolCall.toolName}`);
-        // console.time('executeToolCalls');
-        const toolResults = await this.toolsService.executeToolCalls(
-          [toolCall],
-          this.presentationService,
-        );
-        // console.timeEnd('executeToolCalls');
-
-        // console.time('formatToolResults');
-        const toolResultsFormatted =
-          this.toolsService.formatToolResults(toolResults);
-        // console.timeEnd('formatToolResults');
-
-        if (Array.isArray(toolResultsFormatted)) {
-          const textContent = toolResultsFormatted.find(
-            (item) => item.type === 'text',
-          )?.text;
-
-          if (textContent) {
-            // console.time('addSystemMessage');
-            updatedThread = this.state.addMessage(
-              updatedThread,
-              textContent,
-              'system',
-            );
-            // console.timeEnd('addSystemMessage');
-          }
-
-          const hasImages = toolResultsFormatted.some(
-            (item) => item.type === 'image_url',
-          );
-
-          if (hasImages) {
-            const imageContents = toolResultsFormatted.filter(
-              (item) => item.type === 'image_url',
-            );
-
-            imageContents.unshift({
-              type: 'text',
-              text: 'Here is the screenshot from the tool execution:',
-            });
-
-            console.time('addImageMessage');
-            updatedThread = this.state.addMessage(
-              updatedThread,
-              imageContents as MessageContent[],
-              'user',
-            );
-            console.timeEnd('addImageMessage');
-            currentMessage =
-              'Tool execution completed successfully. Screenshots have been added to the conversation.';
-          } else {
-            currentMessage = 'Tool execution completed successfully.';
-          }
-        } else {
-          // console.time('addSystemMessage');
-          updatedThread = this.state.addMessage(
-            updatedThread,
-            toolResultsFormatted,
-            'system',
-          );
-          // console.timeEnd('addSystemMessage');
-          currentMessage = `Tool execution results: ${toolResultsFormatted}`;
-        }
-
-        iterationCount++;
-        const iterationEndTime = performance.now();
-        console.log(
-          `Iteration ${iterationCount} completed in ${iterationEndTime - iterationStartTime}ms`,
-        );
-
-        if (iterationCount === MAX_ITERATIONS) {
-          const warningMessage =
-            'Maximum number of tool call iterations reached. Some actions may not have been completed.';
-          updatedThread = this.state.addMessage(
-            updatedThread,
-            warningMessage,
-            'system',
-          );
-        }
-      } catch (error) {
-        console.error('Error in AI loop:', error);
-        const errorMessage = `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`;
-        updatedThread = this.state.addMessage(
-          updatedThread,
-          errorMessage,
-          'system',
-        );
-        break;
-      }
-    }
-
-    const loopEndTime = performance.now();
-    console.log(
-      `AI loop completed after ${iterationCount} iterations in ${loopEndTime - loopStartTime}ms`,
-    );
-
-    return updatedThread;
-  }
 
   onEvent(eventName: string, listener: (...args: any[]) => void): void {
     this.eventBus.on(eventName, listener);

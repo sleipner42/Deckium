@@ -23,6 +23,7 @@ export class GetPresentationInfoTool extends BaseTool {
           slideIds: currentPresentation.slides.map((slide) => slide.id),
         },
       },
+      editedSlidesIds: [],
     };
   }
 }

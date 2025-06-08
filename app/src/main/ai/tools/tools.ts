@@ -74,7 +74,7 @@ export class AIToolsService {
   async executeToolCalls(
     toolCalls: AIToolCall[],
     presentationService: PresentationService,
-  ): Promise<Array<{ toolName: string; result: any }>> {
+  ): Promise<Array<{ toolName: string; result: any, editedSlidesIds: string[] }>> {
     const results = [];
 
     for (const call of toolCalls) {
@@ -86,6 +86,7 @@ export class AIToolsService {
           results.push({
             toolName: tool.name,
             result,
+            editedSlidesIds: result.editedSlidesIds || [],
           });
         } catch (error) {
           console.error(`Error executing tool ${tool.name}:`, error);
@@ -95,6 +96,7 @@ export class AIToolsService {
               success: false,
               error: error instanceof Error ? error.message : 'Unknown error',
             },
+            editedSlidesIds: [],
           });
         }
       } else {
@@ -104,6 +106,7 @@ export class AIToolsService {
             success: false,
             error: `Tool with ID ${call.toolId} not found`,
           },
+          editedSlidesIds: [],
         });
       }
     }

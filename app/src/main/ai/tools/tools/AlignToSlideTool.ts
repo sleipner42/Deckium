@@ -165,6 +165,7 @@ export class AlignToSlideTool extends BaseTool {
         message: `Successfully aligned ${updates.length} elements to slide using "${alignType}" alignment`,
         updates,
       },
+      editedSlidesIds: [slideId],
     };
   }
 }

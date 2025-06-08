@@ -134,6 +134,7 @@ export class ChangeElementZIndexTool extends BaseTool {
         newZIndex,
         message: `Changed z-index of element ${elementId} from ${currentZIndex} to ${newZIndex}. ${stackingInfo}\n\nElements with higher z-index values appear on top of elements with lower z-index values.`,
       },
+      editedSlidesIds: [slideId],
     };
   }
 }

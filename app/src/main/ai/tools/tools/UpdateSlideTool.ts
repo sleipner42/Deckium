@@ -43,6 +43,7 @@ export class UpdateSlideTool extends BaseTool {
         slideId: updatedSlide.id,
         message: `Slide updated successfully`,
       },
+      editedSlidesIds: [slideId],
     };
   }
 }

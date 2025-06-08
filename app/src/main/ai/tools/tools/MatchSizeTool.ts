@@ -272,6 +272,7 @@ export class MatchSizeTool extends BaseTool {
         sizeChanges: sizeSummary,
         updates,
       },
+      editedSlidesIds: [slideId],
     };
   }
 

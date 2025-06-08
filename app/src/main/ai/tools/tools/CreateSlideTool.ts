@@ -19,6 +19,7 @@ export class CreateSlideTool extends BaseTool {
         slideId: newSlide.id,
         message: `New slide created successfully`,
       },
+      editedSlidesIds: [newSlide.id],
     };
   }
 }

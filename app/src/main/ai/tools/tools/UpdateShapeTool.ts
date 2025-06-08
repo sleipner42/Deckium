@@ -174,6 +174,7 @@ export class UpdateShapeTool extends BaseTool {
         message,
         updates,
       },
+      editedSlidesIds: slideId ? [slideId] : [],
     };
   }
 }

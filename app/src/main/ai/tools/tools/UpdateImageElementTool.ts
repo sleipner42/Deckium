@@ -267,6 +267,7 @@ export class UpdateImageElementTool extends BaseTool {
           message: message + photoCredit,
           updates: Object.keys(updates),
         },
+        editedSlidesIds: [slideId],
       };
     } catch (error) {
       console.error('Error updating image element:', error);

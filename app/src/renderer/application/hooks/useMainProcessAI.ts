@@ -126,44 +126,6 @@ export const useMainProcessAI = (presentationId: UUID) => {
       },
     );
 
-    const messageReceivedUnsubscribe = electronAPI.ipcRenderer.on(
-      'ai:message-received',
-      (...args: unknown[]) => {
-        const data = args[0] as {
-          threadId: UUID;
-          message: string;
-          updatedThread: Thread;
-        };
-
-        console.log(`Message received for thread: ${data.threadId}`);
-
-        if (data.updatedThread) {
-          setThreads((prev) => {
-            // Find the thread index
-            const index = prev.findIndex((t) => t.id === data.threadId);
-
-            // If thread not found, add it to threads
-            if (index === -1) {
-              console.log(`Adding new thread: ${data.updatedThread.id}`);
-              return [...prev, data.updatedThread];
-            }
-
-            // Otherwise update the existing thread
-            console.log(`Updating existing thread: ${data.threadId}`);
-            const newThreads = [...prev];
-            newThreads[index] = data.updatedThread;
-            return newThreads;
-          });
-
-          // Always update current thread if it matches or if none is selected
-          if (!currentThread || currentThread.id === data.threadId) {
-            console.log(`Setting current thread to: ${data.updatedThread.id}`);
-            setCurrentThread(data.updatedThread);
-          }
-        }
-      },
-    );
-
     const messageChunkReceivedUnsubscribe = electronAPI.ipcRenderer.on(
       'ai:message-chunk-received',
       (...args: unknown[]) => {
@@ -262,7 +224,6 @@ export const useMainProcessAI = (presentationId: UUID) => {
       threadCreatedUnsubscribe();
       threadUpdatedUnsubscribe();
       threadDeletedUnsubscribe();
-      messageReceivedUnsubscribe();
       messageChunkReceivedUnsubscribe();
       processingStartedUnsubscribe();
       processingCompletedUnsubscribe();

@@ -35,5 +35,13 @@
   "black-formatter.args": [
     "--line-length",
     "80"
-  ]
+  ],
+
+  "jest.jestCommandLine": "npm test --",
+  "jest.rootPath": "app",
+  "jest.autoRun": {
+    "watch": false,
+    "onSave": "test-src-file"
+  },
+  "typescript.preferences.includePackageJsonAutoImports": "auto"
 }

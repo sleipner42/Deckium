@@ -178,6 +178,7 @@ export class UpdateBarChartTool extends BaseTool {
         message: 'Bar chart updated successfully',
         updates,
       },
+      editedSlidesIds: slideId ? [slideId] : [],
     };
   }
 }

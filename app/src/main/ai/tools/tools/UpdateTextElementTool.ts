@@ -272,6 +272,7 @@ export class UpdateTextElementTool extends BaseTool {
         message,
         updates: Object.keys(updates),
       },
+      editedSlidesIds: [slideId],
     };
   }
 }

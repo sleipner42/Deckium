@@ -44,6 +44,7 @@ export class GetScreenshotOfSlideTool extends BaseTool {
     return {
       success: true,
       screenshot,
+      editedSlidesIds: [],
     };
   }
 }

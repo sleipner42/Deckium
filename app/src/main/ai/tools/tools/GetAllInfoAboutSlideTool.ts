@@ -116,6 +116,7 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
     return {
       success: true,
       data: slideInfo,
+      editedSlidesIds: [],
     };
   }
 }

@@ -52,6 +52,7 @@ export class GetDataFromUrl extends BaseTool {
         data,
         markdown: markdown || '',
       },
+      editedSlidesIds: [],
     };
   }
 }

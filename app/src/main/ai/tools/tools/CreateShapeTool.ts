@@ -164,6 +164,7 @@ export class CreateShapeTool extends BaseTool {
           strokeWidth: Number(strokeWidth) || 2,
         },
       },
+      editedSlidesIds: [slideId],
     };
   }
 }

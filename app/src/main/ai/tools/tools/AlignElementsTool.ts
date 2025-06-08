@@ -500,6 +500,7 @@ export class AlignElementsTool extends BaseTool {
         message: `Successfully aligned ${updates.length} elements using "${alignType}" alignment`,
         updates,
       },
+      editedSlidesIds: [slideId],
     };
   }
 }

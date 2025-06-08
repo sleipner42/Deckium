@@ -120,6 +120,7 @@ export class CreateBarChartTool extends BaseTool {
           },
         },
       },
+      editedSlidesIds: [slideId],
     };
   }
 }

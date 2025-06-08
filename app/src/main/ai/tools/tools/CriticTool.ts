@@ -100,6 +100,7 @@ export class CriticTool extends BaseTool {
           hasScreenshot,
           recommendations: this.generateRecommendations(slide, slideInfo),
         },
+        editedSlidesIds: [],
       };
     } catch (error) {
       console.error('Error in CriticTool:', error);

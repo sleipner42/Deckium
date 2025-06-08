@@ -39,6 +39,7 @@ export class DeleteSlideTool extends BaseTool {
         slideId: deletedSlideId,
         message: `Slide deleted successfully`,
       },
+      editedSlidesIds: [],
     };
   }
 }

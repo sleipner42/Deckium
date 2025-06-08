@@ -63,6 +63,7 @@ export class DeleteElementTool extends BaseTool {
         elementType: targetElement.type,
         message: `${targetElement.type} element deleted successfully`,
       },
+      editedSlidesIds: [slideId],
     };
   }
 }
