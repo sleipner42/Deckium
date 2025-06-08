@@ -303,16 +303,18 @@ export class ResizeElementCommand implements Command {
   }
 
   undo(): void {
-    if (this.previousSize && this.previousPosition) {
-      const updates: any = { size: this.previousSize };
-      if (this.newPosition) {
-        updates.position = this.previousPosition;
-      }
-      
-      const updatedSlide = this.state.updateElement(this.elementId, updates);
-      if (updatedSlide) {
-        this.eventBus.broadcastToWindows('presentation:slide-updated', updatedSlide);
-      }
+    if (!this.previousSize || !this.previousPosition) {
+      throw new Error('Cannot undo: no previous values stored');
+    }
+
+    const updates: any = { size: this.previousSize };
+    if (this.newPosition) {
+      updates.position = this.previousPosition;
+    }
+    
+    const updatedSlide = this.state.updateElement(this.elementId, updates);
+    if (updatedSlide) {
+      this.eventBus.broadcastToWindows('presentation:slide-updated', updatedSlide);
     }
   }
 

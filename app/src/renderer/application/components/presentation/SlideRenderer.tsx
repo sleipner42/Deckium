@@ -247,12 +247,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       isEditing: !readOnly && selectableElements && isEditing(element.id),
       onStartEditing: () =>
         !readOnly && selectableElements && startEditingElement(element.id),
-      onStopEditing: (content?: string) => {
+      onStopEditing: () => {
         if (readOnly) return;
         stopEditingElement();
-        if (content !== undefined) {
-          updateElement(element.id, { content });
-        }
+        // Content is saved by TextElement's saveIfNeeded before calling this
       },
       onElementUpdate: readOnly ? undefined : updateElement,
       onElementMove: readOnly ? undefined : (elementId: string, x: number, y: number) => moveElement(elementId, x, y),

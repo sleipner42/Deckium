@@ -91,23 +91,36 @@ export const TextElement: React.FC<TextElementProps> = ({
 
         // Handle content changes with debouncing to avoid too many undo actions
         let contentChangeTimeout: NodeJS.Timeout;
-        let lastContent = content;
+        let lastSavedContent = content;
+        let hasUnsavedChanges = false;
+        
+        const saveContent = () => {
+          if (onTextContentUpdate && quillRef.current) {
+            const html = quillRef.current.root.innerHTML;
+            // Only trigger update if content actually changed
+            if (html !== lastSavedContent) {
+              lastSavedContent = html;
+              hasUnsavedChanges = false;
+              onTextContentUpdate(element.id, html);
+            }
+          }
+        };
         
         quill.on('text-change', () => {
+          hasUnsavedChanges = true;
           if (onTextContentUpdate && quillRef.current) {
             clearTimeout(contentChangeTimeout);
-            contentChangeTimeout = setTimeout(() => {
-              if (quillRef.current) {
-                const html = quillRef.current.root.innerHTML;
-                // Only trigger update if content actually changed
-                if (html !== lastContent) {
-                  lastContent = html;
-                  onTextContentUpdate(element.id, html);
-                }
-              }
-            }, 1000); // Increased debounce to 1 second
+            contentChangeTimeout = setTimeout(saveContent, 1000); // Increased debounce to 1 second
           }
         });
+
+        // Function to force save if there are unsaved changes
+        (quill as any).saveIfNeeded = () => {
+          if (hasUnsavedChanges) {
+            clearTimeout(contentChangeTimeout);
+            saveContent();
+          }
+        };
 
         // Add event listeners to toolbar to prevent blur without blocking Quill functionality
         const toolbar = quill.getModule('toolbar');
@@ -241,7 +254,11 @@ export const TextElement: React.FC<TextElementProps> = ({
           !isToolbarElement &&
           quillRef.current
         ) {
-          onStopEditing(quillRef.current.root.innerHTML);
+          // Save any unsaved changes before stopping editing
+          if ((quillRef.current as any).saveIfNeeded) {
+            (quillRef.current as any).saveIfNeeded();
+          }
+          onStopEditing();
         }
       }, 10);
     };
@@ -323,7 +340,11 @@ export const TextElement: React.FC<TextElementProps> = ({
       ) {
         setTimeout(() => {
           if (quillRef.current && isEditing) {
-            onStopEditing(quillRef.current.root.innerHTML);
+            // Save any unsaved changes before stopping editing
+            if ((quillRef.current as any).saveIfNeeded) {
+              (quillRef.current as any).saveIfNeeded();
+            }
+            onStopEditing();
           }
         }, 100);
       }
@@ -333,7 +354,11 @@ export const TextElement: React.FC<TextElementProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape' && quillRef.current) {
       setPreventBlur(false);
-      onStopEditing(quillRef.current.root.innerHTML);
+      // Save any unsaved changes before stopping editing
+      if ((quillRef.current as any).saveIfNeeded) {
+        (quillRef.current as any).saveIfNeeded();
+      }
+      onStopEditing();
     }
   };
 
