@@ -131,6 +131,39 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
     await addElement(newBarChartElement);
   };
 
+  const addImageElement = async () => {
+    if (!selectedSlide) return;
+    
+    // Create a file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    
+    input.onchange = async (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (file) {
+        // Convert file to data URL
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const imageDataUrl = e.target?.result as string;
+          
+          // Create new image element
+          const newImageElement = ElementFactory.createImage({
+            position: { x: 100, y: 100 },
+            size: { width: 200, height: 150 },
+            content: imageDataUrl,
+          });
+          
+          await addElement(newImageElement);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    
+    // Trigger file dialog
+    input.click();
+  };
+
   const handleStartPresentation = () => {
     window.electron.presentation.openFullscreen();
   };
@@ -200,6 +233,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
             variant="outlined"
             size="small"
             startIcon={<ImageIcon />}
+            onClick={addImageElement}
             sx={{
               borderRadius: 1,
               textTransform: 'none',
