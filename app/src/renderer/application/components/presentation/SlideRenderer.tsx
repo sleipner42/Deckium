@@ -39,7 +39,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   maintainAspectRatio = true,
   selectableElements = true,
 }) => {
-  const { updateElement, updateSlide, moveElement, resizeElement } = usePresentation();
+  const { updateElement, updateSlide, moveElement, resizeElement, updateTextContent } = usePresentation();
   const {
     selectedElementId,
     editingElementId,
@@ -75,7 +75,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       const isInputFocused = activeElement && (
         activeElement.tagName === 'INPUT' ||
         activeElement.tagName === 'TEXTAREA' ||
-        activeElement.contentEditable === 'true'
+        (activeElement as HTMLElement).contentEditable === 'true'
       );
 
       if (
@@ -243,6 +243,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       onElementUpdate: readOnly ? undefined : updateElement,
       onElementMove: readOnly ? undefined : (elementId: string, x: number, y: number) => moveElement(elementId, x, y),
       onElementResize: readOnly ? undefined : (elementId: string, width: number, height: number) => resizeElement(elementId, width, height),
+      onTextContentUpdate: readOnly ? undefined : (elementId: string, content: string) => updateTextContent(elementId, content),
       readOnly,
     };
 

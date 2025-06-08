@@ -20,15 +20,30 @@ export class CommandHistory {
     const description = command.getDescription();
     
     // Commands that should be grouped together (replace previous command of same type)
-    const shouldGroup = description === 'Move element' || description === 'Resize element';
+    const shouldGroup = description === 'Move element' || 
+                       description === 'Resize element' || 
+                       description.startsWith('Update') && description.includes('element');
 
     if (shouldGroup && this.undoStack.length > 0) {
       const lastCommand = this.undoStack[this.undoStack.length - 1];
       const lastDescription = lastCommand.getDescription();
       
-      // If the last command is the same type, replace it instead of adding a new one
-      // This groups continuous move/resize operations into a single undo action
-      if (lastDescription === description) {
+      // Group similar operations together
+      const isMoveSimilar = (desc1: string, desc2: string) => 
+        desc1 === 'Move element' && desc2 === 'Move element';
+      
+      const isResizeSimilar = (desc1: string, desc2: string) => 
+        desc1 === 'Resize element' && desc2 === 'Resize element';
+        
+      const isUpdateSimilar = (desc1: string, desc2: string) =>
+        desc1.startsWith('Update') && desc1.includes('element') &&
+        desc2.startsWith('Update') && desc2.includes('element') &&
+        desc1 === desc2;
+      
+      // If the last command is similar type, replace it instead of adding a new one
+      if (isMoveSimilar(lastDescription, description) || 
+          isResizeSimilar(lastDescription, description) ||
+          isUpdateSimilar(lastDescription, description)) {
         this.undoStack[this.undoStack.length - 1] = command;
         this.clearRedoStack();
         return;

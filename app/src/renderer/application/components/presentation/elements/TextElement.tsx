@@ -15,6 +15,7 @@ interface TextElementProps {
   onElementUpdate?: (elementId: string, updates: Partial<TextBox>) => void;
   onElementMove?: (elementId: string, x: number, y: number) => void;
   onElementResize?: (elementId: string, width: number, height: number) => void;
+  onTextContentUpdate?: (elementId: string, content: string) => void;
   readOnly?: boolean;
 }
 
@@ -29,6 +30,7 @@ export const TextElement: React.FC<TextElementProps> = ({
   onElementUpdate,
   onElementMove,
   onElementResize,
+  onTextContentUpdate,
   readOnly = false,
 }) => {
   const {
@@ -90,12 +92,12 @@ export const TextElement: React.FC<TextElementProps> = ({
         // Handle content changes with debouncing to avoid too many undo actions
         let contentChangeTimeout: NodeJS.Timeout;
         quill.on('text-change', () => {
-          if (onElementUpdate && quillRef.current) {
+          if (onTextContentUpdate && quillRef.current) {
             clearTimeout(contentChangeTimeout);
             contentChangeTimeout = setTimeout(() => {
               if (quillRef.current) {
                 const html = quillRef.current.root.innerHTML;
-                onElementUpdate(element.id, { content: html });
+                onTextContentUpdate(element.id, html);
               }
             }, 500); // Debounce for 500ms
           }
@@ -170,6 +172,16 @@ export const TextElement: React.FC<TextElementProps> = ({
     onStopEditing,
     preventBlur,
   ]);
+
+  // Update Quill content when element content changes (from undo/redo)
+  useEffect(() => {
+    if (quillRef.current && !isEditing) {
+      const currentContent = quillRef.current.root.innerHTML;
+      if (currentContent !== content) {
+        quillRef.current.clipboard.dangerouslyPasteHTML(content);
+      }
+    }
+  }, [content, isEditing]);
 
   // Document-level click detection for exiting edit mode
   useEffect(() => {

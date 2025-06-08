@@ -63,6 +63,10 @@ export function setupPresentationIPC(service: PresentationService) {
     return service.resizeElement(elementId, width, height);
   });
 
+  ipcMain.handle('presentation:update-text-content', (_, elementId: string, content: string) => {
+    return service.updateTextContent(elementId, content);
+  });
+
   ipcMain.handle('presentation:save', async (event) => {
     const window = BrowserWindow.fromWebContents(event.sender);
     if (!window) {

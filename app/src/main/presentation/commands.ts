@@ -332,6 +332,47 @@ export class ReorderSlidesCommand implements Command {
   }
 }
 
+export class UpdateTextContentCommand implements Command {
+  private previousContent: string | null = null;
+
+  constructor(
+    private elementId: string,
+    private newContent: string,
+    private state: any,
+    private eventBus: any,
+  ) {}
+
+  execute(): void {
+    // Store the current content before updating
+    const presentation = this.state.getPresentation();
+    for (const slide of presentation.slides) {
+      const element = slide.elements.find((e: ContentElement) => e.id === this.elementId);
+      if (element && element.type === 'textbox') {
+        this.previousContent = (element as any).content;
+        break;
+      }
+    }
+
+    const updatedSlide = this.state.updateElement(this.elementId, { content: this.newContent });
+    if (updatedSlide) {
+      this.eventBus.broadcastToWindows('presentation:slide-updated', updatedSlide);
+    }
+  }
+
+  undo(): void {
+    if (this.previousContent !== null) {
+      const updatedSlide = this.state.updateElement(this.elementId, { content: this.previousContent });
+      if (updatedSlide) {
+        this.eventBus.broadcastToWindows('presentation:slide-updated', updatedSlide);
+      }
+    }
+  }
+
+  getDescription(): string {
+    return 'Update text content';
+  }
+}
+
 export class UpdatePresentationMetaCommand implements Command {
   private previousTitle: string;
 

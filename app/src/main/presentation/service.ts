@@ -17,6 +17,7 @@ import {
   AddElementCommand,
   DeleteElementCommand,
   UpdateElementCommand,
+  UpdateTextContentCommand,
   MoveElementCommand,
   ResizeElementCommand,
   ReorderSlidesCommand,
@@ -156,6 +157,18 @@ export class PresentationService {
 
   resizeElement(elementId: string, width: number, height: number): Slide | null {
     const command = new ResizeElementCommand(elementId, { width, height }, this.state, this.eventBus);
+    this.history.executeCommand(command);
+    this.broadcastUndoRedoState();
+    
+    // Find the slide that contains this element
+    const presentation = this.state.getPresentation();
+    return presentation.slides.find(slide => 
+      slide.elements.some(element => element.id === elementId)
+    ) || null;
+  }
+
+  updateTextContent(elementId: string, content: string): Slide | null {
+    const command = new UpdateTextContentCommand(elementId, content, this.state, this.eventBus);
     this.history.executeCommand(command);
     this.broadcastUndoRedoState();
     
