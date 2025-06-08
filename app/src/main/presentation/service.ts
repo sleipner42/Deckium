@@ -156,7 +156,19 @@ export class PresentationService {
   }
 
   resizeElement(elementId: string, width: number, height: number): Slide | null {
-    const command = new ResizeElementCommand(elementId, { width, height }, this.state, this.eventBus);
+    const command = new ResizeElementCommand(elementId, { width, height }, undefined, this.state, this.eventBus);
+    this.history.executeCommand(command);
+    this.broadcastUndoRedoState();
+    
+    // Find the slide that contains this element
+    const presentation = this.state.getPresentation();
+    return presentation.slides.find(slide => 
+      slide.elements.some(element => element.id === elementId)
+    ) || null;
+  }
+
+  resizeElementWithPosition(elementId: string, width: number, height: number, x: number, y: number): Slide | null {
+    const command = new ResizeElementCommand(elementId, { width, height }, { x, y }, this.state, this.eventBus);
     this.history.executeCommand(command);
     this.broadcastUndoRedoState();
     

@@ -14,6 +14,7 @@ export type PresentationChannels =
   | 'presentation:delete-element'
   | 'presentation:move-element'
   | 'presentation:resize-element'
+  | 'presentation:resize-element-with-position'
   | 'presentation:update-text-content'
   | 'presentation:undo'
   | 'presentation:redo'
@@ -203,6 +204,9 @@ const electronHandler = {
     },
     resizeElement(elementId: string, width: number, height: number) {
       return ipcRenderer.invoke('presentation:resize-element', elementId, width, height);
+    },
+    resizeElementWithPosition(elementId: string, width: number, height: number, x: number, y: number) {
+      return ipcRenderer.invoke('presentation:resize-element-with-position', elementId, width, height, x, y);
     },
     updateTextContent(elementId: string, content: string) {
       return ipcRenderer.invoke('presentation:update-text-content', elementId, content);

@@ -63,6 +63,10 @@ export function setupPresentationIPC(service: PresentationService) {
     return service.resizeElement(elementId, width, height);
   });
 
+  ipcMain.handle('presentation:resize-element-with-position', (_, elementId: string, width: number, height: number, x: number, y: number) => {
+    return service.resizeElementWithPosition(elementId, width, height, x, y);
+  });
+
   ipcMain.handle('presentation:update-text-content', (_, elementId: string, content: string) => {
     return service.updateTextContent(elementId, content);
   });

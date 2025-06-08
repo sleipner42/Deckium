@@ -39,7 +39,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   maintainAspectRatio = true,
   selectableElements = true,
 }) => {
-  const { updateElement, updateSlide, moveElement, resizeElement, updateTextContent } = usePresentation();
+  const { updateElement, updateSlide, moveElement, resizeElement, resizeElementWithPosition, updateTextContent } = usePresentation();
   const {
     selectedElementId,
     editingElementId,
@@ -210,6 +210,19 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   };
 
   const renderElement = (element: ContentElement) => {
+    const handleResizeWithPosition = (elementId: string, updates: { position?: { x: number; y: number }; size?: { width: number; height: number } }) => {
+      if (updates.size && updates.position) {
+        // Both position and size changed - use combined command
+        resizeElementWithPosition(elementId, updates.size.width, updates.size.height, updates.position.x, updates.position.y);
+      } else if (updates.size) {
+        // Only size changed
+        resizeElement(elementId, updates.size.width, updates.size.height);
+      } else if (updates.position) {
+        // Only position changed
+        moveElement(elementId, updates.position.x, updates.position.y);
+      }
+    };
+
     const commonProps = {
       element,
       onClick: () => handleElementClick(element.id),
@@ -217,6 +230,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       onElementUpdate: readOnly ? undefined : updateElement,
       onElementMove: readOnly ? undefined : (elementId: string, x: number, y: number) => moveElement(elementId, x, y),
       onElementResize: readOnly ? undefined : (elementId: string, width: number, height: number) => resizeElement(elementId, width, height),
+      onResizeWithPosition: readOnly ? undefined : handleResizeWithPosition,
       isSelected: !readOnly && selectableElements && isSelected(element.id),
       isEditing: !readOnly && selectableElements && isEditing(element.id),
       onStartEditing: () =>

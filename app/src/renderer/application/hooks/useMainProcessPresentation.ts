@@ -37,6 +37,7 @@ interface ElectronWindow {
       deleteElement: (elementId: string) => Promise<Slide>;
       moveElement: (elementId: string, x: number, y: number) => Promise<Slide>;
       resizeElement: (elementId: string, width: number, height: number) => Promise<Slide>;
+      resizeElementWithPosition: (elementId: string, width: number, height: number, x: number, y: number) => Promise<Slide>;
       updateTextContent: (elementId: string, content: string) => Promise<Slide>;
       savePresentation: () => Promise<string | null>;
       savePresentationAs: () => Promise<string | null>;
@@ -574,6 +575,22 @@ export const useMainProcessPresentation = () => {
     [],
   );
 
+  const resizeElementWithPosition = useCallback(
+    async (elementId: string, width: number, height: number, x: number, y: number) => {
+      try {
+        setError(null);
+        const updatedSlide = await electronAPI.presentation.resizeElementWithPosition(elementId, width, height, x, y);
+        return updatedSlide;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'An error occurred';
+        setError(errorMessage);
+        throw err;
+      }
+    },
+    [],
+  );
+
   const updateTextContent = useCallback(
     async (elementId: string, content: string) => {
       try {
@@ -725,6 +742,7 @@ export const useMainProcessPresentation = () => {
     deleteElement,
     moveElement,
     resizeElement,
+    resizeElementWithPosition,
     updateTextContent,
     undo,
     redo,

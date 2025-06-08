@@ -269,34 +269,47 @@ export class MoveElementCommand implements Command {
 
 export class ResizeElementCommand implements Command {
   private previousSize: { width: number; height: number } | null = null;
+  private previousPosition: { x: number; y: number } | null = null;
 
   constructor(
     private elementId: string,
     private newSize: { width: number; height: number },
-    private state: any,
-    private eventBus: any,
+    private newPosition?: { x: number; y: number },
+    private state?: any,
+    private eventBus?: any,
   ) {}
 
   execute(): void {
-    // Store the current size before updating
+    // Store the current values before updating
     const presentation = this.state.getPresentation();
     for (const slide of presentation.slides) {
       const element = slide.elements.find((e: ContentElement) => e.id === this.elementId);
       if (element) {
         this.previousSize = { ...element.size };
+        this.previousPosition = { ...element.position };
         break;
       }
     }
 
-    const updatedSlide = this.state.updateElement(this.elementId, { size: this.newSize });
+    const updates: any = { size: this.newSize };
+    if (this.newPosition) {
+      updates.position = this.newPosition;
+    }
+
+    const updatedSlide = this.state.updateElement(this.elementId, updates);
     if (updatedSlide) {
       this.eventBus.broadcastToWindows('presentation:slide-updated', updatedSlide);
     }
   }
 
   undo(): void {
-    if (this.previousSize) {
-      const updatedSlide = this.state.updateElement(this.elementId, { size: this.previousSize });
+    if (this.previousSize && this.previousPosition) {
+      const updates: any = { size: this.previousSize };
+      if (this.newPosition) {
+        updates.position = this.previousPosition;
+      }
+      
+      const updatedSlide = this.state.updateElement(this.elementId, updates);
       if (updatedSlide) {
         this.eventBus.broadcastToWindows('presentation:slide-updated', updatedSlide);
       }

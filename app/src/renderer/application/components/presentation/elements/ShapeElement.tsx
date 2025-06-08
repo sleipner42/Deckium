@@ -9,6 +9,7 @@ interface ShapeElementProps {
   onElementUpdate?: (elementId: string, updates: Partial<Shape>) => void;
   onElementMove?: (elementId: string, x: number, y: number) => void;
   onElementResize?: (elementId: string, width: number, height: number) => void;
+  onResizeWithPosition?: (elementId: string, updates: { position?: { x: number; y: number }; size?: { width: number; height: number } }) => void;
   isSelected: boolean;
   isEditing: boolean;
   readOnly?: boolean;
@@ -21,6 +22,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
   onElementUpdate,
   onElementMove,
   onElementResize,
+  onResizeWithPosition,
   isSelected,
   isEditing,
   readOnly = false,
@@ -182,7 +184,9 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
         position={position}
         size={size}
         onResize={
-          onElementResize && onElementMove
+          onResizeWithPosition
+            ? onResizeWithPosition
+            : onElementResize && onElementMove
             ? (id, updates) => {
                 if (updates.size) {
                   onElementResize(id, updates.size.width, updates.size.height);

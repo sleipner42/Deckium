@@ -91,15 +91,21 @@ export const TextElement: React.FC<TextElementProps> = ({
 
         // Handle content changes with debouncing to avoid too many undo actions
         let contentChangeTimeout: NodeJS.Timeout;
+        let lastContent = content;
+        
         quill.on('text-change', () => {
           if (onTextContentUpdate && quillRef.current) {
             clearTimeout(contentChangeTimeout);
             contentChangeTimeout = setTimeout(() => {
               if (quillRef.current) {
                 const html = quillRef.current.root.innerHTML;
-                onTextContentUpdate(element.id, html);
+                // Only trigger update if content actually changed
+                if (html !== lastContent) {
+                  lastContent = html;
+                  onTextContentUpdate(element.id, html);
+                }
               }
-            }, 500); // Debounce for 500ms
+            }, 1000); // Increased debounce to 1 second
           }
         });
 
@@ -178,7 +184,13 @@ export const TextElement: React.FC<TextElementProps> = ({
     if (quillRef.current && !isEditing) {
       const currentContent = quillRef.current.root.innerHTML;
       if (currentContent !== content) {
-        quillRef.current.clipboard.dangerouslyPasteHTML(content);
+        // Set flag to prevent triggering onChange during restore
+        const wasReadOnly = quillRef.current.isEnabled();
+        quillRef.current.disable();
+        quillRef.current.clipboard.dangerouslyPasteHTML(content || '');
+        if (wasReadOnly) {
+          quillRef.current.enable();
+        }
       }
     }
   }, [content, isEditing]);

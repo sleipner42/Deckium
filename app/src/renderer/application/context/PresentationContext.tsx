@@ -51,6 +51,7 @@ interface PresentationContextActions {
   deleteElement: (elementId: string) => void;
   moveElement: (elementId: string, x: number, y: number) => void;
   resizeElement: (elementId: string, width: number, height: number) => void;
+  resizeElementWithPosition: (elementId: string, width: number, height: number, x: number, y: number) => void;
   updateTextContent: (elementId: string, content: string) => void;
   undo: () => Promise<boolean>;
   redo: () => Promise<boolean>;
@@ -110,6 +111,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
     deleteElement,
     moveElement,
     resizeElement,
+    resizeElementWithPosition,
     updateTextContent,
     undo,
     redo,
@@ -160,6 +162,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
         deleteElement,
         moveElement,
         resizeElement,
+        resizeElementWithPosition,
         updateTextContent,
         undo,
         redo,
