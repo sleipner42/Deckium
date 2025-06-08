@@ -39,7 +39,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   maintainAspectRatio = true,
   selectableElements = true,
 }) => {
-  const { updateElement, updateSlide } = usePresentation();
+  const { updateElement, updateSlide, moveElement, resizeElement } = usePresentation();
   const {
     selectedElementId,
     editingElementId,
@@ -215,6 +215,8 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       onClick: () => handleElementClick(element.id),
       onContextMenu: (event: React.MouseEvent) => handleContextMenu(event, element.id),
       onElementUpdate: readOnly ? undefined : updateElement,
+      onElementMove: readOnly ? undefined : (elementId: string, x: number, y: number) => moveElement(elementId, x, y),
+      onElementResize: readOnly ? undefined : (elementId: string, width: number, height: number) => resizeElement(elementId, width, height),
       isSelected: !readOnly && selectableElements && isSelected(element.id),
       isEditing: !readOnly && selectableElements && isEditing(element.id),
       onStartEditing: () =>
@@ -239,6 +241,8 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         }
       },
       onElementUpdate: readOnly ? undefined : updateElement,
+      onElementMove: readOnly ? undefined : (elementId: string, x: number, y: number) => moveElement(elementId, x, y),
+      onElementResize: readOnly ? undefined : (elementId: string, width: number, height: number) => resizeElement(elementId, width, height),
       readOnly,
     };
 

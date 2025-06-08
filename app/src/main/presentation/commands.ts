@@ -226,6 +226,88 @@ export class UpdateElementCommand implements Command {
   }
 }
 
+export class MoveElementCommand implements Command {
+  private previousPosition: { x: number; y: number } | null = null;
+
+  constructor(
+    private elementId: string,
+    private newPosition: { x: number; y: number },
+    private state: any,
+    private eventBus: any,
+  ) {}
+
+  execute(): void {
+    // Store the current position before updating
+    const presentation = this.state.getPresentation();
+    for (const slide of presentation.slides) {
+      const element = slide.elements.find((e: ContentElement) => e.id === this.elementId);
+      if (element) {
+        this.previousPosition = { ...element.position };
+        break;
+      }
+    }
+
+    const updatedSlide = this.state.updateElement(this.elementId, { position: this.newPosition });
+    if (updatedSlide) {
+      this.eventBus.broadcastToWindows('presentation:slide-updated', updatedSlide);
+    }
+  }
+
+  undo(): void {
+    if (this.previousPosition) {
+      const updatedSlide = this.state.updateElement(this.elementId, { position: this.previousPosition });
+      if (updatedSlide) {
+        this.eventBus.broadcastToWindows('presentation:slide-updated', updatedSlide);
+      }
+    }
+  }
+
+  getDescription(): string {
+    return 'Move element';
+  }
+}
+
+export class ResizeElementCommand implements Command {
+  private previousSize: { width: number; height: number } | null = null;
+
+  constructor(
+    private elementId: string,
+    private newSize: { width: number; height: number },
+    private state: any,
+    private eventBus: any,
+  ) {}
+
+  execute(): void {
+    // Store the current size before updating
+    const presentation = this.state.getPresentation();
+    for (const slide of presentation.slides) {
+      const element = slide.elements.find((e: ContentElement) => e.id === this.elementId);
+      if (element) {
+        this.previousSize = { ...element.size };
+        break;
+      }
+    }
+
+    const updatedSlide = this.state.updateElement(this.elementId, { size: this.newSize });
+    if (updatedSlide) {
+      this.eventBus.broadcastToWindows('presentation:slide-updated', updatedSlide);
+    }
+  }
+
+  undo(): void {
+    if (this.previousSize) {
+      const updatedSlide = this.state.updateElement(this.elementId, { size: this.previousSize });
+      if (updatedSlide) {
+        this.eventBus.broadcastToWindows('presentation:slide-updated', updatedSlide);
+      }
+    }
+  }
+
+  getDescription(): string {
+    return 'Resize element';
+  }
+}
+
 export class ReorderSlidesCommand implements Command {
   constructor(
     private fromIndex: number,

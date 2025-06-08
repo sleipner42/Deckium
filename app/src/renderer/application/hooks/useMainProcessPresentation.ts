@@ -35,6 +35,8 @@ interface ElectronWindow {
         updates: Partial<ContentElement>,
       ) => Promise<Slide>;
       deleteElement: (elementId: string) => Promise<Slide>;
+      moveElement: (elementId: string, x: number, y: number) => Promise<Slide>;
+      resizeElement: (elementId: string, width: number, height: number) => Promise<Slide>;
       savePresentation: () => Promise<string | null>;
       savePresentationAs: () => Promise<string | null>;
       loadPresentation: (filePath?: string) => Promise<Presentation | null>;
@@ -539,6 +541,38 @@ export const useMainProcessPresentation = () => {
     }
   }, []);
 
+  const moveElement = useCallback(
+    async (elementId: string, x: number, y: number) => {
+      try {
+        setError(null);
+        const updatedSlide = await electronAPI.presentation.moveElement(elementId, x, y);
+        return updatedSlide;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'An error occurred';
+        setError(errorMessage);
+        throw err;
+      }
+    },
+    [],
+  );
+
+  const resizeElement = useCallback(
+    async (elementId: string, width: number, height: number) => {
+      try {
+        setError(null);
+        const updatedSlide = await electronAPI.presentation.resizeElement(elementId, width, height);
+        return updatedSlide;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'An error occurred';
+        setError(errorMessage);
+        throw err;
+      }
+    },
+    [],
+  );
+
   const currentSlideIndex = useMemo(() => {
     if (!selectedSlide || slides.length === 0) return 0;
     const index = slides.findIndex((slide) => slide.id === selectedSlide.id);
@@ -672,6 +706,8 @@ export const useMainProcessPresentation = () => {
     addElement,
     updateElement,
     deleteElement,
+    moveElement,
+    resizeElement,
     undo,
     redo,
     reorderSlides,

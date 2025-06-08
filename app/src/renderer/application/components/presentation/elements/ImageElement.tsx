@@ -9,6 +9,8 @@ interface ImageElementProps {
   onClick?: () => void;
   onContextMenu?: (event: React.MouseEvent) => void;
   onElementUpdate?: (elementId: string, updates: Partial<Image>) => void;
+  onElementMove?: (elementId: string, x: number, y: number) => void;
+  onElementResize?: (elementId: string, width: number, height: number) => void;
   readOnly?: boolean;
 }
 
@@ -19,6 +21,8 @@ export const ImageElement: React.FC<ImageElementProps> = ({
   onClick,
   onContextMenu,
   onElementUpdate,
+  onElementMove,
+  onElementResize,
   readOnly = false,
 }) => {
   const { position, size, content, style, zIndex } = element;
@@ -42,13 +46,12 @@ export const ImageElement: React.FC<ImageElementProps> = ({
   // Setup mouse move and mouse up event listeners
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging && onElementUpdate) {
-        onElementUpdate(element.id, {
-          position: {
-            x: e.clientX - dragOffset.x,
-            y: e.clientY - dragOffset.y,
-          },
-        });
+      if (isDragging && onElementMove) {
+        onElementMove(
+          element.id,
+          e.clientX - dragOffset.x,
+          e.clientY - dragOffset.y
+        );
       }
     };
 
@@ -65,7 +68,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, element.id, onElementUpdate]);
+  }, [isDragging, dragOffset, element.id, onElementMove]);
 
   const handleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
@@ -110,7 +113,20 @@ export const ImageElement: React.FC<ImageElementProps> = ({
         elementId={element.id}
         position={position}
         size={size}
-        onResize={onElementUpdate ? (id, updates) => onElementUpdate(id, updates) : () => {}}
+        onResize={
+          onElementResize && onElementMove
+            ? (id, updates) => {
+                if (updates.size) {
+                  onElementResize(id, updates.size.width, updates.size.height);
+                }
+                if (updates.position) {
+                  onElementMove(id, updates.position.x, updates.position.y);
+                }
+              }
+            : onElementUpdate
+            ? (id, updates) => onElementUpdate(id, updates)
+            : () => {}
+        }
         minWidth={20}
         minHeight={20}
       />

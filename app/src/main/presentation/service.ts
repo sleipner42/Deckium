@@ -17,6 +17,8 @@ import {
   AddElementCommand,
   DeleteElementCommand,
   UpdateElementCommand,
+  MoveElementCommand,
+  ResizeElementCommand,
   ReorderSlidesCommand,
   UpdatePresentationMetaCommand,
 } from './commands';
@@ -138,6 +140,30 @@ export class PresentationService {
     const presentation = this.state.getPresentation();
     // Since we can't find it after deletion, we'll return the first slide or null
     return presentation.slides.length > 0 ? presentation.slides[0] : null;
+  }
+
+  moveElement(elementId: string, x: number, y: number): Slide | null {
+    const command = new MoveElementCommand(elementId, { x, y }, this.state, this.eventBus);
+    this.history.executeCommand(command);
+    this.broadcastUndoRedoState();
+    
+    // Find the slide that contains this element
+    const presentation = this.state.getPresentation();
+    return presentation.slides.find(slide => 
+      slide.elements.some(element => element.id === elementId)
+    ) || null;
+  }
+
+  resizeElement(elementId: string, width: number, height: number): Slide | null {
+    const command = new ResizeElementCommand(elementId, { width, height }, this.state, this.eventBus);
+    this.history.executeCommand(command);
+    this.broadcastUndoRedoState();
+    
+    // Find the slide that contains this element
+    const presentation = this.state.getPresentation();
+    return presentation.slides.find(slide => 
+      slide.elements.some(element => element.id === elementId)
+    ) || null;
   }
 
   onEvent(eventName: string, listener: (...args: any[]) => void): void {

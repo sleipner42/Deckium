@@ -13,6 +13,8 @@ interface TextElementProps {
   onStartEditing: () => void;
   onStopEditing: (content?: string) => void;
   onElementUpdate?: (elementId: string, updates: Partial<TextBox>) => void;
+  onElementMove?: (elementId: string, x: number, y: number) => void;
+  onElementResize?: (elementId: string, width: number, height: number) => void;
   readOnly?: boolean;
 }
 
@@ -25,6 +27,8 @@ export const TextElement: React.FC<TextElementProps> = ({
   onStartEditing,
   onStopEditing,
   onElementUpdate,
+  onElementMove,
+  onElementResize,
   readOnly = false,
 }) => {
   const {
@@ -83,11 +87,17 @@ export const TextElement: React.FC<TextElementProps> = ({
           quill.clipboard.dangerouslyPasteHTML(content);
         }
 
-        // Handle content changes
+        // Handle content changes with debouncing to avoid too many undo actions
+        let contentChangeTimeout: NodeJS.Timeout;
         quill.on('text-change', () => {
           if (onElementUpdate && quillRef.current) {
-            const html = quillRef.current.root.innerHTML;
-            onElementUpdate(element.id, { content: html });
+            clearTimeout(contentChangeTimeout);
+            contentChangeTimeout = setTimeout(() => {
+              if (quillRef.current) {
+                const html = quillRef.current.root.innerHTML;
+                onElementUpdate(element.id, { content: html });
+              }
+            }, 500); // Debounce for 500ms
           }
         });
 
@@ -244,13 +254,12 @@ export const TextElement: React.FC<TextElementProps> = ({
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging && onElementUpdate) {
-        onElementUpdate(element.id, {
-          position: {
-            x: e.clientX - dragOffset.x,
-            y: e.clientY - dragOffset.y,
-          },
-        });
+      if (isDragging && onElementMove) {
+        onElementMove(
+          element.id,
+          e.clientX - dragOffset.x,
+          e.clientY - dragOffset.y
+        );
       }
     };
 
@@ -267,7 +276,7 @@ export const TextElement: React.FC<TextElementProps> = ({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, element.id, onElementUpdate]);
+  }, [isDragging, dragOffset, element.id, onElementMove]);
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
@@ -395,7 +404,16 @@ export const TextElement: React.FC<TextElementProps> = ({
         position={position}
         size={size}
         onResize={
-          onElementUpdate
+          onElementResize && onElementMove
+            ? (id, updates) => {
+                if (updates.size) {
+                  onElementResize(id, updates.size.width, updates.size.height);
+                }
+                if (updates.position) {
+                  onElementMove(id, updates.position.x, updates.position.y);
+                }
+              }
+            : onElementUpdate
             ? (id, updates) => onElementUpdate(id, updates)
             : () => {}
         }

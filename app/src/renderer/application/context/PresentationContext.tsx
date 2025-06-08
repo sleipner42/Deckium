@@ -49,13 +49,13 @@ interface PresentationContextActions {
   addElement: (element: ContentElement) => void;
   updateElement: (elementId: string, updates: Partial<ContentElement>) => void;
   deleteElement: (elementId: string) => void;
+  moveElement: (elementId: string, x: number, y: number) => void;
+  resizeElement: (elementId: string, width: number, height: number) => void;
   undo: () => Promise<boolean>;
   redo: () => Promise<boolean>;
   reorderSlides: (fromIndex: number, toIndex: number) => Promise<Presentation>;
   startEditingElement: (elementId: string) => void;
   stopEditingElement: (elementId: string, content?: string) => void;
-  moveElement: (elementId: string, x: number, y: number) => void;
-  resizeElement: (elementId: string, width: number, height: number) => void;
   savePresentation: () => Promise<string | null>;
   savePresentationAs: () => Promise<string | null>;
   loadPresentation: (filePath?: string) => Promise<Presentation | null>;
@@ -107,6 +107,8 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
     addElement,
     updateElement,
     deleteElement,
+    moveElement,
+    resizeElement,
     undo,
     redo,
     reorderSlides,
@@ -154,6 +156,8 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
         addElement,
         updateElement,
         deleteElement,
+        moveElement,
+        resizeElement,
         undo,
         redo,
         reorderSlides,
@@ -162,8 +166,6 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
         loadPresentation,
         startEditingElement: () => {},
         stopEditingElement: () => {},
-        moveElement: () => {},
-        resizeElement: () => {},
         openFullscreen,
         closeFullscreen,
         isFullscreenOpen,

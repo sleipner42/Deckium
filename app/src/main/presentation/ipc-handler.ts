@@ -55,6 +55,14 @@ export function setupPresentationIPC(service: PresentationService) {
     return service.deleteElement(elementId);
   });
 
+  ipcMain.handle('presentation:move-element', (_, elementId: string, x: number, y: number) => {
+    return service.moveElement(elementId, x, y);
+  });
+
+  ipcMain.handle('presentation:resize-element', (_, elementId: string, width: number, height: number) => {
+    return service.resizeElement(elementId, width, height);
+  });
+
   ipcMain.handle('presentation:save', async (event) => {
     const window = BrowserWindow.fromWebContents(event.sender);
     if (!window) {
