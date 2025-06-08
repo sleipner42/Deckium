@@ -10,6 +10,7 @@ import FlipToFrontIcon from '@mui/icons-material/FlipToFront';
 import FlipToBackIcon from '@mui/icons-material/FlipToBack';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 interface ElementContextMenuProps {
   anchorEl: HTMLElement | null;
@@ -19,6 +20,8 @@ interface ElementContextMenuProps {
   onMoveBackward: () => void;
   onMoveToTop: () => void;
   onMoveToBottom: () => void;
+  onEditProperties?: () => void;
+  elementType?: string;
 }
 
 export const ElementContextMenu: React.FC<ElementContextMenuProps> = ({
@@ -29,6 +32,8 @@ export const ElementContextMenu: React.FC<ElementContextMenuProps> = ({
   onMoveBackward,
   onMoveToTop,
   onMoveToBottom,
+  onEditProperties,
+  elementType,
 }) => {
   const handleMenuItemClick = (action: () => void) => {
     action();
@@ -49,6 +54,19 @@ export const ElementContextMenu: React.FC<ElementContextMenuProps> = ({
         horizontal: 'right',
       }}
     >
+      {/* Show Properties option only for shapes */}
+      {(elementType === 'rectangle' || elementType === 'circle' || elementType === 'triangle') && onEditProperties && (
+        <>
+          <MenuItem onClick={() => handleMenuItemClick(onEditProperties)}>
+            <ListItemIcon>
+              <SettingsIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Properties</ListItemText>
+          </MenuItem>
+          <Divider />
+        </>
+      )}
+      
       <MenuItem onClick={() => handleMenuItemClick(onMoveToTop)}>
         <ListItemIcon>
           <FlipToFrontIcon fontSize="small" />

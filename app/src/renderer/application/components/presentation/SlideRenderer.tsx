@@ -17,6 +17,7 @@ import { ShapeElement } from './elements/ShapeElement';
 import { TextElement } from './elements/TextElement';
 import { BarChartElement } from './elements/BarChartElement';
 import { ElementContextMenu } from './ElementContextMenu';
+import { ShapePropertiesDialog } from './ShapePropertiesDialog';
 
 interface SlideRendererProps {
   slide: Slide;
@@ -53,6 +54,11 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     mouseY: number;
     elementId: string;
   } | null>(null);
+
+  const [propertiesDialog, setPropertiesDialog] = useState<{
+    open: boolean;
+    elementId: string | null;
+  }>({ open: false, elementId: null });
 
   useEffect(() => {
     if (readOnly) return;
@@ -168,6 +174,20 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     updateElement(elementId, { zIndex: Math.max(minZIndex - 1, 1) });
   };
 
+  const handleEditProperties = (elementId: string) => {
+    setPropertiesDialog({ open: true, elementId });
+  };
+
+  const handleClosePropertiesDialog = () => {
+    setPropertiesDialog({ open: false, elementId: null });
+  };
+
+  const handleUpdateShapeProperties = (updates: Partial<Shape>) => {
+    if (propertiesDialog.elementId) {
+      updateElement(propertiesDialog.elementId, updates);
+    }
+  };
+
   const renderElement = (element: ContentElement) => {
     const commonProps = {
       element,
@@ -266,6 +286,8 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         onMoveBackward={() => contextMenu && moveElementBackward(contextMenu.elementId)}
         onMoveToTop={() => contextMenu && moveElementToTop(contextMenu.elementId)}
         onMoveToBottom={() => contextMenu && moveElementToBottom(contextMenu.elementId)}
+        onEditProperties={() => contextMenu && handleEditProperties(contextMenu.elementId)}
+        elementType={contextMenu ? slide.elements.find(el => el.id === contextMenu.elementId)?.type : undefined}
       />
       
       {contextMenu && (
@@ -281,6 +303,13 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
           }}
         />
       )}
+
+      <ShapePropertiesDialog
+        open={propertiesDialog.open}
+        onClose={handleClosePropertiesDialog}
+        shape={propertiesDialog.elementId ? slide.elements.find(el => el.id === propertiesDialog.elementId) as Shape : null}
+        onUpdate={handleUpdateShapeProperties}
+      />
     </div>
   );
 };
