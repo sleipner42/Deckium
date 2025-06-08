@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ContentElement,
   Image,
@@ -16,6 +16,7 @@ import { PlotElement } from './elements/PlotElement';
 import { ShapeElement } from './elements/ShapeElement';
 import { TextElement } from './elements/TextElement';
 import { BarChartElement } from './elements/BarChartElement';
+import { ElementContextMenu } from './ElementContextMenu';
 
 interface SlideRendererProps {
   slide: Slide;
@@ -46,6 +47,12 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     isSelected,
     isEditing,
   } = useElementState();
+
+  const [contextMenu, setContextMenu] = useState<{
+    mouseX: number;
+    mouseY: number;
+    elementId: string;
+  } | null>(null);
 
   useEffect(() => {
     if (readOnly) return;
@@ -102,10 +109,70 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     }
   };
 
+  const handleContextMenu = (event: React.MouseEvent, elementId: string) => {
+    event.preventDefault();
+    if (readOnly || !selectableElements) return;
+    
+    setContextMenu({
+      mouseX: event.clientX - 2,
+      mouseY: event.clientY - 4,
+      elementId,
+    });
+    selectElement(elementId);
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu(null);
+  };
+
+  const getElementZIndex = (elementId: string): number => {
+    const element = slide.elements.find((el) => el.id === elementId);
+    return element?.zIndex || 1;
+  };
+
+  const getMaxZIndex = (): number => {
+    return Math.max(...slide.elements.map((el) => el.zIndex || 1), 0);
+  };
+
+  const getMinZIndex = (): number => {
+    return Math.min(...slide.elements.map((el) => el.zIndex || 1), 1);
+  };
+
+  const moveElementForward = (elementId: string) => {
+    const currentZIndex = getElementZIndex(elementId);
+    const elementsAbove = slide.elements.filter((el) => (el.zIndex || 1) > currentZIndex);
+    
+    if (elementsAbove.length > 0) {
+      const nextZIndex = Math.min(...elementsAbove.map((el) => el.zIndex || 1));
+      updateElement(elementId, { zIndex: nextZIndex + 1 });
+    }
+  };
+
+  const moveElementBackward = (elementId: string) => {
+    const currentZIndex = getElementZIndex(elementId);
+    const elementsBelow = slide.elements.filter((el) => (el.zIndex || 1) < currentZIndex);
+    
+    if (elementsBelow.length > 0) {
+      const prevZIndex = Math.max(...elementsBelow.map((el) => el.zIndex || 1));
+      updateElement(elementId, { zIndex: Math.max(prevZIndex - 1, 1) });
+    }
+  };
+
+  const moveElementToTop = (elementId: string) => {
+    const maxZIndex = getMaxZIndex();
+    updateElement(elementId, { zIndex: maxZIndex + 1 });
+  };
+
+  const moveElementToBottom = (elementId: string) => {
+    const minZIndex = getMinZIndex();
+    updateElement(elementId, { zIndex: Math.max(minZIndex - 1, 1) });
+  };
+
   const renderElement = (element: ContentElement) => {
     const commonProps = {
       element,
       onClick: () => handleElementClick(element.id),
+      onContextMenu: (event: React.MouseEvent) => handleContextMenu(event, element.id),
       onElementUpdate: readOnly ? undefined : updateElement,
       isSelected: !readOnly && selectableElements && isSelected(element.id),
       isEditing: !readOnly && selectableElements && isEditing(element.id),
@@ -118,6 +185,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     const textProps = {
       element: element as TextBox,
       onClick: () => handleElementClick(element.id),
+      onContextMenu: (event: React.MouseEvent) => handleContextMenu(event, element.id),
       isSelected: !readOnly && selectableElements && isSelected(element.id),
       isEditing: !readOnly && selectableElements && isEditing(element.id),
       onStartEditing: () =>
@@ -189,6 +257,30 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       onClick={() => !readOnly && selectableElements && selectElement(null)}
     >
       {slide.elements.map(renderElement)}
+      
+      <ElementContextMenu
+        anchorEl={contextMenu ? document.body : null}
+        open={Boolean(contextMenu)}
+        onClose={handleCloseContextMenu}
+        onMoveForward={() => contextMenu && moveElementForward(contextMenu.elementId)}
+        onMoveBackward={() => contextMenu && moveElementBackward(contextMenu.elementId)}
+        onMoveToTop={() => contextMenu && moveElementToTop(contextMenu.elementId)}
+        onMoveToBottom={() => contextMenu && moveElementToBottom(contextMenu.elementId)}
+      />
+      
+      {contextMenu && (
+        <div
+          style={{
+            position: 'fixed',
+            top: contextMenu.mouseY,
+            left: contextMenu.mouseX,
+            width: 1,
+            height: 1,
+            pointerEvents: 'none',
+            zIndex: 9999,
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -9,6 +9,7 @@ interface BarChartElementProps {
   isSelected: boolean;
   isEditing: boolean;
   onClick?: () => void;
+  onContextMenu?: (event: React.MouseEvent) => void;
   onElementUpdate?: (elementId: string, updates: Partial<BarChart>) => void;
   onStartEditing?: () => void;
   onStopEditing?: () => void;
@@ -20,6 +21,7 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
   isSelected,
   isEditing,
   onClick,
+  onContextMenu,
   onElementUpdate,
   onStartEditing,
   onStopEditing,
@@ -122,6 +124,7 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
         onClick={handleClick}
         onMouseDown={handleMouseDown}
         onDoubleClick={handleDoubleClick}
+        onContextMenu={onContextMenu}
       >
         <Plot
           data={[

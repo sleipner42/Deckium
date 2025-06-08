@@ -5,6 +5,7 @@ import { ResizeHandles } from '../ResizeHandles';
 interface ShapeElementProps {
   element: Shape;
   onClick?: () => void;
+  onContextMenu?: (event: React.MouseEvent) => void;
   onElementUpdate?: (elementId: string, updates: Partial<Shape>) => void;
   isSelected: boolean;
   isEditing: boolean;
@@ -14,6 +15,7 @@ interface ShapeElementProps {
 export const ShapeElement: React.FC<ShapeElementProps> = ({
   element,
   onClick,
+  onContextMenu,
   onElementUpdate,
   isSelected,
   isEditing,
@@ -113,6 +115,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
             }}
             onClick={handleClick}
             onMouseDown={handleMouseDown}
+            onContextMenu={onContextMenu}
           />
         );
       case 'circle':
@@ -129,6 +132,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
             }}
             onClick={handleClick}
             onMouseDown={handleMouseDown}
+            onContextMenu={onContextMenu}
           />
         );
       case 'triangle':
@@ -144,6 +148,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
             }}
             onClick={handleClick}
             onMouseDown={handleMouseDown}
+            onContextMenu={onContextMenu}
           />
         );
       default:

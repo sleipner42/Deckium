@@ -7,6 +7,7 @@ import { ResizeHandles } from '../ResizeHandles';
 interface TextElementProps {
   element: TextBox;
   onClick: () => void;
+  onContextMenu?: (event: React.MouseEvent) => void;
   isSelected: boolean;
   isEditing: boolean;
   onStartEditing: () => void;
@@ -18,6 +19,7 @@ interface TextElementProps {
 export const TextElement: React.FC<TextElementProps> = ({
   element,
   onClick,
+  onContextMenu,
   isSelected,
   isEditing,
   onStartEditing,
@@ -383,6 +385,7 @@ export const TextElement: React.FC<TextElementProps> = ({
       onKeyDown={handleKeyDown}
       onMouseDown={handleMouseDown}
       onClick={handleClick}
+      onContextMenu={onContextMenu}
     >
       {renderContent()}
       <ResizeHandles

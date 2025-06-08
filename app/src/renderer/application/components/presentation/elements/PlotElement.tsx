@@ -7,6 +7,7 @@ interface PlotElementProps {
   isSelected: boolean;
   isEditing: boolean;
   onClick?: () => void;
+  onContextMenu?: (event: React.MouseEvent) => void;
   onElementUpdate?: (elementId: string, updates: Partial<Plot>) => void;
   readOnly?: boolean;
 }
@@ -16,6 +17,7 @@ export const PlotElement: React.FC<PlotElementProps> = ({
   isSelected,
   isEditing,
   onClick,
+  onContextMenu,
   onElementUpdate,
   readOnly = false,
 }) => {
@@ -96,6 +98,7 @@ export const PlotElement: React.FC<PlotElementProps> = ({
       }}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
+      onContextMenu={onContextMenu}
     >
       <div>
         {plotType} Chart Placeholder

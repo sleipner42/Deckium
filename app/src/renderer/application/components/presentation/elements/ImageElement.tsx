@@ -7,6 +7,7 @@ interface ImageElementProps {
   isSelected: boolean;
   isEditing: boolean;
   onClick?: () => void;
+  onContextMenu?: (event: React.MouseEvent) => void;
   onElementUpdate?: (elementId: string, updates: Partial<Image>) => void;
   readOnly?: boolean;
 }
@@ -16,6 +17,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
   isSelected,
   isEditing,
   onClick,
+  onContextMenu,
   onElementUpdate,
   readOnly = false,
 }) => {
@@ -89,6 +91,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
       }}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
+      onContextMenu={onContextMenu}
     >
       <img
         src={content}
