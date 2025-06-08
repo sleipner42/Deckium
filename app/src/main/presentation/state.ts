@@ -239,6 +239,19 @@ export class PresentationState {
     return this.presentation.slides.findIndex((slide) => slide.id === slideId);
   }
 
+  insertSlideAtIndex(slide: Slide, index: number): Slide {
+    const newSlides = [...this.presentation.slides];
+    newSlides.splice(index, 0, slide);
+
+    this.presentation = {
+      ...this.presentation,
+      slides: newSlides,
+      updatedAt: new Date(),
+    };
+
+    return slide;
+  }
+
   private findElement(elementId: string): ContentElement | null {
     for (const slide of this.presentation.slides) {
       const element = slide.elements.find((e) => e.id === elementId);

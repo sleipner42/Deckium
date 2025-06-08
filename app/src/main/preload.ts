@@ -11,6 +11,11 @@ export type PresentationChannels =
   | 'presentation:reorder-slides'
   | 'presentation:add-element'
   | 'presentation:update-element'
+  | 'presentation:delete-element'
+  | 'presentation:undo'
+  | 'presentation:redo'
+  | 'presentation:get-undo-redo-state'
+  | 'presentation:undo-redo-state-changed'
   | 'presentation:save'
   | 'presentation:save-as'
   | 'presentation:load'
@@ -186,6 +191,18 @@ const electronHandler = {
         elementId,
         updates,
       );
+    },
+    deleteElement(elementId: string) {
+      return ipcRenderer.invoke('presentation:delete-element', elementId);
+    },
+    undo() {
+      return ipcRenderer.invoke('presentation:undo');
+    },
+    redo() {
+      return ipcRenderer.invoke('presentation:redo');
+    },
+    getUndoRedoState() {
+      return ipcRenderer.invoke('presentation:get-undo-redo-state');
     },
     savePresentation() {
       return ipcRenderer.invoke('presentation:save');

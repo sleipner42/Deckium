@@ -9,6 +9,17 @@ import {
 import { PresentationState } from './state';
 import { PresentationEventBus } from './event-bus';
 import { resolveHtmlPath } from '../util';
+import { CommandHistory } from './history';
+import {
+  AddSlideCommand,
+  DeleteSlideCommand,
+  UpdateSlideCommand,
+  AddElementCommand,
+  DeleteElementCommand,
+  UpdateElementCommand,
+  ReorderSlidesCommand,
+  UpdatePresentationMetaCommand,
+} from './commands';
 
 const FILE_EXTENSION = '.kpres';
 
@@ -16,6 +27,8 @@ export class PresentationService {
   private state: PresentationState;
 
   private eventBus: PresentationEventBus;
+
+  private history: CommandHistory;
 
   private currentFilePath: string | null = null;
 
@@ -26,6 +39,7 @@ export class PresentationService {
   constructor() {
     this.state = new PresentationState();
     this.eventBus = new PresentationEventBus();
+    this.history = new CommandHistory();
   }
 
   getPresentation(): Presentation {
@@ -35,6 +49,7 @@ export class PresentationService {
   initializePresentation(title = 'Untitled Presentation'): Presentation {
     const presentation = this.state.initializePresentation(title);
     this.currentFilePath = null;
+    this.history.clear(); // Clear history when initializing new presentation
     this.eventBus.broadcastToWindows(
       PresentationEventBus.events.INITIALIZED,
       presentation,
@@ -43,92 +58,86 @@ export class PresentationService {
   }
 
   updatePresentationMeta(title: string): { title: string; updatedAt: Date } {
-    const presentation = this.state.updatePresentationMeta(title);
-    const data = {
+    const command = new UpdatePresentationMetaCommand(title, this.state, this.eventBus);
+    this.history.executeCommand(command);
+    this.broadcastUndoRedoState();
+    
+    const presentation = this.state.getPresentation();
+    return {
       title: presentation.title,
       updatedAt: presentation.updatedAt,
     };
-    this.eventBus.broadcastToWindows(
-      PresentationEventBus.events.META_UPDATED,
-      data,
-    );
-    return data;
   }
 
   addSlide(): Slide {
-    const newSlide = this.state.addSlide();
-    this.eventBus.broadcastToWindows(
-      PresentationEventBus.events.SLIDE_ADDED,
-      newSlide,
-    );
-    return newSlide;
+    const command = new AddSlideCommand(this.state, this.eventBus);
+    this.history.executeCommand(command);
+    this.broadcastUndoRedoState();
+    
+    // Return the last slide (the one just added)
+    const presentation = this.state.getPresentation();
+    return presentation.slides[presentation.slides.length - 1];
   }
 
   updateSlide(slideId: string, updates: Partial<Slide>): Slide | null {
-    const updatedSlide = this.state.updateSlide(slideId, updates);
-    if (updatedSlide) {
-      this.eventBus.broadcastToWindows(
-        PresentationEventBus.events.SLIDE_UPDATED,
-        updatedSlide,
-      );
-    }
-    return updatedSlide;
+    const command = new UpdateSlideCommand(slideId, updates, this.state, this.eventBus);
+    this.history.executeCommand(command);
+    this.broadcastUndoRedoState();
+    
+    // Find and return the updated slide
+    const presentation = this.state.getPresentation();
+    return presentation.slides.find(slide => slide.id === slideId) || null;
   }
 
   deleteSlide(slideId: string): string | null {
-    const deletedSlideId = this.state.deleteSlide(slideId);
-    if (deletedSlideId) {
-      this.eventBus.broadcastToWindows(
-        PresentationEventBus.events.SLIDE_DELETED,
-        deletedSlideId,
-      );
-    }
-    return deletedSlideId;
+    const command = new DeleteSlideCommand(slideId, this.state, this.eventBus);
+    this.history.executeCommand(command);
+    this.broadcastUndoRedoState();
+    return slideId;
   }
 
   reorderSlides(fromIndex: number, toIndex: number): Presentation {
-    const updatedPresentation = this.state.reorderSlides(fromIndex, toIndex);
-    this.eventBus.broadcastToWindows(
-      PresentationEventBus.events.SLIDES_REORDERED,
-      updatedPresentation,
-    );
-    return updatedPresentation;
+    const command = new ReorderSlidesCommand(fromIndex, toIndex, this.state, this.eventBus);
+    this.history.executeCommand(command);
+    this.broadcastUndoRedoState();
+    return this.state.getPresentation();
   }
 
   addElement(slideId: string, element: ContentElement): Slide | null {
-    const updatedSlide = this.state.addElement(slideId, element);
-    if (updatedSlide) {
-      this.eventBus.broadcastToWindows(
-        PresentationEventBus.events.SLIDE_UPDATED,
-        updatedSlide,
-      );
-    }
-    return updatedSlide;
+    const command = new AddElementCommand(slideId, element, this.state, this.eventBus);
+    this.history.executeCommand(command);
+    this.broadcastUndoRedoState();
+    
+    // Find and return the updated slide
+    const presentation = this.state.getPresentation();
+    return presentation.slides.find(slide => slide.id === slideId) || null;
   }
 
   updateElement(
     elementId: string,
     updates: Partial<ContentElement>,
   ): Slide | null {
-    const updatedSlide = this.state.updateElement(elementId, updates);
-    if (updatedSlide) {
-      this.eventBus.broadcastToWindows(
-        PresentationEventBus.events.SLIDE_UPDATED,
-        updatedSlide,
-      );
-    }
-    return updatedSlide;
+    const command = new UpdateElementCommand(elementId, updates, this.state, this.eventBus);
+    this.history.executeCommand(command);
+    this.broadcastUndoRedoState();
+    
+    // Find the slide that contains this element
+    const presentation = this.state.getPresentation();
+    return presentation.slides.find(slide => 
+      slide.elements.some(element => element.id === elementId)
+    ) || null;
   }
 
   deleteElement(elementId: string): Slide | null {
-    const updatedSlide = this.state.deleteElement(elementId);
-    if (updatedSlide) {
-      this.eventBus.broadcastToWindows(
-        PresentationEventBus.events.SLIDE_UPDATED,
-        updatedSlide,
-      );
-    }
-    return updatedSlide;
+    const command = new DeleteElementCommand(elementId, this.state, this.eventBus);
+    this.history.executeCommand(command);
+    this.broadcastUndoRedoState();
+    
+    // Find the slide that contains this element (after deletion, it won't exist)
+    // Return the slide where the element was deleted from
+    const presentation = this.state.getPresentation();
+    // Since we can't find it after deletion, we'll return the first slide or null
+    return presentation.slides.length > 0 ? presentation.slides[0] : null;
   }
 
   onEvent(eventName: string, listener: (...args: any[]) => void): void {
@@ -137,6 +146,55 @@ export class PresentationService {
 
   offEvent(eventName: string, listener: (...args: any[]) => void): void {
     this.eventBus.off(eventName, listener);
+  }
+
+  undo(): boolean {
+    const success = this.history.undo();
+    if (success) {
+      this.eventBus.broadcastToWindows('presentation:undo-redo-state-changed', {
+        canUndo: this.history.canUndo(),
+        canRedo: this.history.canRedo(),
+        undoDescription: this.history.getUndoDescription(),
+        redoDescription: this.history.getRedoDescription(),
+      });
+    }
+    return success;
+  }
+
+  redo(): boolean {
+    const success = this.history.redo();
+    if (success) {
+      this.eventBus.broadcastToWindows('presentation:undo-redo-state-changed', {
+        canUndo: this.history.canUndo(),
+        canRedo: this.history.canRedo(),
+        undoDescription: this.history.getUndoDescription(),
+        redoDescription: this.history.getRedoDescription(),
+      });
+    }
+    return success;
+  }
+
+  getUndoRedoState(): {
+    canUndo: boolean;
+    canRedo: boolean;
+    undoDescription: string | null;
+    redoDescription: string | null;
+  } {
+    return {
+      canUndo: this.history.canUndo(),
+      canRedo: this.history.canRedo(),
+      undoDescription: this.history.getUndoDescription(),
+      redoDescription: this.history.getRedoDescription(),
+    };
+  }
+
+  private broadcastUndoRedoState(): void {
+    this.eventBus.broadcastToWindows('presentation:undo-redo-state-changed', {
+      canUndo: this.history.canUndo(),
+      canRedo: this.history.canRedo(),
+      undoDescription: this.history.getUndoDescription(),
+      redoDescription: this.history.getRedoDescription(),
+    });
   }
 
   /**
@@ -217,6 +275,7 @@ export class PresentationService {
       // Load the presentation into the state
       const loadedPresentation = this.state.loadPresentation(presentationData);
       this.currentFilePath = path;
+      this.history.clear(); // Clear history when loading a presentation
 
       // Notify the renderer process
       this.eventBus.broadcastToWindows(

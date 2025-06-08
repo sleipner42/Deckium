@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Box, Button, Paper, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { usePresentation } from '../../context/PresentationContext';
@@ -8,7 +8,30 @@ import { ChatInterface } from '../common/ChatInterface';
 import Toolbar from '../common/Toolbar';
 
 const PresentationEditor: React.FC = () => {
-  const { addSlide } = usePresentation();
+  const { addSlide, undo, redo } = usePresentation();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl+Z (Undo) or Cmd+Z on Mac
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+      // Check for Ctrl+Y (Redo) or Ctrl+Shift+Z or Cmd+Shift+Z on Mac
+      else if (
+        ((e.ctrlKey || e.metaKey) && e.key === 'y') ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z')
+      ) {
+        e.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [undo, redo]);
 
   return (
     <Box

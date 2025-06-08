@@ -22,6 +22,12 @@ interface PresentationContextState {
   isLoading: boolean;
   error: string | null;
   currentFilePath: string | null;
+  undoRedoState: {
+    canUndo: boolean;
+    canRedo: boolean;
+    undoDescription: string | null;
+    redoDescription: string | null;
+  };
 }
 
 interface PresentationContextActions {
@@ -42,6 +48,9 @@ interface PresentationContextActions {
   selectElement: (elementId: string | null) => void;
   addElement: (element: ContentElement) => void;
   updateElement: (elementId: string, updates: Partial<ContentElement>) => void;
+  deleteElement: (elementId: string) => void;
+  undo: () => Promise<boolean>;
+  redo: () => Promise<boolean>;
   reorderSlides: (fromIndex: number, toIndex: number) => Promise<Presentation>;
   startEditingElement: (elementId: string) => void;
   stopEditingElement: (elementId: string, content?: string) => void;
@@ -82,6 +91,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
     isLoading,
     error,
     currentFilePath,
+    undoRedoState,
 
     // Actions
     initializePresentation,
@@ -96,6 +106,9 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
     selectElement,
     addElement,
     updateElement,
+    deleteElement,
+    undo,
+    redo,
     reorderSlides,
     savePresentation,
     savePresentationAs,
@@ -116,6 +129,12 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
     isLoading,
     error,
     currentFilePath,
+    undoRedoState: undoRedoState || {
+      canUndo: false,
+      canRedo: false,
+      undoDescription: null,
+      redoDescription: null,
+    },
   };
 
   return (
@@ -134,6 +153,9 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
         selectElement,
         addElement,
         updateElement,
+        deleteElement,
+        undo,
+        redo,
         reorderSlides,
         savePresentation,
         savePresentationAs,

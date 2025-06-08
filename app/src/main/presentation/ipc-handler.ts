@@ -51,6 +51,10 @@ export function setupPresentationIPC(service: PresentationService) {
     },
   );
 
+  ipcMain.handle('presentation:delete-element', (_, elementId: string) => {
+    return service.deleteElement(elementId);
+  });
+
   ipcMain.handle('presentation:save', async (event) => {
     const window = BrowserWindow.fromWebContents(event.sender);
     if (!window) {
@@ -97,5 +101,17 @@ export function setupPresentationIPC(service: PresentationService) {
 
   ipcMain.handle('presentation:get-selected-slide', () => {
     return service.getSelectedSlideId();
+  });
+
+  ipcMain.handle('presentation:undo', () => {
+    return service.undo();
+  });
+
+  ipcMain.handle('presentation:redo', () => {
+    return service.redo();
+  });
+
+  ipcMain.handle('presentation:get-undo-redo-state', () => {
+    return service.getUndoRedoState();
   });
 }

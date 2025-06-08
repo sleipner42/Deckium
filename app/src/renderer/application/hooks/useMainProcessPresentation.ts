@@ -34,6 +34,7 @@ interface ElectronWindow {
         elementId: string,
         updates: Partial<ContentElement>,
       ) => Promise<Slide>;
+      deleteElement: (elementId: string) => Promise<Slide>;
       savePresentation: () => Promise<string | null>;
       savePresentationAs: () => Promise<string | null>;
       loadPresentation: (filePath?: string) => Promise<Presentation | null>;
@@ -41,6 +42,14 @@ interface ElectronWindow {
       openFullscreen: () => Promise<void>;
       closeFullscreen: () => Promise<void>;
       isFullscreenOpen: () => Promise<boolean>;
+      undo: () => Promise<boolean>;
+      redo: () => Promise<boolean>;
+      getUndoRedoState: () => Promise<{
+        canUndo: boolean;
+        canRedo: boolean;
+        undoDescription: string | null;
+        redoDescription: string | null;
+      }>;
     };
   };
 }
@@ -60,6 +69,17 @@ export const useMainProcessPresentation = () => {
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
+  const [undoRedoState, setUndoRedoState] = useState<{
+    canUndo: boolean;
+    canRedo: boolean;
+    undoDescription: string | null;
+    redoDescription: string | null;
+  }>({
+    canUndo: false,
+    canRedo: false,
+    undoDescription: null,
+    redoDescription: null,
+  });
 
   useEffect(() => {
     if (!isInitialized) {
@@ -79,6 +99,9 @@ export const useMainProcessPresentation = () => {
             setSelectedSlide(loadedPresentation.slides[0]);
           }
           setIsInitialized(true);
+          
+          // Load initial undo/redo state
+          electronAPI.presentation.getUndoRedoState().then(setUndoRedoState);
         })
         .catch((err) => {
           setIsInitialized(true);
@@ -240,6 +263,19 @@ export const useMainProcessPresentation = () => {
       },
     );
 
+    const undoRedoStateChangedUnsubscribe = electronAPI.ipcRenderer.on(
+      'presentation:undo-redo-state-changed',
+      (...args: unknown[]) => {
+        const state = args[0] as {
+          canUndo: boolean;
+          canRedo: boolean;
+          undoDescription: string | null;
+          redoDescription: string | null;
+        };
+        setUndoRedoState(state);
+      },
+    );
+
     return () => {
       metaUpdatedUnsubscribe();
       slideAddedUnsubscribe();
@@ -250,6 +286,7 @@ export const useMainProcessPresentation = () => {
       presentationSavedUnsubscribe();
       presentationLoadedUnsubscribe();
       slidesReorderedUnsubscribe();
+      undoRedoStateChangedUnsubscribe();
     };
   }, [selectedSlide]);
 
@@ -456,6 +493,52 @@ export const useMainProcessPresentation = () => {
     [],
   );
 
+  const deleteElement = useCallback(
+    async (elementId: string) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const updatedSlide = await electronAPI.presentation.deleteElement(elementId);
+        return updatedSlide;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'An error occurred';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  const undo = useCallback(async () => {
+    try {
+      setError(null);
+      const success = await electronAPI.presentation.undo();
+      return success;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
+      throw err;
+    }
+  }, []);
+
+  const redo = useCallback(async () => {
+    try {
+      setError(null);
+      const success = await electronAPI.presentation.redo();
+      return success;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
+      throw err;
+    }
+  }, []);
+
   const currentSlideIndex = useMemo(() => {
     if (!selectedSlide || slides.length === 0) return 0;
     const index = slides.findIndex((slide) => slide.id === selectedSlide.id);
@@ -574,6 +657,7 @@ export const useMainProcessPresentation = () => {
     isLoading,
     error,
     currentFilePath,
+    undoRedoState,
 
     initializePresentation,
     updatePresentationMeta,
@@ -587,6 +671,9 @@ export const useMainProcessPresentation = () => {
     selectElement,
     addElement,
     updateElement,
+    deleteElement,
+    undo,
+    redo,
     reorderSlides,
     savePresentation,
     savePresentationAs,

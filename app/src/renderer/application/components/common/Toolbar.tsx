@@ -22,6 +22,8 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PresentationIcon from '@mui/icons-material/Slideshow';
+import UndoIcon from '@mui/icons-material/Undo';
+import RedoIcon from '@mui/icons-material/Redo';
 import { useAuth } from '../../context/AuthContext';
 import { usePresentation } from '../../context/PresentationContext';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
@@ -31,7 +33,7 @@ interface ToolbarProps {
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
-  const { selectedSlide, addElement } = usePresentation();
+  const { selectedSlide, addElement, undo, redo, undoRedoState } = usePresentation();
 
   const [shapeAnchorEl, setShapeAnchorEl] = useState<null | HTMLElement>(null);
   const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
@@ -168,6 +170,22 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
     window.electron.presentation.openFullscreen();
   };
 
+  const handleUndo = async () => {
+    try {
+      await undo();
+    } catch (error) {
+      console.error('Undo failed:', error);
+    }
+  };
+
+  const handleRedo = async () => {
+    try {
+      await redo();
+    } catch (error) {
+      console.error('Redo failed:', error);
+    }
+  };
+
 
   return (
     <Box
@@ -289,6 +307,70 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
           >
             Chart
           </Button>
+        </Tooltip>
+
+        <Divider orientation="vertical" flexItem sx={{ mx: 2, height: 'auto' }} />
+
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontWeight: 600,
+            color: 'text.secondary',
+            mr: 1,
+          }}
+        >
+          History
+        </Typography>
+
+        <Tooltip title={undoRedoState?.undoDescription ? `Undo: ${undoRedoState.undoDescription}` : 'Undo'}>
+          <span>
+            <IconButton
+              size="small"
+              onClick={handleUndo}
+              disabled={!undoRedoState?.canUndo}
+              sx={{
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: alpha('#000', 0.12),
+                mr: 1,
+                '&:hover': {
+                  bgcolor: alpha('#007AFF', 0.04),
+                  borderColor: alpha('#007AFF', 0.5),
+                },
+                '&:disabled': {
+                  borderColor: alpha('#000', 0.06),
+                  color: alpha('#000', 0.26),
+                },
+              }}
+            >
+              <UndoIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title={undoRedoState?.redoDescription ? `Redo: ${undoRedoState.redoDescription}` : 'Redo'}>
+          <span>
+            <IconButton
+              size="small"
+              onClick={handleRedo}
+              disabled={!undoRedoState?.canRedo}
+              sx={{
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: alpha('#000', 0.12),
+                '&:hover': {
+                  bgcolor: alpha('#007AFF', 0.04),
+                  borderColor: alpha('#007AFF', 0.5),
+                },
+                '&:disabled': {
+                  borderColor: alpha('#000', 0.06),
+                  color: alpha('#000', 0.26),
+                },
+              }}
+            >
+              <RedoIcon fontSize="small" />
+            </IconButton>
+          </span>
         </Tooltip>
 
         <Tooltip title="Present">
