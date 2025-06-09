@@ -1,23 +1,23 @@
 ## TODO
+* The text edit menu disappears when clicked in
+* Changing order of slides it buggy
+* Instruction about how a good slide looks. Do not put boxes as highlights.
 * Search for information
 * Look into positioning of objects. Why is it so bad at placing shapes.
 * Undo redo - edit tree
-* Resize ability
-* Move image tools to backend
 * Overlap detection images
 * Margin/padding controls - More sophisticated spacing options
 * Is the grid layout tool working?
 * Duplicate/copy slide tool
-* Instruction about how a good slide looks. Do not put boxes as highlights.
 * Emojis like slack
-* Messages disappearing after the critic response.
-* The agent does not seem to understand this slide properly.
-* Is the critic getting the correct slide?
-* Change order of slides
 * This slide is not clear to the agent
-* Writing in a textbox pressing ctrl+a and then backspace and then esc results
-  in a crash
-  * Check so user resizing is sync back to the main process.
+* Option to add element under another and centered?
+* Change name of thread from new thread
+* Is the outside of slide calculation correct?
+* The agent always creates a new slide
+
+* Is the critic getting the correct slide?
+* Messages disappearing after the critic response.
 
 
 ## Future features
@@ -39,3 +39,7 @@
 * Add info about user focus
 * Something is wrong in the closet non-overlapping positioning.
 * Selecting an element and then writing to the agent and pressing backspace results in the element being deleted.
+* Writing in a textbox pressing ctrl+a and then backspace and then esc results
+* Change order of slides
+* Move image tools to backend
+* Resize ability

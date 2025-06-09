@@ -81,6 +81,36 @@ export class PresentationState {
     return newSlide;
   }
 
+  duplicateSlide(slideId: string): Slide | null {
+    const slideIndex = this.findSlideIndex(slideId);
+    if (slideIndex === -1) return null;
+
+    const originalSlide = this.presentation.slides[slideIndex];
+    
+    // Create a new slide with new ID and duplicate all elements with new IDs
+    const duplicatedSlide: Slide = {
+      id: crypto.randomUUID(),
+      background: originalSlide.background,
+      transition: originalSlide.transition,
+      elements: originalSlide.elements.map(element => ({
+        ...element,
+        id: crypto.randomUUID(), // Generate new ID for each element
+      })),
+    };
+
+    // Insert the duplicated slide right after the original
+    const updatedSlides = [...this.presentation.slides];
+    updatedSlides.splice(slideIndex + 1, 0, duplicatedSlide);
+
+    this.presentation = {
+      ...this.presentation,
+      slides: updatedSlides,
+      updatedAt: new Date(),
+    };
+
+    return duplicatedSlide;
+  }
+
   updateSlide(slideId: string, updates: Partial<Slide>): Slide | null {
     const slideIndex = this.findSlideIndex(slideId);
     if (slideIndex === -1) return null;

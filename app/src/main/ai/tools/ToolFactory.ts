@@ -24,6 +24,7 @@ import { AlignToSlideTool } from './tools/AlignToSlideTool';
 import { GridAlignTool } from './tools/GridAlignTool';
 import { MatchSizeTool } from './tools/MatchSizeTool';
 import { CreateSVGImageTool } from './tools/CreateSVGImageTool';
+import { DuplicateSlideTool } from './tools/DuplicateSlideTool';
 
 export class ToolFactory {
   static getBuiltInTools(authService?: AuthService): AITool[] {
@@ -52,6 +53,7 @@ export class ToolFactory {
       new GridAlignTool(),
       new MatchSizeTool(),
       new CreateSVGImageTool(),
+      new DuplicateSlideTool(),
     ];
   }
 }

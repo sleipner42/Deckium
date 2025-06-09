@@ -86,6 +86,17 @@ export class PresentationService {
     return deletedSlideId;
   }
 
+  duplicateSlide(slideId: string): Slide | null {
+    const duplicatedSlide = this.state.duplicateSlide(slideId);
+    if (duplicatedSlide) {
+      this.eventBus.broadcastToWindows(
+        PresentationEventBus.events.SLIDE_ADDED,
+        duplicatedSlide,
+      );
+    }
+    return duplicatedSlide;
+  }
+
   reorderSlides(fromIndex: number, toIndex: number): Presentation {
     const updatedPresentation = this.state.reorderSlides(fromIndex, toIndex);
     this.eventBus.broadcastToWindows(
