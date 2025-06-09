@@ -1,7 +1,7 @@
 import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
-import { ElementFactory } from '../../../../common/domain/entities/element-factory';
+import { textMeasurementService } from '../../../text-measurement/service';
 import {
   TextBox,
   Shape,
@@ -46,7 +46,7 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
       (a, b) => a.position.y - b.position.y,
     );
 
-    const processedElements = sortedElements.map((element) => {
+    const processedElements = await Promise.all(sortedElements.map(async (element) => {
       const centerCordinatesOfElement = {
         x: element.position.x + element.size.width / 2,
         y: element.position.y + element.size.height / 2,
@@ -63,14 +63,36 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
       switch (element.type) {
         case 'textbox': {
           const textbox = element as TextBox;
+          let quillInfo = null;
+          try {
+            // Get actual Quill measurements
+            const quillDimensions = await textMeasurementService.getQuillTextDimensions(textbox.id);
+            if (quillDimensions.elementFound) {
+              const { containerBounds, textBounds, overflow, quillInstance } = quillDimensions;
+              quillInfo = {
+                containerBounds,
+                textBounds,
+                hasOverflow: overflow?.overflowsContainer || false,
+                lineCount: overflow?.lineCount || 1,
+                isScrollable: quillInstance?.isScrollable || false,
+                textLength: quillInstance?.totalLength || 0,
+              };
+            }
+          } catch (error) {
+            console.warn(`Could not get Quill measurements for element ${textbox.id}:`, error);
+          }
+
           return {
             id: textbox.id,
             type: textbox.type,
             content: textbox.content,
-            fontSize: textbox.fontSize,
-            fontFamily: textbox.fontFamily,
             color: textbox.color,
-            positionInfo: ElementFactory.calculateBoxAroundTextElement(textbox),
+            position: textbox.position,
+            size: textbox.size,
+            quillMetrics: quillInfo,
+            positionInfo: quillInfo?.containerBounds ? 
+              `Element at (${quillInfo.containerBounds.x}, ${quillInfo.containerBounds.y}) to (${quillInfo.containerBounds.x + quillInfo.containerBounds.width}, ${quillInfo.containerBounds.y + quillInfo.containerBounds.height})` :
+              `Element at (${textbox.position.x}, ${textbox.position.y}) to (${textbox.position.x + textbox.size.width}, ${textbox.position.y + textbox.size.height})`,
           };
         }
         case 'rectangle':
@@ -104,7 +126,7 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
         default:
           return baseInfo;
       }
-    });
+    }));
 
     const slideInfo = {
       id: slide.id,

@@ -2,9 +2,7 @@ import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
-import { TextBox } from '../../../../common/domain/entities/types';
 import { ElementValidator } from '../../../presentation/element-validator';
-import { estimateTextDimensions } from '../utils/text-dimensions';
 import { textMeasurementService } from '../../../text-measurement/service';
 
 export class AddTextElementTool extends BaseTool {
@@ -15,15 +13,12 @@ export class AddTextElementTool extends BaseTool {
   requiredParams = {
     slideId: 'The ID of the slide to add the element to',
     content:
-      'The text content to display (supports rich text formatting with HTML though the Quill editor)',
-    x: 'X position of the element (optional, defaults to 100)',
-    y: 'Y position of the element (optional, defaults to 100)',
-    // positionReference: 'The reference position of the element (optional, defaults to top left), choose from top left or center',
+      'The text content to display. Use HTML formatting: <p>paragraph</p>, <h1>header</h1>, <strong>bold</strong>, <em>italic</em>, <u>underline</u>, <ul><li>bullet list</li></ul>, <ol><li>numbered list</li></ol>, <a href="url">link</a>. Font size/family can be specified with inline styles: <span style="font-size: 20px; font-family: Times">text</span>',
+    x: 'X position of the element (optional, defaults to center)',
+    y: 'Y position of the element (optional, defaults to center)',
     width: 'The width of the element (optional, defaults to 400)',
     height: 'The height of the element (optional, defaults to 200)',
-    fontSize: 'The font size of the element (optional, defaults to 12)',
-    fontFamily: 'The font family of the element (optional, defaults to Arial)',
-    color: 'The color of the element (optional, defaults to black)',
+    color: 'The text color of the element (optional, defaults to black)',
     borderRadius: 'The border radius of the element (optional, defaults to 0)',
     backgroundColor:
       'The background color of the element (optional, defaults to transparent)',
@@ -46,9 +41,6 @@ export class AddTextElementTool extends BaseTool {
       content,
       x,
       y,
-      // positionReference,
-      fontSize,
-      fontFamily,
       color,
       borderRadius,
       backgroundColor,
@@ -102,8 +94,6 @@ export class AddTextElementTool extends BaseTool {
       content,
       position: { x: xPos, y: yPos },
       size: { width, height },
-      fontSize: Number(fontSize) || 12,
-      fontFamily: fontFamily || 'Arial',
       color: color || '#000000',
       borderRadius: Number(borderRadius) || 0,
       backgroundColor: backgroundColor || 'transparent',
@@ -132,8 +122,9 @@ export class AddTextElementTool extends BaseTool {
       // Longer delay to ensure DOM updates, React rendering, and lazy-loaded components
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      // Get actual text dimensions from the Quill editor
-      textDimensions = await textMeasurementService.measureQuillText(element.id);
+      textDimensions = await textMeasurementService.measureQuillText(
+        element.id,
+      );
 
       // Get the actual DOM element dimensions and text layout
       actualDimensions =
@@ -159,16 +150,16 @@ export class AddTextElementTool extends BaseTool {
     }
 
     // Create message with text layout feedback
-    let message = `Text element added successfully.\n${ElementFactory.calculateBoxAroundTextElement(
-      element as TextBox,
-    )}`;
+    let message = `Text element added successfully at position (${element.position.x}, ${element.position.y}) with size ${element.size.width}x${element.size.height}px.`;
 
     // Add actual DOM dimensions if available
     if (actualDimensions && actualDimensions.elementFound) {
       const { containerBounds, textBounds, textOverflow } = actualDimensions;
 
       message += `\n\nActual rendered dimensions:`;
-      message += `\n  Container: x: ${containerBounds.x}, y: ${containerBounds.y}, width: ${containerBounds.width}, height: ${containerBounds.height}`;
+      if (containerBounds) {
+        message += `\n  Container: x: ${containerBounds.x}, y: ${containerBounds.y}, width: ${containerBounds.width}, height: ${containerBounds.height}`;
+      }
 
       if (textBounds) {
         message += `\n  Text content: x: ${textBounds.x}, y: ${textBounds.y}, width: ${textBounds.width}, height: ${textBounds.height}`;

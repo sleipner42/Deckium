@@ -43,8 +43,6 @@ export class MockPresentationService {
       content: 'Test content',
       position: { x: 100, y: 100 },
       size: { width: 200, height: 50 },
-      fontSize: 16,
-      fontFamily: 'Arial',
       color: '#000000',
       zIndex: 1,
       ...overrides,

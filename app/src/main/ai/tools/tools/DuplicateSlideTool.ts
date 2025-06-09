@@ -63,10 +63,8 @@ export class DuplicateSlideTool extends BaseTool {
             size: element.size,
             zIndex: element.zIndex,
             // Include type-specific properties
-            ...(element.type === 'text' && {
+            ...(element.type === 'textbox' && {
               content: (element as any).content,
-              fontSize: (element as any).fontSize,
-              fontFamily: (element as any).fontFamily,
               color: (element as any).color,
             }),
             ...(element.type === 'image' && {

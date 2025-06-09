@@ -15,6 +15,7 @@
 * Change name of thread from new thread
 * Is the outside of slide calculation correct?
 * The agent always creates a new slide
+* Scrollbar on text boxes
 
 * Is the critic getting the correct slide?
 * Messages disappearing after the critic response.

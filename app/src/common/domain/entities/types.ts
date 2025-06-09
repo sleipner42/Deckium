@@ -63,8 +63,6 @@ export interface TextBox {
   position: Position;
   size: Size;
   content: string; // HTML content
-  fontSize: number;
-  fontFamily: string;
   color: string;
   zIndex?: number;
   style?: ElementStyle;

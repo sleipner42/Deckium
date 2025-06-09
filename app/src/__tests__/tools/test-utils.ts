@@ -300,8 +300,6 @@ export function createTextElement(
   y: number,
   width: number = 400,
   height: number = 200,
-  fontSize: number = 12,
-  fontFamily: string = 'Arial',
   color: string = '#000000',
   zIndex: number = 1,
 ): TextBox {
@@ -311,8 +309,6 @@ export function createTextElement(
     position: { x, y },
     size: { width, height },
     content,
-    fontSize,
-    fontFamily,
     color,
     zIndex,
   };

@@ -31,8 +31,6 @@ export const TextElement: React.FC<TextElementProps> = ({
     position,
     size,
     content,
-    fontSize,
-    fontFamily,
     color,
     style,
     backgroundColor,
@@ -348,8 +346,6 @@ export const TextElement: React.FC<TextElementProps> = ({
         width: `${size.width}px`,
         minHeight: `${size.height}px`,
         height: `${size.height}px`,
-        fontSize: `${fontSize}px`,
-        fontFamily,
         color,
         cursor: readOnly
           ? 'default'

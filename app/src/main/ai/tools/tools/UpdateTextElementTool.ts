@@ -14,9 +14,7 @@ export class UpdateTextElementTool extends BaseTool {
   requiredParams = {
     elementId: 'The ID of the text element to update',
     content:
-      'The text content to display (supports rich text formatting with HTML though the Quill editor)',
-    fontSize: 'The new font size (optional)',
-    fontFamily: 'The new font family (optional)',
+      'The text content to display. Use HTML formatting: <p>paragraph</p>, <h1>header</h1>, <strong>bold</strong>, <em>italic</em>, <u>underline</u>, <ul><li>bullet list</li></ul>, <ol><li>numbered list</li></ol>, <a href="url">link</a>. Font size/family can be specified with inline styles: <span style="font-size: 20px; font-family: Times">text</span>',
     color: 'The new text color (optional)',
     x: 'New X position (optional)',
     y: 'New Y position (optional)',
@@ -40,8 +38,6 @@ export class UpdateTextElementTool extends BaseTool {
     const {
       elementId,
       content,
-      fontSize,
-      fontFamily,
       color,
       x,
       y,
@@ -64,13 +60,17 @@ export class UpdateTextElementTool extends BaseTool {
 
     if (
       !content &&
-      !fontSize &&
-      !fontFamily &&
       !color &&
       x === undefined &&
       y === undefined &&
       width === undefined &&
-      height === undefined
+      height === undefined &&
+      borderRadius === undefined &&
+      backgroundColor === undefined &&
+      backgroundOpacity === undefined &&
+      align === undefined &&
+      verticalAlign === undefined &&
+      params.zIndex === undefined
     ) {
       return {
         success: false,
@@ -102,8 +102,6 @@ export class UpdateTextElementTool extends BaseTool {
     const updates: Partial<TextBox> = {};
 
     if (content !== undefined) updates.content = content;
-    if (fontSize !== undefined) updates.fontSize = Number(fontSize);
-    if (fontFamily !== undefined) updates.fontFamily = fontFamily;
     if (color !== undefined) updates.color = color;
     if (borderRadius !== undefined) updates.borderRadius = Number(borderRadius);
     if (backgroundColor !== undefined)
@@ -160,7 +158,8 @@ export class UpdateTextElementTool extends BaseTool {
 
       // Get text dimensions if content or size was updated
       if (updates.content || updates.size) {
-        const textDimensions = await textMeasurementService.measureQuillText(elementId);
+        const textDimensions =
+          await textMeasurementService.measureQuillText(elementId);
         lineBreakInfo = textDimensions.lineBreakInfo;
       }
 

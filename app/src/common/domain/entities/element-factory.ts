@@ -6,8 +6,6 @@ export class ElementFactory {
     content: string;
     position: { x: number; y: number };
     size: { width: number; height: number };
-    fontSize: number;
-    fontFamily: string;
     color: string;
     borderRadius?: number;
     backgroundColor?: string;
@@ -22,8 +20,6 @@ export class ElementFactory {
       position: options.position,
       size: options.size,
       content: options.content,
-      fontSize: options.fontSize || 24,
-      fontFamily: options.fontFamily || 'Arial',
       color: options.color || '#000000',
       borderRadius: options.borderRadius || 0,
       backgroundColor: options.backgroundColor || 'transparent',
@@ -95,43 +91,4 @@ export class ElementFactory {
     };
   }
 
-  static calculateHeightBasedOnContent(element: TextBox): number {
-    if (!element.content) {
-      return element.size.height;
-    }
-
-    const averageCharWidth = element.fontSize * 0.6;
-    const charsPerLine = Math.floor(element.size.width / averageCharWidth);
-    const padding = 20;
-
-    const lines = element.content.split('\n');
-    // Calculate total line count using array methods instead of for-loop (for lint compliance)
-    const totalLines = lines.reduce(
-      (acc, line) => acc + Math.max(1, Math.ceil(line.length / charsPerLine)),
-      0,
-    );
-
-    const lineHeight = element.fontSize * 1.2;
-    const calculatedHeight = totalLines * lineHeight + padding;
-
-    return Math.max(calculatedHeight, element.size.height);
-  }
-
-  static calculateBoxAroundTextElement(element: TextBox): string {
-    // Get the calculated height that accounts for text content
-    const calculatedHeight =
-      ElementFactory.calculateHeightBasedOnContent(element);
-    const calculatedEndY = element.position.y + calculatedHeight;
-    const isOutsideSlide = calculatedEndY > 720;
-
-    return `
-      The element starts at:
-      x: ${element.position.x}
-      y: ${element.position.y}
-      
-      And ends at:
-      x: ${element.position.x + element.size.width}
-      y: ${calculatedEndY} ${isOutsideSlide ? '(outside slide)' : ''}
-    `;
-  }
 }
