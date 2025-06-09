@@ -604,7 +604,6 @@ export class AIService {
   private async runAutomaticCritic(thread: Thread): Promise<void> {
     const presentation = this.presentationService.getPresentation();
     if (!presentation.slides.length) return;
-    console.log('\n\n========  Running automatic critic... ========\n\n');
 
     // Get selected slide or last slide
     const selectedSlideId = this.presentationService.getSelectedSlideId();
@@ -612,6 +611,8 @@ export class AIService {
       selectedSlideId || presentation.slides[presentation.slides.length - 1].id;
 
     if (USE_CRITIC) {
+      console.log('\n\n========  Running automatic critic... ========\n\n');
+
       try {
         // Execute the critic tool
         const criticToolCall: AIToolCall = {
