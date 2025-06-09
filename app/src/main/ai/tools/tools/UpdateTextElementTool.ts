@@ -158,20 +158,10 @@ export class UpdateTextElementTool extends BaseTool {
       // Longer delay to ensure DOM updates, React rendering, and lazy-loaded components
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      // Get text dimensions if content, fontSize, or size was updated
-      if (updates.content || updates.fontSize || updates.size) {
-        const updatedElement = updatedSlide.elements.find(
-          (el) => el.id === elementId,
-        ) as TextBox;
-        if (updatedElement) {
-          const textDimensions = await textMeasurementService.measureText(
-            updatedElement.content,
-            updatedElement.fontSize,
-            updatedElement.fontFamily || 'Arial',
-            updatedElement.size.width,
-          );
-          lineBreakInfo = textDimensions.lineBreakInfo;
-        }
+      // Get text dimensions if content or size was updated
+      if (updates.content || updates.size) {
+        const textDimensions = await textMeasurementService.measureQuillText(elementId);
+        lineBreakInfo = textDimensions.lineBreakInfo;
       }
 
       // Get the actual DOM element dimensions and text layout

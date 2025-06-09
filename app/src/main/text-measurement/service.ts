@@ -23,6 +23,61 @@ export class TextMeasurementService {
     this.mainWindow = window;
   }
 
+  /**
+   * Measures text dimensions from actual Quill editor content
+   * More accurate than the legacy measureText method for Quill-based text
+   */
+  async measureQuillText(elementId: string): Promise<
+    TextDimensionResult & {
+      quillMetrics?: {
+        totalLength: number;
+        hasContent: boolean;
+        isScrollable: boolean;
+        contentOverflows: boolean;
+      };
+    }
+  > {
+    const quillDimensions = await this.getQuillTextDimensions(elementId);
+
+    if (!quillDimensions.elementFound) {
+      // Fallback to basic estimation
+      return {
+        height: -1,
+        width: -1,
+        lineBreakInfo:
+          'Could not measure Quill editor - using fallback dimensions',
+      };
+    }
+
+    const { containerBounds, textBounds, overflow, quillInstance } =
+      quillDimensions;
+
+    let lineBreakInfo = null;
+    if (overflow && overflow.lineCount > 1) {
+      if (overflow.overflowsContainer) {
+        lineBreakInfo = `⚠️ OVERFLOW: Text spans ${overflow.lineCount} lines and overflows container. Container: ${containerBounds?.width}x${containerBounds?.height}px, Content needs: ${textBounds?.width}x${textBounds?.height}px. Consider resizing the text box.`;
+      } else if (overflow.needsVerticalScroll) {
+        lineBreakInfo = `ℹ️ SCROLLING: Text spans ${overflow.lineCount} lines with vertical scrolling enabled. Content height: ${quillInstance?.scrollHeight}px, visible height: ${quillInstance?.clientHeight}px.`;
+      } else {
+        lineBreakInfo = `ℹ️ WRAPPING: Text naturally spans ${overflow.lineCount} lines within container. This is normal text wrapping behavior.`;
+      }
+    }
+
+    return {
+      height: textBounds?.height || containerBounds?.height || 50,
+      width: textBounds?.width || containerBounds?.width || 200,
+      lineBreakInfo,
+      quillMetrics: quillInstance
+        ? {
+            totalLength: quillInstance.totalLength,
+            hasContent: quillInstance.hasContent,
+            isScrollable: quillInstance.isScrollable,
+            contentOverflows: quillInstance.contentOverflows,
+          }
+        : undefined,
+    };
+  }
+
   async measureText(
     content: string,
     fontSize: number,
@@ -274,7 +329,9 @@ export class TextMeasurementService {
             }
 
             // If the new elemnt is behind the other element, skip
-            if (z_index !== 'unknown' && target_z_index !== 'unknown' && z_index > target_z_index) {
+            if (z_index !== 'unknown' || target_z_index !== 'unknown') {
+              console.warn('z-index not found by overlap detection', { z_index, target_z_index });
+            } else if (z_index > target_z_index) {
               return;
             }
 
@@ -453,6 +510,161 @@ export class TextMeasurementService {
         overlappingElements: [],
         isOutsideSlide: false,
       };
+    }
+  }
+
+  /**
+   * Gets Quill-specific text dimensions and overflow information
+   * Uses both Quill's API and DOM measurement for comprehensive analysis
+   */
+  async getQuillTextDimensions(elementId: string): Promise<{
+    elementFound: boolean;
+    quillInstance?: {
+      totalLength: number;
+      hasContent: boolean;
+      scrollHeight: number;
+      clientHeight: number;
+      scrollWidth: number;
+      clientWidth: number;
+      isScrollable: boolean;
+      contentOverflows: boolean;
+    };
+    containerBounds?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
+    textBounds?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
+    overflow?: {
+      overflowsContainer: boolean;
+      overflowsSlide: boolean;
+      needsVerticalScroll: boolean;
+      needsHorizontalScroll: boolean;
+      lineCount: number;
+    };
+  }> {
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+      console.warn('Main window not available for Quill measurement');
+      return { elementFound: false };
+    }
+
+    try {
+      const result = await this.mainWindow.webContents.executeJavaScript(`
+        (() => {
+          const SLIDE_WIDTH = 1280;
+          const SLIDE_HEIGHT = 720;
+
+          // Find the target element by its data-element-id
+          const targetElement = document.querySelector('[data-element-id="${elementId}"]');
+          if (!targetElement) {
+            return { elementFound: false };
+          }
+
+          // Find the Quill editor instance within this element
+          const quillContainer = targetElement.querySelector('.ql-editor');
+          if (!quillContainer) {
+            console.warn('No Quill editor found in element ${elementId}');
+            return { elementFound: false };
+          }
+
+          // Try to access the Quill instance (stored on the parent container)
+          let quillInstance = null;
+          let quillData = null;
+
+          // Look for Quill instance in the DOM node's __quill property
+          let parentNode = targetElement;
+          while (parentNode && !quillInstance) {
+            if (parentNode.__quill) {
+              quillInstance = parentNode.__quill;
+              break;
+            }
+            parentNode = parentNode.firstElementChild;
+          }
+
+          if (quillInstance) {
+            quillData = {
+              totalLength: quillInstance.getLength(),
+              hasContent: quillInstance.getLength() > 1, // Quill always has 1 for empty (newline)
+              scrollHeight: quillContainer.scrollHeight,
+              clientHeight: quillContainer.clientHeight,
+              scrollWidth: quillContainer.scrollWidth,
+              clientWidth: quillContainer.clientWidth,
+              isScrollable: quillContainer.scrollHeight > quillContainer.clientHeight ||
+                           quillContainer.scrollWidth > quillContainer.clientWidth,
+              contentOverflows: quillContainer.scrollHeight > quillContainer.clientHeight
+            };
+          }
+
+          // Get slide container for coordinate conversion
+          const slideContainer = document.querySelector('[data-slide-container]') || document.body;
+          const containerRect = slideContainer.getBoundingClientRect();
+
+          // Get element's bounding box
+          const elementRect = targetElement.getBoundingClientRect();
+          const quillRect = quillContainer.getBoundingClientRect();
+
+          // Convert to slide coordinates
+          const containerBounds = {
+            x: elementRect.left - containerRect.left,
+            y: elementRect.top - containerRect.top,
+            width: elementRect.width,
+            height: elementRect.height
+          };
+
+          const textBounds = {
+            x: quillRect.left - containerRect.left,
+            y: quillRect.top - containerRect.top,
+            width: quillRect.width,
+            height: quillRect.height
+          };
+
+          // Calculate overflow
+          const overflowsContainer = (
+            quillRect.width > elementRect.width ||
+            quillRect.height > elementRect.height
+          );
+
+          const overflowsSlide = (
+            textBounds.x < 0 ||
+            textBounds.y < 0 ||
+            textBounds.x + textBounds.width > SLIDE_WIDTH ||
+            textBounds.y + textBounds.height > SLIDE_HEIGHT
+          );
+
+          // Estimate line count from Quill content
+          let lineCount = 1;
+          if (quillData && quillData.hasContent) {
+            const computedStyle = window.getComputedStyle(quillContainer);
+            const lineHeight = parseFloat(computedStyle.lineHeight) || parseFloat(computedStyle.fontSize) * 1.2;
+            lineCount = Math.ceil(quillData.scrollHeight / lineHeight);
+          }
+
+          return {
+            elementFound: true,
+            quillInstance: quillData,
+            containerBounds,
+            textBounds,
+            overflow: {
+              overflowsContainer,
+              overflowsSlide,
+              needsVerticalScroll: quillData ? quillData.scrollHeight > quillData.clientHeight : false,
+              needsHorizontalScroll: quillData ? quillData.scrollWidth > quillData.clientWidth : false,
+              lineCount
+            }
+          };
+        })()
+      `);
+
+      return result;
+    } catch (error) {
+      console.error('Error getting Quill text dimensions:', error);
+      return { elementFound: false };
     }
   }
 

@@ -18,6 +18,35 @@ export interface TextMeasurementResult {
 }
 
 export function setupTextMeasurementIPC() {
+  // New Quill-specific measurement handler
+  ipcMain.handle(
+    'text-measurement:measure-quill',
+    async (event, elementId: string) => {
+      const { textMeasurementService } = require('./service');
+      try {
+        return await textMeasurementService.measureQuillText(elementId);
+      } catch (error) {
+        console.error('Error measuring Quill text:', error);
+        throw error;
+      }
+    },
+  );
+
+  // Enhanced Quill dimensions handler
+  ipcMain.handle(
+    'text-measurement:quill-dimensions',
+    async (event, elementId: string) => {
+      const { textMeasurementService } = require('./service');
+      try {
+        return await textMeasurementService.getQuillTextDimensions(elementId);
+      } catch (error) {
+        console.error('Error getting Quill dimensions:', error);
+        throw error;
+      }
+    },
+  );
+
+  // Legacy text measurement (still used for non-Quill content)
   ipcMain.handle(
     'text-measurement:measure',
     async (

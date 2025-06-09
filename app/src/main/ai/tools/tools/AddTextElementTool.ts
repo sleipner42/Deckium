@@ -132,13 +132,8 @@ export class AddTextElementTool extends BaseTool {
       // Longer delay to ensure DOM updates, React rendering, and lazy-loaded components
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      // Get actual text dimensions from the rendered element
-      textDimensions = await textMeasurementService.measureText(
-        content,
-        Number(fontSize) || 12,
-        fontFamily || 'Arial',
-        width,
-      );
+      // Get actual text dimensions from the Quill editor
+      textDimensions = await textMeasurementService.measureQuillText(element.id);
 
       // Get the actual DOM element dimensions and text layout
       actualDimensions =
