@@ -15,7 +15,11 @@
 * Change name of thread from new thread
 * Is the outside of slide calculation correct?
 * The agent always creates a new slide
+
 * Scrollbar on text boxes
+* Color in TextBoxes are just default values
+* Alginment of TextBoxes are just the alginment of the box not the text.
+
 
 * Is the critic getting the correct slide?
 * Messages disappearing after the critic response.
@@ -44,3 +48,4 @@
 * Change order of slides
 * Move image tools to backend
 * Resize ability
+* Does the background color for text boxes work?
