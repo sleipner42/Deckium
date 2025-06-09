@@ -80,7 +80,7 @@ export class CreateBarChartTool extends BaseTool {
     }
 
     const element = ElementFactory.createBarChart({
-      position: { x: Number(x) || 100, y: Number(y) || 100 },
+      position: { x: x !== undefined ? Number(x) : 100, y: y !== undefined ? Number(y) : 100 },
       size: {
         width: Number(width) || 400,
         height: Number(height) || 300,

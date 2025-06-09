@@ -67,8 +67,8 @@ export class CreateSVGImageTool extends BaseTool {
     const widthValue = Number(width) || 200;
     const heightValue = Number(height) || 200;
 
-    let xPos = Number(x) || 100;
-    let yPos = Number(y) || 100;
+    let xPos = x !== undefined ? Number(x) : 100;
+    let yPos = y !== undefined ? Number(y) : 100;
 
     if (positionReference === 'center') {
       xPos -= widthValue / 2;
