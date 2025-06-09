@@ -59,22 +59,22 @@ export class TextMeasurementService {
             testDiv.style.width = width + 'px';
             testDiv.style.boxSizing = 'border-box';
             testDiv.textContent = content || '';
-            
+
             document.body.appendChild(testDiv);
-            
+
             try {
               const actualHeight = testDiv.offsetHeight;
               const actualWidth = testDiv.offsetWidth;
-              
+
               // Measure natural width without constraints
               testDiv.style.width = 'auto';
               testDiv.style.whiteSpace = 'nowrap';
               const naturalWidth = testDiv.offsetWidth;
-              
+
               // Reset for line counting
               testDiv.style.width = width + 'px';
               testDiv.style.whiteSpace = 'pre-wrap';
-              
+
               // Count lines by measuring height of single line vs total height
               const singleLineDiv = testDiv.cloneNode(true);
               singleLineDiv.style.whiteSpace = 'nowrap';
@@ -83,9 +83,9 @@ export class TextMeasurementService {
               document.body.appendChild(singleLineDiv);
               const singleLineHeight = singleLineDiv.offsetHeight;
               document.body.removeChild(singleLineDiv);
-              
+
               const lineCount = Math.max(1, Math.round(actualHeight / singleLineHeight));
-              
+
               return {
                 actualHeight,
                 actualWidth,
@@ -98,22 +98,22 @@ export class TextMeasurementService {
               document.body.removeChild(testDiv);
             }
           };
-          
+
           // Simulate markdown processing to match TextElement rendering
           let processedContent = ${JSON.stringify(content)};
-          
+
           // Remove markdown headers (# ## ### etc.) as they get processed by ReactMarkdown
           processedContent = processedContent.replace(/^#+\\s+/gm, '');
-          
+
           // Remove bold/italic markdown that gets processed
           processedContent = processedContent.replace(/\\*\\*(.*?)\\*\\*/g, '$1');
           processedContent = processedContent.replace(/\\*(.*?)\\*/g, '$1');
-          
+
           return measureText(
-            processedContent, 
-            ${fontSize}, 
-            ${JSON.stringify(fontFamily)}, 
-            ${width}, 
+            processedContent,
+            ${fontSize},
+            ${JSON.stringify(fontFamily)},
+            ${width},
             ${lineHeight || 1.2}
           );
         })()
@@ -220,7 +220,7 @@ export class TextMeasurementService {
         (() => {
           const SLIDE_WIDTH = 1280;
           const SLIDE_HEIGHT = 720;
-          
+
           // Find the target element by its data-element-id
           const targetElement = document.querySelector('[data-element-id="${elementId}"]');
           if (!targetElement) {
@@ -232,14 +232,15 @@ export class TextMeasurementService {
               elementBounds: null
             };
           }
-          
+
           // Get actual bounding box of the target element
           const targetRect = targetElement.getBoundingClientRect();
-          
+
           // Convert to slide coordinates
           const slideContainer = document.querySelector('[data-slide-container]') || document.body;
           const containerRect = slideContainer.getBoundingClientRect();
-          
+
+          // TODO: Is this correct??
           const targetBounds = {
             left: targetRect.left - containerRect.left - ${padding},
             top: targetRect.top - containerRect.top - ${padding},
@@ -248,38 +249,45 @@ export class TextMeasurementService {
             width: targetRect.width + ${padding * 2},
             height: targetRect.height + ${padding * 2}
           };
-          
+
           // Check if target element is outside slide boundaries
-          const isOutsideSlide = 
-            targetBounds.left < 0 || 
-            targetBounds.top < 0 || 
-            targetBounds.right > SLIDE_WIDTH || 
+          const isOutsideSlide =
+            targetBounds.left < 0 ||
+            targetBounds.top < 0 ||
+            targetBounds.right > SLIDE_WIDTH ||
             targetBounds.bottom > SLIDE_HEIGHT;
-          
+
           const overlappingElements = [];
-          
+
           // Find all other rendered elements in the slide
           const slideElements = document.querySelectorAll('[data-element-id]');
-          
+          const target_z_index = targetElement.getAttribute('z-index') || 'unknown';
+
           slideElements.forEach(element => {
             const elementId = element.getAttribute('data-element-id');
             const elementType = element.getAttribute('data-element-type') || 'unknown';
-            
+            const z_index = element.getAttribute('z-index') || 'unknown';
+
             // Skip the target element itself
             if (elementId === '${elementId}') {
               return;
             }
-            
+
+            // If the new elemnt is behind the other element, skip
+            if (z_index !== 'unknown' && target_z_index !== 'unknown' && z_index > target_z_index) {
+              return;
+            }
+
             // Get actual bounding box from DOM
             const rect = element.getBoundingClientRect();
-            
+
             const elementBounds = {
               left: rect.left - containerRect.left,
               top: rect.top - containerRect.top,
               right: rect.right - containerRect.left,
               bottom: rect.bottom - containerRect.top
             };
-            
+
             // Check for overlap using actual bounding boxes
             const hasOverlap = !(
               targetBounds.right <= elementBounds.left ||
@@ -287,13 +295,13 @@ export class TextMeasurementService {
               targetBounds.bottom <= elementBounds.top ||
               targetBounds.top >= elementBounds.bottom
             );
-            
+
             if (hasOverlap) {
               console.log('DOM element overlap detected:', {
                 targetElement: '${elementId}',
                 overlappingElement: { id: elementId, type: elementType, bounds: elementBounds }
               });
-              
+
               overlappingElements.push({
                 id: elementId,
                 type: elementType,
@@ -305,7 +313,7 @@ export class TextMeasurementService {
               });
             }
           });
-          
+
           return {
             hasOverlap: overlappingElements.length > 0,
             overlappingElements,
@@ -358,51 +366,51 @@ export class TextMeasurementService {
         (() => {
           const SLIDE_WIDTH = 1280;
           const SLIDE_HEIGHT = 720;
-          
+
           const newElementBounds = {
             left: ${newElementPosition.x},
             top: ${newElementPosition.y},
             right: ${newElementPosition.x + newElementSize.width},
             bottom: ${newElementPosition.y + newElementSize.height}
           };
-          
+
           // Check if new element is outside slide boundaries
-          const isOutsideSlide = 
-            newElementBounds.left < 0 || 
-            newElementBounds.top < 0 || 
-            newElementBounds.right > SLIDE_WIDTH || 
+          const isOutsideSlide =
+            newElementBounds.left < 0 ||
+            newElementBounds.top < 0 ||
+            newElementBounds.right > SLIDE_WIDTH ||
             newElementBounds.bottom > SLIDE_HEIGHT;
-          
+
           const overlappingElements = [];
-          
+
           // Find all rendered elements in the slide
           // Look for elements with data-element-id attribute (or similar identifier)
           const slideElements = document.querySelectorAll('[data-element-id]');
-          
+
           slideElements.forEach(element => {
             const elementId = element.getAttribute('data-element-id');
             const elementType = element.getAttribute('data-element-type') || 'unknown';
-            
+
             // Skip the element being excluded (e.g., the one being updated)
             if (${excludeElementId ? `elementId === '${excludeElementId}'` : 'false'}) {
               return;
             }
-            
+
             // Get actual bounding box from DOM
             const rect = element.getBoundingClientRect();
-            
+
             // Convert to slide coordinates (assuming slide container is at 0,0)
             // You may need to adjust this based on your slide container's position
             const slideContainer = document.querySelector('[data-slide-container]') || document.body;
             const containerRect = slideContainer.getBoundingClientRect();
-            
+
             const elementBounds = {
               left: rect.left - containerRect.left,
               top: rect.top - containerRect.top,
               right: rect.right - containerRect.left,
               bottom: rect.bottom - containerRect.top
             };
-            
+
             // Check for overlap using actual bounding boxes
             const hasOverlap = !(
               newElementBounds.right <= elementBounds.left ||
@@ -410,13 +418,13 @@ export class TextMeasurementService {
               newElementBounds.bottom <= elementBounds.top ||
               newElementBounds.top >= elementBounds.bottom
             );
-            
+
             if (hasOverlap) {
               console.log('DOM overlap detected:', {
                 newElement: newElementBounds,
                 existingElement: { id: elementId, type: elementType, bounds: elementBounds }
               });
-              
+
               overlappingElements.push({
                 id: elementId,
                 type: elementType,
@@ -428,7 +436,7 @@ export class TextMeasurementService {
               });
             }
           });
-          
+
           return {
             hasOverlap: overlappingElements.length > 0,
             overlappingElements,
@@ -452,9 +460,7 @@ export class TextMeasurementService {
    * Gets the actual rendered dimensions and text layout from DOM
    * This provides the most accurate information including all CSS effects
    */
-  async getActualElementDimensions(
-    elementId: string,
-  ): Promise<{
+  async getActualElementDimensions(elementId: string): Promise<{
     elementFound: boolean;
     containerBounds?: {
       x: number;
@@ -500,21 +506,21 @@ export class TextMeasurementService {
         (() => {
           const SLIDE_WIDTH = 1280;
           const SLIDE_HEIGHT = 720;
-          
+
           // Find the target element by its data-element-id
           const targetElement = document.querySelector('[data-element-id="${elementId}"]');
           if (!targetElement) {
             console.warn('Element with ID ${elementId} not found in DOM');
             return { elementFound: false };
           }
-          
+
           // Get the slide container for coordinate conversion
           const slideContainer = document.querySelector('[data-slide-container]') || document.body;
           const containerRect = slideContainer.getBoundingClientRect();
-          
+
           // Get element's bounding box (includes padding, borders, etc.)
           const elementRect = targetElement.getBoundingClientRect();
-          
+
           // Convert to slide coordinates
           const containerBounds = {
             left: elementRect.left - containerRect.left,
@@ -526,15 +532,15 @@ export class TextMeasurementService {
             x: elementRect.left - containerRect.left,
             y: elementRect.top - containerRect.top
           };
-          
+
           // Now get the actual text content bounds (excluding padding)
           let textBounds = null;
           let textOverflow = null;
-          
+
           try {
             // Create a range to measure the actual text content
             const range = document.createRange();
-            
+
             // Try to select all text content within the element
             // Handle both direct text nodes and nested React components
             const textNodes = [];
@@ -544,21 +550,21 @@ export class TextMeasurementService {
               null,
               false
             );
-            
+
             let node;
             while (node = walker.nextNode()) {
               if (node.textContent.trim()) {
                 textNodes.push(node);
               }
             }
-            
+
             if (textNodes.length > 0) {
               // Select from first to last text node to get the full text bounds
               range.setStartBefore(textNodes[0]);
               range.setEndAfter(textNodes[textNodes.length - 1]);
-              
+
               const textRect = range.getBoundingClientRect();
-              
+
               textBounds = {
                 left: textRect.left - containerRect.left,
                 top: textRect.top - containerRect.top,
@@ -569,7 +575,7 @@ export class TextMeasurementService {
                 x: textRect.left - containerRect.left,
                 y: textRect.top - containerRect.top
               };
-              
+
               // Check for text overflow
               const overflowsContainer = (
                 textRect.width > elementRect.width ||
@@ -579,19 +585,19 @@ export class TextMeasurementService {
                 textRect.right > elementRect.right ||
                 textRect.bottom > elementRect.bottom
               );
-              
+
               const overflowsSlide = (
                 textBounds.left < 0 ||
                 textBounds.top < 0 ||
                 textBounds.right > SLIDE_WIDTH ||
                 textBounds.bottom > SLIDE_HEIGHT
               );
-              
+
               // Count lines by checking line breaks in the rendered text
               const computedStyle = window.getComputedStyle(targetElement);
               const lineHeight = parseFloat(computedStyle.lineHeight) || parseFloat(computedStyle.fontSize) * 1.2;
               const estimatedLines = Math.ceil(textRect.height / lineHeight);
-              
+
               textOverflow = {
                 overflowsContainer,
                 overflowsSlide,
@@ -616,7 +622,7 @@ export class TextMeasurementService {
               lineCount: 1
             };
           }
-          
+
           // Check if element is outside slide boundaries
           const isOutsideSlide = (
             containerBounds.left < 0 ||
@@ -624,7 +630,7 @@ export class TextMeasurementService {
             containerBounds.right > SLIDE_WIDTH ||
             containerBounds.bottom > SLIDE_HEIGHT
           );
-          
+
           return {
             elementFound: true,
             containerBounds,
