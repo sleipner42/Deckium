@@ -145,9 +145,9 @@ export class CreateSVGImageTool extends BaseTool {
       message += `\n\nWARNING: OVERLAP DETECTED. This SVG image visually overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}. `;
 
       if (overlapCheck.suggestedPosition) {
-        message += `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}).`;
+        message += `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}). You could also change the zIndex.`;
       } else {
-        message += `Please check the SVG placement to avoid visual conflicts.`;
+        message += `Please check the SVG placement and zIndex to avoid visual conflicts.`;
       }
     }
 
