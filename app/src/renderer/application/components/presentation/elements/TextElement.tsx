@@ -70,11 +70,57 @@ export const TextElement: React.FC<TextElementProps> = ({
             'underline',
             'strike',
             'list',
-            'bullet',
             'link',
             'align',
           ],
         });
+
+        // Apply vertical alignment to Quill container after initialization
+        const applyVerticalAlignment = () => {
+          // textRef.current IS the ql-container, not a parent containing it
+          const container = textRef.current as HTMLElement;
+          const editor = container?.querySelector('.ql-editor') as HTMLElement;
+          
+          if (container && editor) {
+            // Set the container to be a flex container with full height
+            container.style.height = '100%';
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            
+            // Clear any existing styles that might interfere
+            editor.style.removeProperty('height');
+            editor.style.removeProperty('min-height');
+            
+            // Try a different approach: use padding to achieve vertical alignment
+            const containerHeight = parseInt(getComputedStyle(container).height) || 0;
+            const toolbarHeight = container.querySelector('.ql-toolbar')?.getBoundingClientRect().height || 0;
+            const availableHeight = containerHeight - toolbarHeight;
+            
+            switch (verticalAlign) {
+              case 'middle':
+                editor.style.paddingTop = `${Math.max(0, (availableHeight - 40) / 2)}px`;
+                editor.style.paddingBottom = '8px';
+                break;
+              case 'bottom':
+                editor.style.paddingTop = `${Math.max(8, availableHeight - 40)}px`;
+                editor.style.paddingBottom = '8px';
+                break;
+              case 'top':
+              default:
+                editor.style.paddingTop = '8px';
+                editor.style.paddingBottom = '8px';
+                break;
+            }
+            
+            // Keep horizontal padding
+            editor.style.paddingLeft = '12px';
+            editor.style.paddingRight = '12px';
+            editor.style.boxSizing = 'border-box';
+          }
+        };
+
+        // Apply alignment after Quill initializes - use longer timeout to ensure DOM is ready
+        setTimeout(applyVerticalAlignment, 100);
 
         // Set initial content
         if (content) {
@@ -157,7 +203,54 @@ export const TextElement: React.FC<TextElementProps> = ({
     onElementUpdate,
     onStopEditing,
     preventBlur,
+    verticalAlign,
   ]);
+
+  // Apply vertical alignment when it changes
+  useEffect(() => {
+    if (quillRef.current && textRef.current) {
+      // textRef.current IS the ql-container, not a parent containing it
+      const container = textRef.current as HTMLElement;
+      const editor = container?.querySelector('.ql-editor') as HTMLElement;
+      
+      if (container && editor) {
+        // Set the container to be a flex container with full height
+        container.style.height = '100%';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        
+        // Clear any existing styles that might interfere
+        editor.style.removeProperty('height');
+        editor.style.removeProperty('min-height');
+        
+        // Try a different approach: use padding to achieve vertical alignment
+        const containerHeight = parseInt(getComputedStyle(container).height) || 0;
+        const toolbarHeight = container.querySelector('.ql-toolbar')?.getBoundingClientRect().height || 0;
+        const availableHeight = containerHeight - toolbarHeight;
+        
+        switch (verticalAlign) {
+          case 'middle':
+            editor.style.paddingTop = `${Math.max(0, (availableHeight - 40) / 2)}px`;
+            editor.style.paddingBottom = '8px';
+            break;
+          case 'bottom':
+            editor.style.paddingTop = `${Math.max(8, availableHeight - 40)}px`;
+            editor.style.paddingBottom = '8px';
+            break;
+          case 'top':
+          default:
+            editor.style.paddingTop = '8px';
+            editor.style.paddingBottom = '8px';
+            break;
+        }
+        
+        // Keep horizontal padding
+        editor.style.paddingLeft = '12px';
+        editor.style.paddingRight = '12px';
+        editor.style.boxSizing = 'border-box';
+      }
+    }
+  }, [verticalAlign]);
 
   // Document-level click detection for exiting edit mode
   useEffect(() => {
@@ -322,18 +415,6 @@ export const TextElement: React.FC<TextElementProps> = ({
     return <div style={{ height: '100%', width: '100%' }} />;
   };
 
-  const getVerticalAlignment = () => {
-    switch (verticalAlign) {
-      case 'middle':
-        return 'center';
-      case 'bottom':
-        return 'flex-end';
-      case 'top':
-      default:
-        return 'flex-start';
-    }
-  };
-
   return (
     <div
       ref={textRef}
@@ -362,7 +443,6 @@ export const TextElement: React.FC<TextElementProps> = ({
             : align === 'right'
               ? 'flex-end'
               : 'flex-start',
-        justifyContent: getVerticalAlignment(),
         userSelect: isEditing ? 'text' : 'none',
         outline: isSelected && !isEditing ? '2px solid #0066ff' : 'none',
         outlineOffset: '2px',

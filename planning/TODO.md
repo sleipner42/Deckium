@@ -1,4 +1,5 @@
 ## TODO
+* What are all the coodinates that addText returns?
 * The text edit menu disappears when clicked in
 * Changing order of slides it buggy
 * Instruction about how a good slide looks. Do not put boxes as highlights.
@@ -18,7 +19,8 @@
 
 * Scrollbar on text boxes
 * Color in TextBoxes are just default values
-* Alginment of TextBoxes are just the alginment of the box not the text.
+* Alginment seems to work horizontaly, but not vertically
+* Why is there both background color and opacity and no explanation about format
 
 
 * Is the critic getting the correct slide?
