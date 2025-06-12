@@ -67,7 +67,6 @@ export interface TextBox {
   zIndex?: number;
   style?: ElementStyle;
   backgroundColor?: string;
-  backgroundOpacity?: number;
   borderRadius?: number;
   align?: 'left' | 'center' | 'right';
   verticalAlign?: 'top' | 'middle' | 'bottom';

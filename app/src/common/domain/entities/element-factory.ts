@@ -9,7 +9,6 @@ export class ElementFactory {
     color: string;
     borderRadius?: number;
     backgroundColor?: string;
-    backgroundOpacity?: number;
     align?: 'left' | 'center' | 'right';
     verticalAlign?: 'top' | 'middle' | 'bottom';
     zIndex?: number;
@@ -23,7 +22,6 @@ export class ElementFactory {
       color: options.color || '#000000',
       borderRadius: options.borderRadius || 0,
       backgroundColor: options.backgroundColor || 'transparent',
-      backgroundOpacity: options.backgroundOpacity || 0,
       align: options.align || 'left',
       verticalAlign: options.verticalAlign || 'top',
       zIndex: options.zIndex || 1,

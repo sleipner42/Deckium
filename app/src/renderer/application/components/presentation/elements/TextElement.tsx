@@ -34,7 +34,6 @@ export const TextElement: React.FC<TextElementProps> = ({
     color,
     style,
     backgroundColor,
-    backgroundOpacity,
     borderRadius,
     align,
     verticalAlign,
@@ -437,7 +436,6 @@ export const TextElement: React.FC<TextElementProps> = ({
         padding: '0',
         border: 'none',
         backgroundColor: backgroundColor || 'transparent',
-        opacity: backgroundOpacity !== undefined ? backgroundOpacity : 1,
         borderRadius:
           borderRadius !== undefined ? `${borderRadius}px` : undefined,
         textAlign: align || 'left',

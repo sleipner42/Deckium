@@ -21,9 +21,7 @@ export class AddTextElementTool extends BaseTool {
     color: 'The text color of the element (optional, defaults to black)',
     borderRadius: 'The border radius of the element (optional, defaults to 0)',
     backgroundColor:
-      'The background color of the element (optional, defaults to transparent)',
-    backgroundOpacity:
-      'The background opacity of the element (optional, defaults to 1)',
+      'The background color of the element (optional, defaults to transparent). Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
     align:
       'The alignment of the element (optional, defaults to left), choose from left, center, right',
     verticalAlign:
@@ -44,7 +42,6 @@ export class AddTextElementTool extends BaseTool {
       color,
       borderRadius,
       backgroundColor,
-      backgroundOpacity,
       align,
       verticalAlign,
     } = params;
@@ -97,7 +94,6 @@ export class AddTextElementTool extends BaseTool {
       color: color || '#000000',
       borderRadius: Number(borderRadius) || 0,
       backgroundColor: backgroundColor || 'transparent',
-      backgroundOpacity: Number(backgroundOpacity) || 1,
       align: align || 'left',
       verticalAlign: verticalAlign || 'top',
       zIndex,

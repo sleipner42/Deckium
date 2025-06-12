@@ -1,6 +1,5 @@
 ## TODO
 * What are all the coodinates that addText returns?
-* The text edit menu disappears when clicked in
 * Changing order of slides it buggy
 * Instruction about how a good slide looks. Do not put boxes as highlights.
 * Search for information
@@ -18,8 +17,6 @@
 * The agent always creates a new slide
 
 * Scrollbar on text boxes
-* Color in TextBoxes are just default values
-* Alginment seems to work horizontaly, but not vertically
 * Why is there both background color and opacity and no explanation about format
 
 
@@ -51,3 +48,5 @@
 * Move image tools to backend
 * Resize ability
 * Does the background color for text boxes work?
+* Alginment seems to work horizontaly, but not vertically
+* The text edit menu disappears when clicked in

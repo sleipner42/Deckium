@@ -23,8 +23,7 @@ export class UpdateTextElementTool extends BaseTool {
     width: 'New width (optional)',
     height: 'New height (optional)',
     borderRadius: 'The new border radius (optional)',
-    backgroundColor: 'The new background color (optional)',
-    backgroundOpacity: 'The new background opacity (optional)',
+    backgroundColor: 'The new background color (optional). Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
     align: 'The new alignment of the element (optional)',
     verticalAlign: 'The new vertical alignment of the element (optional)',
     zIndex:
@@ -46,7 +45,6 @@ export class UpdateTextElementTool extends BaseTool {
       height,
       borderRadius,
       backgroundColor,
-      backgroundOpacity,
       align,
       verticalAlign,
     } = params;
@@ -67,7 +65,6 @@ export class UpdateTextElementTool extends BaseTool {
       height === undefined &&
       borderRadius === undefined &&
       backgroundColor === undefined &&
-      backgroundOpacity === undefined &&
       align === undefined &&
       verticalAlign === undefined &&
       params.zIndex === undefined
@@ -106,8 +103,6 @@ export class UpdateTextElementTool extends BaseTool {
     if (borderRadius !== undefined) updates.borderRadius = Number(borderRadius);
     if (backgroundColor !== undefined)
       updates.backgroundColor = backgroundColor;
-    if (backgroundOpacity !== undefined)
-      updates.backgroundOpacity = Number(backgroundOpacity);
     if (align !== undefined) updates.align = align;
     if (verticalAlign !== undefined) updates.verticalAlign = verticalAlign;
     if (params.zIndex !== undefined) updates.zIndex = Number(params.zIndex);
