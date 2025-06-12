@@ -75,46 +75,41 @@ export const TextElement: React.FC<TextElementProps> = ({
           ],
         });
 
-        // Apply vertical alignment to Quill container after initialization
-        const applyVerticalAlignment = () => {
-          // textRef.current IS the ql-container, not a parent containing it
+        // Set basic padding and vertical alignment on the editor
+        setTimeout(() => {
           const container = textRef.current as HTMLElement;
           const editor = container?.querySelector('.ql-editor') as HTMLElement;
           
-          if (container && editor) {
-            // Set the container to be a flex container with full height
-            container.style.height = '100%';
-            container.style.display = 'flex';
-            container.style.flexDirection = 'column';
+          if (editor && container) {
+            editor.style.boxSizing = 'border-box';
             
-            // Configure the editor to fill available space and handle vertical alignment
-            editor.style.flex = '1';
-            editor.style.display = 'flex';
-            editor.style.flexDirection = 'column';
-            editor.style.minHeight = '0';
+            // Apply vertical alignment using padding only
+            const containerHeight = container.offsetHeight;
+            const toolbarHeight = container.querySelector('.ql-toolbar')?.getBoundingClientRect().height || 0;
+            const availableHeight = containerHeight - toolbarHeight;
             
-            // Apply vertical alignment using flexbox justify-content
             switch (verticalAlign) {
               case 'middle':
-                editor.style.justifyContent = 'center';
+                const middlePadding = Math.max(12, (availableHeight - 50) / 2);
+                editor.style.paddingTop = `${middlePadding}px`;
+                editor.style.paddingBottom = '12px';
                 break;
               case 'bottom':
-                editor.style.justifyContent = 'flex-end';
+                const bottomPadding = Math.max(12, availableHeight - 60);
+                editor.style.paddingTop = `${bottomPadding}px`;
+                editor.style.paddingBottom = '12px';
                 break;
               case 'top':
               default:
-                editor.style.justifyContent = 'flex-start';
+                editor.style.paddingTop = '12px';
+                editor.style.paddingBottom = '12px';
                 break;
             }
             
-            // Set consistent padding
-            editor.style.padding = '12px';
-            editor.style.boxSizing = 'border-box';
+            editor.style.paddingLeft = '12px';
+            editor.style.paddingRight = '12px';
           }
-        };
-
-        // Apply alignment after Quill initializes - use longer timeout to ensure DOM is ready
-        setTimeout(applyVerticalAlignment, 100);
+        }, 100);
 
         // Set initial content
         if (content) {
@@ -203,42 +198,46 @@ export const TextElement: React.FC<TextElementProps> = ({
   // Apply vertical alignment when it changes
   useEffect(() => {
     if (quillRef.current && textRef.current) {
-      // textRef.current IS the ql-container, not a parent containing it
       const container = textRef.current as HTMLElement;
-      const editor = container?.querySelector('.ql-editor') as HTMLElement;
+      const editor = container.querySelector('.ql-editor') as HTMLElement;
       
-      if (container && editor) {
-        // Set the container to be a flex container with full height
-        container.style.height = '100%';
-        container.style.display = 'flex';
-        container.style.flexDirection = 'column';
+      if (editor) {
+        // Always set basic padding
+        editor.style.padding = '12px';
+        editor.style.boxSizing = 'border-box';
         
-        // Configure the editor to fill available space and handle vertical alignment
-        editor.style.flex = '1';
-        editor.style.display = 'flex';
-        editor.style.flexDirection = 'column';
-        editor.style.minHeight = '0';
+        // Apply vertical alignment using padding only - minimal interference
+        const containerHeight = container.offsetHeight;
+        const toolbarHeight = container.querySelector('.ql-toolbar')?.getBoundingClientRect().height || 0;
+        const availableHeight = containerHeight - toolbarHeight;
         
-        // Apply vertical alignment using flexbox justify-content
+        // Reset any previous alignment padding
+        editor.style.removeProperty('padding-top');
+        editor.style.removeProperty('padding-bottom');
+        
         switch (verticalAlign) {
           case 'middle':
-            editor.style.justifyContent = 'center';
+            // For middle alignment, calculate padding to center content
+            const middlePadding = Math.max(12, (availableHeight - 50) / 2);
+            editor.style.paddingTop = `${middlePadding}px`;
+            editor.style.paddingBottom = '12px';
             break;
           case 'bottom':
-            editor.style.justifyContent = 'flex-end';
+            // For bottom alignment, add top padding to push content down
+            const bottomPadding = Math.max(12, availableHeight - 60);
+            editor.style.paddingTop = `${bottomPadding}px`;
+            editor.style.paddingBottom = '12px';
             break;
           case 'top':
           default:
-            editor.style.justifyContent = 'flex-start';
+            // For top alignment, use standard padding
+            editor.style.paddingTop = '12px';
+            editor.style.paddingBottom = '12px';
             break;
         }
-        
-        // Set consistent padding
-        editor.style.padding = '12px';
-        editor.style.boxSizing = 'border-box';
       }
     }
-  }, [verticalAlign]);
+  }, [verticalAlign, size.height]);
 
   // Document-level click detection for exiting edit mode
   useEffect(() => {
@@ -413,8 +412,9 @@ export const TextElement: React.FC<TextElementProps> = ({
         left: `${position.x}px`,
         top: `${position.y}px`,
         width: `${size.width}px`,
-        minHeight: `${size.height}px`,
         height: `${size.height}px`,
+        maxHeight: `${size.height}px`,
+        overflow: 'hidden',
         color,
         cursor: readOnly
           ? 'default'
