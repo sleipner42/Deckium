@@ -87,34 +87,28 @@ export const TextElement: React.FC<TextElementProps> = ({
             container.style.display = 'flex';
             container.style.flexDirection = 'column';
             
-            // Clear any existing styles that might interfere
-            editor.style.removeProperty('height');
-            editor.style.removeProperty('min-height');
+            // Configure the editor to fill available space and handle vertical alignment
+            editor.style.flex = '1';
+            editor.style.display = 'flex';
+            editor.style.flexDirection = 'column';
+            editor.style.minHeight = '0';
             
-            // Try a different approach: use padding to achieve vertical alignment
-            const containerHeight = parseInt(getComputedStyle(container).height) || 0;
-            const toolbarHeight = container.querySelector('.ql-toolbar')?.getBoundingClientRect().height || 0;
-            const availableHeight = containerHeight - toolbarHeight;
-            
+            // Apply vertical alignment using flexbox justify-content
             switch (verticalAlign) {
               case 'middle':
-                editor.style.paddingTop = `${Math.max(0, (availableHeight - 40) / 2)}px`;
-                editor.style.paddingBottom = '8px';
+                editor.style.justifyContent = 'center';
                 break;
               case 'bottom':
-                editor.style.paddingTop = `${Math.max(8, availableHeight - 40)}px`;
-                editor.style.paddingBottom = '8px';
+                editor.style.justifyContent = 'flex-end';
                 break;
               case 'top':
               default:
-                editor.style.paddingTop = '8px';
-                editor.style.paddingBottom = '8px';
+                editor.style.justifyContent = 'flex-start';
                 break;
             }
             
-            // Keep horizontal padding
-            editor.style.paddingLeft = '12px';
-            editor.style.paddingRight = '12px';
+            // Set consistent padding
+            editor.style.padding = '12px';
             editor.style.boxSizing = 'border-box';
           }
         };
@@ -219,34 +213,28 @@ export const TextElement: React.FC<TextElementProps> = ({
         container.style.display = 'flex';
         container.style.flexDirection = 'column';
         
-        // Clear any existing styles that might interfere
-        editor.style.removeProperty('height');
-        editor.style.removeProperty('min-height');
+        // Configure the editor to fill available space and handle vertical alignment
+        editor.style.flex = '1';
+        editor.style.display = 'flex';
+        editor.style.flexDirection = 'column';
+        editor.style.minHeight = '0';
         
-        // Try a different approach: use padding to achieve vertical alignment
-        const containerHeight = parseInt(getComputedStyle(container).height) || 0;
-        const toolbarHeight = container.querySelector('.ql-toolbar')?.getBoundingClientRect().height || 0;
-        const availableHeight = containerHeight - toolbarHeight;
-        
+        // Apply vertical alignment using flexbox justify-content
         switch (verticalAlign) {
           case 'middle':
-            editor.style.paddingTop = `${Math.max(0, (availableHeight - 40) / 2)}px`;
-            editor.style.paddingBottom = '8px';
+            editor.style.justifyContent = 'center';
             break;
           case 'bottom':
-            editor.style.paddingTop = `${Math.max(8, availableHeight - 40)}px`;
-            editor.style.paddingBottom = '8px';
+            editor.style.justifyContent = 'flex-end';
             break;
           case 'top':
           default:
-            editor.style.paddingTop = '8px';
-            editor.style.paddingBottom = '8px';
+            editor.style.justifyContent = 'flex-start';
             break;
         }
         
-        // Keep horizontal padding
-        editor.style.paddingLeft = '12px';
-        editor.style.paddingRight = '12px';
+        // Set consistent padding
+        editor.style.padding = '12px';
         editor.style.boxSizing = 'border-box';
       }
     }
