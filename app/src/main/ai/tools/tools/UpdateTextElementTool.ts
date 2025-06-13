@@ -116,9 +116,26 @@ export class UpdateTextElementTool extends BaseTool {
       const heightValue =
         height !== undefined ? Number(height) : targetElement.size.height;
 
+      // Handle positioning based on positionReference (legacy parameter)
       if (positionReference === 'center') {
         xPos -= widthValue / 2;
         yPos -= heightValue / 2;
+      } else {
+        // Handle positioning based on alignment parameters for consistency with AddTextElementTool
+        const currentAlign = align !== undefined ? align : targetElement.align;
+        const currentVerticalAlign = verticalAlign !== undefined ? verticalAlign : targetElement.verticalAlign;
+        
+        if (currentAlign === 'center') {
+          xPos -= widthValue / 2;
+        } else if (currentAlign === 'right') {
+          xPos -= widthValue;
+        }
+        
+        if (currentVerticalAlign === 'middle') {
+          yPos -= heightValue / 2;
+        } else if (currentVerticalAlign === 'bottom') {
+          yPos -= heightValue;
+        }
       }
 
       updates.position = { x: xPos, y: yPos };

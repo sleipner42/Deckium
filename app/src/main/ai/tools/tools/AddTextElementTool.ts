@@ -64,13 +64,23 @@ export class AddTextElementTool extends BaseTool {
     const height = Number(params.height) || 200;
 
     // Use consistent default positioning - center the element if no position provided
-    const xPos = x !== undefined ? Number(x) : 1280 / 2 - width / 2;
-    const yPos = y !== undefined ? Number(y) : 720 / 2 - height / 2;
+    let xPos = x !== undefined ? Number(x) : 1280 / 2 - width / 2;
+    let yPos = y !== undefined ? Number(y) : 720 / 2 - height / 2;
 
-    // if (positionReference === 'center') {
-    //   xPos = xPos - (width / 2);
-    //   yPos = yPos - (height / 2);
-    // }
+    // Adjust position based on alignment - if align is center or right, adjust x position
+    // This ensures the x,y coordinates represent the intended reference point
+    if (x !== undefined && align === 'center') {
+      xPos = xPos - (width / 2);
+    } else if (x !== undefined && align === 'right') {
+      xPos = xPos - width;
+    }
+
+    // Adjust position based on vertical alignment - if verticalAlign is middle or bottom, adjust y position
+    if (y !== undefined && verticalAlign === 'middle') {
+      yPos = yPos - (height / 2);
+    } else if (y !== undefined && verticalAlign === 'bottom') {
+      yPos = yPos - height;
+    }
 
     // Get the current slide to check for overlaps
     const presentation = presentationService.getPresentation();
