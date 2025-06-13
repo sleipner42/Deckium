@@ -16,8 +16,8 @@
 * Is the outside of slide calculation correct?
 * The agent always creates a new slide
 
-* Scrollbar on text boxes
 * Why is there both background color and opacity and no explanation about format
+* Alignment seems to work horizontally, but vertically it aligns to the first line.
 
 
 * Is the critic getting the correct slide?
@@ -48,5 +48,5 @@
 * Move image tools to backend
 * Resize ability
 * Does the background color for text boxes work?
-* Alginment seems to work horizontaly, but not vertically
 * The text edit menu disappears when clicked in
+* Scrollbar on text boxes
