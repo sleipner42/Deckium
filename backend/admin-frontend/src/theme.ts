@@ -118,18 +118,5 @@ export const theme = createTheme({
         },
       },
     },
-
-    MuiDataGrid: {
-      styleOverrides: {
-        root: {
-          border: 'none',
-          borderRadius: 12,
-          '& .MuiDataGrid-columnHeaders': {
-            backgroundColor: '#f9fafb',
-            borderRadius: '12px 12px 0 0',
-          },
-        },
-      },
-    },
   },
 }); 
