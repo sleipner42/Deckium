@@ -4,6 +4,11 @@ import { TextBox } from '../../../../../common/domain/entities/types';
 import { useTextEditing } from '../../../context/TextEditingContext';
 import { ResizeHandles } from '../ResizeHandles';
 
+// Configure Quill to accept custom font sizes
+const SizeStyle = Quill.import('attributors/style/size');
+SizeStyle.whitelist = ['8px', '10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'];
+Quill.register(SizeStyle, true);
+
 interface TextElementProps {
   element: TextBox;
   onClick: () => void;
@@ -55,7 +60,7 @@ export const TextElement: React.FC<TextElementProps> = ({
           modules: {
             toolbar: [
               [{ header: [1, 2, 3, false] }],
-              [{ font: [] }, { size: ['small', false, 'large', 'huge'] }],
+              [{ font: [] }, { size: ['8px', '10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'] }],
               ['bold', 'italic', 'underline', 'strike'],
               [{ color: [] }, { background: [] }],
               [{ list: 'ordered' }, { list: 'bullet' }],
