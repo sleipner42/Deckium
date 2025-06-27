@@ -1,4 +1,7 @@
 ## TODO
+* Make sure that Quill uses the font size and colors
+* SVGs sometime not working?
+
 * What are all the coodinates that addText returns?
 * Changing order of slides it buggy
 * Instruction about how a good slide looks. Do not put boxes as highlights.
