@@ -1,6 +1,8 @@
 ## TODO
-* Make sure that Quill uses the font size and colors
-* SVGs sometime not working?
+* How to size and position images?
+* Create an icon
+* Change kraftpo to deckium
+* Remove logs from built app
 
 * What are all the coodinates that addText returns?
 * Changing order of slides it buggy
@@ -53,3 +55,4 @@
 * Does the background color for text boxes work?
 * The text edit menu disappears when clicked in
 * Scrollbar on text boxes
+* Make sure that Quill uses the font size and colors
