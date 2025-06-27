@@ -1,7 +1,11 @@
 from app.core.config import settings
 from app.repositories.sqlite_user_repository import SQLiteUserRepository
-from app.repositories.sqlite_transaction_repository import SQLiteTransactionRepository
-from app.repositories.sqlite_auth_repository import SQLiteAuthorizedEmailRepository
+from app.repositories.sqlite_transaction_repository import (
+    SQLiteTransactionRepository,
+)
+from app.repositories.sqlite_auth_repository import (
+    SQLiteAuthorizedEmailRepository,
+)
 from app.services.transaction_service import TransactionService
 
 

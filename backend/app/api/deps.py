@@ -21,7 +21,10 @@ async def get_current_authenticated_user(request: Request) -> TokenData:
 
 async def get_admin_user(request: Request) -> TokenData:
     user = await get_current_authenticated_user(request)
-    if user.email != "kristoffer.nordstrom42@gmail.com":
+    if user.email not in [
+        "kristoffer.nordstrom42@gmail.com",
+        "elias.aronson@gmail.com",
+    ]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
