@@ -16,6 +16,8 @@ export class AddTextElementTool extends BaseTool {
       'The text content to display. Use HTML formatting: <p>paragraph</p>, <h1>header</h1>, <strong>bold</strong>, <em>italic</em>, <u>underline</u>, <ul><li>bullet list</li></ul>, <ol><li>numbered list</li></ol>, <a href="url">link</a>. Font size/family can be specified with inline styles: <span style="font-size: 20px; font-family: Times">text</span>',
     x: 'X position of the element (optional, defaults to center)',
     y: 'Y position of the element (optional, defaults to center)',
+    positionReference:
+      'The reference position of the element (optional, defaults to top left), choose from top left or center',
     width: 'The width of the element (optional, defaults to 400)',
     height: 'The height of the element (optional, defaults to 200)',
     color: 'The text color of the element (optional, defaults to black)',
@@ -39,6 +41,7 @@ export class AddTextElementTool extends BaseTool {
       content,
       x,
       y,
+      positionReference,
       color,
       borderRadius,
       backgroundColor,
@@ -67,19 +70,10 @@ export class AddTextElementTool extends BaseTool {
     let xPos = x !== undefined ? Number(x) : 1280 / 2 - width / 2;
     let yPos = y !== undefined ? Number(y) : 720 / 2 - height / 2;
 
-    // Adjust position based on alignment - if align is center or right, adjust x position
-    // This ensures the x,y coordinates represent the intended reference point
-    if (x !== undefined && align === 'center') {
-      xPos = xPos - (width / 2);
-    } else if (x !== undefined && align === 'right') {
-      xPos = xPos - width;
-    }
-
-    // Adjust position based on vertical alignment - if verticalAlign is middle or bottom, adjust y position
-    if (y !== undefined && verticalAlign === 'middle') {
-      yPos = yPos - (height / 2);
-    } else if (y !== undefined && verticalAlign === 'bottom') {
-      yPos = yPos - height;
+    // Handle positioning based on positionReference (same as UpdateTextElementTool)
+    if (positionReference === 'center') {
+      xPos -= width / 2;
+      yPos -= height / 2;
     }
 
     // Get the current slide to check for overlaps
