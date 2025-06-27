@@ -1,7 +1,6 @@
 ## TODO
 * How to size and position images?
 * Create an icon
-* Change kraftpo to deckium
 * Remove logs from built app
 
 * What are all the coodinates that addText returns?
@@ -56,3 +55,4 @@
 * The text edit menu disappears when clicked in
 * Scrollbar on text boxes
 * Make sure that Quill uses the font size and colors
+* Change kraftpo to deckium

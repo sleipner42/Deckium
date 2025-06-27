@@ -17,14 +17,14 @@ export function getProtocolArgs(): string | null {
   // Check if the app was launched with a URL
   if (process.platform === 'darwin' && process.argv.length >= 2) {
     const url = process.argv[1];
-    if (url && url.startsWith('kraftpo://')) {
+    if (url && url.startsWith('deckium://')) {
       return url;
     }
   }
 
   if (process.platform === 'win32' && process.argv.length >= 2) {
     const url = process.argv[1];
-    if (url && url.startsWith('kraftpo://')) {
+    if (url && url.startsWith('deckium://')) {
       return url;
     }
   }

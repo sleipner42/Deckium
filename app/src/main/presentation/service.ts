@@ -261,7 +261,7 @@ export class PresentationService {
       defaultPath,
       filters: [
         {
-          name: 'KraftPo Presentations',
+          name: 'Deckium Presentations',
           extensions: [FILE_EXTENSION.substring(1)],
         },
         { name: 'All Files', extensions: ['*'] },
@@ -280,7 +280,7 @@ export class PresentationService {
       properties: ['openFile'],
       filters: [
         {
-          name: 'KraftPo Presentations',
+          name: 'Deckium Presentations',
           extensions: [FILE_EXTENSION.substring(1)],
         },
         { name: 'All Files', extensions: ['*'] },

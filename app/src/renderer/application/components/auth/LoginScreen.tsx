@@ -55,7 +55,7 @@ const LoginScreen: React.FC = () => {
         }}
       >
         <Typography variant="h4" component="h1">
-          Welcome to Kraftpo
+          Welcome to Deckium
         </Typography>
         <Typography variant="body1" textAlign="center">
           Please log in to continue using the application.
