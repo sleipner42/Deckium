@@ -4,7 +4,9 @@ from app.core.auth import TokenData, get_current_user
 
 async def get_current_authenticated_user(request: Request) -> TokenData:
     cookie_authorization = request.cookies.get("access_token")
-    if not cookie_authorization or not cookie_authorization.startswith("Bearer "):
+    if not cookie_authorization or not cookie_authorization.startswith(
+        "Bearer "
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -19,10 +21,10 @@ async def get_current_authenticated_user(request: Request) -> TokenData:
 
 async def get_admin_user(request: Request) -> TokenData:
     user = await get_current_authenticated_user(request)
-    print(user)
     if user.email != "kristoffer.nordstrom42@gmail.com":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
         )
 
     return user

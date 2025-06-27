@@ -23,7 +23,6 @@ import {
   Delete,
   AccountBalance,
   Add,
-  Login,
 } from '@mui/icons-material';
 import { adminApi } from '../lib/api';
 import type { User, UpdateUser } from '../lib/api';
@@ -230,9 +229,7 @@ export default function UserManagement() {
     }
   };
 
-  const handleLogin = () => {
-    window.open('http://localhost:8000/auth/login');
-  };
+
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 90 },
@@ -331,13 +328,6 @@ export default function UserManagement() {
             onClick={fetchUsers}
           >
             Refresh
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<Login />}
-            onClick={handleLogin}
-          >
-            Login
           </Button>
         </Box>
       </Box>

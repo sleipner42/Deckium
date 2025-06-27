@@ -69,9 +69,13 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
+        "http://localhost:3001",
         "http://localhost:8000",
         "http://localhost:8123",
         "https://api.deckium.xyz",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:8123",
+        "http://127.0.0.1:8000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -109,7 +113,9 @@ async def serve_admin():
 @app.get("/")
 def read_root() -> dict[str, str]:
     return {
-        "message": "Welcome to the KeynotAI API. Visit /admin for admin dashboard."
+        "message": (
+            "Welcome to the KeynotAI API. Visit /admin for admin dashboard."
+        )
     }
 
 

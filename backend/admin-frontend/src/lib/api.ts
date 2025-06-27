@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+export const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -14,6 +14,13 @@ export interface User {
   is_active: boolean;
   is_superuser: boolean;
   created_at: string;
+}
+
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  picture: string;
 }
 
 export interface AuthorizedEmail {
@@ -47,6 +54,13 @@ export interface UpdateUser {
   is_active?: boolean;
   is_superuser?: boolean;
 }
+
+export const authApi = {
+  checkAuth: async (): Promise<AuthUser> => {
+    const response = await api.get('/auth/me');
+    return response.data;
+  },
+};
 
 export const adminApi = {
   getAuthorizedEmails: async (): Promise<AuthorizedEmail[]> => {

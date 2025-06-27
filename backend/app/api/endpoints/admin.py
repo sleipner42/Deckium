@@ -11,7 +11,11 @@ from app.models.transaction import Transaction
 from app.repositories.auth import AuthorizedEmailRepository
 from app.repositories.user import UserRepository
 from app.services.transaction_service import TransactionService
-from app.dependencies import get_auth_repo, get_user_repo, get_transaction_service
+from app.dependencies import (
+    get_auth_repo,
+    get_user_repo,
+    get_transaction_service,
+)
 from app.api.deps import get_admin_user
 from app.core.auth import TokenData
 
@@ -37,7 +41,8 @@ async def create_authorized_email(
     existing = await repo.get_by_email(email_in.email)
     if existing:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already authorized"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already authorized",
         )
     return await repo.create(email_in)
 
@@ -52,7 +57,8 @@ async def update_authorized_email(
     email = await repo.update(email_id, email_in)
     if not email:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Authorized email not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Authorized email not found",
         )
     return email
 
@@ -66,7 +72,8 @@ async def delete_authorized_email(
     email = await repo.delete(email_id)
     if not email:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Authorized email not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Authorized email not found",
         )
     return email
 
@@ -159,7 +166,8 @@ async def add_credits_to_user(
 
     if amount <= 0:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Amount must be positive"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Amount must be positive",
         )
 
     return await service.add_credits(user_id, amount, description)
