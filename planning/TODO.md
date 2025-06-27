@@ -1,7 +1,5 @@
 ## TODO
 * How to size and position images?
-* Create an icon
-* Remove logs from built app
 
 * What are all the coodinates that addText returns?
 * Changing order of slides it buggy
@@ -56,3 +54,5 @@
 * Scrollbar on text boxes
 * Make sure that Quill uses the font size and colors
 * Change kraftpo to deckium
+* Create an icon
+* Remove logs from built app
