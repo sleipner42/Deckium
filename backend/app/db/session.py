@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import AsyncGenerator
 
 import aiosqlite
 
@@ -10,7 +11,7 @@ DATABASE_URL = settings.DATABASE_URL
 logger = logging.getLogger(__name__)
 
 
-async def get_db() -> aiosqlite.Connection:
+async def get_db() -> AsyncGenerator[aiosqlite.Connection, None]:
     db = await aiosqlite.connect(DATABASE_URL)
     db.row_factory = aiosqlite.Row
     try:
@@ -22,13 +23,13 @@ async def get_db() -> aiosqlite.Connection:
 async def init_db():
     try:
         db_dir = os.path.dirname(DATABASE_URL)
-        logger.info(f"Creating database directory: {db_dir}")
+        logger.info("Creating database directory: {db_dir}")
         os.makedirs(db_dir, mode=0o755, exist_ok=True)
-        logger.info(f"Database directory created successfully")
+        logger.info("Database directory created successfully")
 
-        logger.info(f"Connecting to database at: {DATABASE_URL}")
-    except Exception as e:
-        logger.error(f"Failed to create database directory: {e}")
+        logger.info("Connecting to database at: {DATABASE_URL}")
+    except Exception:
+        logger.error("Failed to create database directory: {e}")
         raise
 
     try:
@@ -87,7 +88,6 @@ async def init_db():
                 "elias.aronson@gmail.com",
                 "victor@lagerfors.com",
                 "deckium36@gmail.com",
-                "samuel.aronson.hogbom@gmail.com",
             ]
 
             for email in initial_emails:

@@ -7,7 +7,9 @@ router = APIRouter()
 
 
 @router.get("/protected")
-async def protected_route(current_user: TokenData = Depends(get_current_authenticated_user)):
+async def protected_route(
+    current_user: TokenData = Depends(get_current_authenticated_user),
+):
     """
     Example of a protected route that requires authentication.
     Returns user info from JWT token.
@@ -15,5 +17,5 @@ async def protected_route(current_user: TokenData = Depends(get_current_authenti
     return {
         "message": "You are authenticated!",
         "user_id": current_user.sub,
-        "email": current_user.email
-    } 
+        "email": current_user.email,
+    }

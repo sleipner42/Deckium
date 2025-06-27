@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -7,7 +7,6 @@ from jose import jwt, JWTError
 from pydantic import BaseModel
 
 from app.core.config import settings
-
 
 SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = "HS256"
@@ -47,9 +46,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     )
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("email")
-        sub: str = payload.get("sub")
+        payload: dict[str, Any] = jwt.decode(
+            token, SECRET_KEY, algorithms=[ALGORITHM]
+        )
+        email: str | None = payload.get("email")
+        sub: str | None = payload.get("sub")
 
         if email is None or sub is None:
             raise credentials_exception

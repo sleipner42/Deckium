@@ -12,9 +12,7 @@ class SQLiteTransactionRepository(TransactionRepository):
 
     async def _get_db(self) -> aiosqlite.Connection:
         db = await aiosqlite.connect(
-            self.db_path,
-            isolation_level=None,
-            check_same_thread=False
+            self.db_path, isolation_level=None, check_same_thread=False
         )
         db.row_factory = aiosqlite.Row
         return db
@@ -32,7 +30,7 @@ class SQLiteTransactionRepository(TransactionRepository):
                 transaction_in.user_id,
                 transaction_in.amount,
                 transaction_in.description,
-                current_time.isoformat()
+                current_time.isoformat(),
             )
             cursor = await db.execute(sql, params)
             await db.commit()
@@ -47,7 +45,7 @@ class SQLiteTransactionRepository(TransactionRepository):
                 user_id=transaction_in.user_id,
                 amount=transaction_in.amount,
                 description=transaction_in.description,
-                created_at=current_time
+                created_at=current_time,
             )
         finally:
             await db.close()
@@ -60,16 +58,16 @@ class SQLiteTransactionRepository(TransactionRepository):
             )
             row = await cursor.fetchone()
             await cursor.close()
-            
+
             if not row:
                 return None
-                
+
             return Transaction(
                 id=row["id"],
                 user_id=row["user_id"],
                 amount=row["amount"],
                 description=row["description"],
-                created_at=datetime.fromisoformat(row["created_at"])
+                created_at=datetime.fromisoformat(row["created_at"]),
             )
         finally:
             await db.close()
@@ -80,18 +78,18 @@ class SQLiteTransactionRepository(TransactionRepository):
             cursor = await db.execute(
                 'SELECT * FROM "transaction" WHERE user_id = ? '
                 "ORDER BY created_at DESC",
-                (user_id,)
+                (user_id,),
             )
             rows = await cursor.fetchall()
             await cursor.close()
-            
+
             return [
                 Transaction(
                     id=row["id"],
                     user_id=row["user_id"],
                     amount=row["amount"],
                     description=row["description"],
-                    created_at=datetime.fromisoformat(row["created_at"])
+                    created_at=datetime.fromisoformat(row["created_at"]),
                 )
                 for row in rows
             ]
@@ -101,17 +99,14 @@ class SQLiteTransactionRepository(TransactionRepository):
     async def get_user_balance(self, user_id: int) -> float:
         db = await self._get_db()
         try:
-            query = (
-                'SELECT SUM(amount) as balance FROM "transaction" '
-                'WHERE user_id = ?'
-            )
+            query = 'SELECT SUM(amount) as balance FROM "transaction" WHERE user_id = ?'
             cursor = await db.execute(query, (user_id,))
             row = await cursor.fetchone()
             await cursor.close()
-            
+
             if not row or row["balance"] is None:
                 return 0.0
-                
+
             return float(row["balance"])
         finally:
-            await db.close() 
+            await db.close()

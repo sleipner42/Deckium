@@ -1,10 +1,7 @@
 import httpx
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
-from app.models.pexels import (
-    PexelsImage,
-    PexelsImageUrls
-)
+from app.models.pexels import PexelsImage, PexelsImageUrls
 from app.api.deps import get_current_authenticated_user
 from app.core.auth import TokenData
 from app.core.config import settings
@@ -19,9 +16,7 @@ async def search_images(
     query: str = Query(..., description="Search query for images"),
     orientation: Optional[str] = Query(None, description="Image orientation"),
     min_width: Optional[int] = Query(None, description="Minimum image width"),
-    min_height: Optional[int] = Query(
-        None, description="Minimum image height"
-    ),
+    min_height: Optional[int] = Query(None, description="Minimum image height"),
     color: Optional[str] = Query(None, description="Image color filter"),
     current_user: TokenData = Depends(get_current_authenticated_user),
 ):
@@ -31,17 +26,16 @@ async def search_images(
 
         api_key = settings.PEXELS_API_KEY
         if not api_key:
-            raise HTTPException(
-                status_code=500,
-                detail="Pexels API key not configured"
-            )
+            raise HTTPException(status_code=500, detail="Pexels API key not configured")
 
         valid_orientations = ["landscape", "portrait", "square"]
         if orientation and orientation not in valid_orientations:
             raise HTTPException(
                 status_code=400,
-                detail=(f"Invalid orientation. Must be one of: "
-                        f"{', '.join(valid_orientations)}")
+                detail=(
+                    "Invalid orientation. Must be one of: "
+                    f"{', '.join(valid_orientations)}"
+                ),
             )
 
         params: Dict[str, Any] = {
@@ -69,19 +63,18 @@ async def search_images(
         if response.status_code != 200:
             raise HTTPException(
                 status_code=response.status_code,
-                detail=f"Pexels API error: {response.text}"
+                detail=f"Pexels API error: {response.text}",
             )
 
         data = response.json()
 
         if not data.get("photos") or len(data["photos"]) == 0:
             raise HTTPException(
-                status_code=404,
-                detail="No images found for the given query"
+                status_code=404, detail="No images found for the given query"
             )
 
         photo = data["photos"][0]
-        
+
         image = PexelsImage(
             id=photo["id"],
             urls=PexelsImageUrls(
@@ -111,11 +104,7 @@ async def search_images(
 
     except httpx.HTTPError as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error communicating with Pexels API: {str(e)}"
+            status_code=500, detail=f"Error communicating with Pexels API: {str(e)}"
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Internal server error: {str(e)}"
-        ) 
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

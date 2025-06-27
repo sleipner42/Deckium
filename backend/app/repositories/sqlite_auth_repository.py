@@ -3,9 +3,9 @@ from typing import List, Optional
 from datetime import datetime
 
 from app.models.auth import (
-    AuthorizedEmail, 
-    AuthorizedEmailCreate, 
-    AuthorizedEmailUpdate
+    AuthorizedEmail,
+    AuthorizedEmailCreate,
+    AuthorizedEmailUpdate,
 )
 from app.repositories.auth import AuthorizedEmailRepository
 
@@ -16,9 +16,7 @@ class SQLiteAuthorizedEmailRepository(AuthorizedEmailRepository):
 
     async def _get_db(self) -> aiosqlite.Connection:
         db = await aiosqlite.connect(
-            self.db_path,
-            isolation_level=None,
-            check_same_thread=False
+            self.db_path, isolation_level=None, check_same_thread=False
         )
         db.row_factory = aiosqlite.Row
         return db
@@ -37,7 +35,7 @@ class SQLiteAuthorizedEmailRepository(AuthorizedEmailRepository):
                     email=row["email"],
                     is_active=bool(row["is_active"]),
                     created_at=datetime.fromisoformat(row["created_at"]),
-                    created_by=row["created_by"]
+                    created_by=row["created_by"],
                 )
             return None
         finally:
@@ -57,16 +55,14 @@ class SQLiteAuthorizedEmailRepository(AuthorizedEmailRepository):
                     email=row["email"],
                     is_active=bool(row["is_active"]),
                     created_at=datetime.fromisoformat(row["created_at"]),
-                    created_by=row["created_by"]
+                    created_by=row["created_by"],
                 )
             return None
         finally:
             await db.close()
 
     async def create(
-        self, 
-        email_in: AuthorizedEmailCreate, 
-        created_by: Optional[int] = None
+        self, email_in: AuthorizedEmailCreate, created_by: Optional[int] = None
     ) -> AuthorizedEmail:
         db = await self._get_db()
         try:
@@ -75,15 +71,15 @@ class SQLiteAuthorizedEmailRepository(AuthorizedEmailRepository):
                 INSERT INTO authorized_emails (email, is_active, created_by)
                 VALUES (?, ?, ?)
                 """,
-                (email_in.email, email_in.is_active, created_by)
+                (email_in.email, email_in.is_active, created_by),
             )
             email_id = cursor.lastrowid
             await cursor.close()
             await db.commit()
-            
+
             if email_id is None:
                 raise ValueError("Failed to create authorized email")
-            
+
             result = await self.get(email_id)
             if result is None:
                 raise ValueError("Failed to retrieve created authorized email")
@@ -92,32 +88,29 @@ class SQLiteAuthorizedEmailRepository(AuthorizedEmailRepository):
             await db.close()
 
     async def update(
-        self, 
-        email_id: int, 
-        email_in: AuthorizedEmailUpdate
+        self, email_id: int, email_in: AuthorizedEmailUpdate
     ) -> Optional[AuthorizedEmail]:
         db = await self._get_db()
         try:
             update_fields = []
             values = []
-            
+
             if email_in.is_active is not None:
                 update_fields.append("is_active = ?")
                 values.append(int(email_in.is_active))
-            
+
             if not update_fields:
                 return await self.get(email_id)
-            
+
             values.append(email_id)
             query = (
-                f"UPDATE authorized_emails SET {', '.join(update_fields)} "
-                f"WHERE id = ?"
+                f"UPDATE authorized_emails SET {', '.join(update_fields)} WHERE id = ?"
             )
-            
+
             cursor = await db.execute(query, values)
             await cursor.close()
             await db.commit()
-            
+
             return await self.get(email_id)
         finally:
             await db.close()
@@ -136,11 +129,7 @@ class SQLiteAuthorizedEmailRepository(AuthorizedEmailRepository):
         finally:
             await db.close()
 
-    async def list(
-        self, 
-        skip: int = 0, 
-        limit: int = 100
-    ) -> List[AuthorizedEmail]:
+    async def list(self, skip: int = 0, limit: int = 100) -> List[AuthorizedEmail]:
         db = await self._get_db()
         try:
             cursor = await db.execute(
@@ -149,18 +138,18 @@ class SQLiteAuthorizedEmailRepository(AuthorizedEmailRepository):
                 ORDER BY created_at DESC 
                 LIMIT ? OFFSET ?
                 """,
-                (limit, skip)
+                (limit, skip),
             )
             rows = await cursor.fetchall()
             await cursor.close()
-            
+
             return [
                 AuthorizedEmail(
                     id=row["id"],
                     email=row["email"],
                     is_active=bool(row["is_active"]),
                     created_at=datetime.fromisoformat(row["created_at"]),
-                    created_by=row["created_by"]
+                    created_by=row["created_by"],
                 )
                 for row in rows
             ]
@@ -175,7 +164,7 @@ class SQLiteAuthorizedEmailRepository(AuthorizedEmailRepository):
                 SELECT COUNT(*) FROM authorized_emails 
                 WHERE email = ? AND is_active = 1
                 """,
-                (email,)
+                (email,),
             )
             result = await cursor.fetchone()
             await cursor.close()
@@ -183,4 +172,4 @@ class SQLiteAuthorizedEmailRepository(AuthorizedEmailRepository):
                 return False
             return result[0] > 0
         finally:
-            await db.close() 
+            await db.close()

@@ -26,4 +26,4 @@ class AuthorizedEmailInDBBase(AuthorizedEmailBase):
 
 
 class AuthorizedEmail(AuthorizedEmailInDBBase):
-    pass 
+    pass

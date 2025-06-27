@@ -28,4 +28,4 @@ class User(UserInDBBase):
 
 
 class UserInDB(UserInDBBase):
-    hashed_password: str 
+    hashed_password: str

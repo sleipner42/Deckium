@@ -8,6 +8,7 @@ dependencies = [
     "aiosqlite>=0.21.0",
     "authlib>=1.5.2",
     "bcrypt>=4.3.0",
+    "black>=25.1.0",
     "email-validator>=2.2.0",
     "fastapi>=0.115.12",
     "httpx>=0.28.1",
@@ -17,5 +18,9 @@ dependencies = [
     "passlib>=1.7.4",
     "pydantic-settings>=2.9.1",
     "python-jose>=3.4.0",
+    "ruff>=0.12.1",
+    "types-authlib>=1.5.0.20250608",
+    "types-passlib>=1.7.7.20250602",
+    "types-python-jose>=3.5.0.20250531",
     "uvicorn>=0.34.2",
 ]

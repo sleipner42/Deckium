@@ -50,11 +50,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="KeynotAI API", 
+    title="KeynotAI API",
     openapi_url=None,
     docs_url=None,
     redoc_url=None,
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -67,7 +67,12 @@ app.add_middleware(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://localhost:8123",
+        "https://api.deckium.xyz",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -77,9 +82,9 @@ FRONTEND_DIST_PATH = Path(__file__).parent.parent / "admin-frontend" / "dist"
 
 if FRONTEND_DIST_PATH.exists():
     app.mount(
-        "/assets", 
-        StaticFiles(directory=str(FRONTEND_DIST_PATH / "assets")), 
-        name="frontend-assets"
+        "/assets",
+        StaticFiles(directory=str(FRONTEND_DIST_PATH / "assets")),
+        name="frontend-assets",
     )
 
 
@@ -87,8 +92,9 @@ if FRONTEND_DIST_PATH.exists():
 @app.get("/admin/{path:path}")
 async def serve_admin():
     from fastapi.responses import FileResponse
+
     index_file = FRONTEND_DIST_PATH / "index.html"
-    
+
     if not index_file.exists():
         return {
             "message": (
@@ -96,17 +102,14 @@ async def serve_admin():
                 "Run 'npm run build' in the frontend directory."
             )
         }
-    
+
     return FileResponse(str(index_file))
 
 
 @app.get("/")
 def read_root() -> dict[str, str]:
     return {
-        "message": (
-            "Welcome to the KeynotAI API. "
-            "Visit /admin for admin dashboard."
-        )
+        "message": "Welcome to the KeynotAI API. Visit /admin for admin dashboard."
     }
 
 

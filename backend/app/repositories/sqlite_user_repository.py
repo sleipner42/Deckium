@@ -12,9 +12,7 @@ class SQLiteUserRepository(UserRepository):
 
     async def _get_db(self) -> aiosqlite.Connection:
         db = await aiosqlite.connect(
-            self.db_path,
-            isolation_level=None,
-            check_same_thread=False
+            self.db_path, isolation_level=None, check_same_thread=False
         )
         db.row_factory = aiosqlite.Row
         return db
@@ -22,9 +20,7 @@ class SQLiteUserRepository(UserRepository):
     async def get(self, user_id: int) -> Optional[User]:
         db = await self._get_db()
         try:
-            cursor = await db.execute(
-                "SELECT * FROM user WHERE id = ?", (user_id,)
-            )
+            cursor = await db.execute("SELECT * FROM user WHERE id = ?", (user_id,))
             row = await cursor.fetchone()
             await cursor.close()
             return User(**row) if row else None
@@ -34,9 +30,7 @@ class SQLiteUserRepository(UserRepository):
     async def get_by_email(self, email: str) -> Optional[User]:
         db = await self._get_db()
         try:
-            cursor = await db.execute(
-                "SELECT * FROM user WHERE email = ?", (email,)
-            )
+            cursor = await db.execute("SELECT * FROM user WHERE email = ?", (email,))
             row = await cursor.fetchone()
             await cursor.close()
             return User(**row) if row else None

@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from app.models.auth import (
-    AuthorizedEmail, 
-    AuthorizedEmailCreate, 
-    AuthorizedEmailUpdate
+    AuthorizedEmail,
+    AuthorizedEmailCreate,
+    AuthorizedEmailUpdate,
 )
 
 
@@ -20,17 +20,13 @@ class AuthorizedEmailRepository(ABC):
 
     @abstractmethod
     async def create(
-        self, 
-        email_in: AuthorizedEmailCreate, 
-        created_by: Optional[int] = None
+        self, email_in: AuthorizedEmailCreate, created_by: Optional[int] = None
     ) -> AuthorizedEmail:
         pass
 
     @abstractmethod
     async def update(
-        self, 
-        email_id: int, 
-        email_in: AuthorizedEmailUpdate
+        self, email_id: int, email_in: AuthorizedEmailUpdate
     ) -> Optional[AuthorizedEmail]:
         pass
 
@@ -39,13 +35,9 @@ class AuthorizedEmailRepository(ABC):
         pass
 
     @abstractmethod
-    async def list(
-        self, 
-        skip: int = 0, 
-        limit: int = 100
-    ) -> List[AuthorizedEmail]:
+    async def list(self, skip: int = 0, limit: int = 100) -> List[AuthorizedEmail]:
         pass
 
     @abstractmethod
     async def is_authorized(self, email: str) -> bool:
-        pass 
+        pass

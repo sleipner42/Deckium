@@ -2,24 +2,13 @@ import logging
 import secrets
 
 from authlib.integrations.starlette_client import OAuth
-from fastapi import (
-    APIRouter, 
-    Depends, 
-    HTTPException, 
-    Request, 
-    Response, 
-    status
-)
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from starlette.config import Config
 
 from app.core.auth import create_access_token
 from app.core.config import settings
-from app.dependencies import (
-    get_transaction_repo, 
-    get_user_repo, 
-    get_auth_repo
-)
+from app.dependencies import get_transaction_repo, get_user_repo, get_auth_repo
 from app.factories.user_factory import create_oauth_user
 from app.repositories.transaction import TransactionRepository
 from app.repositories.user import UserRepository
@@ -38,9 +27,7 @@ starlette_config = Config(environ=config_data)
 oauth = OAuth(starlette_config)
 oauth.register(
     name="google",
-    server_metadata_url=(
-        "https://accounts.google.com/.well-known/openid-configuration"
-    ),
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
     client_kwargs={"scope": "openid email profile"},
 )
 
@@ -52,9 +39,7 @@ async def login(request: Request):
     state = secrets.token_urlsafe(16)
     request.session["oauth_state"] = state
     logger.info(f"Starting OAuth login flow with state: {state[:5]}...")
-    return await oauth.google.authorize_redirect(
-        request, redirect_uri, state=state
-    )
+    return await oauth.google.authorize_redirect(request, redirect_uri, state=state)
 
 
 @router.get("/callback")
@@ -71,9 +56,7 @@ async def auth_callback(
 
         user_info = token.get("userinfo")
         if not user_info:
-            raise HTTPException(
-                status_code=400, detail="Could not fetch user info"
-            )
+            raise HTTPException(status_code=400, detail="Could not fetch user info")
 
         email = user_info["email"]
         is_authorized = await auth_repo.is_authorized(email)
@@ -139,12 +122,9 @@ async def login_failed(error: str = ""):
 async def get_user(request: Request):
     """Returns user information from the auth cookie"""
     cookie_authorization = request.cookies.get("access_token")
-    if not cookie_authorization or not cookie_authorization.startswith(
-        "Bearer "
-    ):
+    if not cookie_authorization or not cookie_authorization.startswith("Bearer "):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Not authenticated"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
         )
     token = cookie_authorization.replace("Bearer ", "")
     print("token", token)

@@ -21,4 +21,4 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    content: str 
+    content: str

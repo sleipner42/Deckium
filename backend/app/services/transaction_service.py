@@ -24,7 +24,8 @@ class TransactionService:
         current_balance = await self.get_balance(user_id)
         if current_balance < amount:
             raise ValueError(
-                f"Insufficient credits: {current_balance} available, {amount} required"
+                "Insufficient credits: {current_balance} available,"
+                "{amount} required"
             )
 
         transaction = TransactionCreate(

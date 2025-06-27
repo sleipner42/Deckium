@@ -49,4 +49,4 @@ class PexelsSearchResponse(BaseModel):
     prev_page: Optional[str] = None
     query: str
     parameters: Dict[str, Any]
-    message: str 
+    message: str

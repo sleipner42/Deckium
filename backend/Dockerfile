@@ -1,6 +1,11 @@
-FROM python:3.12-slim
+FROM nikolaik/python-nodejs:python3.13-nodejs24-slim
 
-WORKDIR /app
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+
+WORKDIR /workdir
+
+RUN echo "WORKDIR: ${WORKDIR}"
 
 RUN apt-get update && apt-get install -y \
     gcc \
@@ -9,20 +14,13 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-COPY admin-frontend/dist ./admin-frontend/dist
-
 COPY uv.lock pyproject.toml ./
 RUN uv sync --frozen --no-cache
 
-COPY . .
+COPY app ./app
+COPY admin-frontend ./admin-frontend
 
-RUN useradd -m -u 1000 appuser
-RUN mkdir -p /app/data && chown -R appuser:appuser /app
-RUN chmod +x /app/entrypoint.sh
+RUN cd admin-frontend && npm install && npm run build
+RUN cd app && uv sync --frozen --no-cache
 
-USER appuser
-
-EXPOSE 8000
-
-ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"] 

@@ -16,7 +16,7 @@ async def create_oauth_user(
 ) -> None:
     existing_user = await repo.get_by_email(email)
     if not existing_user:
-            
+
         alphabet = string.ascii_letters + string.digits
         password = "".join(secrets.choice(alphabet) for _ in range(20))
         user_create = UserCreate(
