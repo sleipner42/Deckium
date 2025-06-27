@@ -196,13 +196,23 @@ export const TextElement: React.FC<TextElementProps> = ({
     }
   }, [
     isEditing,
-    content,
     element.id,
     onElementUpdate,
     onStopEditing,
     preventBlur,
     verticalAlign,
   ]);
+
+  // Handle external content updates
+  useEffect(() => {
+    if (quillRef.current && content) {
+      const currentContent = quillRef.current.root.innerHTML;
+      // Only update if content actually changed to avoid infinite loops
+      if (currentContent !== content) {
+        quillRef.current.clipboard.dangerouslyPasteHTML(content);
+      }
+    }
+  }, [content]);
 
   // Apply vertical alignment when it changes
   useEffect(() => {
