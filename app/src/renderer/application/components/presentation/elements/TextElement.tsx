@@ -9,6 +9,25 @@ const SizeStyle = Quill.import('attributors/style/size');
 SizeStyle.whitelist = ['8px', '10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'];
 Quill.register(SizeStyle, true);
 
+// Add styles for high z-index toolbar
+const toolbarStyles = `
+  .ql-toolbar {
+    z-index: 9999 !important;
+    position: relative !important;
+  }
+  .ql-picker-options {
+    z-index: 10000 !important;
+  }
+`;
+
+// Inject toolbar z-index styles
+if (!document.querySelector('#quill-toolbar-zindex')) {
+  const style = document.createElement('style');
+  style.id = 'quill-toolbar-zindex';
+  style.textContent = toolbarStyles;
+  document.head.appendChild(style);
+}
+
 interface TextElementProps {
   element: TextBox;
   onClick: () => void;
