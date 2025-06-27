@@ -55,7 +55,9 @@ export const TextElement: React.FC<TextElementProps> = ({
           modules: {
             toolbar: [
               [{ header: [1, 2, 3, false] }],
+              [{ font: [] }, { size: ['small', false, 'large', 'huge'] }],
               ['bold', 'italic', 'underline', 'strike'],
+              [{ color: [] }, { background: [] }],
               [{ list: 'ordered' }, { list: 'bullet' }],
               ['link'],
               [{ align: [] }],
@@ -64,6 +66,8 @@ export const TextElement: React.FC<TextElementProps> = ({
           },
           formats: [
             'header',
+            'font',
+            'size',
             'bold',
             'italic',
             'underline',
@@ -71,6 +75,10 @@ export const TextElement: React.FC<TextElementProps> = ({
             'list',
             'link',
             'align',
+            'color',
+            'background',
+            'code',
+            'formula',
           ],
         });
 
@@ -78,15 +86,17 @@ export const TextElement: React.FC<TextElementProps> = ({
         setTimeout(() => {
           const container = textRef.current as HTMLElement;
           const editor = container?.querySelector('.ql-editor') as HTMLElement;
-          
+
           if (editor && container) {
             editor.style.boxSizing = 'border-box';
-            
+
             // Apply vertical alignment using padding only
             const containerHeight = container.offsetHeight;
-            const toolbarHeight = container.querySelector('.ql-toolbar')?.getBoundingClientRect().height || 0;
+            const toolbarHeight =
+              container.querySelector('.ql-toolbar')?.getBoundingClientRect()
+                .height || 0;
             const availableHeight = containerHeight - toolbarHeight;
-            
+
             switch (verticalAlign) {
               case 'middle':
                 const middlePadding = Math.max(12, (availableHeight - 50) / 2);
@@ -104,7 +114,7 @@ export const TextElement: React.FC<TextElementProps> = ({
                 editor.style.paddingBottom = '12px';
                 break;
             }
-            
+
             editor.style.paddingLeft = '12px';
             editor.style.paddingRight = '12px';
           }
@@ -199,21 +209,23 @@ export const TextElement: React.FC<TextElementProps> = ({
     if (quillRef.current && textRef.current) {
       const container = textRef.current as HTMLElement;
       const editor = container.querySelector('.ql-editor') as HTMLElement;
-      
+
       if (editor) {
         // Always set basic padding
         editor.style.padding = '12px';
         editor.style.boxSizing = 'border-box';
-        
+
         // Apply vertical alignment using padding only - minimal interference
         const containerHeight = container.offsetHeight;
-        const toolbarHeight = container.querySelector('.ql-toolbar')?.getBoundingClientRect().height || 0;
+        const toolbarHeight =
+          container.querySelector('.ql-toolbar')?.getBoundingClientRect()
+            .height || 0;
         const availableHeight = containerHeight - toolbarHeight;
-        
+
         // Reset any previous alignment padding
         editor.style.removeProperty('padding-top');
         editor.style.removeProperty('padding-bottom');
-        
+
         switch (verticalAlign) {
           case 'middle':
             // For middle alignment, calculate padding to center content
