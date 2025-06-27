@@ -93,7 +93,17 @@ const configuration: webpack.Configuration = {
 
   optimization: {
     minimize: true,
-    minimizer: [new TerserPlugin(), new CssMinimizerPlugin()],
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          compress: {
+            drop_console: true,
+            drop_debugger: true,
+          },
+        },
+      }),
+      new CssMinimizerPlugin(),
+    ],
   },
 
   plugins: [
@@ -109,6 +119,11 @@ const configuration: webpack.Configuration = {
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'production',
       DEBUG_PROD: false,
+      LOG_ENABLED: false,
+      LOG_TO_CONSOLE: false,
+      LOG_TO_FILE: false,
+      AI_LOGGING_ENABLED: false,
+      CONVERSATION_LOG_ENABLED: false,
     }),
 
     new MiniCssExtractPlugin({

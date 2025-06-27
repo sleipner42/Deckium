@@ -39,6 +39,12 @@ const configuration: webpack.Configuration = {
     minimizer: [
       new TerserPlugin({
         parallel: true,
+        terserOptions: {
+          compress: {
+            drop_console: true,
+            drop_debugger: true,
+          },
+        },
       }),
     ],
   },
@@ -62,6 +68,11 @@ const configuration: webpack.Configuration = {
       NODE_ENV: 'production',
       DEBUG_PROD: false,
       START_MINIMIZED: false,
+      LOG_ENABLED: false,
+      LOG_TO_CONSOLE: false,
+      LOG_TO_FILE: false,
+      AI_LOGGING_ENABLED: false,
+      CONVERSATION_LOG_ENABLED: false,
     }),
 
     new webpack.DefinePlugin({
