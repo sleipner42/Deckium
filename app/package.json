@@ -241,7 +241,10 @@
       "target": [
         "AppImage"
       ],
-      "category": "Development"
+      "category": "Development",
+      "desktop": {
+        "MimeType": "x-scheme-handler/deckium"
+      }
     },
     "directories": {
       "app": "release/app",

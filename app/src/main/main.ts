@@ -13,6 +13,7 @@ import { PresentationService } from './presentation/service';
 import { setupTextMeasurementIPC } from './text-measurement/ipc-handler';
 import { textMeasurementService } from './text-measurement/service';
 import { getProtocolArgs, resolveHtmlPath } from './util';
+import { AppImageIntegration } from './appimage-integration';
 
 dotenv.config();
 
@@ -183,32 +184,42 @@ app.on('second-instance', (event, commandLine) => {
   }
 });
 
-app
-  .whenReady()
-  .then(async () => {
-    if (!app.isDefaultProtocolClient('deckium')) {
-      app.setAsDefaultProtocolClient('deckium');
-    }
+// Request single instance lock to prevent multiple instances
+const gotTheLock = app.requestSingleInstanceLock();
 
-    createWindow();
-    createSecondWindow();
-    app.on('activate', () => {
-      if (mainWindow === null) createWindow();
-      if (secondWindow === null) createSecondWindow();
-    });
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app
+    .whenReady()
+    .then(async () => {
+      if (!app.isDefaultProtocolClient('deckium')) {
+        app.setAsDefaultProtocolClient('deckium');
+      }
 
-    presentationService = new PresentationService();
-    authService = new AuthService();
+      // Handle AppImage desktop integration
+      await AppImageIntegration.integrateIfNeeded();
 
-    aiServiceFactory = new BackendAIServiceFactory(authService);
+      createWindow();
+      createSecondWindow();
+      app.on('activate', () => {
+        if (mainWindow === null) createWindow();
+        if (secondWindow === null) createSecondWindow();
+      });
 
-    const aiModel = aiServiceFactory.createService();
+      presentationService = new PresentationService();
+      authService = new AuthService();
 
-    aiService = new AIService(aiModel, presentationService, authService);
+      aiServiceFactory = new BackendAIServiceFactory(authService);
 
-    setupAuthIPC(authService);
-    setupAIIPC(aiService);
-    setupPresentationIPC(presentationService);
-    setupTextMeasurementIPC();
-  })
-  .catch(console.log);
+      const aiModel = aiServiceFactory.createService();
+
+      aiService = new AIService(aiModel, presentationService, authService);
+
+      setupAuthIPC(authService);
+      setupAIIPC(aiService);
+      setupPresentationIPC(presentationService);
+      setupTextMeasurementIPC();
+    })
+    .catch(console.log);
+}
