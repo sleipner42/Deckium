@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import React from 'react';
 import { Presentation, Slide } from '../../../common/domain/entities/types';
 import { PRESENTATION_DIMENSIONS } from '../../../common/utils/constants';
-import { SlideRenderer } from '../components/presentation/SlideRenderer';
+import { StandaloneSlideRenderer } from '../components/presentation/StandaloneSlideRenderer';
 
 export interface PDFExportOptions {
   quality: number; // 1-3, where 3 is highest quality
@@ -174,13 +174,10 @@ export class PDFExportService {
       try {
         const root = createRoot(container);
         
-        // Render the slide component
+        // Render the slide component using standalone renderer
         root.render(
-          React.createElement(SlideRenderer, {
+          React.createElement(StandaloneSlideRenderer, {
             slide,
-            readOnly: true,
-            selectableElements: false,
-            maintainAspectRatio: false,
             scale: 1,
             style: {
               transform: 'none',

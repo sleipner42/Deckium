@@ -39,7 +39,7 @@ interface ToolbarProps {
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
-	const { selectedSlide, addElement, presentation } = usePresentation();
+	const { selectedSlide, addElement, currentPresentation, slides } = usePresentation();
 
 	const [shapeAnchorEl, setShapeAnchorEl] = useState<null | HTMLElement>(null);
 	const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
@@ -303,7 +303,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
 						size="small"
 						startIcon={<PictureAsPdfIcon />}
 						onClick={handlePDFExport}
-						disabled={!presentation || presentation.slides.length === 0}
+						disabled={!currentPresentation || slides.length === 0}
 						sx={{
 							borderRadius: 1,
 							textTransform: "none",
@@ -434,11 +434,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
 			</Box>
 
 			{/* PDF Export Dialog */}
-			{presentation && (
+			{currentPresentation && (
 				<PDFExportDialog
 					open={pdfExportDialogOpen}
 					onClose={() => setPdfExportDialogOpen(false)}
-					presentation={presentation}
+					presentation={currentPresentation}
 				/>
 			)}
 		</Box>
