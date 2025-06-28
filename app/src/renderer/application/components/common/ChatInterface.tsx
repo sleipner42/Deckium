@@ -156,7 +156,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleCreateNewThread = async () => {
     try {
-      await createThread('New Thread');
+      // Generate thread name based on existing threads count
+      const threadNumber = threads.length + 1;
+      const threadName = `Thread ${threadNumber}`;
+      await createThread(threadName);
     } catch (error) {
       console.error('Error creating thread:', error);
     }
