@@ -11,8 +11,10 @@ import {
 import { PRESENTATION_DIMENSIONS } from '../../../../common/utils/constants';
 import { usePresentation } from '../../context/PresentationContext';
 import { useElementState } from '../../hooks/useElementState';
+import { useSnapSystem } from '../../hooks/useSnapSystem';
 import { BarChartPropertiesDialog } from './BarChartPropertiesDialog';
 import { ElementContextMenu } from './ElementContextMenu';
+import { SnapGuides } from './SnapGuides';
 import { BarChartElement } from './elements/BarChartElement';
 import { ImageElement } from './elements/ImageElement';
 import { PlotElement } from './elements/PlotElement';
@@ -49,6 +51,45 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     isSelected,
     isEditing,
   } = useElementState();
+
+  // Initialize snap system
+  const { activeGuides, calculateSnapPosition, clearGuides } = useSnapSystem({
+    elements: slide.elements,
+    slideWidth: PRESENTATION_DIMENSIONS.WIDTH,
+    slideHeight: PRESENTATION_DIMENSIONS.HEIGHT,
+    config: {
+      tolerance: 8,
+      enableEdgeSnapping: true,
+      enableCenterSnapping: true,
+      enableDistributionSnapping: false, // Can be enabled later
+    },
+  });
+
+  // Enhanced updateElement with snap support
+  const updateElementWithSnap = (elementId: string, updates: Partial<ContentElement>) => {
+    const element = slide.elements.find(el => el.id === elementId);
+    if (!element) return;
+
+    // If we're updating position and not in read-only mode, apply snapping
+    if (updates.position && !readOnly) {
+      const snapResult = calculateSnapPosition(element, updates.position);
+      updates.position = snapResult.position;
+    }
+
+    updateElement(elementId, updates);
+  };
+
+  // Add mouse up event listener to clear guides when dragging ends
+  useEffect(() => {
+    const handleMouseUp = () => {
+      clearGuides();
+    };
+
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [clearGuides]);
 
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
@@ -219,7 +260,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       onClick: () => handleElementClick(element.id),
       onContextMenu: (event: React.MouseEvent) =>
         handleContextMenu(event, element.id),
-      onElementUpdate: readOnly ? undefined : updateElement,
+      onElementUpdate: readOnly ? undefined : updateElementWithSnap,
       isSelected: !readOnly && selectableElements && isSelected(element.id),
       isEditing: !readOnly && selectableElements && isEditing(element.id),
       onStartEditing: () =>
@@ -240,11 +281,12 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       onStopEditing: (content?: string) => {
         if (readOnly) return;
         stopEditingElement();
+        clearGuides(); // Clear guides when stopping text editing
         if (content !== undefined) {
           updateElement(element.id, { content });
         }
       },
-      onElementUpdate: readOnly ? undefined : updateElement,
+      onElementUpdate: readOnly ? undefined : updateElementWithSnap,
       readOnly,
     };
 
@@ -298,12 +340,28 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         height: PRESENTATION_DIMENSIONS.HEIGHT,
         backgroundColor: slide.background,
         overflow: 'hidden',
+        position: 'relative',
         ...style,
       }}
       className={className}
-      onClick={() => !readOnly && selectableElements && selectElement(null)}
+      onClick={() => {
+        if (!readOnly && selectableElements) {
+          selectElement(null);
+          clearGuides(); // Clear guides when clicking background
+        }
+      }}
     >
       {slide.elements.map(renderElement)}
+
+      {/* Snap guides overlay */}
+      {!readOnly && (
+        <SnapGuides
+          guides={activeGuides}
+          slideWidth={PRESENTATION_DIMENSIONS.WIDTH}
+          slideHeight={PRESENTATION_DIMENSIONS.HEIGHT}
+          scale={scale}
+        />
+      )}
 
       <ElementContextMenu
         anchorEl={contextMenu ? document.body : null}
