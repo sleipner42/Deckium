@@ -34,6 +34,7 @@ export const useMainProcessAI = (presentationId: UUID) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [isCreatingInitialThread, setIsCreatingInitialThread] = useState<boolean>(false);
 
   const loadThreads = useCallback(async () => {
     if (!presentationId) return;
@@ -46,13 +47,16 @@ export const useMainProcessAI = (presentationId: UUID) => {
       
       if (loadedThreads.length > 0 && !currentThread) {
         setCurrentThread(loadedThreads[0]);
-      } else if (loadedThreads.length === 0) {
+      } else if (loadedThreads.length === 0 && !isCreatingInitialThread) {
         // Auto-create first thread if none exist
+        setIsCreatingInitialThread(true);
         try {
           await electronAPI.ai.createThread('Thread 1', presentationId);
           // Thread creation will trigger the ai:thread-created event which will update state
         } catch (createError) {
           console.error('Failed to auto-create initial thread:', createError);
+        } finally {
+          setIsCreatingInitialThread(false);
         }
       }
     } catch (err) {
@@ -61,7 +65,7 @@ export const useMainProcessAI = (presentationId: UUID) => {
       setIsLoading(false);
       setIsInitialized(true);
     }
-  }, [presentationId, currentThread]);
+  }, [presentationId, currentThread, isCreatingInitialThread]);
 
   useEffect(() => {
     if (!isInitialized && presentationId) {

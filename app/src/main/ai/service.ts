@@ -222,6 +222,27 @@ export class AIService {
       // Check if this was an abort - this catch handles outer errors
       if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted'))) {
         console.log(`Request aborted for thread: ${request.threadId}`);
+        
+        // Clean up any streaming messages to remove loading indicators
+        const currentThread = this.getThread(request.threadId);
+        if (currentThread) {
+          const cleanedMessages = currentThread.messages.map(m => {
+            // Set any streaming messages to completed and remove empty ones
+            if (m.role === 'assistant' && m.streamingState === 'streaming') {
+              if (!m.content || m.content.toString().trim() === '') {
+                return null; // Mark for removal
+              } else {
+                return { ...m, streamingState: 'completed' as const };
+              }
+            }
+            return m;
+          }).filter(m => m !== null); // Remove null entries
+          
+          const cleanedThread = { ...currentThread, messages: cleanedMessages };
+          this.saveThread(cleanedThread);
+          this.eventBus.broadcastThreadUpdated(cleanedThread);
+        }
+        
         this.eventBus.broadcastProcessingCompleted(request.threadId);
         throw error; // Re-throw so the renderer knows it was aborted
       }

@@ -191,7 +191,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     } catch (error) {
       console.error('Error sending abort request:', error);
     } finally {
-      setIsProcessing(false); // Hide stop button when abort is pressed
+      setIsProcessing(false); // Hide stop button and clear streaming states
     }
   };
 
@@ -552,7 +552,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 />
                               </Tooltip>
                             )}
-                            {message.streamingState === 'streaming' && (
+                            {message.streamingState === 'streaming' && isProcessing && (
                               <Box
                                 component="span"
                                 sx={{
@@ -603,7 +603,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                               }}
                             >
                               {content}
-                              {message.streamingState === 'streaming' && (
+                              {message.streamingState === 'streaming' && isProcessing && (
                                 <Box
                                   component="span"
                                   sx={{
