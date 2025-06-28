@@ -59,6 +59,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const [inputValue, setInputValue] = useState('');
   const [pastedImages, setPastedImages] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
 
@@ -133,6 +134,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     e.preventDefault();
 
     if (!inputValue.trim() && pastedImages.length === 0) return;
+    if (isProcessing) return; // Prevent multiple submissions
 
     try {
       if (!currentThread) {
@@ -141,17 +143,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         );
       }
 
+      setIsProcessing(true); // Show stop button immediately
+      setInputValue('');
+      setPastedImages([]);
+
       await sendMessage(
         inputValue,
         pastedImages.length > 0 ? pastedImages : undefined,
       );
-      setInputValue('');
-      setPastedImages([]);
     } catch (error) {
       // Only log non-abort errors
       if (!(error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted')))) {
         console.error('Error sending message:', error);
       }
+    } finally {
+      setIsProcessing(false); // Hide stop button when done
     }
   };
 
@@ -184,6 +190,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       console.log('Abort request sent');
     } catch (error) {
       console.error('Error sending abort request:', error);
+    } finally {
+      setIsProcessing(false); // Hide stop button when abort is pressed
     }
   };
 
@@ -646,8 +654,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   );
                 })}
               
-              {/* Show processing indicator when loading but not streaming */}
-              {isLoading && !currentThread.messages.some(m => m.streamingState === 'streaming') && (
+              {/* Show processing indicator when processing but not streaming */}
+              {isProcessing && !currentThread.messages.some(m => m.streamingState === 'streaming') && (
                 <Box
                   sx={{
                     maxWidth: '85%',
@@ -841,7 +849,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onFocus={handleInputFocus}
-          disabled={isLoading || !currentThread}
+          disabled={isProcessing || !currentThread}
           variant="outlined"
           inputRef={inputRef}
           InputProps={{
@@ -868,7 +876,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     ) : null}
                     New
                   </Button>
-                ) : isLoading ? (
+                ) : isProcessing ? (
                   <IconButton
                     color="error"
                     onClick={handleAbortRequest}
@@ -890,7 +898,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   <IconButton
                     color="primary"
                     type="submit"
-                    disabled={isLoading || (!inputValue.trim() && pastedImages.length === 0)}
+                    disabled={isProcessing || (!inputValue.trim() && pastedImages.length === 0)}
                     edge="end"
                     size="small"
                   >
