@@ -5,6 +5,8 @@ import { IAIServiceFactory } from '../common/domain/interfaces/ai-service.interf
 import { BackendAIServiceFactory } from './ai/external/backend-ai-service';
 import { setupAIIPC } from './ai/ipc-handler';
 import { AIService } from './ai/service';
+import { setupCriticIPC } from './ai/critic/ipc-handler';
+import { CriticService } from './ai/critic/service';
 import { setupAuthIPC } from './auth/ipc-handler';
 import AuthService from './auth/service';
 import MenuBuilder from './menu';
@@ -21,6 +23,7 @@ let mainWindow: BrowserWindow | null = null;
 let secondWindow: BrowserWindow | null = null;
 let presentationService: PresentationService;
 let aiService: AIService;
+let criticService: CriticService;
 let aiServiceFactory: IAIServiceFactory;
 let authService: AuthService;
 
@@ -215,9 +218,11 @@ if (!gotTheLock) {
       const aiModel = aiServiceFactory.createService();
 
       aiService = new AIService(aiModel, presentationService, authService);
+      criticService = new CriticService(aiModel, presentationService);
 
       setupAuthIPC(authService);
       setupAIIPC(aiService);
+      setupCriticIPC(criticService);
       setupPresentationIPC(presentationService);
       setupTextMeasurementIPC();
     })
