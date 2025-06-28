@@ -6,6 +6,7 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
+import StopIcon from '@mui/icons-material/Stop';
 import {
   Avatar,
   alpha,
@@ -51,12 +52,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     sendMessage,
     loadThread,
     deleteThread,
+    abortRequest,
   } = useAI();
 
   const { selectElement } = usePresentation();
 
   const [inputValue, setInputValue] = useState('');
   const [pastedImages, setPastedImages] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingSessionId, setProcessingSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
 
@@ -131,6 +135,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     e.preventDefault();
 
     if (!inputValue.trim() && pastedImages.length === 0) return;
+    if (isProcessing) return; // Prevent multiple submissions
 
     try {
       if (!currentThread) {
@@ -139,14 +144,24 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         );
       }
 
+      const sessionId = Date.now().toString(); // Unique session ID
+      setIsProcessing(true); // Show stop button immediately
+      setProcessingSessionId(sessionId);
+      setInputValue('');
+      setPastedImages([]);
+
       await sendMessage(
         inputValue,
         pastedImages.length > 0 ? pastedImages : undefined,
       );
-      setInputValue('');
-      setPastedImages([]);
     } catch (error) {
-      console.error('Error sending message:', error);
+      // Only log non-abort errors
+      if (!(error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted')))) {
+        console.error('Error sending message:', error);
+      }
+    } finally {
+      setIsProcessing(false); // Hide stop button when done
+      setProcessingSessionId(null);
     }
   };
 
@@ -171,6 +186,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleInputFocus = () => {
     selectElement(null);
+  };
+
+  const handleAbortRequest = async () => {
+    try {
+      await abortRequest();
+      console.log('Abort request sent');
+    } catch (error) {
+      console.error('Error sending abort request:', error);
+    } finally {
+      setIsProcessing(false); // Hide stop button and clear streaming states
+      setProcessingSessionId(null); // Clear the session
+    }
   };
 
   const formatTimestamp = (date: Date) => {
@@ -427,7 +454,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       typeof message.content === 'string' &&
                       message.content.startsWith('[CRITIC]')),
                 )
-                .map((message: Message) => {
+                .map((message: Message, index, filteredMessages) => {
                   const isUser = message.role === 'user';
                   const isAssistant = message.role === 'assistant';
                   // Check for system messages with [CRITIC] prefix
@@ -436,6 +463,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     (message.role === 'system' &&
                       typeof message.content === 'string' &&
                       message.content.startsWith('[CRITIC]'));
+
+                  // Only show streaming indicators for the last assistant message
+                  const isLastAssistantMessage = isAssistant && index === filteredMessages.length - 1;
+                  const shouldShowStreamingIndicator = isLastAssistantMessage && isProcessing;
 
                   const { content, isUsingTool, hasImages } =
                     processMessageContent(message);
@@ -530,7 +561,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 />
                               </Tooltip>
                             )}
-                            {message.streamingState === 'streaming' && (
+                            {message.streamingState === 'streaming' && shouldShowStreamingIndicator && (
                               <Box
                                 component="span"
                                 sx={{
@@ -581,7 +612,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                               }}
                             >
                               {content}
-                              {message.streamingState === 'streaming' && (
+                              {message.streamingState === 'streaming' && shouldShowStreamingIndicator && (
                                 <Box
                                   component="span"
                                   sx={{
@@ -631,6 +662,83 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     </Box>
                   );
                 })}
+              
+              {/* Show processing indicator when processing but not streaming */}
+              {isProcessing && !currentThread.messages.some(m => m.streamingState === 'streaming') && (
+                <Box
+                  sx={{
+                    maxWidth: '85%',
+                    width: 'fit-content',
+                    alignSelf: 'flex-start',
+                    mb: 1.5,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      gap: 1,
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <Avatar
+                      sx={{
+                        width: 28,
+                        height: 28,
+                        bgcolor: '#F5F5F7',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <SmartToyOutlinedIcon
+                        sx={{
+                          color: 'text.secondary',
+                          fontSize: '0.9rem',
+                        }}
+                      />
+                    </Avatar>
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          mb: 0.5,
+                          color: 'text.secondary',
+                          fontSize: '0.65rem',
+                        }}
+                      >
+                        AI Assistant • Processing...
+                        <CircularProgress size={8} thickness={6} />
+                      </Typography>
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 1.5,
+                          maxWidth: '100%',
+                          bgcolor: alpha('#007AFF', 0.08),
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: 'text.secondary',
+                            fontSize: '0.85rem',
+                            fontStyle: 'italic',
+                          }}
+                        >
+                          Analyzing and executing tools...
+                        </Typography>
+                      </Paper>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+              
               <Box ref={messagesEndRef} />
             </>
           ) : (
@@ -750,7 +858,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onFocus={handleInputFocus}
-          disabled={isLoading || !currentThread}
+          disabled={isProcessing || !currentThread}
           variant="outlined"
           inputRef={inputRef}
           InputProps={{
@@ -777,18 +885,33 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     ) : null}
                     New
                   </Button>
+                ) : isProcessing ? (
+                  <IconButton
+                    color="error"
+                    onClick={handleAbortRequest}
+                    edge="end"
+                    size="small"
+                    title="Stop generation"
+                    sx={{
+                      animation: 'pulse 2s infinite',
+                      '@keyframes pulse': {
+                        '0%': { opacity: 1 },
+                        '50%': { opacity: 0.7 },
+                        '100%': { opacity: 1 },
+                      },
+                    }}
+                  >
+                    <StopIcon />
+                  </IconButton>
                 ) : (
                   <IconButton
                     color="primary"
                     type="submit"
-                    disabled={
-                      isLoading ||
-                      (!inputValue.trim() && pastedImages.length === 0)
-                    }
+                    disabled={isProcessing || (!inputValue.trim() && pastedImages.length === 0)}
                     edge="end"
                     size="small"
                   >
-                    {isLoading ? <CircularProgress size={16} /> : <SendIcon />}
+                    <SendIcon />
                   </IconButton>
                 )}
               </InputAdornment>

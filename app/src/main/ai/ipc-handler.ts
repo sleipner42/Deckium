@@ -40,4 +40,8 @@ export function setupAIIPC(service: AIService) {
       return service.sendMessage(request);
     },
   );
+
+  ipcMain.handle('ai:abort-request', (_, threadId: UUID): boolean => {
+    return service.abortRequest(threadId);
+  });
 }

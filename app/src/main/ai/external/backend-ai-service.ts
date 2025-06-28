@@ -15,7 +15,7 @@ export class BackendAIService implements IAIService {
     this.authService = authService;
   }
 
-  async chat(messages: Message[], deploymentName?: string): Promise<string> {
+  async chat(messages: Message[], deploymentName?: string, abortSignal?: AbortSignal): Promise<string> {
     const overallStartTime = performance.now();
 
     try {
@@ -39,6 +39,7 @@ export class BackendAIService implements IAIService {
           model: deploymentName,
           stream: false,
         }),
+        signal: abortSignal,
       });
 
       if (!response.ok) {
@@ -71,6 +72,7 @@ export class BackendAIService implements IAIService {
     messages: Message[],
     onChunk: (chunk: string) => void,
     deploymentName?: string,
+    abortSignal?: AbortSignal,
   ): Promise<string> {
     const overallStartTime = performance.now();
 
@@ -97,6 +99,7 @@ export class BackendAIService implements IAIService {
             model: deploymentName,
             stream: true,
           }),
+          signal: abortSignal,
         });
 
         if (!response.ok) {
