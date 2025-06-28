@@ -42,8 +42,17 @@ export const useMainProcessAI = (presentationId: UUID) => {
       const loadedThreads =
         await electronAPI.ai.getThreadsForPresentation(presentationId);
       setThreads(loadedThreads);
+      
       if (loadedThreads.length > 0 && !currentThread) {
         setCurrentThread(loadedThreads[0]);
+      } else if (loadedThreads.length === 0) {
+        // Auto-create first thread if none exist
+        try {
+          await electronAPI.ai.createThread('Thread 1', presentationId);
+          // Thread creation will trigger the ai:thread-created event which will update state
+        } catch (createError) {
+          console.error('Failed to auto-create initial thread:', createError);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load threads');
