@@ -60,6 +60,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [pastedImages, setPastedImages] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingSessionId, setProcessingSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
 
@@ -143,7 +144,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         );
       }
 
+      const sessionId = Date.now().toString(); // Unique session ID
       setIsProcessing(true); // Show stop button immediately
+      setProcessingSessionId(sessionId);
       setInputValue('');
       setPastedImages([]);
 
@@ -158,6 +161,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
     } finally {
       setIsProcessing(false); // Hide stop button when done
+      setProcessingSessionId(null);
     }
   };
 
@@ -192,6 +196,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       console.error('Error sending abort request:', error);
     } finally {
       setIsProcessing(false); // Hide stop button and clear streaming states
+      setProcessingSessionId(null); // Clear the session
     }
   };
 
@@ -449,7 +454,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       typeof message.content === 'string' &&
                       message.content.startsWith('[CRITIC]')),
                 )
-                .map((message: Message) => {
+                .map((message: Message, index, filteredMessages) => {
                   const isUser = message.role === 'user';
                   const isAssistant = message.role === 'assistant';
                   // Check for system messages with [CRITIC] prefix
@@ -458,6 +463,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     (message.role === 'system' &&
                       typeof message.content === 'string' &&
                       message.content.startsWith('[CRITIC]'));
+
+                  // Only show streaming indicators for the last assistant message
+                  const isLastAssistantMessage = isAssistant && index === filteredMessages.length - 1;
+                  const shouldShowStreamingIndicator = isLastAssistantMessage && isProcessing;
 
                   const { content, isUsingTool, hasImages } =
                     processMessageContent(message);
@@ -552,7 +561,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 />
                               </Tooltip>
                             )}
-                            {message.streamingState === 'streaming' && isProcessing && (
+                            {message.streamingState === 'streaming' && shouldShowStreamingIndicator && (
                               <Box
                                 component="span"
                                 sx={{
@@ -603,7 +612,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                               }}
                             >
                               {content}
-                              {message.streamingState === 'streaming' && isProcessing && (
+                              {message.streamingState === 'streaming' && shouldShowStreamingIndicator && (
                                 <Box
                                   component="span"
                                   sx={{
