@@ -4,6 +4,7 @@ import ShapesIcon from "@mui/icons-material/Category";
 import TriangleIcon from "@mui/icons-material/ChangeHistory";
 import ImageIcon from "@mui/icons-material/Image";
 import LogoutIcon from "@mui/icons-material/Logout";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import CircleIcon from "@mui/icons-material/RadioButtonUnchecked";
 import RectangleIcon from "@mui/icons-material/Rectangle";
 import PresentationIcon from "@mui/icons-material/Slideshow";
@@ -31,16 +32,18 @@ import {
 } from "../../../../common/domain/entities/element-factory";
 import { useAuth } from "../../context/AuthContext";
 import { usePresentation } from "../../context/PresentationContext";
+import { PDFExportDialog } from "../presentation/PDFExportDialog";
 
 interface ToolbarProps {
 	style?: React.CSSProperties;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
-	const { selectedSlide, addElement } = usePresentation();
+	const { selectedSlide, addElement, presentation } = usePresentation();
 
 	const [shapeAnchorEl, setShapeAnchorEl] = useState<null | HTMLElement>(null);
 	const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
+	const [pdfExportDialogOpen, setPdfExportDialogOpen] = useState<boolean>(false);
 	const [balance, setBalance] = useState<number>(0);
 	const [balanceError, setBalanceError] = useState<boolean>(false);
 	const { authState, logout, getBalance } = useAuth();
@@ -168,6 +171,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
 		window.electron.presentation.openFullscreen();
 	};
 
+	const handlePDFExport = () => {
+		setPdfExportDialogOpen(true);
+	};
+
 	return (
 		<Box
 			sx={{
@@ -290,6 +297,32 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
 					</Button>
 				</Tooltip>
 
+				<Tooltip title="Export to PDF">
+					<Button
+						variant="outlined"
+						size="small"
+						startIcon={<PictureAsPdfIcon />}
+						onClick={handlePDFExport}
+						disabled={!presentation || presentation.slides.length === 0}
+						sx={{
+							borderRadius: 1,
+							textTransform: "none",
+							px: 2,
+							ml: 1,
+							borderColor: alpha("#000", 0.12),
+							"&:hover": {
+								bgcolor: alpha("#FF6B35", 0.04),
+								borderColor: alpha("#FF6B35", 0.5),
+							},
+							"&:disabled": {
+								opacity: 0.5,
+							},
+						}}
+					>
+						Export PDF
+					</Button>
+				</Tooltip>
+
 				<Tooltip title="Present">
 					<Button
 						variant="contained"
@@ -399,6 +432,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
 					</MenuItem>
 				</Menu>
 			</Box>
+
+			{/* PDF Export Dialog */}
+			{presentation && (
+				<PDFExportDialog
+					open={pdfExportDialogOpen}
+					onClose={() => setPdfExportDialogOpen(false)}
+					presentation={presentation}
+				/>
+			)}
 		</Box>
 	);
 };
