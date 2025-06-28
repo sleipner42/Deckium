@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Users, Zap, BarChart, X, MessageSquare } from "lucide-react";
+import { Users, Zap, BarChart, X, MessageSquare, Menu } from "lucide-react";
 
 const Modal = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-gray-800 p-6 rounded-lg relative max-w-md w-full">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+      <div className="bg-gray-800 p-6 rounded-lg relative max-w-md w-full max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 text-gray-400 hover:text-white"
+          className="absolute top-4 right-4 text-gray-400 hover:text-white z-10"
         >
           <X size={24} />
         </button>
@@ -125,6 +125,19 @@ const LandingPage = () => {
   const [formStatus, setFormStatus] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [earlyAccessStatus, setEarlyAccessStatus] = useState("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMobileMenuOpen && !event.target.closest('header')) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isMobileMenuOpen]);
 
   const handleSubmit = async (e, formType) => {
     e.preventDefault();
@@ -166,9 +179,11 @@ const LandingPage = () => {
   return (
     <div className="bg-gray-900 text-white min-h-screen">
       <div className="container mx-auto px-4">
-        <header className="flex justify-between items-center py-6">
+        <header className="flex justify-between items-center py-6 relative">
           <div className="text-indigo-400 font-bold text-2xl">DECKIUM</div>
-          <nav>
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden md:block">
             <ul className="flex space-x-6">
               <li>
                 <a href="#features" className="hover:text-indigo-400">
@@ -187,7 +202,9 @@ const LandingPage = () => {
               </li>
             </ul>
           </nav>
-          <div>
+          
+          {/* Desktop Join Waitlist Button */}
+          <div className="hidden md:block">
             <button
               onClick={() => {
                 setIsModalOpen(true);
@@ -198,29 +215,86 @@ const LandingPage = () => {
               Join waitlist
             </button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+
+          {/* Mobile Navigation Menu */}
+          {isMobileMenuOpen && (
+            <div className="absolute top-full left-0 right-0 bg-gray-800 border-t border-gray-700 md:hidden z-50">
+              <nav className="py-4">
+                <ul className="space-y-4 text-center">
+                  <li>
+                    <a 
+                      href="#features" 
+                      className="block py-2 hover:text-indigo-400"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Features
+                    </a>
+                  </li>
+                  <li>
+                    <a 
+                      href="#about" 
+                      className="block py-2 hover:text-indigo-400"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      About
+                    </a>
+                  </li>
+                  <li>
+                    <a 
+                      href="#contact" 
+                      className="block py-2 hover:text-indigo-400"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Contact
+                    </a>
+                  </li>
+                  <li className="pt-4 pb-2">
+                    <button
+                      onClick={() => {
+                        setIsModalOpen(true);
+                        setIsMobileMenuOpen(false);
+                        trackEvent('Navigation', 'Click', 'Join Waitlist Mobile');
+                      }}
+                      className="bg-indigo-500 text-white px-6 py-3 rounded font-semibold hover:bg-indigo-600 transition-colors"
+                    >
+                      Join waitlist
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          )}
         </header>
 
-        <main className="py-20">
+        <main className="py-12 md:py-20">
           <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="max-w-xl mb-12 md:mb-0 md:mr-8">
-              <h1 className="text-5xl font-bold mb-6">
+            <div className="max-w-xl mb-12 md:mb-0 md:mr-8 text-center md:text-left">
+              <h1 className="text-3xl md:text-5xl font-bold mb-6">
                 AI-powered presentations
                 <br />
                 <span className="text-indigo-400">with human control</span>
               </h1>
-              <p className="text-xl mb-8">
+              <p className="text-lg md:text-xl mb-8">
                 Deckium is your AI presentation assistant that works just like a human colleague. 
                 Create professional slides, enhance content, and add visualizations while maintaining 
                 full control. No animations, no AI templates - just pure presentation power.
               </p>
-              <div className="space-x-4">
+              <div className="flex flex-col sm:flex-row gap-4 sm:space-x-4 items-center justify-center md:justify-start">
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="bg-indigo-500 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-600 transition-colors"
+                  className="w-full sm:w-auto bg-indigo-500 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-600 transition-colors"
                 >
                   Join waitlist
                 </button>
-                <button className="bg-gray-700 px-6 py-3 rounded-lg text-lg hover:bg-gray-600 transition-colors">
+                <button className="w-full sm:w-auto bg-gray-700 px-6 py-3 rounded-lg text-lg hover:bg-gray-600 transition-colors">
                   Learn more
                 </button>
               </div>
@@ -230,13 +304,13 @@ const LandingPage = () => {
           </div>
         </main>
 
-        <section className="py-20">
+        <section className="py-12 md:py-20">
           <AIDemo />
         </section>
 
-        <section id="features" className="py-20">
-          <h2 className="text-3xl font-bold mb-12">Key features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <section id="features" className="py-12 md:py-20">
+          <h2 className="text-2xl md:text-3xl font-bold mb-8 md:mb-12 text-center">Key features</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             <FeatureCard
               icon={<Users className="w-12 h-12 text-indigo-400" />}
               title="Human-like assistance"
@@ -255,51 +329,53 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <section id="about" className="py-20">
-          <h2 className="text-3xl font-bold mb-8">About Deckium</h2>
-          <p className="text-xl mb-6">
-            Deckium is revolutionizing presentation creation by combining AI capabilities with human control. 
-            Unlike other tools that force you into templates or animations, Deckium works as your intelligent 
-            presentation partner, helping you create professional slides while keeping you in the driver's seat.
-          </p>
-          <p className="text-xl">
-            Whether you need to create a new presentation from scratch, enhance existing slides, 
-            or add the latest data visualizations, Deckium's AI agent is ready to assist you 
-            with the same precision and understanding as a human colleague.
-          </p>
+        <section id="about" className="py-12 md:py-20">
+          <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-center">About Deckium</h2>
+          <div className="max-w-4xl mx-auto">
+            <p className="text-lg md:text-xl mb-6">
+              Deckium is revolutionizing presentation creation by combining AI capabilities with human control. 
+              Unlike other tools that force you into templates or animations, Deckium works as your intelligent 
+              presentation partner, helping you create professional slides while keeping you in the driver's seat.
+            </p>
+            <p className="text-lg md:text-xl">
+              Whether you need to create a new presentation from scratch, enhance existing slides, 
+              or add the latest data visualizations, Deckium's AI agent is ready to assist you 
+              with the same precision and understanding as a human colleague.
+            </p>
+          </div>
         </section>
 
-        <section id="contact" className="py-20">
-          <h2 className="text-3xl font-bold mb-12">Contact us</h2>
+        <section id="contact" className="py-12 md:py-20">
+          <h2 className="text-2xl md:text-3xl font-bold mb-8 md:mb-12 text-center">Contact us</h2>
           <form
             onSubmit={(e) => handleSubmit(e, "contact")}
-            className="space-y-4 max-w-2xl mx-auto"
+            className="space-y-4 max-w-2xl mx-auto px-4 md:px-0"
           >
             <input
               type="text"
               name="name"
               placeholder="Name"
               required
-              className="w-full p-2 rounded bg-gray-800"
+              className="w-full p-3 md:p-4 rounded bg-gray-800 text-white"
             />
             <input
               type="email"
               name="email"
               placeholder="Email"
               required
-              className="w-full p-2 rounded bg-gray-800"
+              className="w-full p-3 md:p-4 rounded bg-gray-800 text-white"
             />
             <textarea
               name="message"
               placeholder="Message"
               required
               rows="4"
-              className="w-full p-2 rounded bg-gray-800"
+              className="w-full p-3 md:p-4 rounded bg-gray-800 text-white"
             ></textarea>
             <button
               type="submit"
               disabled={formStatus === "submitting"}
-              className="bg-indigo-500 text-white px-6 py-2 rounded font-semibold w-full"
+              className="bg-indigo-500 text-white px-6 py-3 md:py-4 rounded font-semibold w-full hover:bg-indigo-600 transition-colors"
             >
               {formStatus === "submitting" ? "Sending..." : "Send message"}
             </button>
