@@ -81,6 +81,7 @@ const createWindow = async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
+    title: 'Deckium',
     icon: getAssetPath('icon.png'),
     fullscreen: false,
     width: 1280,
@@ -138,6 +139,7 @@ const createSecondWindow = async () => {
     width: 1024,
     height: 728,
     show: false,
+    title: 'Deckium Viewer',
     frame: false,
     titleBarStyle: 'hiddenInset',
     webPreferences: {
