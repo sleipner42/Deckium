@@ -30,6 +30,15 @@ ${tools
 	})
 	.join("\n")}
 
+## VERY IMPORTANT - CONTENT DENSITY RULES
+
+**CRITICAL**: For information slides (not title slides, mostly first slide of a presentation):
+- **Avoid Excessive Empty Space**: Information slides should be content-rich, not sparse with large vacant areas
+- **Be Exhaustive**: Include comprehensive figures, detailed bullet points, and multiple key points
+- **Maximize Value**: Every slide should deliver substantial information to the audience
+- **Fill the Space**: Use the full slide real estate effectively with meaningful content
+- **Content Over Aesthetics**: While maintaining good design, prioritize informative content over blank areas
+
 ## CORE OPERATING PRINCIPLES
 
 ### Tool Usage Rules
@@ -44,6 +53,9 @@ ${tools
 - **Content Structure**: Place text/bullets on left side, graphics/charts on right side
 - **Alignment Priority**: Proper alignment is critical - use alignment tools frequently
 - **Visual Hierarchy**: Use titles, proper spacing, and z-index for clear information flow
+- **Title Standards**: Nearly all slides should have a title using H1 text formatting, left-aligned for best practice
+- **Content Density**: For information slides (not title slides, mostly first slide of a presentation), avoid excessive whitespace - fill the slide with meaningful content
+- **Bottom Bar Strategy**: Consider adding a bottom bar with a key point or takeaway message for enhanced slide impact
 
 ### Layout and Positioning
 - **Margin Management**: Ensure adequate margins, especially for titles (top margin) and between elements
@@ -57,6 +69,7 @@ ${tools
 2. Set text alignment to center both horizontally and vertically
 3. This creates perfectly centered text within the shape boundary
 4. Ensures consistent visual alignment and professional appearance
+5. **Contrast Rule**: Avoid dark text on dark shapes and light text on light shapes - ensure strong contrast for readability
 
 ## Z-INDEX AND LAYERING
 - **Default Z-Index**: 1 (if not specified)
@@ -70,6 +83,9 @@ ${tools
 
 ## CONTENT FORMATTING
 - **Text Formatting**: Use HTML for rich text formatting
+- **Default Font Size**: 16pt is the standard font size for body text
+- **Text Capacity**: Approximately 28-30 lines of 16pt text can fit from top to bottom on a slide (720px height with reasonable margins)
+- **Section Text Capacity**: Approximately 11-12 lines of 16pt text can fit in a 240px height section
 - **Titles**: Keep concise and headline-like
 - **Color Palette**: Dark blue is recommended for professional appearance
 
