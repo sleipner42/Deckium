@@ -15,11 +15,28 @@ interface StandaloneSlideRendererProps {
   style?: React.CSSProperties;
   className?: string;
   scale?: number;
+  hideText?: boolean; // Option to hide text elements for hybrid PDF rendering
 }
 
 // Standalone element renderers that don't use context
 const StandaloneTextElement: React.FC<{ element: TextBox }> = ({ element }) => {
-  const { position, size, content, backgroundColor, borderRadius, zIndex } = element;
+  const { position, size, content, backgroundColor, borderRadius, zIndex, align, verticalAlign } = element;
+
+  const getJustifyContent = () => {
+    switch (verticalAlign) {
+      case 'middle': return 'center';
+      case 'bottom': return 'flex-end';
+      default: return 'flex-start';
+    }
+  };
+
+  const getTextAlign = () => {
+    switch (align) {
+      case 'center': return 'center';
+      case 'right': return 'right';
+      default: return 'left';
+    }
+  };
 
   return (
     <div
@@ -38,10 +55,19 @@ const StandaloneTextElement: React.FC<{ element: TextBox }> = ({ element }) => {
         fontSize: '16px',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'flex-start',
+        justifyContent: getJustifyContent(),
+        textAlign: getTextAlign(),
+        boxSizing: 'border-box',
       }}
-      dangerouslySetInnerHTML={{ __html: content || '' }}
-    />
+    >
+      <div
+        style={{
+          width: '100%',
+          textAlign: getTextAlign(),
+        }}
+        dangerouslySetInnerHTML={{ __html: content || '' }}
+      />
+    </div>
   );
 };
 
@@ -94,15 +120,20 @@ const StandaloneImageElement: React.FC<{ element: Image }> = ({ element }) => {
         width: `${size.width}px`,
         height: `${size.height}px`,
         zIndex: zIndex || 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
       }}
     >
       <img
         src={content}
         alt="Slide element"
         style={{
-          width: '100%',
-          height: '100%',
+          maxWidth: '100%',
+          maxHeight: '100%',
           objectFit: 'contain',
+          objectPosition: 'center',
         }}
         crossOrigin="anonymous"
       />
@@ -202,8 +233,14 @@ export const StandaloneSlideRenderer: React.FC<StandaloneSlideRendererProps> = (
   style,
   className,
   scale = 1,
+  hideText = false,
 }) => {
   const renderElement = (element: ContentElement) => {
+    // Skip text elements if hideText is true
+    if (hideText && element.type === 'textbox') {
+      return null;
+    }
+
     switch (element.type) {
       case 'rectangle':
       case 'circle':
