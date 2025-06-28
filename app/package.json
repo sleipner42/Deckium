@@ -1,6 +1,7 @@
 {
   "name": "Deckium",
   "description": "Deckium is a desktop app for creating and managing your slides with AI.",
+  "license": "UNLICENSED",
   "keywords": [
     "Deckium"
   ],
