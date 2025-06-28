@@ -67,11 +67,8 @@ export const TextElement: React.FC<TextElementProps> = ({
 		position,
 		size,
 		content,
-		color,
-		style,
 		backgroundColor,
 		borderRadius,
-		align,
 		verticalAlign,
 		zIndex,
 	} = element;
@@ -367,18 +364,81 @@ export const TextElement: React.FC<TextElementProps> = ({
 			data-element-id={element.id}
 			data-element-type="textbox"
 			sx={{
+				"& .ql-container": {
+					border: "none !important",
+					fontFamily: "inherit !important",
+					fontSize: "inherit !important",
+					height: "100% !important",
+				},
 				"& .ql-editor": {
 					display: "flex !important",
 					padding: "5px !important",
-					alignItems:
-						verticalAlign === "bottom"
-							? "flex-end !important"
-							: verticalAlign === "middle"
-								? "center !important"
+					flexDirection: "column !important",
+					justifyContent:
+						verticalAlign === "middle"
+							? "center !important"
+							: verticalAlign === "bottom"
+								? "flex-end !important"
 								: "flex-start !important",
 					minHeight: "100% !important",
 					overflow: "visible !important",
+					color: "inherit !important",
+					fontFamily: "inherit !important",
+					fontSize: "inherit !important",
 					"& ol": { paddingLeft: "0", fontSize: "inherit" },
+					"& h1": {
+						fontSize: "32px !important",
+						fontWeight: "bold !important",
+						margin: "0 !important",
+					},
+					"& h2": {
+						fontSize: "24px !important",
+						fontWeight: "bold !important",
+						margin: "0 !important",
+					},
+					"& h3": {
+						fontSize: "20px !important",
+						fontWeight: "bold !important",
+						margin: "0 !important",
+					},
+				},
+				"& .ql-editor.ql-blank::before": {
+					fontStyle: "normal !important",
+					color: "#999 !important",
+				},
+				"& .ql-toolbar.ql-snow": {
+					background: "white !important",
+					border: "1px solid #ccc !important",
+					borderRadius: "4px !important",
+					boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15) !important",
+					userSelect: "none !important",
+					pointerEvents: "auto !important",
+				},
+				"& .ql-formats": {
+					marginRight: "15px !important",
+				},
+				"& .ql-toolbar": {
+					userSelect: "none !important",
+					pointerEvents: "auto !important",
+					"& *": {
+						userSelect: "none !important",
+					},
+				},
+				"& .ql-picker": {
+					userSelect: "none !important",
+				},
+				"& .ql-picker-options": {
+					userSelect: "none !important",
+				},
+				"& .ql-toolbar button:focus, & .ql-toolbar select:focus, & .ql-picker:focus, & .ql-picker-item:focus":
+					{
+						outline: "none !important",
+					},
+				"& .ql-disabled .ql-toolbar": {
+					display: "none !important",
+				},
+				"& .ql-disabled .ql-container": {
+					border: "none !important",
 				},
 			}}
 			style={{
@@ -389,7 +449,6 @@ export const TextElement: React.FC<TextElementProps> = ({
 				height: `${size.height}px`,
 				maxHeight: `${size.height}px`,
 				overflow: "visible",
-				color,
 				cursor: readOnly
 					? "default"
 					: isEditing
@@ -397,12 +456,6 @@ export const TextElement: React.FC<TextElementProps> = ({
 						: isSelected
 							? "move"
 							: "pointer",
-				alignItems:
-					align === "center"
-						? "center"
-						: align === "right"
-							? "flex-end"
-							: "flex-start",
 				userSelect: isEditing ? "text" : "none",
 				outline: isSelected && !isEditing ? "2px solid #0066ff" : "none",
 				outlineOffset: "2px",
@@ -411,9 +464,9 @@ export const TextElement: React.FC<TextElementProps> = ({
 				backgroundColor: backgroundColor || "transparent",
 				borderRadius:
 					borderRadius !== undefined ? `${borderRadius}px` : undefined,
-				textAlign: align || "left",
 				zIndex: zIndex || 1,
-				...style,
+				color: "black",
+				fontSize: "16px",
 			}}
 			onDoubleClick={handleDoubleClick}
 			onBlur={handleBlur}
