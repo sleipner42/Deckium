@@ -1,28 +1,28 @@
-import Quill from 'quill';
-import React, { useEffect, useRef, useState } from 'react';
-import { TextBox } from '../../../../../common/domain/entities/types';
-import { useTextEditing } from '../../../context/TextEditingContext';
-import { ResizeHandles } from '../ResizeHandles';
+import { Box } from "@mui/material";
+import Quill from "quill";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
+import type { TextBox } from "../../../../../common/domain/entities/types";
+import { useTextEditing } from "../../../context/TextEditingContext";
+import { ResizeHandles } from "../ResizeHandles";
 
-// Configure Quill to accept custom font sizes
-const SizeStyle = Quill.import('attributors/style/size');
+const SizeStyle = Quill.import("attributors/style/size") as any;
 SizeStyle.whitelist = [
-  '8px',
-  '10px',
-  '12px',
-  '14px',
-  '16px',
-  '18px',
-  '20px',
-  '24px',
-  '28px',
-  '32px',
-  '36px',
-  '48px',
+	"8px",
+	"10px",
+	"12px",
+	"14px",
+	"16px",
+	"18px",
+	"20px",
+	"24px",
+	"28px",
+	"32px",
+	"36px",
+	"48px",
 ];
 Quill.register(SizeStyle, true);
 
-// Add styles for high z-index toolbar
 const toolbarStyles = `
   .ql-toolbar {
     z-index: 9999 !important;
@@ -33,518 +33,410 @@ const toolbarStyles = `
   }
 `;
 
-// Inject toolbar z-index styles
-if (!document.querySelector('#quill-toolbar-zindex')) {
-  const style = document.createElement('style');
-  style.id = 'quill-toolbar-zindex';
-  style.textContent = toolbarStyles;
-  document.head.appendChild(style);
+if (!document.querySelector("#quill-toolbar-zindex")) {
+	const style = document.createElement("style");
+	style.id = "quill-toolbar-zindex";
+	style.textContent = toolbarStyles;
+	document.head.appendChild(style);
 }
 
 interface TextElementProps {
-  element: TextBox;
-  onClick: () => void;
-  onContextMenu?: (event: React.MouseEvent) => void;
-  isSelected: boolean;
-  isEditing: boolean;
-  onStartEditing: () => void;
-  onStopEditing: (content?: string) => void;
-  onElementUpdate?: (elementId: string, updates: Partial<TextBox>) => void;
-  readOnly?: boolean;
+	element: TextBox;
+	onClick: () => void;
+	onContextMenu?: (event: React.MouseEvent) => void;
+	isSelected: boolean;
+	isEditing: boolean;
+	onStartEditing: () => void;
+	onStopEditing: (content?: string) => void;
+	onElementUpdate?: (elementId: string, updates: Partial<TextBox>) => void;
+	readOnly?: boolean;
 }
 
 export const TextElement: React.FC<TextElementProps> = ({
-  element,
-  onClick,
-  onContextMenu,
-  isSelected,
-  isEditing,
-  onStartEditing,
-  onStopEditing,
-  onElementUpdate,
-  readOnly = false,
+	element,
+	onClick,
+	onContextMenu,
+	isSelected,
+	isEditing,
+	onStartEditing,
+	onStopEditing,
+	onElementUpdate,
+	readOnly = false,
 }) => {
-  const {
-    position,
-    size,
-    content,
-    color,
-    style,
-    backgroundColor,
-    borderRadius,
-    align,
-    verticalAlign,
-    zIndex,
-  } = element;
-  const textRef = useRef<HTMLDivElement>(null);
-  const quillRef = useRef<Quill | null>(null);
-  const [preventBlur, setPreventBlur] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const { setActiveEditor } = useTextEditing();
+	const {
+		position,
+		size,
+		content,
+		color,
+		style,
+		backgroundColor,
+		borderRadius,
+		align,
+		verticalAlign,
+		zIndex,
+	} = element;
+	const textRef = useRef<HTMLDivElement>(null);
+	const quillRef = useRef<Quill | null>(null);
+	const [preventBlur, setPreventBlur] = useState(false);
+	const [isDragging, setIsDragging] = useState(false);
+	const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+	const { setActiveEditor } = useTextEditing();
 
-  useEffect(() => {
-    if (textRef.current && !quillRef.current) {
-      // Initialize Quill once and keep it persistent
-      try {
-        const quill = new Quill(textRef.current, {
-          theme: 'snow',
-          modules: {
-            toolbar: [
-              [{ header: [1, 2, 3, false] }],
-              [
-                { font: [] },
-                {
-                  size: [
-                    '8px',
-                    '10px',
-                    '12px',
-                    '14px',
-                    '16px',
-                    '18px',
-                    '20px',
-                    '24px',
-                    '28px',
-                    '32px',
-                    '36px',
-                    '48px',
-                  ],
-                },
-              ],
-              ['bold', 'italic', 'underline', 'strike'],
-              [{ color: [] }, { background: [] }],
-              [{ list: 'ordered' }, { list: 'bullet' }],
-              ['link'],
-              [{ align: [] }],
-              ['clean'],
-            ],
-          },
-          formats: [
-            'header',
-            'font',
-            'size',
-            'bold',
-            'italic',
-            'underline',
-            'strike',
-            'list',
-            'link',
-            'align',
-            'color',
-            'background',
-            'code',
-            'formula',
-          ],
-        });
+	useEffect(() => {
+		if (textRef.current && !quillRef.current) {
+			try {
+				const quill = new Quill(textRef.current, {
+					theme: "snow",
+					modules: {
+						toolbar: [
+							[{ header: [1, 2, 3, false] }],
+							[
+								{ font: [] },
+								{
+									size: [
+										"8px",
+										"10px",
+										"12px",
+										"14px",
+										"16px",
+										"18px",
+										"20px",
+										"24px",
+										"28px",
+										"32px",
+										"36px",
+										"48px",
+									],
+								},
+							],
+							["bold", "italic", "underline", "strike"],
+							[{ color: [] }, { background: [] }],
+							[{ list: "ordered" }, { list: "bullet" }],
+							["link"],
+							[{ align: [] }],
+							["clean"],
+						],
+					},
+					formats: [
+						"header",
+						"font",
+						"size",
+						"bold",
+						"italic",
+						"underline",
+						"strike",
+						"list",
+						"link",
+						"align",
+						"color",
+						"background",
+						"code",
+						"formula",
+					],
+				});
 
-        // Set basic padding and vertical alignment on the editor
-        setTimeout(() => {
-          const container = textRef.current as HTMLElement;
-          const editor = container?.querySelector('.ql-editor') as HTMLElement;
+				if (content) {
+					quill.clipboard.dangerouslyPasteHTML(content);
+				}
 
-          if (editor && container) {
-            editor.style.boxSizing = 'border-box';
+				const toolbar = quill.getModule("toolbar");
+				if (toolbar?.container) {
+					const handleToolbarClick = (e: Event) => {
+						e.stopPropagation();
+						setPreventBlur(true);
 
-            // Apply vertical alignment using padding only
-            const containerHeight = container.offsetHeight;
-            const toolbarHeight =
-              container.querySelector('.ql-toolbar')?.getBoundingClientRect()
-                .height || 0;
-            const availableHeight = containerHeight - toolbarHeight;
+						setTimeout(() => setPreventBlur(false), 300);
+					};
 
-            switch (verticalAlign) {
-              case 'middle': {
-                const middlePadding = Math.max(12, (availableHeight - 50) / 2);
-                editor.style.paddingTop = `${middlePadding}px`;
-                editor.style.paddingBottom = '12px';
-                break;
-              }
-              case 'bottom': {
-                const bottomPadding = Math.max(12, availableHeight - 60);
-                editor.style.paddingTop = `${bottomPadding}px`;
-                editor.style.paddingBottom = '12px';
-                break;
-              }
-              case 'top':
-              default:
-                editor.style.paddingTop = '12px';
-                editor.style.paddingBottom = '12px';
-                break;
-            }
+					const handleToolbarMouseDown = (_e: Event) => {
+						setPreventBlur(true);
+					};
 
-            editor.style.paddingLeft = '12px';
-            editor.style.paddingRight = '12px';
-          }
-        }, 100);
+					toolbar.container.addEventListener(
+						"mousedown",
+						handleToolbarMouseDown,
+						true,
+					);
+					toolbar.container.addEventListener(
+						"click",
+						handleToolbarClick,
+						false,
+					);
+				}
 
-        // Set initial content
-        if (content) {
-          quill.clipboard.dangerouslyPasteHTML(content);
-        }
+				quillRef.current = quill;
+			} catch (error) {
+				console.error("Failed to initialize Quill editor:", error);
+			}
+		}
 
-        // Handle content changes
-        quill.on('text-change', () => {
-          if (onElementUpdate && quillRef.current) {
-            const html = quillRef.current.root.innerHTML;
-            onElementUpdate(element.id, { content: html });
-          }
-        });
+		if (quillRef.current) {
+			if (isEditing) {
+				quillRef.current.enable();
+				const toolbar = quillRef.current.getModule("toolbar");
+				if (toolbar?.container) {
+					toolbar.container.style.display = "block";
+				}
+				setActiveEditor(quillRef.current);
+				setPreventBlur(true);
+				setTimeout(() => {
+					setPreventBlur(false);
+					if (quillRef.current) {
+						quillRef.current.focus();
+					}
+				}, 200);
+			} else {
+				quillRef.current.disable();
+				const toolbar = quillRef.current.getModule("toolbar");
+				if (toolbar?.container) {
+					toolbar.container.style.display = "none";
+				}
+				setActiveEditor(null);
+			}
+		}
+	}, [isEditing, setActiveEditor, content]);
 
-        // Add event listeners to toolbar to prevent blur without blocking Quill functionality
-        const toolbar = quill.getModule('toolbar');
-        if (toolbar && toolbar.container) {
-          const handleToolbarClick = (e: Event) => {
-            // Stop propagation and set preventBlur immediately on click
-            e.stopPropagation();
-            setPreventBlur(true);
+	useEffect(() => {
+		if (quillRef.current && content) {
+			const currentContent = quillRef.current.root.innerHTML;
 
-            // Reset preventBlur after Quill has had time to process
-            setTimeout(() => setPreventBlur(false), 300);
-          };
+			if (currentContent !== content) {
+				quillRef.current.clipboard.dangerouslyPasteHTML(content);
+			}
+		}
+	}, [content]);
 
-          const handleToolbarMouseDown = (e: Event) => {
-            // Prevent document click detection
-            setPreventBlur(true);
-          };
+	useEffect(() => {
+		if (!isEditing) return;
 
-          // Handle both mousedown and click to ensure toolbar stays visible
-          toolbar.container.addEventListener(
-            'mousedown',
-            handleToolbarMouseDown,
-            true,
-          );
-          toolbar.container.addEventListener(
-            'click',
-            handleToolbarClick,
-            false,
-          ); // Use false to let Quill handle it first
-        }
+		const handleDocumentClick = (e: MouseEvent) => {
+			setTimeout(() => {
+				if (preventBlur) return;
 
-        quillRef.current = quill;
-      } catch (error) {
-        console.error('Failed to initialize Quill editor:', error);
-      }
-    }
+				const target = e.target as HTMLElement;
+				const quillContainer = textRef.current;
 
-    // Toggle editing mode
-    if (quillRef.current) {
-      if (isEditing) {
-        quillRef.current.enable();
-        const toolbar = quillRef.current.getModule('toolbar');
-        if (toolbar && toolbar.container) {
-          toolbar.container.style.display = 'block';
-        }
-        setActiveEditor(quillRef.current); // Register this editor as active
-        setPreventBlur(true);
-        setTimeout(() => {
-          setPreventBlur(false);
-          if (quillRef.current) {
-            quillRef.current.focus();
-          }
-        }, 200);
-      } else {
-        quillRef.current.disable();
-        const toolbar = quillRef.current.getModule('toolbar');
-        if (toolbar && toolbar.container) {
-          toolbar.container.style.display = 'none';
-        }
-        setActiveEditor(null); // Unregister the editor
-      }
-    }
-  }, [
-    isEditing,
-    element.id,
-    onElementUpdate,
-    onStopEditing,
-    preventBlur,
-    verticalAlign,
-  ]);
+				const isWithinQuill = quillContainer?.contains(target);
 
-  // Handle external content updates
-  useEffect(() => {
-    if (quillRef.current && content) {
-      const currentContent = quillRef.current.root.innerHTML;
-      // Only update if content actually changed to avoid infinite loops
-      if (currentContent !== content) {
-        quillRef.current.clipboard.dangerouslyPasteHTML(content);
-      }
-    }
-  }, [content]);
+				let isWithinToolbar = false;
+				if (quillRef.current) {
+					const toolbar = quillRef.current.getModule("toolbar");
+					if (toolbar?.container) {
+						isWithinToolbar = toolbar.container.contains(target);
+					}
+				}
 
-  // Apply vertical alignment when it changes
-  useEffect(() => {
-    if (quillRef.current && textRef.current) {
-      const container = textRef.current as HTMLElement;
-      const editor = container.querySelector('.ql-editor') as HTMLElement;
+				const isToolbarElement =
+					target?.closest(".ql-toolbar") ||
+					target?.closest(".ql-picker") ||
+					target?.closest(".ql-picker-options") ||
+					target?.closest(".ql-picker-item") ||
+					target?.closest(".ql-picker-label") ||
+					target?.closest(".ql-formats") ||
+					target?.classList?.contains("ql-picker") ||
+					target?.classList?.contains("ql-picker-label") ||
+					target?.classList?.contains("ql-picker-item") ||
+					target?.classList?.contains("ql-stroke") ||
+					target?.classList?.contains("ql-fill") ||
+					(target?.tagName === "svg" && target?.closest(".ql-toolbar"));
 
-      if (editor) {
-        // Always set basic padding
-        editor.style.padding = '12px';
-        editor.style.boxSizing = 'border-box';
+				if (
+					!isWithinQuill &&
+					!isWithinToolbar &&
+					!isToolbarElement &&
+					quillRef.current
+				) {
+					onStopEditing(quillRef.current.root.innerHTML);
+				}
+			}, 10);
+		};
 
-        // Apply vertical alignment using padding only - minimal interference
-        const containerHeight = container.offsetHeight;
-        const toolbarHeight =
-          container.querySelector('.ql-toolbar')?.getBoundingClientRect()
-            .height || 0;
-        const availableHeight = containerHeight - toolbarHeight;
+		const timeoutId = setTimeout(() => {
+			document.addEventListener("click", handleDocumentClick, true);
+		}, 50);
 
-        // Reset any previous alignment padding
-        editor.style.removeProperty('padding-top');
-        editor.style.removeProperty('padding-bottom');
+		return () => {
+			clearTimeout(timeoutId);
+			document.removeEventListener("click", handleDocumentClick, true);
+		};
+	}, [isEditing, preventBlur, onStopEditing]);
 
-        switch (verticalAlign) {
-          case 'middle': {
-            // For middle alignment, calculate padding to center content
-            const middlePadding = Math.max(12, (availableHeight - 50) / 2);
-            editor.style.paddingTop = `${middlePadding}px`;
-            editor.style.paddingBottom = '12px';
-            break;
-          }
-          case 'bottom': {
-            // For bottom alignment, add top padding to push content down
-            const bottomPadding = Math.max(12, availableHeight - 60);
-            editor.style.paddingTop = `${bottomPadding}px`;
-            editor.style.paddingBottom = '12px';
-            break;
-          }
-          case 'top':
-          default:
-            // For top alignment, use standard padding
-            editor.style.paddingTop = '12px';
-            editor.style.paddingBottom = '12px';
-            break;
-        }
-      }
-    }
-  }, [verticalAlign, size.height]);
+	const handleMouseDown = (e: React.MouseEvent) => {
+		if (readOnly) return;
 
-  // Document-level click detection for exiting edit mode
-  useEffect(() => {
-    if (!isEditing) return;
+		const target = e.target as HTMLElement;
+		if (target?.closest(".ql-toolbar")) {
+			return;
+		}
 
-    const handleDocumentClick = (e: MouseEvent) => {
-      // Use a small delay to ensure preventBlur state is properly set
-      setTimeout(() => {
-        if (preventBlur) return;
+		if (isSelected && !isEditing) {
+			e.stopPropagation();
+			setIsDragging(true);
+			setDragOffset({
+				x: e.clientX - position.x,
+				y: e.clientY - position.y,
+			});
+		}
+	};
 
-        const target = e.target as HTMLElement;
-        const quillContainer = textRef.current;
+	const onElementUpdateRef = useRef(onElementUpdate);
+	useEffect(() => {
+		onElementUpdateRef.current = onElementUpdate;
+	}, [onElementUpdate]);
 
-        // Check if click is within the Quill editor
-        const isWithinQuill = quillContainer && quillContainer.contains(target);
+	useEffect(() => {
+		const handleMouseMove = (e: MouseEvent) => {
+			if (isDragging && onElementUpdateRef.current) {
+				onElementUpdateRef.current(element.id, {
+					position: {
+						x: e.clientX - dragOffset.x,
+						y: e.clientY - dragOffset.y,
+					},
+				});
+			}
+		};
 
-        // Get toolbar directly from Quill instance for more reliable detection
-        let isWithinToolbar = false;
-        if (quillRef.current) {
-          const toolbar = quillRef.current.getModule('toolbar');
-          if (toolbar && toolbar.container) {
-            isWithinToolbar = toolbar.container.contains(target);
-          }
-        }
+		const handleMouseUp = () => {
+			setIsDragging(false);
+		};
 
-        // More comprehensive toolbar element detection
-        const isToolbarElement =
-          target?.closest('.ql-toolbar') ||
-          target?.closest('.ql-picker') ||
-          target?.closest('.ql-picker-options') ||
-          target?.closest('.ql-picker-item') ||
-          target?.closest('.ql-picker-label') ||
-          target?.closest('.ql-formats') ||
-          target?.classList?.contains('ql-picker') ||
-          target?.classList?.contains('ql-picker-label') ||
-          target?.classList?.contains('ql-picker-item') ||
-          target?.classList?.contains('ql-stroke') ||
-          target?.classList?.contains('ql-fill') ||
-          (target?.tagName === 'svg' && target?.closest('.ql-toolbar'));
+		if (isDragging) {
+			document.addEventListener("mousemove", handleMouseMove);
+			document.addEventListener("mouseup", handleMouseUp);
+		}
 
-        // If click is outside editor, toolbar container, and toolbar elements, exit editing
-        if (
-          !isWithinQuill &&
-          !isWithinToolbar &&
-          !isToolbarElement &&
-          quillRef.current
-        ) {
-          onStopEditing(quillRef.current.root.innerHTML);
-        }
-      }, 10);
-    };
+		return () => {
+			document.removeEventListener("mousemove", handleMouseMove);
+			document.removeEventListener("mouseup", handleMouseUp);
+		};
+	}, [isDragging, dragOffset, element.id]);
 
-    // Add listener with a small delay to avoid immediate triggering
-    const timeoutId = setTimeout(() => {
-      document.addEventListener('click', handleDocumentClick, true);
-    }, 50);
+	const handleDoubleClick = (e: React.MouseEvent) => {
+		if (readOnly) return;
 
-    return () => {
-      clearTimeout(timeoutId);
-      document.removeEventListener('click', handleDocumentClick, true);
-    };
-  }, [isEditing, preventBlur, onStopEditing]);
+		e.stopPropagation();
+		onStartEditing();
+	};
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (readOnly) return;
+	const handleBlur = (e: React.FocusEvent) => {
+		if (!preventBlur && isEditing && quillRef.current) {
+			const relatedTarget = e.relatedTarget as HTMLElement;
 
-    // Don't interfere with toolbar clicks
-    const target = e.target as HTMLElement;
-    if (target?.closest('.ql-toolbar')) {
-      return;
-    }
+			if (
+				!relatedTarget ||
+				(!relatedTarget.closest("[data-element-id]") &&
+					!relatedTarget.closest(".ql-toolbar"))
+			) {
+				setTimeout(() => {
+					if (quillRef.current && isEditing) {
+						onStopEditing(quillRef.current.root.innerHTML);
+					}
+				}, 100);
+			}
+		}
+	};
 
-    if (isSelected && !isEditing) {
-      e.stopPropagation();
-      setIsDragging(true);
-      setDragOffset({
-        x: e.clientX - position.x,
-        y: e.clientY - position.y,
-      });
-    }
-  };
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Escape" && quillRef.current) {
+			setPreventBlur(false);
+			onStopEditing(quillRef.current.root.innerHTML);
+		}
+	};
 
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging && onElementUpdate) {
-        onElementUpdate(element.id, {
-          position: {
-            x: e.clientX - dragOffset.x,
-            y: e.clientY - dragOffset.y,
-          },
-        });
-      }
-    };
+	const handleClick = (e: React.MouseEvent) => {
+		if (readOnly) return;
 
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
+		const target = e.target as HTMLElement;
+		if (target?.closest(".ql-toolbar")) {
+			return;
+		}
 
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }
+		e.stopPropagation();
+		if (!isEditing) {
+			onClick();
+		}
+	};
 
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, dragOffset, element.id, onElementUpdate]);
+	const renderContent = () => {
+		return <div style={{ height: "100%", width: "100%" }} />;
+	};
 
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    if (readOnly) return;
-
-    e.stopPropagation();
-    onStartEditing();
-  };
-
-  const handleBlur = (e: React.FocusEvent) => {
-    // Simplified blur handler since we primarily use document click detection
-    // This handles keyboard navigation cases
-    if (!preventBlur && isEditing && quillRef.current) {
-      const relatedTarget = e.relatedTarget as HTMLElement;
-
-      // Only exit if focus goes to something completely unrelated
-      if (
-        !relatedTarget ||
-        (!relatedTarget.closest('[data-element-id]') &&
-          !relatedTarget.closest('.ql-toolbar'))
-      ) {
-        setTimeout(() => {
-          if (quillRef.current && isEditing) {
-            onStopEditing(quillRef.current.root.innerHTML);
-          }
-        }, 100);
-      }
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape' && quillRef.current) {
-      setPreventBlur(false);
-      onStopEditing(quillRef.current.root.innerHTML);
-    }
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    if (readOnly) return;
-
-    // Don't interfere with toolbar clicks
-    const target = e.target as HTMLElement;
-    if (target?.closest('.ql-toolbar')) {
-      return;
-    }
-
-    e.stopPropagation();
-    if (!isEditing) {
-      onClick();
-    }
-  };
-
-  const renderContent = () => {
-    // Always return the Quill container - it will be enabled/disabled based on editing state
-    return <div style={{ height: '100%', width: '100%' }} />;
-  };
-
-  return (
-    <div
-      ref={textRef}
-      data-element-id={element.id}
-      data-element-type="textbox"
-      style={{
-        position: 'absolute',
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: `${size.width}px`,
-        height: `${size.height}px`,
-        maxHeight: `${size.height}px`,
-        overflow: 'hidden',
-        color,
-        cursor: readOnly
-          ? 'default'
-          : isEditing
-            ? 'text'
-            : isSelected
-              ? 'move'
-              : 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems:
-          align === 'center'
-            ? 'center'
-            : align === 'right'
-              ? 'flex-end'
-              : 'flex-start',
-        userSelect: isEditing ? 'text' : 'none',
-        outline: isSelected && !isEditing ? '2px solid #0066ff' : 'none',
-        outlineOffset: '2px',
-        padding: '0',
-        border: 'none',
-        backgroundColor: backgroundColor || 'transparent',
-        borderRadius:
-          borderRadius !== undefined ? `${borderRadius}px` : undefined,
-        textAlign: align || 'left',
-        zIndex: zIndex || 1,
-        ...style,
-      }}
-      onDoubleClick={handleDoubleClick}
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-      onMouseDown={handleMouseDown}
-      onClick={handleClick}
-      onContextMenu={onContextMenu}
-    >
-      {renderContent()}
-      <ResizeHandles
-        isSelected={isSelected}
-        isEditing={isEditing}
-        elementId={element.id}
-        position={position}
-        size={size}
-        onResize={
-          onElementUpdate
-            ? (id, updates) => onElementUpdate(id, updates)
-            : () => {}
-        }
-        minWidth={50}
-        minHeight={30}
-      />
-    </div>
-  );
+	return (
+		<Box
+			ref={textRef}
+			data-element-id={element.id}
+			data-element-type="textbox"
+			sx={{
+				"& .ql-editor": {
+					display: "flex !important",
+					padding: "5px !important",
+					alignItems:
+						verticalAlign === "bottom"
+							? "flex-end !important"
+							: verticalAlign === "middle"
+								? "center !important"
+								: "flex-start !important",
+					minHeight: "100% !important",
+					overflow: "visible !important",
+					"& ol": { paddingLeft: "0", fontSize: "inherit" },
+				},
+			}}
+			style={{
+				position: "absolute",
+				left: `${position.x}px`,
+				top: `${position.y}px`,
+				width: `${size.width}px`,
+				height: `${size.height}px`,
+				maxHeight: `${size.height}px`,
+				overflow: "visible",
+				color,
+				cursor: readOnly
+					? "default"
+					: isEditing
+						? "text"
+						: isSelected
+							? "move"
+							: "pointer",
+				alignItems:
+					align === "center"
+						? "center"
+						: align === "right"
+							? "flex-end"
+							: "flex-start",
+				userSelect: isEditing ? "text" : "none",
+				outline: isSelected && !isEditing ? "2px solid #0066ff" : "none",
+				outlineOffset: "2px",
+				padding: "0",
+				border: "none",
+				backgroundColor: backgroundColor || "transparent",
+				borderRadius:
+					borderRadius !== undefined ? `${borderRadius}px` : undefined,
+				textAlign: align || "left",
+				zIndex: zIndex || 1,
+				...style,
+			}}
+			onDoubleClick={handleDoubleClick}
+			onBlur={handleBlur}
+			onKeyDown={handleKeyDown}
+			onMouseDown={handleMouseDown}
+			onClick={handleClick}
+			onContextMenu={onContextMenu}
+		>
+			{renderContent()}
+			<ResizeHandles
+				isSelected={isSelected}
+				isEditing={isEditing}
+				elementId={element.id}
+				position={position}
+				size={size}
+				onResize={
+					onElementUpdate
+						? (id, updates) => onElementUpdate(id, updates)
+						: () => {}
+				}
+				minWidth={50}
+				minHeight={30}
+			/>
+		</Box>
+	);
 };
