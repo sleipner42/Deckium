@@ -35,6 +35,7 @@ export const useMainProcessAI = (presentationId: UUID) => {
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [isCreatingInitialThread, setIsCreatingInitialThread] = useState<boolean>(false);
+  const [hasCreatedInitialThread, setHasCreatedInitialThread] = useState<boolean>(false);
 
   const loadThreads = useCallback(async () => {
     if (!presentationId) return;
@@ -47,14 +48,16 @@ export const useMainProcessAI = (presentationId: UUID) => {
       
       if (loadedThreads.length > 0 && !currentThread) {
         setCurrentThread(loadedThreads[0]);
-      } else if (loadedThreads.length === 0 && !isCreatingInitialThread) {
-        // Auto-create first thread if none exist
+      } else if (loadedThreads.length === 0 && !isCreatingInitialThread && !hasCreatedInitialThread) {
+        // Auto-create first thread if none exist and we haven't already created one
         setIsCreatingInitialThread(true);
+        setHasCreatedInitialThread(true); // Mark that we've attempted to create initial thread
         try {
           await electronAPI.ai.createThread('Thread 1', presentationId);
           // Thread creation will trigger the ai:thread-created event which will update state
         } catch (createError) {
           console.error('Failed to auto-create initial thread:', createError);
+          setHasCreatedInitialThread(false); // Reset on error so we can retry
         } finally {
           setIsCreatingInitialThread(false);
         }
@@ -65,7 +68,7 @@ export const useMainProcessAI = (presentationId: UUID) => {
       setIsLoading(false);
       setIsInitialized(true);
     }
-  }, [presentationId, currentThread, isCreatingInitialThread]);
+  }, [presentationId, currentThread, isCreatingInitialThread, hasCreatedInitialThread]);
 
   useEffect(() => {
     if (!isInitialized && presentationId) {
@@ -75,7 +78,8 @@ export const useMainProcessAI = (presentationId: UUID) => {
 
   useEffect(() => {
     if (presentationId && isInitialized) {
-      // When presentation changes, reload threads
+      // When presentation changes, reset the initial thread creation flag and reload threads
+      setHasCreatedInitialThread(false);
       loadThreads();
     }
   }, [presentationId, isInitialized, loadThreads]);
