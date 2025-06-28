@@ -1,28 +1,48 @@
 import React from 'react';
 import { Download, Monitor, Apple, Smartphone } from 'lucide-react';
 
-const DownloadButton = ({ icon, title, subtitle, disabled = false }) => (
-  <div className="bg-gray-800 p-8 rounded-lg border border-gray-700 hover:border-indigo-500 transition-colors group h-full">
-    <div className="flex flex-col items-center text-center h-full">
-      <div className="mb-6 p-4 bg-gray-700 rounded-full group-hover:bg-indigo-500 transition-colors">
-        {icon}
+// Azure Blob Storage configuration
+const AZURE_STORAGE_ACCOUNT = 'deckiumpublic';
+const AZURE_BASE_URL = `https://${AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/releases`;
+
+// Download URLs for each platform
+const DOWNLOAD_URLS = {
+  macos: `${AZURE_BASE_URL}/darwin/Deckium-1.0.0-arm64.dmg`,
+  windows: `${AZURE_BASE_URL}/win32/Deckium%20Setup%201.0.0.exe`, 
+  linux: `${AZURE_BASE_URL}/linux/Deckium_0_0_1.AppImage`
+};
+
+const DownloadButton = ({ icon, title, subtitle, downloadUrl, disabled = false }) => {
+  const handleDownload = () => {
+    if (!disabled && downloadUrl) {
+      window.open(downloadUrl, '_blank');
+    }
+  };
+
+  return (
+    <div className="bg-gray-800 p-8 rounded-lg border border-gray-700 hover:border-indigo-500 transition-colors group h-full">
+      <div className="flex flex-col items-center text-center h-full">
+        <div className="mb-6 p-4 bg-gray-700 rounded-full group-hover:bg-indigo-500 transition-colors">
+          {icon}
+        </div>
+        <h3 className="text-2xl font-semibold mb-2">{title}</h3>
+        <p className="text-gray-400 mb-6 flex-grow">{subtitle}</p>
+        <button
+          disabled={disabled}
+          onClick={handleDownload}
+          className={`w-full flex items-center justify-center px-6 py-3 rounded-lg text-lg font-semibold transition-colors ${
+            disabled
+              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              : 'bg-indigo-500 text-white hover:bg-indigo-600 cursor-pointer'
+          }`}
+        >
+          <Download className="w-5 h-5 mr-2" />
+          {disabled ? 'Coming Soon' : 'Download'}
+        </button>
       </div>
-      <h3 className="text-2xl font-semibold mb-2">{title}</h3>
-      <p className="text-gray-400 mb-6 flex-grow">{subtitle}</p>
-      <button
-        disabled={disabled}
-        className={`w-full flex items-center justify-center px-6 py-3 rounded-lg text-lg font-semibold transition-colors ${
-          disabled
-            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-            : 'bg-indigo-500 text-white hover:bg-indigo-600'
-        }`}
-      >
-        <Download className="w-5 h-5 mr-2" />
-        {disabled ? 'Coming Soon' : 'Download'}
-      </button>
     </div>
-  </div>
-);
+  );
+};
 
 const DownloadPage = () => {
   return (
@@ -72,18 +92,21 @@ const DownloadPage = () => {
               icon={<Apple className="w-12 h-12" />}
               title="macOS"
               subtitle="For Mac computers with Intel or Apple Silicon"
+              downloadUrl={DOWNLOAD_URLS.macos}
             />
             
             <DownloadButton
               icon={<Monitor className="w-12 h-12" />}
               title="Windows"
               subtitle="For Windows 10 and Windows 11"
+              downloadUrl={DOWNLOAD_URLS.windows}
             />
             
             <DownloadButton
               icon={<Smartphone className="w-12 h-12" />}
               title="Linux"
               subtitle="For Ubuntu, Debian, and other distributions"
+              downloadUrl={DOWNLOAD_URLS.linux}
             />
           </div>
         </main>
