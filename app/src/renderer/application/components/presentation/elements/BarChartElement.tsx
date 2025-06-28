@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Plot from 'react-plotly.js';
 import { BarChart } from '../../../../../common/domain/entities/types';
 import { ResizeHandles } from '../ResizeHandles';
@@ -41,6 +41,11 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showEditor, setShowEditor] = useState(false);
 
+  const onElementUpdateRef = useRef(onElementUpdate);
+  useEffect(() => {
+    onElementUpdateRef.current = onElementUpdate;
+  }, [onElementUpdate]);
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if (readOnly) return;
 
@@ -56,8 +61,8 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging && onElementUpdate) {
-        onElementUpdate(element.id, {
+      if (isDragging && onElementUpdateRef.current) {
+        onElementUpdateRef.current(element.id, {
           position: {
             x: e.clientX - dragOffset.x,
             y: e.clientY - dragOffset.y,
@@ -79,7 +84,7 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, element.id, onElementUpdate]);
+  }, [isDragging, dragOffset, element.id]);
 
   const handleClick = (e: React.MouseEvent) => {
     if (readOnly) return;

@@ -82,7 +82,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   // Add mouse up event listener to clear guides when dragging ends
   useEffect(() => {
     const handleMouseUp = () => {
-      clearGuides();
+      // Delay clearing guides to let element mouseup handlers fire first
+      setTimeout(() => {
+        clearGuides();
+      }, 0);
     };
 
     document.addEventListener('mouseup', handleMouseUp);

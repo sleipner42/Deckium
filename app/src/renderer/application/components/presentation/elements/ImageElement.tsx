@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Image } from '../../../../../common/domain/entities/types';
 import { ResizeHandles } from '../ResizeHandles';
 
@@ -25,6 +25,11 @@ export const ImageElement: React.FC<ImageElementProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
+  const onElementUpdateRef = useRef(onElementUpdate);
+  useEffect(() => {
+    onElementUpdateRef.current = onElementUpdate;
+  }, [onElementUpdate]);
+
   // Handle mouse events for dragging
   const handleMouseDown = (e: React.MouseEvent) => {
     if (readOnly) return;
@@ -42,8 +47,8 @@ export const ImageElement: React.FC<ImageElementProps> = ({
   // Setup mouse move and mouse up event listeners
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging && onElementUpdate) {
-        onElementUpdate(element.id, {
+      if (isDragging && onElementUpdateRef.current) {
+        onElementUpdateRef.current(element.id, {
           position: {
             x: e.clientX - dragOffset.x,
             y: e.clientY - dragOffset.y,
@@ -65,7 +70,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, element.id, onElementUpdate]);
+  }, [isDragging, dragOffset, element.id]);
 
   const handleClick = (e: React.MouseEvent) => {
     if (readOnly) return;

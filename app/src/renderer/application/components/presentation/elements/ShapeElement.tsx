@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Shape } from "../../../../../common/domain/entities/types";
 import { ResizeHandles } from "../ResizeHandles";
 
@@ -34,6 +34,11 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
+	const onElementUpdateRef = useRef(onElementUpdate);
+	useEffect(() => {
+		onElementUpdateRef.current = onElementUpdate;
+	}, [onElementUpdate]);
+
 	const commonStyles: React.CSSProperties = {
 		position: "absolute",
 		left: `${position.x}px`,
@@ -66,8 +71,8 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
 	// Setup mouse move and mouse up event listeners
 	useEffect(() => {
 		const handleMouseMove = (e: MouseEvent) => {
-			if (isDragging && onElementUpdate) {
-				onElementUpdate(element.id, {
+			if (isDragging && onElementUpdateRef.current) {
+				onElementUpdateRef.current(element.id, {
 					position: {
 						x: e.clientX - dragOffset.x,
 						y: e.clientY - dragOffset.y,
@@ -89,7 +94,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
 			document.removeEventListener("mousemove", handleMouseMove);
 			document.removeEventListener("mouseup", handleMouseUp);
 		};
-	}, [isDragging, dragOffset, element.id, onElementUpdate]);
+	}, [isDragging, dragOffset, element.id]);
 
 	const handleClick = (e: React.MouseEvent) => {
 		if (readOnly) return;
