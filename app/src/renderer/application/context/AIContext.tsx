@@ -17,6 +17,7 @@ interface AIContextActions {
   sendMessage: (message: string, imageDataUrls?: string[]) => Promise<void>;
   loadThread: (threadId: UUID) => Promise<void>;
   deleteThread: (threadId: UUID) => Promise<void>;
+  abortRequest: () => Promise<boolean>;
 }
 
 interface AIContextValue extends AIContextState, AIContextActions {}
@@ -40,6 +41,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     loadThread: loadThreadFromMainProcess,
     deleteThread: deleteThreadInMainProcess,
     sendMessage: sendMessageToMainProcess,
+    abortRequest: abortRequestInMainProcess,
   } = useMainProcessAI(presentationId || 'default');
 
   const createThread = async (title: string) => {
@@ -84,6 +86,10 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     await deleteThreadInMainProcess(threadId);
   };
 
+  const abortRequest = async () => {
+    return await abortRequestInMainProcess();
+  };
+
   return (
     <AIContext.Provider
       value={{
@@ -95,6 +101,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
         sendMessage,
         loadThread,
         deleteThread,
+        abortRequest,
       }}
     >
       {children}

@@ -6,6 +6,7 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
+import StopIcon from '@mui/icons-material/Stop';
 import {
   Avatar,
   alpha,
@@ -51,6 +52,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     sendMessage,
     loadThread,
     deleteThread,
+    abortRequest,
   } = useAI();
 
   const { selectElement } = usePresentation();
@@ -146,7 +148,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setInputValue('');
       setPastedImages([]);
     } catch (error) {
-      console.error('Error sending message:', error);
+      // Only log non-abort errors
+      if (!(error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted')))) {
+        console.error('Error sending message:', error);
+      }
     }
   };
 
@@ -171,6 +176,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleInputFocus = () => {
     selectElement(null);
+  };
+
+  const handleAbortRequest = async () => {
+    try {
+      await abortRequest();
+      console.log('Abort request sent');
+    } catch (error) {
+      console.error('Error sending abort request:', error);
+    }
   };
 
   const formatTimestamp = (date: Date) => {
@@ -631,6 +645,83 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     </Box>
                   );
                 })}
+              
+              {/* Show processing indicator when loading but not streaming */}
+              {isLoading && !currentThread.messages.some(m => m.streamingState === 'streaming') && (
+                <Box
+                  sx={{
+                    maxWidth: '85%',
+                    width: 'fit-content',
+                    alignSelf: 'flex-start',
+                    mb: 1.5,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      gap: 1,
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <Avatar
+                      sx={{
+                        width: 28,
+                        height: 28,
+                        bgcolor: '#F5F5F7',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <SmartToyOutlinedIcon
+                        sx={{
+                          color: 'text.secondary',
+                          fontSize: '0.9rem',
+                        }}
+                      />
+                    </Avatar>
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          mb: 0.5,
+                          color: 'text.secondary',
+                          fontSize: '0.65rem',
+                        }}
+                      >
+                        AI Assistant • Processing...
+                        <CircularProgress size={8} thickness={6} />
+                      </Typography>
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 1.5,
+                          maxWidth: '100%',
+                          bgcolor: alpha('#007AFF', 0.08),
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: 'text.secondary',
+                            fontSize: '0.85rem',
+                            fontStyle: 'italic',
+                          }}
+                        >
+                          Analyzing and executing tools...
+                        </Typography>
+                      </Paper>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+              
               <Box ref={messagesEndRef} />
             </>
           ) : (
@@ -777,18 +868,33 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     ) : null}
                     New
                   </Button>
+                ) : isLoading ? (
+                  <IconButton
+                    color="error"
+                    onClick={handleAbortRequest}
+                    edge="end"
+                    size="small"
+                    title="Stop generation"
+                    sx={{
+                      animation: 'pulse 2s infinite',
+                      '@keyframes pulse': {
+                        '0%': { opacity: 1 },
+                        '50%': { opacity: 0.7 },
+                        '100%': { opacity: 1 },
+                      },
+                    }}
+                  >
+                    <StopIcon />
+                  </IconButton>
                 ) : (
                   <IconButton
                     color="primary"
                     type="submit"
-                    disabled={
-                      isLoading ||
-                      (!inputValue.trim() && pastedImages.length === 0)
-                    }
+                    disabled={isLoading || (!inputValue.trim() && pastedImages.length === 0)}
                     edge="end"
                     size="small"
                   >
-                    {isLoading ? <CircularProgress size={16} /> : <SendIcon />}
+                    <SendIcon />
                   </IconButton>
                 )}
               </InputAdornment>

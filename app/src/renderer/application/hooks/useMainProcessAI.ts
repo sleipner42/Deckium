@@ -21,6 +21,7 @@ interface ElectronWindow {
       getThreadsForPresentation: (presentationId: UUID) => Promise<Thread[]>;
       deleteThread: (threadId: UUID) => Promise<boolean>;
       sendMessage: (request: AIRequest) => Promise<{ message: string }>;
+      abortRequest: (threadId: UUID) => Promise<boolean>;
     };
   };
 }
@@ -259,16 +260,14 @@ export const useMainProcessAI = (presentationId: UUID) => {
           err instanceof Error ? err.message : 'An error occurred';
         setError(errorMessage);
         throw err;
-      } finally {
-        setIsLoading(false);
       }
+      // Don't set loading false here - let the processing events handle it
     },
     [presentationId],
   );
 
   const loadThread = useCallback(async (threadId: UUID) => {
     try {
-      setIsLoading(true);
       setError(null);
 
       const thread = await electronAPI.ai.getThread(threadId);
@@ -284,14 +283,12 @@ export const useMainProcessAI = (presentationId: UUID) => {
         err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       throw err;
-    } finally {
-      setIsLoading(false);
     }
+    // Don't manage loading state for thread loading - it's not processing
   }, []);
 
   const deleteThread = useCallback(async (threadId: UUID) => {
     try {
-      setIsLoading(true);
       setError(null);
 
       const success = await electronAPI.ai.deleteThread(threadId);
@@ -306,9 +303,8 @@ export const useMainProcessAI = (presentationId: UUID) => {
         err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       throw err;
-    } finally {
-      setIsLoading(false);
     }
+    // Don't manage loading state for thread deletion - it's not processing
   }, []);
 
   const sendMessage = useCallback(
@@ -320,9 +316,15 @@ export const useMainProcessAI = (presentationId: UUID) => {
         throw new Error('No active thread');
       }
 
+      // Prevent multiple sends while processing
+      if (isLoading) {
+        console.log('Already processing, ignoring send request');
+        return;
+      }
+
       try {
-        setIsLoading(true);
         setError(null);
+        setIsLoading(true); // Set loading immediately to show stop button
 
         // First, refresh the threads list to ensure we have the latest data
         const updatedThreads =
@@ -355,16 +357,46 @@ export const useMainProcessAI = (presentationId: UUID) => {
 
         return response.message;
       } catch (err) {
+        // Check if this was an abort error
+        if (err instanceof Error && (err.name === 'AbortError' || err.message.includes('aborted'))) {
+          console.log('Message sending was aborted - leaving thread as-is');
+          // For aborts, just return silently - thread is left in whatever state it was
+          return;
+        }
+        
+        // Check if this was a "thread already being processed" error
+        if (err instanceof Error && err.message.includes('Thread is already being processed')) {
+          console.log('Thread already being processed, ignoring');
+          setIsLoading(false); // Reset loading state for this case
+          return;
+        }
+        
         const errorMessage =
           err instanceof Error ? err.message : 'An error occurred';
         setError(errorMessage);
+        setIsLoading(false); // Reset loading state on error
         throw err;
-      } finally {
-        setIsLoading(false);
       }
     },
-    [currentThread, presentationId],
+    [currentThread, presentationId, isLoading],
   );
+
+  const abortRequest = useCallback(async () => {
+    if (!currentThread) {
+      return false;
+    }
+
+    try {
+      const success = await electronAPI.ai.abortRequest(currentThread.id);
+      if (success) {
+        console.log(`Aborted request for thread: ${currentThread.id}`);
+      }
+      return success;
+    } catch (err) {
+      console.error('Error aborting request:', err);
+      return false;
+    }
+  }, [currentThread]);
 
   return {
     threads,
@@ -376,5 +408,6 @@ export const useMainProcessAI = (presentationId: UUID) => {
     loadThread,
     deleteThread,
     sendMessage,
+    abortRequest,
   };
 };

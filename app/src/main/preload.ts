@@ -39,6 +39,7 @@ export type AIChannels =
   | 'ai:get-threads-for-presentation'
   | 'ai:delete-thread'
   | 'ai:send-message'
+  | 'ai:abort-request'
   | 'ai:thread-created'
   | 'ai:thread-updated'
   | 'ai:thread-deleted'
@@ -128,6 +129,9 @@ const electronHandler = {
     },
     sendMessage(request: unknown) {
       return ipcRenderer.invoke('ai:send-message', request);
+    },
+    abortRequest(threadId: string) {
+      return ipcRenderer.invoke('ai:abort-request', threadId);
     },
   },
 

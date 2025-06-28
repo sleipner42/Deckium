@@ -31,6 +31,10 @@ export class AIService {
 
   private presentationService: PresentationService;
 
+  private activeRequests: Map<UUID, AbortController> = new Map();
+  
+  private processingThreads: Set<UUID> = new Set();
+
   constructor(
     aiClient: IAIService,
     presentationService: PresentationService,
@@ -82,6 +86,18 @@ export class AIService {
   }
 
   async sendMessage(request: AIRequest): Promise<AIResponse> {
+    // Prevent multiple simultaneous processing for the same thread
+    if (this.processingThreads.has(request.threadId)) {
+      console.log(`Thread ${request.threadId} is already being processed, ignoring duplicate request`);
+      throw new Error('Thread is already being processed');
+    }
+    
+    this.processingThreads.add(request.threadId);
+
+    // Create abort controller for this request
+    const abortController = new AbortController();
+    this.activeRequests.set(request.threadId, abortController);
+
     try {
       logger.logAIRequest('Received AI message request', {
         threadId: request.threadId,
@@ -107,42 +123,79 @@ export class AIService {
         `Using thread ${thread.id} with ${thread.messages.length} messages`,
       );
 
-      let updatedThread: Thread;
-
+      // Store the user message but don't add it to thread yet
+      let userMessage: string | any;
+      let userContent: any;
+      
       if (
         request.content &&
         Array.isArray(request.content) &&
         request.content.length > 0
       ) {
-        updatedThread = this.state.addMessage(thread, request.content, 'user');
-
-        logger.logSystem('User message added to thread', 'debug', {
-          threadId: thread.id,
-          messageType: 'multi-content',
-          content: request.content,
-        });
+        userContent = request.content;
+        userMessage = null;
       } else {
-        updatedThread = this.state.addMessage(thread, request.message, 'user');
-
-        logger.logSystem('User message added to thread', 'debug', {
-          threadId: thread.id,
-          messageType: 'text',
-          message: request.message,
-        });
+        userMessage = request.message;
+        userContent = null;
       }
 
-      this.eventBus.broadcastProcessingStarted(updatedThread.id);
+      this.eventBus.broadcastProcessingStarted(thread.id);
 
-      const startTime = performance.now();
-      updatedThread = await this.processAILoopWithStreaming(updatedThread);
-      const endTime = performance.now();
-      console.log(`Total AI loop processing time: ${endTime - startTime}ms`);
+      // Add user message and process in one go
+      let updatedThread: Thread;
+      let startTime: number;
+      let endTime: number;
+      
+      try {
+        if (userContent) {
+          updatedThread = this.state.addMessage(thread, userContent, 'user');
+          logger.logSystem('User message added to thread', 'debug', {
+            threadId: thread.id,
+            messageType: 'multi-content',
+            content: userContent,
+          });
+        } else {
+          updatedThread = this.state.addMessage(thread, userMessage, 'user');
+          logger.logSystem('User message added to thread', 'debug', {
+            threadId: thread.id,
+            messageType: 'text',
+            message: userMessage,
+          });
+        }
+
+        this.saveThread(updatedThread);
+        this.eventBus.broadcastThreadUpdated(updatedThread);
+
+        startTime = performance.now();
+        updatedThread = await this.processAILoopWithStreaming(updatedThread, false, abortController.signal);
+        endTime = performance.now();
+        console.log(`Total AI loop processing time: ${endTime - startTime}ms`);
+      } catch (error) {
+        // If aborted, remove the user message we just added
+        if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted'))) {
+          const revertedThread = { ...thread }; // Revert to original state before user message
+          this.saveThread(revertedThread);
+          this.eventBus.broadcastThreadUpdated(revertedThread);
+        }
+        throw error;
+      }
 
       const lastAssistantMessage = [...updatedThread.messages]
         .reverse()
         .find((m) => m.role === 'assistant');
 
       if (!lastAssistantMessage) {
+        // If no assistant message, check if this was aborted
+        if (abortController.signal.aborted) {
+          // Add a cancelled message to show the user what happened
+          updatedThread = this.state.addMessage(updatedThread, 'Request was cancelled by user.', 'assistant');
+          this.saveThread(updatedThread);
+          this.eventBus.broadcastThreadUpdated(updatedThread);
+          this.eventBus.broadcastProcessingCompleted(updatedThread.id);
+          return {
+            message: 'Request was cancelled by user.',
+          };
+        }
         throw new Error('No response from AI');
       }
 
@@ -156,7 +209,7 @@ export class AIService {
           typeof aiResponse === 'string'
             ? aiResponse.length
             : JSON.stringify(aiResponse).length,
-        processingTimeMs: endTime - startTime,
+        processingTimeMs: endTime && startTime ? endTime - startTime : 0,
         messageCount: updatedThread.messages.length,
       });
 
@@ -166,6 +219,12 @@ export class AIService {
         message: aiResponse,
       };
     } catch (error) {
+      // Check if this was an abort - this catch handles outer errors
+      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted'))) {
+        console.log(`Request aborted for thread: ${request.threadId}`);
+        this.eventBus.broadcastProcessingCompleted(request.threadId);
+        throw error; // Re-throw so the renderer knows it was aborted
+      }
       console.error('Error sending message to AI:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error occurred';
@@ -181,12 +240,39 @@ export class AIService {
       return {
         message: `Error: ${errorMessage}`,
       };
+    } finally {
+      // Clean up abort controller and processing tracking
+      this.activeRequests.delete(request.threadId);
+      this.processingThreads.delete(request.threadId);
+    }
+  }
+
+  abortRequest(threadId: UUID): boolean {
+    const abortController = this.activeRequests.get(threadId);
+    if (abortController) {
+      console.log(`Aborting request for thread: ${threadId}`);
+      abortController.abort();
+      this.activeRequests.delete(threadId);
+      return true;
+    }
+    console.log(`No active request found for thread: ${threadId}`);
+    return false;
+  }
+
+  private checkAborted(abortSignal?: AbortSignal, context?: string): void {
+    if (abortSignal?.aborted) {
+      const message = context ? `Request aborted ${context}` : 'Request was aborted';
+      console.log(message);
+      const error = new Error('Request was aborted');
+      error.name = 'AbortError';
+      throw error;
     }
   }
 
   private async processAILoopWithStreaming(
     thread: Thread,
     responseToCritic = false,
+    abortSignal?: AbortSignal,
   ): Promise<Thread> {
     const loopStartTime = performance.now();
     let updatedThread = this.initializeThreadForLoop(thread);
@@ -200,6 +286,9 @@ export class AIService {
     };
 
     while (iterationCount < constants.MAX_ITERATIONS) {
+      // Check if request was aborted at start of iteration
+      this.checkAborted(abortSignal, 'at start of iteration');
+
       const iterationStartTime = performance.now();
       console.log(
         `Starting iteration ${iterationCount + 1}/${constants.MAX_ITERATIONS}`,
@@ -210,7 +299,11 @@ export class AIService {
           updatedThread,
           constants.DEPLOYMENT_NAME,
           iterationCount,
+          abortSignal,
         );
+
+        // Check if request was aborted after streaming
+        this.checkAborted(abortSignal, 'after streaming iteration');
 
         if (this.isRepeatingResponse(updatedThread.messages, aiResponse)) {
           updatedThread = this.handleRepeatingResponse(updatedThread);
@@ -238,10 +331,15 @@ export class AIService {
         }
 
         consecutiveEmptyIterations = 0;
+        
+        // Check if request was aborted before tool execution
+        this.checkAborted(abortSignal, 'before tool execution');
+        
         updatedThread = await this.executeToolCallAndUpdateThread(
           updatedThread,
           toolCall,
           iterationCount,
+          abortSignal,
         );
 
         iterationCount++;
@@ -281,6 +379,7 @@ export class AIService {
     thread: Thread,
     deploymentName: string,
     iterationCount: number,
+    abortSignal?: AbortSignal,
   ): Promise<string> {
     const assistantMessageId = crypto.randomUUID?.() || Date.now().toString();
 
@@ -342,6 +441,7 @@ export class AIService {
       thread.messages,
       onChunk,
       deploymentName,
+      abortSignal,
     );
 
     this.logStreamingCompletion(
@@ -442,8 +542,12 @@ export class AIService {
     thread: Thread,
     toolCall: AIToolCall,
     iterationCount: number,
+    abortSignal?: AbortSignal,
   ): Promise<Thread> {
     console.log(`Executing tool call: ${toolCall.toolName}`);
+
+    // Check if request was aborted before tool execution
+    this.checkAborted(abortSignal, 'during tool execution');
 
     this.logToolExecutionStart(toolCall, iterationCount);
 
