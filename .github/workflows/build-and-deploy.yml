@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - 'stable'
+      - 'v*.*.*'
 jobs:
   build-multiplatform:
     strategy:
