@@ -71,16 +71,21 @@ export class PexelsBackendService implements IPexelsService {
         params.append('color', request.color);
       }
 
-      console.log(`[PexelsService] Searching images with params: ${params.toString()}, url: ${API_URL}/pexels/search?${params.toString()}`);
+      console.log(
+        `[PexelsService] Searching images with params: ${params.toString()}, url: ${API_URL}/pexels/search?${params.toString()}`,
+      );
 
-      const response = await fetch(`${API_URL}/pexels/search?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Cookie: `access_token=Bearer ${accessToken}`,
+      const response = await fetch(
+        `${API_URL}/pexels/search?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Cookie: `access_token=Bearer ${accessToken}`,
+          },
+          credentials: 'include',
         },
-        credentials: 'include',
-      });
+      );
 
       if (!response.ok) {
         const error = await response.text();
@@ -88,14 +93,19 @@ export class PexelsBackendService implements IPexelsService {
       }
 
       const data = await response.json();
-      
+
       const endTime = performance.now();
-      console.log(`[PexelsService] Image search completed in ${endTime - startTime}ms`);
+      console.log(
+        `[PexelsService] Image search completed in ${endTime - startTime}ms`,
+      );
 
       return data;
     } catch (error) {
       const endTime = performance.now();
-      console.error(`[PexelsService] Error searching images (after ${endTime - startTime}ms):`, error);
+      console.error(
+        `[PexelsService] Error searching images (after ${endTime - startTime}ms):`,
+        error,
+      );
       throw error;
     }
   }
@@ -134,4 +144,4 @@ export class PexelsServiceFactory {
       throw error;
     }
   }
-} 
+}

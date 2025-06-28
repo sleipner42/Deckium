@@ -3,12 +3,12 @@ import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import ImageIcon from '@mui/icons-material/Image';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
+import RateReviewIcon from '@mui/icons-material/RateReview';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
-import RateReviewIcon from '@mui/icons-material/RateReview';
 import {
-  alpha,
   Avatar,
+  alpha,
   Box,
   Button,
   Chip,
@@ -20,8 +20,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import React, { useEffect, useRef, useState } from 'react';
 import { keyframes } from '@mui/system';
+import React, { useEffect, useRef, useState } from 'react';
 import { Message } from '../../../../common/domain/entities/ai-types';
 import { useAI } from '../../context/AIContext';
 import { usePresentation } from '../../context/PresentationContext';

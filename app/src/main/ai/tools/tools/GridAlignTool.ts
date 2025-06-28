@@ -1,6 +1,6 @@
-import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
+import { BaseTool } from '../BaseTool';
 
 export class GridAlignTool extends BaseTool {
   name = 'gridAlign';
@@ -134,7 +134,7 @@ export class GridAlignTool extends BaseTool {
           snapY = this.snapToGrid(element.position.y, cellSize, originY);
           break;
 
-        case 'center':
+        case 'center': {
           // Snap the center point to the nearest grid intersection
           const centerX = element.position.x + element.size.width / 2;
           const centerY = element.position.y + element.size.height / 2;
@@ -143,8 +143,9 @@ export class GridAlignTool extends BaseTool {
           snapX = snappedCenterX - element.size.width / 2;
           snapY = snappedCenterY - element.size.height / 2;
           break;
+        }
 
-        case 'nearest-corner':
+        case 'nearest-corner': {
           // Find the corner that's closest to a grid intersection and snap that
           const corners = [
             { x: element.position.x, y: element.position.y }, // top-left
@@ -198,6 +199,7 @@ export class GridAlignTool extends BaseTool {
           snapX = bestSnap.x;
           snapY = bestSnap.y;
           break;
+        }
 
         default:
           snapX = element.position.x;

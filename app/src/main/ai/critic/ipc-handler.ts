@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
-import { CriticService } from './service';
 import { Thread } from '../../../common/domain/entities/ai-types';
 import { UUID } from '../../../common/domain/entities/types';
+import { CriticService } from './service';
 
 export function setupCriticIPC(service: CriticService) {
   ipcMain.handle(

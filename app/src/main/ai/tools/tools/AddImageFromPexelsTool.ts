@@ -1,28 +1,36 @@
-import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
-import { PresentationService } from '../../../presentation/service';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
-import { ElementValidator } from '../../../presentation/element-validator';
 import AuthService from '../../../auth/service';
-import { PexelsBackendService, PexelsSearchRequest } from '../../external/pexels-backend-service';
+import { ElementValidator } from '../../../presentation/element-validator';
+import { PresentationService } from '../../../presentation/service';
+import {
+  PexelsBackendService,
+  PexelsSearchRequest,
+} from '../../external/pexels-backend-service';
+import { BaseTool } from '../BaseTool';
 
 export class AddImageFromPexelsTool extends BaseTool {
   name = 'searchAndAddImage';
 
-  description = 'Search for high-quality stock images using Pexels API and add the best matching image directly to a presentation slide. This tool handles the entire process from search to placement, automatically positioning the image and providing detailed feedback about placement and potential overlaps.';
+  description =
+    'Search for high-quality stock images using Pexels API and add the best matching image directly to a presentation slide. This tool handles the entire process from search to placement, automatically positioning the image and providing detailed feedback about placement and potential overlaps.';
 
   requiredParams = {
-    slideId: 'The unique identifier of the slide where the image should be added',
-    query: 'The search terms to find relevant images (e.g., "sunset beach", "business meeting", "mountain landscape")',
+    slideId:
+      'The unique identifier of the slide where the image should be added',
+    query:
+      'The search terms to find relevant images (e.g., "sunset beach", "business meeting", "mountain landscape")',
     x: 'The horizontal position (in pixels) where the image should be placed on the slide',
     y: 'The vertical position (in pixels) where the image should be placed on the slide',
     width: 'The desired width of the image in pixels',
     height: 'The desired height of the image in pixels',
-    zIndex: 'The stacking order of the image relative to other elements (higher numbers appear on top)',
+    zIndex:
+      'The stacking order of the image relative to other elements (higher numbers appear on top)',
   };
 
   optionalParams = {
-    orientation: 'Filter images by aspect ratio - "landscape" for wide images, "portrait" for tall images, "square" for equal dimensions. Leave empty to allow any orientation.',
+    orientation:
+      'Filter images by aspect ratio - "landscape" for wide images, "portrait" for tall images, "square" for equal dimensions. Leave empty to allow any orientation.',
     size: 'The resolution quality from Pexels API. Options: "small" (130px), "medium" (350px), "large" (940px), "original" (full resolution). Defaults to "large" for good quality without excessive file size.',
   };
 

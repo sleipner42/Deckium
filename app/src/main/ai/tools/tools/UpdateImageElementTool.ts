@@ -1,9 +1,9 @@
 import axios from 'axios';
-import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
-import { PresentationService } from '../../../presentation/service';
 import { Image } from '../../../../common/domain/entities/types';
 import { ElementValidator } from '../../../presentation/element-validator';
+import { PresentationService } from '../../../presentation/service';
+import { BaseTool } from '../BaseTool';
 
 export class UpdateImageElementTool extends BaseTool {
   name = 'updateImageElement';

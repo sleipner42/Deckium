@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Plot from 'react-plotly.js';
 import { BarChart } from '../../../../../common/domain/entities/types';
-import { BarChartEditor } from './BarChartEditor';
 import { ResizeHandles } from '../ResizeHandles';
+import { BarChartEditor } from './BarChartEditor';
 
 interface BarChartElementProps {
   element: BarChart;
@@ -180,7 +180,11 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
           elementId={element.id}
           position={position}
           size={size}
-          onResize={onElementUpdate ? (id, updates) => onElementUpdate(id, updates) : () => {}}
+          onResize={
+            onElementUpdate
+              ? (id, updates) => onElementUpdate(id, updates)
+              : () => {}
+          }
           minWidth={200}
           minHeight={150}
         />

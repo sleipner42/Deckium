@@ -1,7 +1,7 @@
-import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
-import { PresentationService } from '../../../presentation/service';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
+import { PresentationService } from '../../../presentation/service';
+import { BaseTool } from '../BaseTool';
 
 export class CreateBarChartTool extends BaseTool {
   name = 'createBarChart';
@@ -80,7 +80,10 @@ export class CreateBarChartTool extends BaseTool {
     }
 
     const element = ElementFactory.createBarChart({
-      position: { x: x !== undefined ? Number(x) : 100, y: y !== undefined ? Number(y) : 100 },
+      position: {
+        x: x !== undefined ? Number(x) : 100,
+        y: y !== undefined ? Number(y) : 100,
+      },
       size: {
         width: Number(width) || 400,
         height: Number(height) || 300,

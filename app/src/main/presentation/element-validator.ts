@@ -1,8 +1,8 @@
 import {
   ContentElement,
-  Slide,
   Position,
   Size,
+  Slide,
   TextBox,
 } from '../../common/domain/entities/types';
 import { textMeasurementService } from '../text-measurement/service';
@@ -59,7 +59,7 @@ export class ElementValidator {
       // Generate suggested position if there are overlaps
       let suggestedPosition: Position | undefined;
       if (domResult.hasOverlap && domResult.overlappingElements.length > 0) {
-        suggestedPosition = this.suggestNewPositionFromDOMElements(
+        suggestedPosition = ElementValidator.suggestNewPositionFromDOMElements(
           domResult.overlappingElements,
           size,
           slide,
@@ -150,7 +150,7 @@ export class ElementValidator {
       // Generate suggested position if there are overlaps
       let suggestedPosition: Position | undefined;
       if (domResult.hasOverlap && domResult.overlappingElements.length > 0) {
-        suggestedPosition = this.suggestNewPositionFromDOMElements(
+        suggestedPosition = ElementValidator.suggestNewPositionFromDOMElements(
           domResult.overlappingElements,
           {
             width: domResult.elementBounds?.width || 100,
@@ -236,7 +236,7 @@ export class ElementValidator {
     console.log('DOM-based: Using grid-based position suggestion as fallback');
 
     // Fall back to grid-based positioning
-    return this.generateGridPositionFallback(newElementSize);
+    return ElementValidator.generateGridPositionFallback(newElementSize);
   }
 
   /**

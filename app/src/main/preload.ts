@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { contextBridge, IpcRendererEvent, ipcRenderer } from 'electron';
 import { AuthChannels } from '../common/domain/interfaces/auth.interface';
 
 export type PresentationChannels =
@@ -175,7 +175,11 @@ const electronHandler = {
       return ipcRenderer.invoke('presentation:delete-slide', slideId);
     },
     reorderSlides(fromIndex: number, toIndex: number) {
-      return ipcRenderer.invoke('presentation:reorder-slides', fromIndex, toIndex);
+      return ipcRenderer.invoke(
+        'presentation:reorder-slides',
+        fromIndex,
+        toIndex,
+      );
     },
     addElement(slideId: string, element: unknown) {
       return ipcRenderer.invoke('presentation:add-element', slideId, element);

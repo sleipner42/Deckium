@@ -1,14 +1,14 @@
+import { BrowserWindow, dialog, screen } from 'electron';
 import fs from 'fs';
-import { dialog, BrowserWindow, screen } from 'electron';
 import path from 'path';
 import {
+  ContentElement,
   Presentation,
   Slide,
-  ContentElement,
 } from '../../common/domain/entities/types';
-import { PresentationState } from './state';
-import { PresentationEventBus } from './event-bus';
 import { resolveHtmlPath } from '../util';
+import { PresentationEventBus } from './event-bus';
+import { PresentationState } from './state';
 
 const FILE_EXTENSION = '.kpres';
 

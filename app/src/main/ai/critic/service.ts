@@ -1,19 +1,19 @@
 import {
-  Thread,
   AIRequest,
   AIResponse,
   AIToolCall,
+  Thread,
 } from '../../../common/domain/entities/ai-types';
 import { UUID } from '../../../common/domain/entities/types';
 import {
   IAIService,
   MessageContent,
 } from '../../../common/domain/interfaces/ai-service.interface';
-import { AIState } from '../state';
+import { PresentationService } from '../../presentation/service';
 import { AIEventBus } from '../event-bus';
+import { AIState } from '../state';
 import { AIToolsService } from '../tools/tools';
 import { CriticPrompt } from './systemPrompt';
-import { PresentationService } from '../../presentation/service';
 
 export class CriticService {
   private state: AIState;

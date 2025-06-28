@@ -1,9 +1,9 @@
 import { Box, Paper } from '@mui/material';
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Slide } from '../../../../common/domain/entities/types';
+import { PRESENTATION_DIMENSIONS } from '../../../../common/utils/constants';
 import { usePresentation } from '../../context/PresentationContext';
 import { SlideRenderer } from './SlideRenderer';
-import { PRESENTATION_DIMENSIONS } from '../../../../common/utils/constants';
-import { Slide } from '../../../../common/domain/entities/types';
 
 export const SlideView: React.FC<{
   defaultScale?: number;

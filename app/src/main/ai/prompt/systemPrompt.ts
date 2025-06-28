@@ -1,6 +1,6 @@
 import { Presentation, Slide } from '../../../common/domain/entities/types';
-import { ToolsService } from '../tools/builtInTools';
 import { PresentationService } from '../../presentation/service';
+import { ToolsService } from '../tools/builtInTools';
 
 export function getDeveloperPrompt(
   presentation: Presentation,

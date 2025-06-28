@@ -1,30 +1,30 @@
-import { AITool } from './AITool';
 import AuthService from '../../auth/service';
-import { GetPresentationInfoTool } from './tools/GetPresentationInfoTool';
-import { CreateSlideTool } from './tools/CreateSlideTool';
-import { UpdateSlideTool } from './tools/UpdateSlideTool';
-import { DeleteSlideTool } from './tools/DeleteSlideTool';
-import { AddTextElementTool } from './tools/AddTextElementTool';
-import { GetAllInfoAboutSlideTool } from './tools/GetAllInfoAboutSlideTool';
-import { GetScreenshotOfSlideTool } from './tools/GetScreenshotOfSlideTool';
-import { UpdateTextElementTool } from './tools/UpdateTextElementTool';
-import { CreateBarChartTool } from './tools/CreateBarChartTool';
-import { UpdateBarChartTool } from './tools/UpdateBarChartTool';
-import { CreateShapeTool } from './tools/CreateShapeTool';
-import { UpdateShapeTool } from './tools/UpdateShapeTool';
-import { AlignElementsTool } from './tools/AlignElementsTool';
-import { SpaceElementsEvenlyTool } from './tools/SpaceElementsEvenlyTool';
-import { GetDataFromUrl } from './tools/GetDataFromUrl';
-import { ChangeElementZIndexTool } from './tools/ChangeElementZIndexTool';
+import { AITool } from './AITool';
 import { AddImageFromPexelsTool } from './tools/AddImageFromPexelsTool';
-import { UpdateImageElementTool } from './tools/UpdateImageElementTool';
-import { DeleteElementTool } from './tools/DeleteElementTool';
-import { CriticTool } from './tools/CriticTool';
+import { AddTextElementTool } from './tools/AddTextElementTool';
+import { AlignElementsTool } from './tools/AlignElementsTool';
 import { AlignToSlideTool } from './tools/AlignToSlideTool';
+import { ChangeElementZIndexTool } from './tools/ChangeElementZIndexTool';
+import { CreateBarChartTool } from './tools/CreateBarChartTool';
+import { CreateShapeTool } from './tools/CreateShapeTool';
+import { CreateSlideTool } from './tools/CreateSlideTool';
+import { CreateSVGImageTool } from './tools/CreateSVGImageTool';
+import { CriticTool } from './tools/CriticTool';
+import { DeleteElementTool } from './tools/DeleteElementTool';
+import { DeleteSlideTool } from './tools/DeleteSlideTool';
+import { DuplicateSlideTool } from './tools/DuplicateSlideTool';
+import { GetAllInfoAboutSlideTool } from './tools/GetAllInfoAboutSlideTool';
+import { GetDataFromUrl } from './tools/GetDataFromUrl';
+import { GetPresentationInfoTool } from './tools/GetPresentationInfoTool';
+import { GetScreenshotOfSlideTool } from './tools/GetScreenshotOfSlideTool';
 import { GridAlignTool } from './tools/GridAlignTool';
 import { MatchSizeTool } from './tools/MatchSizeTool';
-import { CreateSVGImageTool } from './tools/CreateSVGImageTool';
-import { DuplicateSlideTool } from './tools/DuplicateSlideTool';
+import { SpaceElementsEvenlyTool } from './tools/SpaceElementsEvenlyTool';
+import { UpdateBarChartTool } from './tools/UpdateBarChartTool';
+import { UpdateImageElementTool } from './tools/UpdateImageElementTool';
+import { UpdateShapeTool } from './tools/UpdateShapeTool';
+import { UpdateSlideTool } from './tools/UpdateSlideTool';
+import { UpdateTextElementTool } from './tools/UpdateTextElementTool';
 
 export class ToolFactory {
   static getBuiltInTools(authService?: AuthService): AITool[] {
@@ -45,7 +45,9 @@ export class ToolFactory {
       new SpaceElementsEvenlyTool(),
       new GetDataFromUrl(),
       new ChangeElementZIndexTool(),
-      authService ? new AddImageFromPexelsTool(authService) : new AddImageFromPexelsTool(),
+      authService
+        ? new AddImageFromPexelsTool(authService)
+        : new AddImageFromPexelsTool(),
       new UpdateImageElementTool(),
       new DeleteElementTool(),
       new CriticTool(),

@@ -1,5 +1,5 @@
-import { ipcMain, BrowserWindow } from 'electron';
-import { Slide, ContentElement } from '../../common/domain/entities/types';
+import { BrowserWindow, ipcMain } from 'electron';
+import { ContentElement, Slide } from '../../common/domain/entities/types';
 import { PresentationService } from './service';
 
 export function setupPresentationIPC(service: PresentationService) {

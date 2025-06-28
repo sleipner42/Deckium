@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
 import { Box } from '@mui/material';
-import { SlideView } from './SlideView';
+import React, { useEffect, useState } from 'react';
 import { usePresentation } from '../../context/PresentationContext';
+import { SlideView } from './SlideView';
 
 const FullScreenPresentationViewer: React.FC = () => {
   const { slides } = usePresentation();

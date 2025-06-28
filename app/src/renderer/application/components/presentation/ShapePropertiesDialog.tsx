@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Box,
-  Typography,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
   Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography,
 } from '@mui/material';
+import React, { useEffect, useState } from 'react';
 import { Shape } from '../../../../common/domain/entities/types';
 
 interface ShapePropertiesDialogProps {
@@ -79,9 +79,10 @@ export const ShapePropertiesDialog: React.FC<ShapePropertiesDialogProps> = ({
   return (
     <Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
       <DialogTitle>
-        Shape Properties - {shape.type.charAt(0).toUpperCase() + shape.type.slice(1)}
+        Shape Properties -{' '}
+        {shape.type.charAt(0).toUpperCase() + shape.type.slice(1)}
       </DialogTitle>
-      
+
       <DialogContent>
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={3}>
@@ -91,7 +92,7 @@ export const ShapePropertiesDialog: React.FC<ShapePropertiesDialogProps> = ({
                 Size
               </Typography>
             </Grid>
-            
+
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -102,7 +103,7 @@ export const ShapePropertiesDialog: React.FC<ShapePropertiesDialogProps> = ({
                 inputProps={{ min: 10, max: 1000 }}
               />
             </Grid>
-            
+
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -120,7 +121,7 @@ export const ShapePropertiesDialog: React.FC<ShapePropertiesDialogProps> = ({
                 Colors
               </Typography>
             </Grid>
-            
+
             <Grid item xs={6}>
               <Box>
                 <Typography variant="body2" gutterBottom>
@@ -148,7 +149,7 @@ export const ShapePropertiesDialog: React.FC<ShapePropertiesDialogProps> = ({
                 </Box>
               </Box>
             </Grid>
-            
+
             <Grid item xs={6}>
               <Box>
                 <Typography variant="body2" gutterBottom>
@@ -192,7 +193,7 @@ export const ShapePropertiesDialog: React.FC<ShapePropertiesDialogProps> = ({
           </Grid>
         </Box>
       </DialogContent>
-      
+
       <DialogActions>
         <Button onClick={handleCancel}>Cancel</Button>
         <Button onClick={handleSave} variant="contained">

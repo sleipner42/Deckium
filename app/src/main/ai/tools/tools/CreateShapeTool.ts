@@ -1,8 +1,8 @@
-import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
-import { PresentationService } from '../../../presentation/service';
 import { ElementFactory } from '../../../../common/domain/entities/element-factory';
 import { ElementValidator } from '../../../presentation/element-validator';
+import { PresentationService } from '../../../presentation/service';
+import { BaseTool } from '../BaseTool';
 
 export class CreateShapeTool extends BaseTool {
   name = 'createShape';

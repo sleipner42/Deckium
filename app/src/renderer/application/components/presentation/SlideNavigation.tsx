@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  IconButton,
-  Paper,
-  Stack,
-  Chip,
-  Menu,
-  MenuItem,
-} from '@mui/material';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import { SlideRenderer } from './SlideRenderer';
+import {
+  Box,
+  Chip,
+  IconButton,
+  Menu,
+  MenuItem,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material';
+import React, { useState } from 'react';
 import { usePresentation } from '../../context/PresentationContext';
+import { SlideRenderer } from './SlideRenderer';
 import { SlideView } from './SlideView';
 
 interface SlideNavigationProps {
@@ -83,7 +83,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
       const rect = e.currentTarget.getBoundingClientRect();
       const midpoint = rect.top + rect.height / 2;
       const mouseY = e.clientY;
-      
+
       // If mouse is in the top half, insert before (same index)
       // If mouse is in the bottom half, insert after (index + 1)
       const insertIndex = mouseY < midpoint ? index : index + 1;
@@ -97,7 +97,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
-    
+
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
       setDragOverIndex(null);
     }
@@ -106,24 +106,24 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
   const handleDrop = async (e: React.DragEvent, slideIndex: number) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Use the calculated dragOverIndex instead of the slideIndex
     let targetIndex = dragOverIndex !== null ? dragOverIndex : slideIndex;
-    
+
     // Clamp target index to valid bounds - if targeting beyond last slide, move to last position
     const maxIndex = currentPresentation.slides.length - 1;
     if (targetIndex > maxIndex) {
       targetIndex = maxIndex;
     }
-    
-    console.log('Drop triggered on slide:', { 
-      draggedIndex, 
-      slideIndex, 
-      dragOverIndex, 
+
+    console.log('Drop triggered on slide:', {
+      draggedIndex,
+      slideIndex,
+      dragOverIndex,
       targetIndex,
-      maxIndex 
+      maxIndex,
     });
-    
+
     if (draggedIndex !== null && draggedIndex !== targetIndex) {
       try {
         console.log('Calling reorderSlides:', draggedIndex, '→', targetIndex);
@@ -135,7 +135,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
     } else {
       console.log('No reorder needed - same position or invalid drag');
     }
-    
+
     setDraggedIndex(null);
     setDragOverIndex(null);
     setIsDragging(false);
@@ -275,15 +275,18 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
                 overflow: 'hidden',
                 cursor: draggedIndex === index ? 'grabbing' : 'grab',
                 border: '2px solid',
-                borderColor: 
-                  dragOverIndex === index && draggedIndex !== null && draggedIndex !== index
+                borderColor:
+                  dragOverIndex === index &&
+                  draggedIndex !== null &&
+                  draggedIndex !== index
                     ? 'primary.main'
-                    : selectedSlide?.id === slide.id 
-                      ? 'primary.main' 
+                    : selectedSlide?.id === slide.id
+                      ? 'primary.main'
                       : 'divider',
-                boxShadow: selectedSlide?.id === slide.id
-                  ? '0 0 0 2px rgba(0, 122, 255, 0.2)'
-                  : 'none',
+                boxShadow:
+                  selectedSlide?.id === slide.id
+                    ? '0 0 0 2px rgba(0, 122, 255, 0.2)'
+                    : 'none',
                 opacity: draggedIndex === index ? 0.5 : 1,
                 transition: 'all 0.2s ease-in-out',
                 transform: draggedIndex === index ? 'scale(0.95)' : 'scale(1)',

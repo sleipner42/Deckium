@@ -1,10 +1,10 @@
+import { Box, CircularProgress } from '@mui/material';
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
+import LoginScreen from '../components/auth/LoginScreen';
+import FullScreenPresentationViewer from '../components/presentation/FullScreenPresentationViewer';
 import PresentationEditor from '../components/presentation/PresentationEditor';
 import PresentationViewer from '../components/presentation/PresentationViewer';
-import FullScreenPresentationViewer from '../components/presentation/FullScreenPresentationViewer';
-import LoginScreen from '../components/auth/LoginScreen';
 import { useAuth } from '../context/AuthContext';
 
 const AppContent: React.FC = () => {

@@ -1,18 +1,18 @@
 import { v4 as uuidv4 } from 'uuid';
 import {
-  AIToolResult,
   AIToolCall,
+  AIToolResult,
 } from '../../../common/domain/entities/ai-types';
+import { ElementFactory } from '../../../common/domain/entities/element-factory';
 import {
-  TextBox,
-  Shape,
+  BarChart,
   Image,
   Plot,
-  BarChart,
+  Shape,
+  TextBox,
 } from '../../../common/domain/entities/types';
-import { ElementFactory } from '../../../common/domain/entities/element-factory';
-import { PresentationService } from '../../presentation/service';
 import { getScreenshotFromSecondaryWindow } from '../../main';
+import { PresentationService } from '../../presentation/service';
 import { AITool } from './AITool';
 import { ToolFactory } from './ToolFactory';
 

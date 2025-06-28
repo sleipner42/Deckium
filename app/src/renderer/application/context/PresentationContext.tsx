@@ -1,15 +1,15 @@
 import React, {
   createContext,
-  useContext,
   ReactNode,
-  useRef,
-  useCallback,
   RefObject,
+  useCallback,
+  useContext,
+  useRef,
 } from 'react';
 import {
+  ContentElement,
   Presentation,
   Slide,
-  ContentElement,
 } from '../../../common/domain/entities/types';
 import { useMainProcessPresentation } from '../hooks/useMainProcessPresentation';
 

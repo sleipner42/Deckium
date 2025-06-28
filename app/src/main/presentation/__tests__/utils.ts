@@ -1,5 +1,10 @@
+import {
+  BarChart,
+  Shape,
+  Slide,
+  TextBox,
+} from '../../../common/domain/entities/types';
 import { generateSlideGrid } from '../utils';
-import { Slide, TextBox, Shape, BarChart } from '../../../common/domain/entities/types';
 
 describe('Slide Grid Utils', () => {
   it('should generate and print slide grid representation', () => {
@@ -15,7 +20,7 @@ describe('Slide Grid Utils', () => {
           content: 'Sample Text',
           fontSize: 16,
           fontFamily: 'Arial',
-          color: '#000000'
+          color: '#000000',
         } as TextBox,
         {
           id: 'shape-1',
@@ -24,7 +29,7 @@ describe('Slide Grid Utils', () => {
           size: { width: 100, height: 150 },
           fillColor: '#ff0000',
           strokeColor: '#000000',
-          strokeWidth: 2
+          strokeWidth: 2,
         } as Shape,
         {
           id: 'chart-1',
@@ -34,21 +39,21 @@ describe('Slide Grid Utils', () => {
           data: { x: ['A', 'B', 'C'], y: [10, 20, 15] },
           title: 'Sample Chart',
           xAxisLabel: 'Categories',
-          yAxisLabel: 'Values'
-        } as BarChart
-      ]
+          yAxisLabel: 'Values',
+        } as BarChart,
+      ],
     };
 
     const gridConfig = {
       pixelsPerSquare: 50,
       canvasWidth: 600,
-      canvasHeight: 800
+      canvasHeight: 800,
     };
 
     const grid = generateSlideGrid(sampleSlide, gridConfig);
-    
+
     console.log(grid);
-    
+
     expect(grid).toBeDefined();
     expect(grid.length).toBeGreaterThan(0);
   });

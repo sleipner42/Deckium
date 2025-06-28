@@ -1,10 +1,11 @@
 // @ts-nocheck
-import { PresentationService } from '../../main/presentation/service';
+
 import {
+  ContentElement,
   Presentation,
   Slide,
-  ContentElement,
 } from '../../common/domain/entities/types';
+import { PresentationService } from '../../main/presentation/service';
 
 /**
  * Mock PresentationService for testing tools

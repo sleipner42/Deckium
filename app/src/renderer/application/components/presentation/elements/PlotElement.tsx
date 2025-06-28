@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plot } from '../../../../../common/domain/entities/types';
 import { ResizeHandles } from '../ResizeHandles';
 
@@ -110,7 +110,11 @@ export const PlotElement: React.FC<PlotElementProps> = ({
         elementId={element.id}
         position={position}
         size={size}
-        onResize={onElementUpdate ? (id, updates) => onElementUpdate(id, updates) : () => {}}
+        onResize={
+          onElementUpdate
+            ? (id, updates) => onElementUpdate(id, updates)
+            : () => {}
+        }
         minWidth={100}
         minHeight={80}
       />

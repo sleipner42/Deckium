@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
 import {
   Box,
   Button,
+  CircularProgress,
   Container,
   Paper,
   Typography,
-  CircularProgress,
 } from '@mui/material';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 const LoginScreen: React.FC = () => {

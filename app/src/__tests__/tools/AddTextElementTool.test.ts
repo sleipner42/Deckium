@@ -1,6 +1,6 @@
+import { AIToolResult } from '../../common/domain/entities/ai-types';
 import { AddTextElementTool } from '../../main/ai/tools/tools/AddTextElementTool';
 import { MockPresentationService } from './MockPresentationService';
-import { AIToolResult } from '../../common/domain/entities/ai-types';
 
 describe('AddTextElementTool', () => {
   let tool: AddTextElementTool;

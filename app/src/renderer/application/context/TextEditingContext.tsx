@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
 import Quill from 'quill';
+import React, { createContext, ReactNode, useContext, useState } from 'react';
 
 interface TextEditingContextType {
   activeEditor: Quill | null;
@@ -7,13 +7,17 @@ interface TextEditingContextType {
   isTextEditing: boolean;
 }
 
-const TextEditingContext = createContext<TextEditingContextType | undefined>(undefined);
+const TextEditingContext = createContext<TextEditingContextType | undefined>(
+  undefined,
+);
 
 interface TextEditingProviderProps {
   children: ReactNode;
 }
 
-export const TextEditingProvider: React.FC<TextEditingProviderProps> = ({ children }) => {
+export const TextEditingProvider: React.FC<TextEditingProviderProps> = ({
+  children,
+}) => {
   const [activeEditor, setActiveEditor] = useState<Quill | null>(null);
 
   const value = {

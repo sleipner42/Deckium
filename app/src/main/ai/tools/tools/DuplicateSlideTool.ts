@@ -1,6 +1,6 @@
-import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
+import { BaseTool } from '../BaseTool';
 
 export class DuplicateSlideTool extends BaseTool {
   name = 'duplicateSlide';

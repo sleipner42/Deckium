@@ -1,9 +1,9 @@
-import { BaseTool } from '../BaseTool';
 import {
-  AIToolResult,
   AIToolCall,
+  AIToolResult,
 } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
+import { BaseTool } from '../BaseTool';
 import { ToolsService } from '../builtInTools';
 
 export class CriticTool extends BaseTool {

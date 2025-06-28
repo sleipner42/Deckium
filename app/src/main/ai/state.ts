@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Thread, Message } from '../../common/domain/entities/ai-types';
+import { Message, Thread } from '../../common/domain/entities/ai-types';
 import { UUID } from '../../common/domain/entities/types';
 import { MessageContent } from '../../common/domain/interfaces/ai-service.interface';
 import { logger } from '../utils/logger';

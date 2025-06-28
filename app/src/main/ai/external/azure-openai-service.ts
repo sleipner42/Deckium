@@ -1,12 +1,12 @@
-import { AzureOpenAI } from 'openai';
 import * as dotenv from 'dotenv';
-import * as path from 'path';
 import * as fs from 'fs';
+import { AzureOpenAI } from 'openai';
+import * as path from 'path';
 import { Message } from '../../../common/domain/entities/ai-types';
 import {
+  IAIModelClient,
   IAIService,
   IAIServiceFactory,
-  IAIModelClient,
   MessageContent,
 } from '../../../common/domain/interfaces/ai-service.interface';
 

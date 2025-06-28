@@ -8,8 +8,10 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Roboto', 'Helvetica Neue', sans-serif;
-  background-color: #1E1E1E;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Roboto",
+    "Helvetica Neue", sans-serif;
+  background-color: #1e1e1e;
   color: white;
   -webkit-font-smoothing: antialiased;
 }
@@ -25,7 +27,7 @@ body {
 }
 
 .apple-music-promo-banner {
-  background-color: #FF2D55;
+  background-color: #ff2d55;
   border-radius: 8px;
   color: white;
   text-align: center;
@@ -68,7 +70,7 @@ body {
 }
 
 .App-header {
-  background-color: #1E1E1E;
+  background-color: #1e1e1e;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -79,7 +81,7 @@ body {
 }
 
 .App-link {
-  color: #FF2D55;
+  color: #ff2d55;
 }
 
 @keyframes App-logo-spin {
@@ -94,7 +96,7 @@ body {
 .app {
   display: flex;
   height: 100vh;
-  background-color: #1E1E1E;
+  background-color: #1e1e1e;
 }
 
 .welcome-screen {
@@ -103,7 +105,7 @@ body {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #1E1E1E;
+  background-color: #1e1e1e;
   color: white;
 }
 
@@ -115,7 +117,7 @@ body {
 .create-presentation-btn {
   padding: 1rem 2rem;
   font-size: 1.2rem;
-  background-color: #FF2D55;
+  background-color: #ff2d55;
   color: white;
   border: none;
   border-radius: 8px;
@@ -124,7 +126,7 @@ body {
 }
 
 .create-presentation-btn:hover {
-  background-color: #FF1A43;
+  background-color: #ff1a43;
 }
 
 .sidebar {
@@ -138,7 +140,7 @@ body {
 }
 
 .slide-thumbnail {
-  background-color: #2C2C2C;
+  background-color: #2c2c2c;
   color: white;
   padding: 10px;
   margin-bottom: 10px;
@@ -148,17 +150,17 @@ body {
 }
 
 .slide-thumbnail:hover {
-  background-color: #3A3A3A;
+  background-color: #3a3a3a;
 }
 
 .slide-thumbnail.active {
-  background-color: #FF2D55;
+  background-color: #ff2d55;
 }
 
 .add-slide-btn {
   width: 100%;
   padding: 10px;
-  background-color: #FF2D55;
+  background-color: #ff2d55;
   color: white;
   border: none;
   border-radius: 8px;
@@ -169,7 +171,7 @@ body {
 }
 
 .add-slide-btn:hover {
-  background-color: #FF1A43;
+  background-color: #ff1a43;
 }
 
 .slide-navigation {
@@ -185,13 +187,13 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #1E1E1E;
+  background-color: #1e1e1e;
 }
 
 .slide-editor {
   width: 100%;
   max-width: 1200px;
-  aspect-ratio: 16/9;
+  aspect-ratio: 16 / 9;
   background-color: #212121;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -225,7 +227,9 @@ body {
 }
 
 button {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Roboto', 'Helvetica Neue', sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Roboto",
+    "Helvetica Neue", sans-serif;
 }
 
 button:disabled {
@@ -252,7 +256,7 @@ button:disabled {
 .ai-chat-interface {
   flex: 1;
   border-radius: 8px;
-  background-color: #2C2C2C;
+  background-color: #2c2c2c;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -336,7 +340,7 @@ button:disabled {
   background: white;
   border: 1px solid #ccc;
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   margin-bottom: 5px;
 }
 

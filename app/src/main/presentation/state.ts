@@ -1,7 +1,7 @@
 import {
+  ContentElement,
   Presentation,
   Slide,
-  ContentElement,
 } from '../../common/domain/entities/types';
 
 export class PresentationState {
@@ -86,13 +86,13 @@ export class PresentationState {
     if (slideIndex === -1) return null;
 
     const originalSlide = this.presentation.slides[slideIndex];
-    
+
     // Create a new slide with new ID and duplicate all elements with new IDs
     const duplicatedSlide: Slide = {
       id: crypto.randomUUID(),
       background: originalSlide.background,
       transition: originalSlide.transition,
-      elements: originalSlide.elements.map(element => ({
+      elements: originalSlide.elements.map((element) => ({
         ...element,
         id: crypto.randomUUID(), // Generate new ID for each element
       })),

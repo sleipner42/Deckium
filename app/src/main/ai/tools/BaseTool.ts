@@ -1,6 +1,6 @@
-import { AITool } from './AITool';
 import { AIToolResult } from '../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../presentation/service';
+import { AITool } from './AITool';
 
 export abstract class BaseTool extends AITool {
   async execute(

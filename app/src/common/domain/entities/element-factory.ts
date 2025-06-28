@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { ContentElement, TextBox, BarChartData } from './types';
+import { BarChartData, ContentElement, TextBox } from './types';
 
 export class ElementFactory {
   static createTextBox(options: {
@@ -88,5 +88,4 @@ export class ElementFactory {
       zIndex: options.zIndex || 1,
     };
   }
-
 }

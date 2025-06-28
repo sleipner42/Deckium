@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  Thread,
   AIRequest,
   AIResponse,
+  Thread,
 } from '../../../common/domain/entities/ai-types';
-import { MessageContent } from '../../../common/domain/interfaces/ai-service.interface';
 import { UUID } from '../../../common/domain/entities/types';
+import { MessageContent } from '../../../common/domain/interfaces/ai-service.interface';
 
 interface ElectronWindow {
   electron: {

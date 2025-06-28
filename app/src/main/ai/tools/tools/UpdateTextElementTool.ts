@@ -1,10 +1,10 @@
-import { BaseTool } from '../BaseTool';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
-import { PresentationService } from '../../../presentation/service';
 import { TextBox } from '../../../../common/domain/entities/types';
 import { ElementValidator } from '../../../presentation/element-validator';
-import { estimateTextDimensions } from '../utils/text-dimensions';
+import { PresentationService } from '../../../presentation/service';
 import { textMeasurementService } from '../../../text-measurement/service';
+import { BaseTool } from '../BaseTool';
+import { estimateTextDimensions } from '../utils/text-dimensions';
 
 export class UpdateTextElementTool extends BaseTool {
   name = 'updateTextElement';
@@ -23,7 +23,8 @@ export class UpdateTextElementTool extends BaseTool {
     width: 'New width (optional)',
     height: 'New height (optional)',
     borderRadius: 'The new border radius (optional)',
-    backgroundColor: 'The new background color (optional). Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
+    backgroundColor:
+      'The new background color (optional). Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
     align: 'The new alignment of the element (optional)',
     verticalAlign: 'The new vertical alignment of the element (optional)',
     zIndex:
@@ -123,14 +124,17 @@ export class UpdateTextElementTool extends BaseTool {
       } else {
         // Handle positioning based on alignment parameters for consistency with AddTextElementTool
         const currentAlign = align !== undefined ? align : targetElement.align;
-        const currentVerticalAlign = verticalAlign !== undefined ? verticalAlign : targetElement.verticalAlign;
-        
+        const currentVerticalAlign =
+          verticalAlign !== undefined
+            ? verticalAlign
+            : targetElement.verticalAlign;
+
         if (currentAlign === 'center') {
           xPos -= widthValue / 2;
         } else if (currentAlign === 'right') {
           xPos -= widthValue;
         }
-        
+
         if (currentVerticalAlign === 'middle') {
           yPos -= heightValue / 2;
         } else if (currentVerticalAlign === 'bottom') {

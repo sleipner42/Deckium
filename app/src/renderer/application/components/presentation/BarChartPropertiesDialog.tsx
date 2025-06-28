@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
   Box,
-  Typography,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   IconButton,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
+  TextField,
+  Typography,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
+import React, { useEffect, useState } from 'react';
 import { BarChart } from '../../../../common/domain/entities/types';
 
 interface BarChartPropertiesDialogProps {
@@ -29,19 +29,18 @@ interface BarChartPropertiesDialogProps {
   onUpdate: (updates: Partial<BarChart>) => void;
 }
 
-export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> = ({
-  open,
-  onClose,
-  chart,
-  onUpdate,
-}) => {
+export const BarChartPropertiesDialog: React.FC<
+  BarChartPropertiesDialogProps
+> = ({ open, onClose, chart, onUpdate }) => {
   const [title, setTitle] = useState('');
   const [xAxisLabel, setXAxisLabel] = useState('');
   const [yAxisLabel, setYAxisLabel] = useState('');
   const [barColor, setBarColor] = useState('#007bff');
   const [width, setWidth] = useState(300);
   const [height, setHeight] = useState(200);
-  const [dataPoints, setDataPoints] = useState<Array<{ x: string; y: number }>>([]);
+  const [dataPoints, setDataPoints] = useState<Array<{ x: string; y: number }>>(
+    [],
+  );
 
   useEffect(() => {
     if (chart) {
@@ -51,7 +50,7 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
       setBarColor(chart.barColor || '#007bff');
       setWidth(chart.size?.width || 300);
       setHeight(chart.size?.height || 200);
-      
+
       // Convert chart data to editable format
       if (chart.data?.x && chart.data?.y) {
         const points = chart.data.x.map((x, i) => ({
@@ -78,8 +77,8 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
         height,
       },
       data: {
-        x: dataPoints.map(point => point.x),
-        y: dataPoints.map(point => point.y),
+        x: dataPoints.map((point) => point.x),
+        y: dataPoints.map((point) => point.y),
       },
     };
 
@@ -96,7 +95,7 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
       setBarColor(chart.barColor || '#007bff');
       setWidth(chart.size?.width || 300);
       setHeight(chart.size?.height || 200);
-      
+
       if (chart.data?.x && chart.data?.y) {
         const points = chart.data.x.map((x, i) => ({
           x: String(x),
@@ -109,7 +108,10 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
   };
 
   const addDataPoint = () => {
-    setDataPoints([...dataPoints, { x: `Category ${dataPoints.length + 1}`, y: 0 }]);
+    setDataPoints([
+      ...dataPoints,
+      { x: `Category ${dataPoints.length + 1}`, y: 0 },
+    ]);
   };
 
   const removeDataPoint = (index: number) => {
@@ -118,7 +120,11 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
     }
   };
 
-  const updateDataPoint = (index: number, field: 'x' | 'y', value: string | number) => {
+  const updateDataPoint = (
+    index: number,
+    field: 'x' | 'y',
+    value: string | number,
+  ) => {
     const newDataPoints = [...dataPoints];
     if (field === 'x') {
       newDataPoints[index].x = String(value);
@@ -133,7 +139,7 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
   return (
     <Dialog open={open} onClose={handleCancel} maxWidth="md" fullWidth>
       <DialogTitle>Bar Chart Properties</DialogTitle>
-      
+
       <DialogContent>
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={3}>
@@ -143,7 +149,7 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
                 Chart Information
               </Typography>
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -153,7 +159,7 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
                 placeholder="Enter chart title"
               />
             </Grid>
-            
+
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -163,7 +169,7 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
                 placeholder="Categories"
               />
             </Grid>
-            
+
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -180,7 +186,7 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
                 Size
               </Typography>
             </Grid>
-            
+
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -191,7 +197,7 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
                 inputProps={{ min: 200, max: 1000 }}
               />
             </Grid>
-            
+
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -209,7 +215,7 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
                 Appearance
               </Typography>
             </Grid>
-            
+
             <Grid item xs={6}>
               <Box>
                 <Typography variant="body2" gutterBottom>
@@ -240,10 +246,16 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
 
             {/* Data Section */}
             <Grid item xs={12}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2, mb: 1 }}>
-                <Typography variant="h6">
-                  Chart Data
-                </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mt: 2,
+                  mb: 1,
+                }}
+              >
+                <Typography variant="h6">Chart Data</Typography>
                 <Button
                   startIcon={<AddIcon />}
                   onClick={addDataPoint}
@@ -253,7 +265,7 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
                   Add Data Point
                 </Button>
               </Box>
-              
+
               <TableContainer component={Paper} variant="outlined">
                 <Table size="small">
                   <TableHead>
@@ -271,7 +283,9 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
                             size="small"
                             fullWidth
                             value={point.x}
-                            onChange={(e) => updateDataPoint(index, 'x', e.target.value)}
+                            onChange={(e) =>
+                              updateDataPoint(index, 'x', e.target.value)
+                            }
                             placeholder="Category name"
                           />
                         </TableCell>
@@ -281,7 +295,9 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
                             fullWidth
                             type="number"
                             value={point.y}
-                            onChange={(e) => updateDataPoint(index, 'y', e.target.value)}
+                            onChange={(e) =>
+                              updateDataPoint(index, 'y', e.target.value)
+                            }
                             inputProps={{ min: 0 }}
                           />
                         </TableCell>
@@ -304,7 +320,7 @@ export const BarChartPropertiesDialog: React.FC<BarChartPropertiesDialogProps> =
           </Grid>
         </Box>
       </DialogContent>
-      
+
       <DialogActions>
         <Button onClick={handleCancel}>Cancel</Button>
         <Button onClick={handleSave} variant="contained">

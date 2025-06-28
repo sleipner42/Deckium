@@ -1,11 +1,11 @@
-import React from 'react';
-import { Box, Button, Paper, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { Box, Button, Paper, Typography } from '@mui/material';
+import React from 'react';
 import { usePresentation } from '../../context/PresentationContext';
-import { SlideNavigation } from './SlideNavigation';
-import { SlideView } from './SlideView';
 import { ChatInterface } from '../common/ChatInterface';
 import Toolbar from '../common/Toolbar';
+import { SlideNavigation } from './SlideNavigation';
+import { SlideView } from './SlideView';
 
 const PresentationEditor: React.FC = () => {
   const { addSlide } = usePresentation();

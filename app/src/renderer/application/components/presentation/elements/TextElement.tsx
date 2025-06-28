@@ -1,12 +1,25 @@
-import React, { useRef, useEffect, useState } from 'react';
 import Quill from 'quill';
+import React, { useEffect, useRef, useState } from 'react';
 import { TextBox } from '../../../../../common/domain/entities/types';
 import { useTextEditing } from '../../../context/TextEditingContext';
 import { ResizeHandles } from '../ResizeHandles';
 
 // Configure Quill to accept custom font sizes
 const SizeStyle = Quill.import('attributors/style/size');
-SizeStyle.whitelist = ['8px', '10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'];
+SizeStyle.whitelist = [
+  '8px',
+  '10px',
+  '12px',
+  '14px',
+  '16px',
+  '18px',
+  '20px',
+  '24px',
+  '28px',
+  '32px',
+  '36px',
+  '48px',
+];
 Quill.register(SizeStyle, true);
 
 // Add styles for high z-index toolbar
@@ -79,7 +92,25 @@ export const TextElement: React.FC<TextElementProps> = ({
           modules: {
             toolbar: [
               [{ header: [1, 2, 3, false] }],
-              [{ font: [] }, { size: ['8px', '10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px'] }],
+              [
+                { font: [] },
+                {
+                  size: [
+                    '8px',
+                    '10px',
+                    '12px',
+                    '14px',
+                    '16px',
+                    '18px',
+                    '20px',
+                    '24px',
+                    '28px',
+                    '32px',
+                    '36px',
+                    '48px',
+                  ],
+                },
+              ],
               ['bold', 'italic', 'underline', 'strike'],
               [{ color: [] }, { background: [] }],
               [{ list: 'ordered' }, { list: 'bullet' }],
@@ -122,16 +153,18 @@ export const TextElement: React.FC<TextElementProps> = ({
             const availableHeight = containerHeight - toolbarHeight;
 
             switch (verticalAlign) {
-              case 'middle':
+              case 'middle': {
                 const middlePadding = Math.max(12, (availableHeight - 50) / 2);
                 editor.style.paddingTop = `${middlePadding}px`;
                 editor.style.paddingBottom = '12px';
                 break;
-              case 'bottom':
+              }
+              case 'bottom': {
                 const bottomPadding = Math.max(12, availableHeight - 60);
                 editor.style.paddingTop = `${bottomPadding}px`;
                 editor.style.paddingBottom = '12px';
                 break;
+              }
               case 'top':
               default:
                 editor.style.paddingTop = '12px';
@@ -261,18 +294,20 @@ export const TextElement: React.FC<TextElementProps> = ({
         editor.style.removeProperty('padding-bottom');
 
         switch (verticalAlign) {
-          case 'middle':
+          case 'middle': {
             // For middle alignment, calculate padding to center content
             const middlePadding = Math.max(12, (availableHeight - 50) / 2);
             editor.style.paddingTop = `${middlePadding}px`;
             editor.style.paddingBottom = '12px';
             break;
-          case 'bottom':
+          }
+          case 'bottom': {
             // For bottom alignment, add top padding to push content down
             const bottomPadding = Math.max(12, availableHeight - 60);
             editor.style.paddingTop = `${bottomPadding}px`;
             editor.style.paddingBottom = '12px';
             break;
+          }
           case 'top':
           default:
             // For top alignment, use standard padding

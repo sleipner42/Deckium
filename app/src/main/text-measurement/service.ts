@@ -1,9 +1,9 @@
 import { BrowserWindow } from 'electron';
-import { TextMeasurementRequest, TextMeasurementResult } from './ipc-handler';
 import {
   estimateTextDimensions,
   TextDimensionResult,
 } from '../ai/tools/utils/text-dimensions';
+import { TextMeasurementRequest, TextMeasurementResult } from './ipc-handler';
 
 export class TextMeasurementService {
   private static instance: TextMeasurementService;

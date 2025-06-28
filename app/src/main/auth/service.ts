@@ -1,8 +1,8 @@
-import * as path from 'path';
-import * as fs from 'fs';
-import { URL } from 'url';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { URL } from 'node:url';
 import { app, shell } from 'electron';
-import {
+import type {
   IAuthService,
   IUser,
 } from '../../common/domain/interfaces/auth.interface';

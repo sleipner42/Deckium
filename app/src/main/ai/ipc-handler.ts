@@ -1,11 +1,11 @@
 import { ipcMain } from 'electron';
-import { AIService } from './service';
 import {
   AIRequest,
   AIResponse,
   Thread,
 } from '../../common/domain/entities/ai-types';
 import { UUID } from '../../common/domain/entities/types';
+import { AIService } from './service';
 
 export function setupAIIPC(service: AIService) {
   ipcMain.handle(

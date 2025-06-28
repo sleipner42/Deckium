@@ -1,11 +1,11 @@
-import { AITool } from './AITool';
-import { ToolFactory } from './ToolFactory';
 import {
   AIToolCall,
   AIToolResult,
 } from '../../../common/domain/entities/ai-types';
-import { PresentationService } from '../../presentation/service';
 import AuthService from '../../auth/service';
+import { PresentationService } from '../../presentation/service';
+import { AITool } from './AITool';
+import { ToolFactory } from './ToolFactory';
 
 export class AIToolsService {
   private tools: AITool[];
@@ -74,7 +74,9 @@ export class AIToolsService {
   async executeToolCalls(
     toolCalls: AIToolCall[],
     presentationService: PresentationService,
-  ): Promise<Array<{ toolName: string; result: any, editedSlidesIds: string[] }>> {
+  ): Promise<
+    Array<{ toolName: string; result: any; editedSlidesIds: string[] }>
+  > {
     const results = [];
 
     for (const call of toolCalls) {

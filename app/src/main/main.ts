@@ -1,18 +1,18 @@
-import path from 'path';
-import { app, BrowserWindow, shell } from 'electron';
 import * as dotenv from 'dotenv';
+import { app, BrowserWindow, shell } from 'electron';
+import path from 'path';
+import { IAIServiceFactory } from '../common/domain/interfaces/ai-service.interface';
+import { BackendAIServiceFactory } from './ai/external/backend-ai-service';
+import { setupAIIPC } from './ai/ipc-handler';
+import { AIService } from './ai/service';
+import { setupAuthIPC } from './auth/ipc-handler';
+import AuthService from './auth/service';
 import MenuBuilder from './menu';
-import { resolveHtmlPath, getProtocolArgs } from './util';
 import { setupPresentationIPC } from './presentation/ipc-handler';
 import { PresentationService } from './presentation/service';
-import { AIService } from './ai/service';
-import { IAIServiceFactory } from '../common/domain/interfaces/ai-service.interface';
-import { setupAIIPC } from './ai/ipc-handler';
-import { setupAuthIPC } from './auth/ipc-handler';
-import { BackendAIServiceFactory } from './ai/external/backend-ai-service';
-import AuthService from './auth/service';
-import { textMeasurementService } from './text-measurement/service';
 import { setupTextMeasurementIPC } from './text-measurement/ipc-handler';
+import { textMeasurementService } from './text-measurement/service';
+import { getProtocolArgs, resolveHtmlPath } from './util';
 
 dotenv.config();
 

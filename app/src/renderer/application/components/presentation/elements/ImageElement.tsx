@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image } from '../../../../../common/domain/entities/types';
 import { ResizeHandles } from '../ResizeHandles';
 
@@ -110,7 +110,11 @@ export const ImageElement: React.FC<ImageElementProps> = ({
         elementId={element.id}
         position={position}
         size={size}
-        onResize={onElementUpdate ? (id, updates) => onElementUpdate(id, updates) : () => {}}
+        onResize={
+          onElementUpdate
+            ? (id, updates) => onElementUpdate(id, updates)
+            : () => {}
+        }
         minWidth={20}
         minHeight={20}
       />

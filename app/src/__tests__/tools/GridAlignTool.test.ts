@@ -1,12 +1,12 @@
 import { GridAlignTool } from '../../main/ai/tools/tools/GridAlignTool';
 import { MockPresentationService } from './MockPresentationService';
 import {
-  createSlideWithElements,
-  expectToolSuccess,
-  expectToolError,
-  createTextElement,
   createImageElement,
   createShapeElement,
+  createSlideWithElements,
+  createTextElement,
+  expectToolError,
+  expectToolSuccess,
 } from './test-utils';
 
 describe('GridAlignTool', () => {

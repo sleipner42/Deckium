@@ -1,12 +1,12 @@
-import { MockPresentationService } from './MockPresentationService';
+import { AIToolResult } from '../../common/domain/entities/ai-types';
 import {
   ContentElement,
-  Slide,
-  TextBox,
   Image,
   Shape,
+  Slide,
+  TextBox,
 } from '../../common/domain/entities/types';
-import { AIToolResult } from '../../common/domain/entities/ai-types';
+import { MockPresentationService } from './MockPresentationService';
 
 /**
  * Utility functions for testing tools

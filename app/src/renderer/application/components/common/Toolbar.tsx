@@ -1,30 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import ShapesIcon from '@mui/icons-material/Category';
+import TriangleIcon from '@mui/icons-material/ChangeHistory';
+import ImageIcon from '@mui/icons-material/Image';
+import LogoutIcon from '@mui/icons-material/Logout';
+import CircleIcon from '@mui/icons-material/RadioButtonUnchecked';
+import RectangleIcon from '@mui/icons-material/Rectangle';
+import PresentationIcon from '@mui/icons-material/Slideshow';
+import TextFieldsIcon from '@mui/icons-material/TextFields';
 import {
+  alpha,
   Box,
   Button,
   Divider,
   IconButton,
-  Tooltip,
-  Typography,
-  alpha,
-  Menu,
-  MenuItem,
   ListItemIcon,
   ListItemText,
+  Menu,
+  MenuItem,
+  Tooltip,
+  Typography,
 } from '@mui/material';
-import TextFieldsIcon from '@mui/icons-material/TextFields';
-import ImageIcon from '@mui/icons-material/Image';
-import ShapesIcon from '@mui/icons-material/Category';
-import RectangleIcon from '@mui/icons-material/Rectangle';
-import CircleIcon from '@mui/icons-material/RadioButtonUnchecked';
-import TriangleIcon from '@mui/icons-material/ChangeHistory';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import LogoutIcon from '@mui/icons-material/Logout';
-import PresentationIcon from '@mui/icons-material/Slideshow';
+import React, { useEffect, useState } from 'react';
+import { ElementFactory } from '../../../../common/domain/entities/element-factory';
 import { useAuth } from '../../context/AuthContext';
 import { usePresentation } from '../../context/PresentationContext';
-import { ElementFactory } from '../../../../common/domain/entities/element-factory';
 
 interface ToolbarProps {
   style?: React.CSSProperties;
@@ -133,12 +133,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
 
   const addImageElement = async () => {
     if (!selectedSlide) return;
-    
+
     // Create a file input element
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    
+
     input.onchange = async (event) => {
       const file = (event.target as HTMLInputElement).files?.[0];
       if (file) {
@@ -146,20 +146,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
         const reader = new FileReader();
         reader.onload = async (e) => {
           const imageDataUrl = e.target?.result as string;
-          
+
           // Create new image element
           const newImageElement = ElementFactory.createImage({
             position: { x: 100, y: 100 },
             size: { width: 200, height: 150 },
             content: imageDataUrl,
           });
-          
+
           await addElement(newImageElement);
         };
         reader.readAsDataURL(file);
       }
     };
-    
+
     // Trigger file dialog
     input.click();
   };
@@ -167,7 +167,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
   const handleStartPresentation = () => {
     window.electron.presentation.openFullscreen();
   };
-
 
   return (
     <Box
@@ -344,7 +343,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
             <ListItemText>Triangle</ListItemText>
           </MenuItem>
         </Menu>
-
       </Box>
 
       <Box

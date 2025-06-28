@@ -1,7 +1,7 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext } from 'react';
 import { Thread } from '../../../common/domain/entities/ai-types';
-import { MessageContent } from '../../../common/domain/interfaces/ai-service.interface';
 import { UUID } from '../../../common/domain/entities/types';
+import { MessageContent } from '../../../common/domain/interfaces/ai-service.interface';
 import { useMainProcessAI } from '../hooks/useMainProcessAI';
 import { usePresentation } from './PresentationContext';
 

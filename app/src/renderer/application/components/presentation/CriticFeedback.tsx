@@ -1,23 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CloseIcon from '@mui/icons-material/Close';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import RateReviewIcon from '@mui/icons-material/RateReview';
+import SendIcon from '@mui/icons-material/Send';
 import {
   Box,
   Button,
-  Typography,
-  Paper,
+  Chip,
   CircularProgress,
   Collapse,
-  IconButton,
   Divider,
-  Chip,
+  IconButton,
+  Paper,
+  Typography,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import RateReviewIcon from '@mui/icons-material/RateReview';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import SendIcon from '@mui/icons-material/Send';
-import { useCritic } from '../../context/CriticContext';
+import React, { useEffect, useState } from 'react';
 import { useAI } from '../../context/AIContext';
+import { useCritic } from '../../context/CriticContext';
 import { usePresentation } from '../../context/PresentationContext';
 
 interface CriticFeedbackProps {

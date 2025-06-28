@@ -1,5 +1,5 @@
-import { UUID, ContentElement } from './types';
 import { MessageContent } from '../interfaces/ai-service.interface';
+import { ContentElement, UUID } from './types';
 
 export type MessageRole = 'user' | 'assistant' | 'system' | 'critic';
 
