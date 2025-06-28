@@ -1,11 +1,12 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { URL } from 'url';
-import { app, BrowserWindow, session } from 'electron';
+import { app, shell } from 'electron';
 import {
   IAuthService,
   IUser,
 } from '../../common/domain/interfaces/auth.interface';
+import { Logger } from '../utils/logger';
 
 const CONFIG = {
   apiBaseUrl: process.env.BACKEND_API_URL || 'https://api.deckium.xyz',
@@ -14,14 +15,22 @@ const CONFIG = {
   windowHeight: 600,
   tokenExpiry: 24 * 60 * 60, // 24 hours in seconds
   userDataFile: path.join(app.getPath('userData'), 'user-auth.json'),
+  authTimeoutMs: 120000,
 };
 
 export default class AuthService implements IAuthService {
-  private authWindow: BrowserWindow | null = null;
-
   private user: IUser | null = null;
 
+  private authPromise: Promise<void> | null = null;
+
+  private authResolver: (() => void) | null = null;
+
+  private authRejecter: ((error: Error) => void) | null = null;
+
+  private logger: Logger;
+
   constructor() {
+    this.logger = Logger.getInstance();
     this.loadUserFromFile();
   }
 
@@ -34,130 +43,153 @@ export default class AuthService implements IAuthService {
         }
       }
     } catch (error) {
-      console.error('Failed to load user data:', error);
+      this.logger.logSystem('Failed to load user data from file', 'warn', {
+        error: error instanceof Error ? error.message : String(error),
+        filePath: CONFIG.userDataFile,
+      });
     }
   }
 
   private saveUserToFile(user: IUser): void {
     this.user = user;
-    console.log('user', user.accessToken);
     try {
       fs.writeFileSync(CONFIG.userDataFile, JSON.stringify(user), 'utf8');
+      this.logger.logSystem('User data saved successfully', 'debug');
     } catch (error) {
-      console.error('Failed to save user data:', error);
+      this.logger.logSystem('Failed to save user data to file', 'error', {
+        error: error instanceof Error ? error.message : String(error),
+        filePath: CONFIG.userDataFile,
+      });
     }
   }
 
   async login(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.closeAuthWindow();
+    if (this.authPromise) {
+      return this.authPromise;
+    }
 
-      this.authWindow = new BrowserWindow({
-        width: CONFIG.windowWidth,
-        height: CONFIG.windowHeight,
-        show: true,
-        webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true,
-          partition: CONFIG.sessionPartition,
-        },
-        parent: BrowserWindow.getFocusedWindow() || undefined,
-        modal: true,
+    this.authPromise = new Promise((resolve, reject) => {
+      this.authResolver = resolve;
+      this.authRejecter = reject;
+
+      const authUrl = `${CONFIG.apiBaseUrl}/auth/login?redirect_type=desktop`;
+
+      shell.openExternal(authUrl).catch((error) => {
+        this.logger.logSystem(
+          'Failed to open external browser for auth',
+          'error',
+          {
+            error: error instanceof Error ? error.message : String(error),
+            authUrl,
+          },
+        );
+        this.cleanupAuthPromise();
+        reject(new Error('Failed to open browser for authentication'));
       });
 
-      const ses = this.authWindow.webContents.session;
-      this.authWindow.loadURL(`${CONFIG.apiBaseUrl}/auth/login`);
-
-      this.authWindow.webContents.on('did-navigate', (_, url) => {
-        if (url.includes('login_success')) {
-          this.processAuthSuccess(url, ses, resolve, reject);
-        } else if (url.includes('login_failed')) {
-          reject(new Error('Authentication failed'));
+      setTimeout(() => {
+        if (this.authRejecter) {
+          this.logger.logSystem('Authentication timeout', 'warn', {
+            timeoutMs: CONFIG.authTimeoutMs,
+          });
+          this.cleanupAuthPromise();
+          reject(new Error('Authentication timeout - please try again'));
         }
-      });
-
-      this.authWindow.on('closed', () => {
-        this.authWindow = null;
-        if (!this.user) {
-          reject(new Error('Authentication window closed'));
-        }
-      });
+      }, CONFIG.authTimeoutMs);
     });
+
+    return this.authPromise;
   }
 
-  private async processAuthSuccess(
-    url: string,
-    ses: Electron.Session,
-    resolve: () => void,
-    reject: (error: Error) => void,
-  ): Promise<void> {
+  handleDeepLink(url: string): void {
     try {
-      const accessTokenCookie = await this.findAccessTokenCookie(ses);
+      const parsedUrl = new URL(url);
+      this.logger.logSystem('Processing deep link', 'debug', { url });
 
-      if (accessTokenCookie) {
-        const tokenValue = accessTokenCookie.value.replace('Bearer ', '');
-        const userData = await this.fetchUserData(accessTokenCookie.value);
+      if (parsedUrl.protocol !== 'deckium:') {
+        return;
+      }
 
-        const expirationDate =
-          accessTokenCookie.expirationDate ||
-          Date.now() / 1000 + CONFIG.tokenExpiry;
-
-        this.saveUserToFile({
-          id: userData.id,
-          username: userData.name || userData.email.split('@')[0],
-          email: userData.email,
-          accessToken: tokenValue,
-          expiresAt: new Date(expirationDate * 1000).getTime(),
-        });
-
-        this.closeAuthWindow();
-        resolve();
-      } else if (url.includes('auth_error=')) {
-        const parsedUrl = new URL(url);
-        const errorParam = parsedUrl.searchParams.get('auth_error');
-        throw new Error(errorParam || 'Authentication failed');
+      if (parsedUrl.hostname === 'auth') {
+        if (parsedUrl.pathname === '/success') {
+          this.handleAuthSuccess(parsedUrl);
+        } else if (parsedUrl.pathname === '/error') {
+          this.handleAuthError(parsedUrl);
+        }
       }
     } catch (error) {
-      console.error('Authentication error:', error);
-      this.closeAuthWindow();
-      reject(error instanceof Error ? error : new Error(String(error)));
+      this.logger.logSystem('Error processing deep link', 'error', {
+        error: error instanceof Error ? error.message : String(error),
+        url,
+      });
+      this.handleAuthError(
+        new URL('deckium://auth/error?error=Invalid deep link'),
+      );
     }
   }
 
-  private async fetchUserData(accessToken: string): Promise<any> {
-    const userResponse = await fetch(`${CONFIG.apiBaseUrl}/auth/me`, {
-      headers: {
-        Cookie: `access_token=${accessToken}`,
-      },
-    });
+  private async handleAuthSuccess(url: URL): Promise<void> {
+    try {
+      const token = url.searchParams.get('token');
+      const userId = url.searchParams.get('userId');
+      const email = url.searchParams.get('email');
+      const name = url.searchParams.get('name');
 
-    if (!userResponse.ok) {
-      throw new Error(`Failed to get user data: ${userResponse.statusText}`);
-    }
+      if (!token || !userId || !email) {
+        throw new Error('Missing required authentication parameters');
+      }
 
-    return userResponse.json();
-  }
+      const expirationDate = Date.now() + CONFIG.tokenExpiry * 1000;
 
-  private async findAccessTokenCookie(
-    ses: Electron.Session,
-  ): Promise<Electron.Cookie | null> {
-    const apiUrl = new URL(CONFIG.apiBaseUrl);
-    const domains = ['localhost', apiUrl.hostname];
-
-    for (const domain of domains) {
-      const domainCookies = await ses.cookies.get({
-        url: `${apiUrl.protocol}//${domain}:${apiUrl.port}`,
+      this.saveUserToFile({
+        id: userId,
+        username: name || email.split('@')[0],
+        email,
+        accessToken: token,
+        expiresAt: expirationDate,
       });
 
-      const tokenCookie = domainCookies.find(
-        (cookie) => cookie.name === 'access_token',
-      );
-      if (tokenCookie) {
-        return tokenCookie;
+      this.logger.logSystem('Authentication successful', 'info', {
+        userId,
+        email,
+      });
+
+      if (this.authResolver) {
+        this.authResolver();
+        this.cleanupAuthPromise();
+      }
+    } catch (error) {
+      this.logger.logSystem('Authentication success handling failed', 'error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      if (this.authRejecter) {
+        this.authRejecter(
+          error instanceof Error ? error : new Error(String(error)),
+        );
+        this.cleanupAuthPromise();
       }
     }
+  }
 
-    return null;
+  private handleAuthError(url: URL): void {
+    const errorMessage =
+      url.searchParams.get('error') || 'Authentication failed';
+
+    this.logger.logSystem('Authentication error received', 'error', {
+      errorMessage,
+      url: url.toString(),
+    });
+
+    if (this.authRejecter) {
+      this.authRejecter(new Error(errorMessage));
+      this.cleanupAuthPromise();
+    }
+  }
+
+  private cleanupAuthPromise(): void {
+    this.authPromise = null;
+    this.authResolver = null;
+    this.authRejecter = null;
   }
 
   async logout(): Promise<void> {
@@ -167,29 +199,26 @@ export default class AuthService implements IAuthService {
       fs.unlinkSync(CONFIG.userDataFile);
     }
 
-    const mainSession = session.fromPartition(CONFIG.sessionPartition);
-    const apiUrl = new URL(CONFIG.apiBaseUrl);
-    const domains = ['localhost', apiUrl.hostname];
-
-    for (const domain of domains) {
-      await mainSession.cookies.remove(
-        `${apiUrl.protocol}//${domain}:${apiUrl.port}`,
-        'access_token',
-      );
-    }
-
     try {
       await fetch(`${CONFIG.apiBaseUrl}/auth/logout`, {
         credentials: 'include',
       });
-    } catch (e) {}
+      this.logger.logSystem('User logout successful', 'info');
+    } catch (error) {
+      this.logger.logSystem('Logout request failed (ignoring)', 'debug', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   async getUser(): Promise<IUser | null> {
     if (this.user?.expiresAt && this.user.expiresAt < Date.now()) {
       try {
         await this.refreshTokens();
-      } catch (e) {
+      } catch (error) {
+        this.logger.logSystem('Token refresh failed, clearing user', 'warn', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         this.user = null;
       }
     }
@@ -220,9 +249,11 @@ export default class AuthService implements IAuthService {
       const data = await response.text();
       const balance = parseFloat(data);
 
-      return isNaN(balance) ? 0 : balance;
+      return Number.isNaN(balance) ? 0 : balance;
     } catch (error) {
-      console.error('Error fetching balance:', error);
+      this.logger.logSystem('Error fetching user balance', 'warn', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       return 0;
     }
   }
@@ -230,12 +261,5 @@ export default class AuthService implements IAuthService {
   async refreshTokens(): Promise<boolean> {
     await this.login();
     return !!this.user;
-  }
-
-  private closeAuthWindow(): void {
-    if (this.authWindow) {
-      this.authWindow.close();
-      this.authWindow = null;
-    }
   }
 }

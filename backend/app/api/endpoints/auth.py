@@ -1,9 +1,17 @@
 import logging
 import secrets
+from urllib.parse import urlencode
 
 from authlib.integrations.starlette_client import OAuth
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.responses import RedirectResponse
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Request,
+    Response,
+    status,
+)
+from fastapi.responses import RedirectResponse, HTMLResponse
 from starlette.config import Config
 
 from app.core.auth import create_access_token
@@ -13,6 +21,7 @@ from app.factories.user_factory import create_oauth_user
 from app.repositories.transaction import TransactionRepository
 from app.repositories.user import UserRepository
 from app.repositories.auth import AuthorizedEmailRepository
+from app.templates.desktop_success import get_desktop_success_html
 
 router = APIRouter()
 
@@ -33,13 +42,18 @@ oauth.register(
 
 
 @router.get("/login")
-async def login(request: Request):
+async def login(request: Request, redirect_type: str = "web"):
     """Google login route that redirects to Google OAuth consent screen"""
     redirect_uri = settings.REDIRECT_URL
     state = secrets.token_urlsafe(16)
     request.session["oauth_state"] = state
-    logger.info(f"Starting OAuth login flow with state: {state[:5]}...")
-    return await oauth.google.authorize_redirect(request, redirect_uri, state=state)
+    request.session["redirect_type"] = redirect_type
+    logger.info(
+        f"Starting OAuth login flow with state: {state[:5]}... for {redirect_type}"
+    )
+    return await oauth.google.authorize_redirect(
+        request, redirect_uri, state=state
+    )
 
 
 @router.get("/callback")
@@ -50,13 +64,15 @@ async def auth_callback(
     transaction_repo: TransactionRepository = Depends(get_transaction_repo),
     auth_repo: AuthorizedEmailRepository = Depends(get_auth_repo),
 ):
-    """Callback route from Google OAuth, creates JWT and sets cookie"""
+    """Callback route from Google OAuth, creates JWT and redirects appropriately"""
     try:
         token = await oauth.google.authorize_access_token(request)
 
         user_info = token.get("userinfo")
         if not user_info:
-            raise HTTPException(status_code=400, detail="Could not fetch user info")
+            raise HTTPException(
+                status_code=400, detail="Could not fetch user info"
+            )
 
         email = user_info["email"]
         is_authorized = await auth_repo.is_authorized(email)
@@ -81,22 +97,41 @@ async def auth_callback(
         }
         access_token = create_access_token(data=jwt_data)
 
-        response = RedirectResponse(url="/auth/login_success")
-        response.set_cookie(
-            key="access_token",
-            value=f"Bearer {access_token}",
-            httponly=True,
-            max_age=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            secure=False,
-            samesite="lax",
-        )
+        redirect_type = request.session.get("redirect_type", "web")
 
-        return response
+        if redirect_type == "desktop":
+            params = {
+                "token": access_token,
+                "userId": user_info["sub"],
+                "email": user_info["email"],
+                "name": user_info.get("name", ""),
+            }
+            desktop_url = f"/auth/desktop_success?{urlencode(params)}"
+            return RedirectResponse(url=desktop_url)
+        else:
+            response = RedirectResponse(url="/auth/login_success")
+            response.set_cookie(
+                key="access_token",
+                value=f"Bearer {access_token}",
+                httponly=True,
+                max_age=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+                secure=False,
+                samesite="lax",
+            )
+            return response
     except Exception as e:
         logger.exception(f"Auth error: {str(e)}")
-        error_msg = f"Authentication failed: {str(e)}"
-        error_url = f"/auth/login_failed?error={error_msg}"
-        return RedirectResponse(url=error_url)
+        redirect_type = request.session.get("redirect_type", "web")
+
+        if redirect_type == "desktop":
+            error_msg = str(e)
+            params = {"error": error_msg}
+            deep_link_url = f"deckium://auth/error?{urlencode(params)}"
+            return RedirectResponse(url=deep_link_url)
+        else:
+            error_msg = str(e)
+            error_url = f"/auth/login_failed?error={error_msg}"
+            return RedirectResponse(url=error_url)
 
 
 @router.get("/logout")
@@ -110,21 +145,24 @@ async def logout(response: Response):
 
 @router.get("/login_success")
 async def login_success():
-    return "success"
+    return "Authentication successful! You can close this window and return to the app."
 
 
 @router.get("/login_failed")
 async def login_failed(error: str = ""):
-    return "failed"
+    return f"Authentication failed: {error}. Please close this window and try again."
 
 
 @router.get("/me")
 async def get_user(request: Request):
     """Returns user information from the auth cookie"""
     cookie_authorization = request.cookies.get("access_token")
-    if not cookie_authorization or not cookie_authorization.startswith("Bearer "):
+    if not cookie_authorization or not cookie_authorization.startswith(
+        "Bearer "
+    ):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
         )
     token = cookie_authorization.replace("Bearer ", "")
     print("token", token)
@@ -144,3 +182,22 @@ async def get_user(request: Request):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
         )
+
+
+@router.get("/desktop_success")
+async def desktop_success(
+    token: str,
+    userId: str,
+    email: str,
+    name: str = "",
+):
+    """Intermediate success page for desktop that redirects to deep link"""
+    params = {
+        "token": token,
+        "userId": userId,
+        "email": email,
+        "name": name,
+    }
+    deep_link_url = f"deckium://auth/success?{urlencode(params)}"
+    html_content = get_desktop_success_html(deep_link_url)
+    return HTMLResponse(content=html_content)

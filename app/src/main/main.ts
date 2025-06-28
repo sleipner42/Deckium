@@ -1,11 +1,9 @@
 import path from 'path';
-import { app, BrowserWindow, shell, protocol, session } from 'electron';
-import log from 'electron-log';
+import { app, BrowserWindow, shell } from 'electron';
 import * as dotenv from 'dotenv';
 import MenuBuilder from './menu';
-import { resolveHtmlPath } from './util';
+import { resolveHtmlPath, getProtocolArgs } from './util';
 import { setupPresentationIPC } from './presentation/ipc-handler';
-import { AzureOpenAIServiceFactory } from './ai/external/azure-openai-service';
 import { PresentationService } from './presentation/service';
 import { AIService } from './ai/service';
 import { IAIServiceFactory } from '../common/domain/interfaces/ai-service.interface';
@@ -20,8 +18,12 @@ dotenv.config();
 
 let mainWindow: BrowserWindow | null = null;
 let secondWindow: BrowserWindow | null = null;
+let presentationService: PresentationService;
+let aiService: AIService;
+let aiServiceFactory: IAIServiceFactory;
+let authService: AuthService;
 
-export async function getScreenshotFromSecondaryWindow(): Promise<string> {
+export default async function getScreenshotFromSecondaryWindow(): Promise<string> {
   if (!secondWindow) {
     console.error('Secondary window is not available');
     throw new Error('Secondary window is not available');
@@ -107,8 +109,12 @@ const createWindow = async () => {
       mainWindow.show();
     }
 
-    // Set up text measurement service with the main window
     textMeasurementService.setMainWindow(mainWindow);
+
+    const protocolUrl = getProtocolArgs();
+    if (protocolUrl && authService) {
+      authService.handleDeepLink(protocolUrl);
+    }
   });
 
   mainWindow.on('closed', () => {
@@ -156,14 +162,32 @@ app.on('window-all-closed', () => {
   }
 });
 
-let presentationService: PresentationService;
-let aiService: AIService;
-let aiServiceFactory: IAIServiceFactory;
-let authService: AuthService;
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  if (authService) {
+    authService.handleDeepLink(url);
+  }
+});
+
+app.on('second-instance', (event, commandLine) => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+
+  const protocolUrl = commandLine.find((arg) => arg.startsWith('deckium://'));
+  if (protocolUrl && authService) {
+    authService.handleDeepLink(protocolUrl);
+  }
+});
 
 app
   .whenReady()
   .then(async () => {
+    if (!app.isDefaultProtocolClient('deckium')) {
+      app.setAsDefaultProtocolClient('deckium');
+    }
+
     createWindow();
     createSecondWindow();
     app.on('activate', () => {

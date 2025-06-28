@@ -151,6 +151,40 @@ Become a sponsor and get your logo on our README on Github with a link to your s
 
 MIT © [Electron React Boilerplate](https://github.com/electron-react-boilerplate)
 
+# Deckium
+
+AI-powered presentations with human control.
+
+## Authentication Flow
+
+Deckium supports configurable authentication that works for both desktop and web applications:
+
+### Desktop App Authentication
+- Uses external browser with deep link redirect
+- URL: `${API_BASE_URL}/auth/login?redirect_type=desktop`
+- Redirects to: `deckium://auth/success?token=...` or `deckium://auth/error?error=...`
+- Users authenticate in their trusted system browser
+- App automatically receives auth data via deep links
+
+### Web App Authentication  
+- Uses traditional web redirect flow
+- URL: `${API_BASE_URL}/auth/login` (defaults to `redirect_type=web`)
+- Redirects to: `/auth/login_success` or `/auth/login_failed`
+- Sets httpOnly cookie with JWT token
+- Standard web application flow
+
+### Implementation Details
+
+The backend `/auth/login` endpoint accepts a `redirect_type` parameter:
+- `desktop`: Uses deep link redirects for desktop app
+- `web` (default): Uses web redirects with cookie authentication
+
+This allows sharing the same OAuth backend between desktop and web while providing appropriate user experiences for each platform.
+
+## Development
+
+[Previous content...]
+
 [github-actions-status]: https://github.com/electron-react-boilerplate/electron-react-boilerplate/workflows/Test/badge.svg
 [github-actions-url]: https://github.com/electron-react-boilerplate/electron-react-boilerplate/actions
 [github-tag-image]: https://img.shields.io/github/tag/electron-react-boilerplate/electron-react-boilerplate.svg?label=version
