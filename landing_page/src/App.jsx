@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './LandingPage';
 import BlogPost from './BlogPost';
 import BlogListing from './BlogListing';
+import DownloadPage from './DownloadPage';
 import GoogleAnalytics from './components/GoogleAnalytics';
 
 const App = () => {
@@ -14,6 +15,7 @@ const App = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/blog" element={<BlogListing />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/download" element={<DownloadPage />} />
         </Routes>
       </div>
     </Router>
