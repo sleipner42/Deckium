@@ -56,6 +56,9 @@ module.exports = {
         description: 'AI-powered presentation tool',
         genericName: 'Presentation Tool',
         mimeType: ['application/x-deckium'],
+        desktop: {
+          MimeType: 'x-scheme-handler/deckium',
+        },
       },
     },
     {
@@ -67,6 +70,9 @@ module.exports = {
         homepage: 'https://deckium.xyz',
         description: 'AI-powered presentation tool',
         genericName: 'Presentation Tool',
+        desktop: {
+          MimeType: 'x-scheme-handler/deckium',
+        },
       },
     },
   ],
