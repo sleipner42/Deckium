@@ -1,5 +1,3 @@
-<img src=".erb/img/erb-banner.svg" width="100%" />
-
 <br>
 
 <p>
@@ -57,10 +55,6 @@ See our [docs and guides here](https://electron-react-boilerplate.js.org/docs/in
 Join our Discord: https://discord.gg/Fjy3vfgy5q
 
 ## Sponsors
-
-<a href="https://palette.dev">
-  <img src=".erb/img/palette-sponsor-banner.svg" width="100%" />
-</a>
 
 ## Donations
 
