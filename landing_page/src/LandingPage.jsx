@@ -45,6 +45,7 @@ const AIDemo = () => {
   const [currentPrompt, setCurrentPrompt] = useState(0);
   const [displayText, setDisplayText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
+  
   const prompts = [
     "Create a 5 slide presentation about espresso",
     "Translate the current presentation into English",
@@ -79,7 +80,7 @@ const AIDemo = () => {
         clearTimeout(timeout);
       }
     };
-  }, [currentPrompt, prompts]);
+  }, [currentPrompt]);
 
   return (
     <div className="max-w-2xl mx-auto">
