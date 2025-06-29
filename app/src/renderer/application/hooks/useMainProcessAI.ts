@@ -34,7 +34,8 @@ export const useMainProcessAI = (presentationId: UUID) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
-  const [isCreatingInitialThread, setIsCreatingInitialThread] = useState<boolean>(false);
+  const [isCreatingInitialThread, setIsCreatingInitialThread] =
+    useState<boolean>(false);
 
   const loadThreads = useCallback(async () => {
     if (!presentationId) return;
@@ -44,20 +45,8 @@ export const useMainProcessAI = (presentationId: UUID) => {
       const loadedThreads =
         await electronAPI.ai.getThreadsForPresentation(presentationId);
       setThreads(loadedThreads);
-      
       if (loadedThreads.length > 0 && !currentThread) {
         setCurrentThread(loadedThreads[0]);
-      } else if (loadedThreads.length === 0 && !isCreatingInitialThread) {
-        // Auto-create first thread if none exist
-        setIsCreatingInitialThread(true);
-        try {
-          await electronAPI.ai.createThread('Thread 1', presentationId);
-          // Thread creation will trigger the ai:thread-created event which will update state
-        } catch (createError) {
-          console.error('Failed to auto-create initial thread:', createError);
-        } finally {
-          setIsCreatingInitialThread(false);
-        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load threads');
@@ -362,19 +351,25 @@ export const useMainProcessAI = (presentationId: UUID) => {
         return response.message;
       } catch (err) {
         // Check if this was an abort error
-        if (err instanceof Error && (err.name === 'AbortError' || err.message.includes('aborted'))) {
+        if (
+          err instanceof Error &&
+          (err.name === 'AbortError' || err.message.includes('aborted'))
+        ) {
           console.log('Message sending was aborted - leaving thread as-is');
           // For aborts, just return silently - thread is left in whatever state it was
           return;
         }
-        
+
         // Check if this was a "thread already being processed" error
-        if (err instanceof Error && err.message.includes('Thread is already being processed')) {
+        if (
+          err instanceof Error &&
+          err.message.includes('Thread is already being processed')
+        ) {
           console.log('Thread already being processed, ignoring');
           setIsLoading(false); // Reset loading state for this case
           return;
         }
-        
+
         const errorMessage =
           err instanceof Error ? err.message : 'An error occurred';
         setError(errorMessage);
