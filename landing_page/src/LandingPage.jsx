@@ -69,7 +69,7 @@ const AIDemo = () => {
           setCurrentPrompt((prev) => (prev + 1) % prompts.length);
           setDisplayText("");
           setIsTyping(true);
-        }, 5000);
+        }, 2000);
       }
     };
 
