@@ -18,9 +18,7 @@
 * Is the outside of slide calculation correct?
 * The agent always creates a new slide
 
-* Why is there both background color and opacity and no explanation about format
 * Alignment seems to work horizontally, but vertically it aligns to the first line.
-
 
 * Is the critic getting the correct slide?
 * Messages disappearing after the critic response.
@@ -56,3 +54,4 @@
 * Change kraftpo to deckium
 * Create an icon
 * Remove logs from built app
+* Why is there both background color and opacity and no explanation about format
