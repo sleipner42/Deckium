@@ -32,7 +32,7 @@ export class AIService {
   private presentationService: PresentationService;
 
   private activeRequests: Map<UUID, AbortController> = new Map();
-  
+
   private processingThreads: Set<UUID> = new Set();
 
   constructor(
@@ -88,10 +88,12 @@ export class AIService {
   async sendMessage(request: AIRequest): Promise<AIResponse> {
     // Prevent multiple simultaneous processing for the same thread
     if (this.processingThreads.has(request.threadId)) {
-      console.log(`Thread ${request.threadId} is already being processed, ignoring duplicate request`);
+      console.log(
+        `Thread ${request.threadId} is already being processed, ignoring duplicate request`,
+      );
       throw new Error('Thread is already being processed');
     }
-    
+
     this.processingThreads.add(request.threadId);
 
     // Create abort controller for this request
@@ -126,7 +128,7 @@ export class AIService {
       // Store the user message but don't add it to thread yet
       let userMessage: string | any;
       let userContent: any;
-      
+
       if (
         request.content &&
         Array.isArray(request.content) &&
@@ -145,7 +147,7 @@ export class AIService {
       let updatedThread: Thread;
       let startTime: number;
       let endTime: number;
-      
+
       try {
         if (userContent) {
           updatedThread = this.state.addMessage(thread, userContent, 'user');
@@ -167,12 +169,19 @@ export class AIService {
         this.eventBus.broadcastThreadUpdated(updatedThread);
 
         startTime = performance.now();
-        updatedThread = await this.processAILoopWithStreaming(updatedThread, false, abortController.signal);
+        updatedThread = await this.processAILoopWithStreaming(
+          updatedThread,
+          false,
+          abortController.signal,
+        );
         endTime = performance.now();
         console.log(`Total AI loop processing time: ${endTime - startTime}ms`);
       } catch (error) {
         // If aborted, remove the user message we just added
-        if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted'))) {
+        if (
+          error instanceof Error &&
+          (error.name === 'AbortError' || error.message.includes('aborted'))
+        ) {
           const revertedThread = { ...thread }; // Revert to original state before user message
           this.saveThread(revertedThread);
           this.eventBus.broadcastThreadUpdated(revertedThread);
@@ -188,7 +197,11 @@ export class AIService {
         // If no assistant message, check if this was aborted
         if (abortController.signal.aborted) {
           // Add a cancelled message to show the user what happened
-          updatedThread = this.state.addMessage(updatedThread, 'Request was cancelled by user.', 'assistant');
+          updatedThread = this.state.addMessage(
+            updatedThread,
+            'Request was cancelled by user.',
+            'assistant',
+          );
           this.saveThread(updatedThread);
           this.eventBus.broadcastThreadUpdated(updatedThread);
           this.eventBus.broadcastProcessingCompleted(updatedThread.id);
@@ -220,29 +233,34 @@ export class AIService {
       };
     } catch (error) {
       // Check if this was an abort - this catch handles outer errors
-      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted'))) {
+      if (
+        error instanceof Error &&
+        (error.name === 'AbortError' || error.message.includes('aborted'))
+      ) {
         console.log(`Request aborted for thread: ${request.threadId}`);
-        
+
         // Clean up any streaming messages to remove loading indicators
         const currentThread = this.getThread(request.threadId);
         if (currentThread) {
-          const cleanedMessages = currentThread.messages.map(m => {
-            // Set any streaming messages to completed and remove empty ones
-            if (m.role === 'assistant' && m.streamingState === 'streaming') {
-              if (!m.content || m.content.toString().trim() === '') {
-                return null; // Mark for removal
-              } else {
-                return { ...m, streamingState: 'completed' as const };
+          const cleanedMessages = currentThread.messages
+            .map((m) => {
+              // Set any streaming messages to completed and remove empty ones
+              if (m.role === 'assistant' && m.streamingState === 'streaming') {
+                if (!m.content || m.content.toString().trim() === '') {
+                  return null; // Mark for removal
+                } else {
+                  return { ...m, streamingState: 'completed' as const };
+                }
               }
-            }
-            return m;
-          }).filter(m => m !== null); // Remove null entries
-          
+              return m;
+            })
+            .filter((m) => m !== null); // Remove null entries
+
           const cleanedThread = { ...currentThread, messages: cleanedMessages };
           this.saveThread(cleanedThread);
           this.eventBus.broadcastThreadUpdated(cleanedThread);
         }
-        
+
         this.eventBus.broadcastProcessingCompleted(request.threadId);
         throw error; // Re-throw so the renderer knows it was aborted
       }
@@ -282,7 +300,9 @@ export class AIService {
 
   private checkAborted(abortSignal?: AbortSignal, context?: string): void {
     if (abortSignal?.aborted) {
-      const message = context ? `Request aborted ${context}` : 'Request was aborted';
+      const message = context
+        ? `Request aborted ${context}`
+        : 'Request was aborted';
       console.log(message);
       const error = new Error('Request was aborted');
       error.name = 'AbortError';
@@ -352,10 +372,10 @@ export class AIService {
         }
 
         consecutiveEmptyIterations = 0;
-        
+
         // Check if request was aborted before tool execution
         this.checkAborted(abortSignal, 'before tool execution');
-        
+
         updatedThread = await this.executeToolCallAndUpdateThread(
           updatedThread,
           toolCall,

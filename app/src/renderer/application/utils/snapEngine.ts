@@ -26,7 +26,13 @@ export interface SnapGuide {
   type: 'horizontal' | 'vertical';
   position: number;
   elements: string[];
-  guideType: 'edge-left' | 'edge-right' | 'edge-top' | 'edge-bottom' | 'center-x' | 'center-y';
+  guideType:
+    | 'edge-left'
+    | 'edge-right'
+    | 'edge-top'
+    | 'edge-bottom'
+    | 'center-x'
+    | 'center-y';
 }
 
 export interface SnapResult {
@@ -63,11 +69,13 @@ export class SnapEngine {
     newPosition: Point,
     allElements: ContentElement[],
     slideWidth: number = 1920,
-    slideHeight: number = 1080
+    slideHeight: number = 1080,
   ): SnapResult {
     const draggedBounds = this.getElementBounds(draggedElement, newPosition);
-    const otherElements = allElements.filter(el => el.id !== draggedElement.id);
-    const otherBounds = otherElements.map(el => this.getElementBounds(el));
+    const otherElements = allElements.filter(
+      (el) => el.id !== draggedElement.id,
+    );
+    const otherBounds = otherElements.map((el) => this.getElementBounds(el));
 
     const snapGuides: SnapGuide[] = [];
     let snappedX = newPosition.x;
@@ -128,7 +136,10 @@ export class SnapEngine {
     }
 
     if (!hasSnappedY && this.config.enableCenterSnapping) {
-      const centerYSnap = this.checkSlideCenterSnapY(draggedBounds, slideHeight);
+      const centerYSnap = this.checkSlideCenterSnapY(
+        draggedBounds,
+        slideHeight,
+      );
       if (centerYSnap) {
         snappedY = centerYSnap.position;
         snapGuides.push(centerYSnap.guide);
@@ -143,10 +154,13 @@ export class SnapEngine {
     };
   }
 
-  private getElementBounds(element: ContentElement, customPosition?: Point): ElementBounds {
+  private getElementBounds(
+    element: ContentElement,
+    customPosition?: Point,
+  ): ElementBounds {
     const pos = customPosition || element.position;
     const size = element.size;
-    
+
     return {
       id: element.id,
       left: pos.x,
@@ -160,7 +174,10 @@ export class SnapEngine {
     };
   }
 
-  private checkHorizontalSnap(draggedBounds: ElementBounds, otherBounds: ElementBounds) {
+  private checkHorizontalSnap(
+    draggedBounds: ElementBounds,
+    otherBounds: ElementBounds,
+  ) {
     const { tolerance } = this.config;
 
     // Check if elements are vertically aligned (overlapping in Y)
@@ -231,7 +248,9 @@ export class SnapEngine {
 
     // Center to center
     if (this.config.enableCenterSnapping) {
-      const centerToCenter = Math.abs(draggedBounds.centerX - otherBounds.centerX);
+      const centerToCenter = Math.abs(
+        draggedBounds.centerX - otherBounds.centerX,
+      );
       if (centerToCenter <= tolerance) {
         return {
           position: otherBounds.centerX - draggedBounds.width / 2,
@@ -248,7 +267,10 @@ export class SnapEngine {
     return null;
   }
 
-  private checkVerticalSnap(draggedBounds: ElementBounds, otherBounds: ElementBounds) {
+  private checkVerticalSnap(
+    draggedBounds: ElementBounds,
+    otherBounds: ElementBounds,
+  ) {
     const { tolerance } = this.config;
 
     // Check if elements are horizontally aligned (overlapping in X)
@@ -275,7 +297,9 @@ export class SnapEngine {
       }
 
       // Bottom edge to bottom edge
-      const bottomToBottom = Math.abs(draggedBounds.bottom - otherBounds.bottom);
+      const bottomToBottom = Math.abs(
+        draggedBounds.bottom - otherBounds.bottom,
+      );
       if (bottomToBottom <= tolerance) {
         return {
           position: otherBounds.bottom - draggedBounds.height,
@@ -319,7 +343,9 @@ export class SnapEngine {
 
     // Center to center
     if (this.config.enableCenterSnapping) {
-      const centerToCenter = Math.abs(draggedBounds.centerY - otherBounds.centerY);
+      const centerToCenter = Math.abs(
+        draggedBounds.centerY - otherBounds.centerY,
+      );
       if (centerToCenter <= tolerance) {
         return {
           position: otherBounds.centerY - draggedBounds.height / 2,
@@ -336,7 +362,10 @@ export class SnapEngine {
     return null;
   }
 
-  private checkSlideEdgeSnapX(draggedBounds: ElementBounds, slideWidth: number) {
+  private checkSlideEdgeSnapX(
+    draggedBounds: ElementBounds,
+    slideWidth: number,
+  ) {
     const { tolerance } = this.config;
 
     // Left edge to slide left
@@ -370,7 +399,10 @@ export class SnapEngine {
     return null;
   }
 
-  private checkSlideEdgeSnapY(draggedBounds: ElementBounds, slideHeight: number) {
+  private checkSlideEdgeSnapY(
+    draggedBounds: ElementBounds,
+    slideHeight: number,
+  ) {
     const { tolerance } = this.config;
 
     // Top edge to slide top
@@ -404,7 +436,10 @@ export class SnapEngine {
     return null;
   }
 
-  private checkSlideCenterSnapX(draggedBounds: ElementBounds, slideWidth: number) {
+  private checkSlideCenterSnapX(
+    draggedBounds: ElementBounds,
+    slideWidth: number,
+  ) {
     const { tolerance } = this.config;
     const slideCenter = slideWidth / 2;
 
@@ -424,7 +459,10 @@ export class SnapEngine {
     return null;
   }
 
-  private checkSlideCenterSnapY(draggedBounds: ElementBounds, slideHeight: number) {
+  private checkSlideCenterSnapY(
+    draggedBounds: ElementBounds,
+    slideHeight: number,
+  ) {
     const { tolerance } = this.config;
     const slideCenter = slideHeight / 2;
 

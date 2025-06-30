@@ -25,7 +25,11 @@ export interface IAIModelClient {
 }
 
 export interface IAIService {
-  chat(messages: Message[], deploymentName?: string, abortSignal?: AbortSignal): Promise<string>;
+  chat(
+    messages: Message[],
+    deploymentName?: string,
+    abortSignal?: AbortSignal,
+  ): Promise<string>;
   chatStream(
     messages: Message[],
     onChunk: (chunk: string) => void,

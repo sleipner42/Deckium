@@ -14,13 +14,13 @@ import { useElementState } from '../../hooks/useElementState';
 import { useSnapSystem } from '../../hooks/useSnapSystem';
 import { BarChartPropertiesDialog } from './BarChartPropertiesDialog';
 import { ElementContextMenu } from './ElementContextMenu';
-import { SnapGuides } from './SnapGuides';
 import { BarChartElement } from './elements/BarChartElement';
 import { ImageElement } from './elements/ImageElement';
 import { PlotElement } from './elements/PlotElement';
 import { ShapeElement } from './elements/ShapeElement';
 import { TextElement } from './elements/TextElement';
 import { ShapePropertiesDialog } from './ShapePropertiesDialog';
+import { SnapGuides } from './SnapGuides';
 
 interface SlideRendererProps {
   slide: Slide;
@@ -66,8 +66,11 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   });
 
   // Enhanced updateElement with snap support
-  const updateElementWithSnap = (elementId: string, updates: Partial<ContentElement>) => {
-    const element = slide.elements.find(el => el.id === elementId);
+  const updateElementWithSnap = (
+    elementId: string,
+    updates: Partial<ContentElement>,
+  ) => {
+    const element = slide.elements.find((el) => el.id === elementId);
     if (!element) return;
 
     // If we're updating position and not in read-only mode, apply snapping

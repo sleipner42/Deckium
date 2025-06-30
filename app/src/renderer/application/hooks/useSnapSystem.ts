@@ -1,6 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ContentElement } from '../../../common/domain/entities/types';
-import { SnapEngine, SnapGuide, Point, SnapConfiguration } from '../utils/snapEngine';
+import {
+  Point,
+  SnapConfiguration,
+  SnapEngine,
+  SnapGuide,
+} from '../utils/snapEngine';
 
 interface UseSnapSystemProps {
   elements: ContentElement[];
@@ -14,7 +19,7 @@ interface UseSnapSystemReturn {
   activeGuides: SnapGuide[];
   calculateSnapPosition: (
     element: ContentElement,
-    newPosition: Point
+    newPosition: Point,
   ) => { position: Point; snapped: boolean };
   clearGuides: () => void;
   updateConfig: (newConfig: Partial<SnapConfiguration>) => void;
@@ -39,7 +44,7 @@ export const useSnapSystem = ({
         newPosition,
         elements,
         slideWidth,
-        slideHeight
+        slideHeight,
       );
 
       setActiveGuides(result.guides);
@@ -49,7 +54,7 @@ export const useSnapSystem = ({
         snapped: result.snapped,
       };
     },
-    [snapEngine, elements, slideWidth, slideHeight]
+    [snapEngine, elements, slideWidth, slideHeight],
   );
 
   const clearGuides = useCallback(() => {
@@ -60,7 +65,7 @@ export const useSnapSystem = ({
     (newConfig: Partial<SnapConfiguration>) => {
       snapEngine.updateConfig(newConfig);
     },
-    [snapEngine]
+    [snapEngine],
   );
 
   return {

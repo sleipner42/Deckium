@@ -15,7 +15,11 @@ export class BackendAIService implements IAIService {
     this.authService = authService;
   }
 
-  async chat(messages: Message[], deploymentName?: string, abortSignal?: AbortSignal): Promise<string> {
+  async chat(
+    messages: Message[],
+    deploymentName?: string,
+    abortSignal?: AbortSignal,
+  ): Promise<string> {
     const overallStartTime = performance.now();
 
     try {

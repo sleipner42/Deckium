@@ -1,7 +1,7 @@
-import fs from 'fs';
-import path from 'path';
 import { exec } from 'child_process';
 import { app } from 'electron';
+import fs from 'fs';
+import path from 'path';
 
 export class AppImageIntegration {
   private static isAppImage(): boolean {
@@ -14,8 +14,11 @@ export class AppImageIntegration {
 
   private static async checkDesktopFileExists(): Promise<boolean> {
     const homeDir = require('os').homedir();
-    const desktopFilePath = path.join(homeDir, '.local/share/applications/deckium.desktop');
-    
+    const desktopFilePath = path.join(
+      homeDir,
+      '.local/share/applications/deckium.desktop',
+    );
+
     try {
       await fs.promises.access(desktopFilePath);
       return true;
@@ -26,8 +29,8 @@ export class AppImageIntegration {
 
   private static async installDesktopFile(): Promise<void> {
     const homeDir = require('os').homedir();
-    const appImagePath = this.getAppImagePath();
-    
+    const appImagePath = AppImageIntegration.getAppImagePath();
+
     if (!appImagePath) {
       throw new Error('Not running as AppImage');
     }
@@ -57,31 +60,39 @@ MimeType=x-scheme-handler/deckium;
     await fs.promises.chmod(desktopFilePath, 0o755);
 
     // Copy icon to user icons directory
-    await this.installIcon();
+    await AppImageIntegration.installIcon();
 
     // Update desktop database
-    await this.updateDesktopDatabase();
+    await AppImageIntegration.updateDesktopDatabase();
 
     // Register as default protocol handler
-    await this.registerProtocolHandler();
+    await AppImageIntegration.registerProtocolHandler();
   }
 
   private static async installIcon(): Promise<void> {
     const homeDir = require('os').homedir();
     const iconsDir = path.join(homeDir, '.local/share/icons/hicolor');
-    
+
     // Get icon from AppImage resources
-    const iconSource = app.isPackaged 
+    const iconSource = app.isPackaged
       ? path.join(process.resourcesPath, 'assets/icon.png')
       : path.join(__dirname, '../../assets/icon.png');
 
     // Install icon in various sizes
-    const sizes = ['16x16', '32x32', '48x48', '64x64', '128x128', '256x256', '512x512'];
-    
+    const sizes = [
+      '16x16',
+      '32x32',
+      '48x48',
+      '64x64',
+      '128x128',
+      '256x256',
+      '512x512',
+    ];
+
     for (const size of sizes) {
       const iconDir = path.join(iconsDir, size, 'apps');
       await fs.promises.mkdir(iconDir, { recursive: true });
-      
+
       const iconPath = path.join(iconDir, 'deckium.png');
       try {
         await fs.promises.copyFile(iconSource, iconPath);
@@ -95,7 +106,7 @@ MimeType=x-scheme-handler/deckium;
     return new Promise((resolve, reject) => {
       const homeDir = require('os').homedir();
       const applicationsDir = path.join(homeDir, '.local/share/applications');
-      
+
       exec(`update-desktop-database "${applicationsDir}"`, (error) => {
         if (error) {
           console.warn('Failed to update desktop database:', error);
@@ -108,27 +119,31 @@ MimeType=x-scheme-handler/deckium;
 
   private static async registerProtocolHandler(): Promise<void> {
     return new Promise((resolve, reject) => {
-      exec('xdg-mime default deckium.desktop x-scheme-handler/deckium', (error) => {
-        if (error) {
-          console.warn('Failed to register protocol handler:', error);
-          // Don't reject, as this is not critical
-        }
-        resolve();
-      });
+      exec(
+        'xdg-mime default deckium.desktop x-scheme-handler/deckium',
+        (error) => {
+          if (error) {
+            console.warn('Failed to register protocol handler:', error);
+            // Don't reject, as this is not critical
+          }
+          resolve();
+        },
+      );
     });
   }
 
   public static async integrateIfNeeded(): Promise<void> {
-    if (!this.isAppImage()) {
+    if (!AppImageIntegration.isAppImage()) {
       return; // Not running as AppImage
     }
 
     try {
-      const desktopFileExists = await this.checkDesktopFileExists();
-      
+      const desktopFileExists =
+        await AppImageIntegration.checkDesktopFileExists();
+
       if (!desktopFileExists) {
         console.log('Installing AppImage desktop integration...');
-        await this.installDesktopFile();
+        await AppImageIntegration.installDesktopFile();
         console.log('AppImage desktop integration installed successfully');
       }
     } catch (error) {

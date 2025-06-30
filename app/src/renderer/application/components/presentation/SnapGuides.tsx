@@ -8,11 +8,11 @@ interface SnapGuidesProps {
   scale?: number;
 }
 
-export const SnapGuides: React.FC<SnapGuidesProps> = ({ 
-  guides, 
-  slideWidth, 
-  slideHeight, 
-  scale = 1 
+export const SnapGuides: React.FC<SnapGuidesProps> = ({
+  guides,
+  slideWidth,
+  slideHeight,
+  scale = 1,
 }) => {
   if (guides.length === 0) return null;
 

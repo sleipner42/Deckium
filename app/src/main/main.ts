@@ -2,11 +2,12 @@ import * as dotenv from 'dotenv';
 import { app, BrowserWindow, shell } from 'electron';
 import path from 'path';
 import { IAIServiceFactory } from '../common/domain/interfaces/ai-service.interface';
+import { setupCriticIPC } from './ai/critic/ipc-handler';
+import { CriticService } from './ai/critic/service';
 import { BackendAIServiceFactory } from './ai/external/backend-ai-service';
 import { setupAIIPC } from './ai/ipc-handler';
 import { AIService } from './ai/service';
-import { setupCriticIPC } from './ai/critic/ipc-handler';
-import { CriticService } from './ai/critic/service';
+import { AppImageIntegration } from './appimage-integration';
 import { setupAuthIPC } from './auth/ipc-handler';
 import AuthService from './auth/service';
 import MenuBuilder from './menu';
@@ -15,7 +16,6 @@ import { PresentationService } from './presentation/service';
 import { setupTextMeasurementIPC } from './text-measurement/ipc-handler';
 import { textMeasurementService } from './text-measurement/service';
 import { getProtocolArgs, resolveHtmlPath } from './util';
-import { AppImageIntegration } from './appimage-integration';
 
 dotenv.config();
 
