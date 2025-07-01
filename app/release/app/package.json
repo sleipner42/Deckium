@@ -1,18 +1,18 @@
 {
-	"name": "deckium",
-	"version": "1.0.0",
-	"description": "AI-powered presentations with human control",
-	"license": "MIT",
-	"author": {
-		"name": "Deckium",
-		"email": "support@deckium.xyz",
-		"url": "https://deckium.xyz"
-	},
-	"main": "./dist/main/main.js",
-	"scripts": {
-		"rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
-		"postinstall": "npm run rebuild && npm run link-modules",
-		"link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
-	},
-	"dependencies": {}
+  "name": "deckium",
+  "version": "1.0.0",
+  "description": "AI-powered presentations with human control",
+  "license": "All rights reserved",
+  "author": {
+    "name": "Deckium",
+    "email": "support@deckium.xyz",
+    "url": "https://deckium.xyz"
+  },
+  "main": "./dist/main/main.js",
+  "scripts": {
+    "rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
+    "postinstall": "npm run rebuild && npm run link-modules",
+    "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
+  },
+  "dependencies": {}
 }
