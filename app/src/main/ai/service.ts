@@ -45,6 +45,7 @@ export class AIService {
         this.toolsService = new AIToolsService(authService);
         this.aiClient = aiClient;
         this.presentationService = presentationService;
+        this.createThread('Thread 1', presentationService.getPresentation().id);
     }
 
     createThread(title: string, presentationId: UUID): Thread {
