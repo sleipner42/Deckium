@@ -13,7 +13,7 @@ const CONFIG = {
   sessionPartition: 'persist:main',
   windowWidth: 800,
   windowHeight: 600,
-  tokenExpiry: 24 * 60 * 60, // 24 hours in seconds
+  tokenExpiry: 60 * 24 * 365, // 1 year
   userDataFile: path.join(app.getPath('userData'), 'user-auth.json'),
   authTimeoutMs: 120000,
 };
