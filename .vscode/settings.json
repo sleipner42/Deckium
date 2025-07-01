@@ -1,62 +1,64 @@
 {
-	"files.associations": {
-		".eslintrc": "jsonc",
-		".prettierrc": "jsonc",
-		".eslintignore": "ignore"
-	},
+    "files.associations": {
+        ".eslintrc": "jsonc",
+        ".prettierrc": "jsonc",
+        ".eslintignore": "ignore"
+    },
 
-	"eslint.enable": false,
+    "eslint.enable": false,
 
-	"editor.defaultFormatter": "biomejs.biome",
-	"editor.formatOnSave": true,
-	"editor.codeActionsOnSave": {
-		"quickfix.biome": "explicit",
-		"source.organizeImports.biome": "explicit"
-	},
+    "biome.configurationPath": "./app/",
 
-	"[javascript]": {
-		"editor.defaultFormatter": "biomejs.biome"
-	},
-	"[javascriptreact]": {
-		"editor.defaultFormatter": "biomejs.biome"
-	},
-	"[typescript]": {
-		"editor.defaultFormatter": "biomejs.biome"
-	},
-	"[typescriptreact]": {
-		"editor.defaultFormatter": "biomejs.biome"
-	},
-	"[json]": {
-		"editor.defaultFormatter": "biomejs.biome"
-	},
-	"[jsonc]": {
-		"editor.defaultFormatter": "biomejs.biome"
-	},
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "quickfix.biome": "explicit",
+        "source.organizeImports.biome": "explicit"
+    },
 
-	"search.exclude": {
-		".git": true,
-		".eslintcache": true,
-		".erb/dll": true,
-		"release/{build,app/dist}": true,
-		"node_modules": true,
-		"npm-debug.log.*": true,
-		"test/**/__snapshots__": true,
-		"package-lock.json": true,
-		"*.{css,sass,scss}.d.ts": true
-	},
+    "[javascript]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[javascriptreact]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
 
-	"[python]": {
-		"editor.defaultFormatter": "ms-python.black-formatter",
-		"editor.formatOnSave": true
-	},
-	"black-formatter.args": ["--line-length", "79", "--preview"],
+    "search.exclude": {
+        ".git": true,
+        ".eslintcache": true,
+        ".erb/dll": true,
+        "release/{build,app/dist}": true,
+        "node_modules": true,
+        "npm-debug.log.*": true,
+        "test/**/__snapshots__": true,
+        "package-lock.json": true,
+        "*.{css,sass,scss}.d.ts": true
+    },
 
-	"jest.jestCommandLine": "npm test --",
-	"jest.rootPath": "app",
-	"jest.autoRun": {
-		"watch": false,
-		"onSave": "test-src-file"
-	},
-	"typescript.preferences.includePackageJsonAutoImports": "auto",
-	"black-formatter.cwd": "${workspaceFolder}/backend"
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true
+    },
+    "black-formatter.args": ["--line-length", "79", "--preview"],
+
+    "jest.jestCommandLine": "npm test --",
+    "jest.rootPath": "app",
+    "jest.autoRun": {
+        "watch": false,
+        "onSave": "test-src-file"
+    },
+    "typescript.preferences.includePackageJsonAutoImports": "auto",
+    "black-formatter.cwd": "${workspaceFolder}/backend"
 }
