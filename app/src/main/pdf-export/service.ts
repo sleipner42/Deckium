@@ -2,6 +2,7 @@ import { BrowserWindow, dialog } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { jsPDF } from 'jspdf';
+import { PDFDocument } from 'pdf-lib';
 import { Presentation } from '../../common/domain/entities/types';
 import { PresentationService } from '../presentation/service';
 
@@ -166,9 +167,32 @@ export class PDFExportService {
             return pdfBuffers[0];
         }
 
-        // For multiple slides, let's use the fallback method instead
-        console.log('Multiple slides detected, falling back to image-based export for proper merging');
-        throw new Error('Multiple slides require image-based export for proper merging');
+        // For multiple slides, merge PDFs using pdf-lib (preserves text quality)
+        console.log('Multiple slides detected, merging PDFs with pdf-lib...');
+        return await this.mergePDFs(pdfBuffers);
+    }
+
+    /**
+     * Merge multiple PDF buffers into a single PDF using pdf-lib
+     */
+    private async mergePDFs(pdfBuffers: Buffer[]): Promise<Buffer> {
+        console.log(`Merging ${pdfBuffers.length} PDFs...`);
+        
+        const mergedPdf = await PDFDocument.create();
+
+        for (let i = 0; i < pdfBuffers.length; i++) {
+            console.log(`Processing PDF ${i + 1}/${pdfBuffers.length} (${pdfBuffers[i].length} bytes)`);
+            
+            const pdfDoc = await PDFDocument.load(pdfBuffers[i]);
+            const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+            
+            pages.forEach((page) => mergedPdf.addPage(page));
+        }
+
+        const mergedPdfBytes = await mergedPdf.save();
+        console.log(`Merged PDF created, final size: ${mergedPdfBytes.length} bytes`);
+        
+        return Buffer.from(mergedPdfBytes);
     }
 
     /**
@@ -204,9 +228,14 @@ export class PDFExportService {
             // Wait for rendering and slide change to take effect
             await new Promise(resolve => setTimeout(resolve, 800));
 
-            // Capture screenshot
+            // Capture screenshot at higher resolution
             console.log(`Capturing screenshot for slide ${i + 1}`);
-            const screenshot = await this.secondWindow!.webContents.capturePage();
+            const screenshot = await this.secondWindow!.webContents.capturePage({
+                x: 0,
+                y: 0,
+                width: 1280,
+                height: 720
+            });
             const pngData = screenshot.toPNG();
             const base64Data = pngData.toString('base64');
             
