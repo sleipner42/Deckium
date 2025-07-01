@@ -3,6 +3,7 @@ import React from 'react';
 import { AIProvider } from './application/context/AIContext';
 import { AuthProvider } from './application/context/AuthContext';
 import { CriticProvider } from './application/context/CriticContext';
+import { LintingProvider } from './application/context/LintingContext';
 import { PresentationProvider } from './application/context/PresentationContext';
 import { TextEditingProvider } from './application/context/TextEditingContext';
 import theme from './application/theme';
@@ -18,18 +19,20 @@ const App: React.FC = () => {
             <Router>
                 <AuthProvider>
                     <PresentationProvider>
-                        <TextEditingProvider>
-                            <AIProvider>
-                                <CriticProvider>
-                                    <Routes>
-                                        <Route
-                                            path="/"
-                                            element={<AppContent />}
-                                        />
-                                    </Routes>
-                                </CriticProvider>
-                            </AIProvider>
-                        </TextEditingProvider>
+                        <LintingProvider>
+                            <TextEditingProvider>
+                                <AIProvider>
+                                    <CriticProvider>
+                                        <Routes>
+                                            <Route
+                                                path="/"
+                                                element={<AppContent />}
+                                            />
+                                        </Routes>
+                                    </CriticProvider>
+                                </AIProvider>
+                            </TextEditingProvider>
+                        </LintingProvider>
                     </PresentationProvider>
                 </AuthProvider>
             </Router>

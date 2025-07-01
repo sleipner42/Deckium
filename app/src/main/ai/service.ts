@@ -4,13 +4,15 @@ import {
     AIToolCall,
     Thread,
 } from '../../common/domain/entities/ai-types';
-import { UUID } from '../../common/domain/entities/types';
-import {
+
+import type { UUID } from '../../common/domain/entities/types';
+import type {
     IAIService,
     MessageContent,
 } from '../../common/domain/interfaces/ai-service.interface';
 import AuthService from '../auth/service';
 import { PresentationService } from '../presentation/service';
+
 import { generateSlideGrid } from '../presentation/utils';
 import { logger } from '../utils/logger';
 import { AIEventBus } from './event-bus';
@@ -87,7 +89,6 @@ export class AIService {
     }
 
     async sendMessage(request: AIRequest): Promise<AIResponse> {
-        // Prevent multiple simultaneous processing for the same thread
         if (this.processingThreads.has(request.threadId)) {
             console.log(
                 `Thread ${request.threadId} is already being processed, ignoring duplicate request`,
@@ -97,7 +98,6 @@ export class AIService {
 
         this.processingThreads.add(request.threadId);
 
-        // Create abort controller for this request
         const abortController = new AbortController();
         this.activeRequests.set(request.threadId, abortController);
 
@@ -128,7 +128,6 @@ export class AIService {
                 `Using thread ${thread.id} with ${thread.messages.length} messages`,
             );
 
-            // Store the user message but don't add it to thread yet
             let userMessage: string | any;
             let userContent: any;
 
@@ -146,7 +145,6 @@ export class AIService {
 
             this.eventBus.broadcastProcessingStarted(thread.id);
 
-            // Add user message and process in one go
             let updatedThread: Thread;
             let startTime: number;
             let endTime: number;
@@ -190,13 +188,12 @@ export class AIService {
                     `Total AI loop processing time: ${endTime - startTime}ms`,
                 );
             } catch (error) {
-                // If aborted, remove the user message we just added
                 if (
                     error instanceof Error &&
                     (error.name === 'AbortError' ||
                         error.message.includes('aborted'))
                 ) {
-                    const revertedThread = { ...thread }; // Revert to original state before user message
+                    const revertedThread = { ...thread };
                     this.saveThread(revertedThread);
                     this.eventBus.broadcastThreadUpdated(revertedThread);
                 }
@@ -208,9 +205,7 @@ export class AIService {
                 .find((m) => m.role === 'assistant');
 
             if (!lastAssistantMessage) {
-                // If no assistant message, check if this was aborted
                 if (abortController.signal.aborted) {
-                    // Add a cancelled message to show the user what happened
                     updatedThread = this.state.addMessage(
                         updatedThread,
                         'Request was cancelled by user.',
@@ -249,7 +244,6 @@ export class AIService {
                 message: aiResponse,
             };
         } catch (error) {
-            // Check if this was an abort - this catch handles outer errors
             if (
                 error instanceof Error &&
                 (error.name === 'AbortError' ||
@@ -257,12 +251,10 @@ export class AIService {
             ) {
                 console.log(`Request aborted for thread: ${request.threadId}`);
 
-                // Clean up any streaming messages to remove loading indicators
                 const currentThread = this.getThread(request.threadId);
                 if (currentThread) {
                     const cleanedMessages = currentThread.messages
                         .map((m) => {
-                            // Set any streaming messages to completed and remove empty ones
                             if (
                                 m.role === 'assistant' &&
                                 m.streamingState === 'streaming'
@@ -271,7 +263,7 @@ export class AIService {
                                     !m.content ||
                                     m.content.toString().trim() === ''
                                 ) {
-                                    return null; // Mark for removal
+                                    return null;
                                 } else {
                                     return {
                                         ...m,
@@ -281,7 +273,7 @@ export class AIService {
                             }
                             return m;
                         })
-                        .filter((m) => m !== null); // Remove null entries
+                        .filter((m) => m !== null);
 
                     const cleanedThread = {
                         ...currentThread,
@@ -292,7 +284,7 @@ export class AIService {
                 }
 
                 this.eventBus.broadcastProcessingCompleted(request.threadId);
-                throw error; // Re-throw so the renderer knows it was aborted
+                throw error;
             }
             console.error('Error sending message to AI:', error);
             const errorMessage =
@@ -315,7 +307,6 @@ export class AIService {
                 message: `Error: ${errorMessage}`,
             };
         } finally {
-            // Clean up abort controller and processing tracking
             this.activeRequests.delete(request.threadId);
             this.processingThreads.delete(request.threadId);
         }
@@ -363,7 +354,6 @@ export class AIService {
         };
 
         while (iterationCount < constants.MAX_ITERATIONS) {
-            // Check if request was aborted at start of iteration
             this.checkAborted(abortSignal, 'at start of iteration');
 
             const iterationStartTime = performance.now();
@@ -379,7 +369,6 @@ export class AIService {
                     abortSignal,
                 );
 
-                // Check if request was aborted after streaming
                 this.checkAborted(abortSignal, 'after streaming iteration');
 
                 if (
@@ -412,7 +401,6 @@ export class AIService {
 
                 consecutiveEmptyIterations = 0;
 
-                // Check if request was aborted before tool execution
                 this.checkAborted(abortSignal, 'before tool execution');
 
                 updatedThread = await this.executeToolCallAndUpdateThread(
@@ -627,7 +615,6 @@ export class AIService {
     ): Promise<Thread> {
         console.log(`Executing tool call: ${toolCall.toolName}`);
 
-        // Check if request was aborted before tool execution
         this.checkAborted(abortSignal, 'during tool execution');
 
         this.logToolExecutionStart(toolCall, iterationCount);
@@ -891,7 +878,6 @@ export class AIService {
         const presentation = this.presentationService.getPresentation();
         if (!presentation.slides.length) return;
 
-        // Get selected slide or last slide
         const selectedSlideId = this.presentationService.getSelectedSlideId();
         const slideId =
             selectedSlideId ||
@@ -903,7 +889,6 @@ export class AIService {
             );
 
             try {
-                // Execute the critic tool
                 const criticToolCall: AIToolCall = {
                     toolId: 'critic',
                     toolName: 'criticizeSlide',
@@ -918,7 +903,6 @@ export class AIService {
                 if (toolResults.length > 0 && toolResults[0].result.success) {
                     const criticResult = toolResults[0].result.data;
 
-                    // Get the latest version of the thread
                     const latestThread = this.getThread(thread.id);
                     if (!latestThread) {
                         console.error(
@@ -927,23 +911,18 @@ export class AIService {
                         return;
                     }
 
-                    // Format the criticism and recommendations
                     const criticismMessage = `## Slide Feedback\n\n${criticResult.criticism}\n\n### Recommendations:\n${criticResult.recommendations.map((rec: string) => `• ${rec}`).join('\n')}\n\nPlease implement these suggestions to improve the slide.`;
 
-                    // Add the critique as a system message
                     const updatedThread = this.state.addMessage(
                         latestThread,
                         criticismMessage,
                         'system',
                     );
 
-                    // Save the updated thread
                     const savedThread = this.saveThread(updatedThread);
 
-                    // Broadcast the updates
                     this.eventBus.broadcastThreadUpdated(savedThread);
 
-                    // Auto-generate AI response to implement the changes
                     await this.generateAIResponseToCritique(
                         savedThread,
                         criticismMessage,
@@ -957,10 +936,9 @@ export class AIService {
 
     private async generateAIResponseToCritique(
         thread: Thread,
-        criticismMessage?: string,
+        _criticismMessagee?: string,
     ): Promise<void> {
         try {
-            // Get the latest thread state
             const latestThread = this.getThread(thread.id);
             if (!latestThread) {
                 console.error(
@@ -973,7 +951,6 @@ export class AIService {
                 `Generating AI response to criticism for thread ${latestThread.id}`,
             );
 
-            // Add a system message encouraging the AI to implement the changes
             const presentation = this.presentationService.getPresentation();
             const selectedSlideId =
                 this.presentationService.getSelectedSlideId();
@@ -994,7 +971,6 @@ export class AIService {
             const savedThread = this.saveThread(updatedThread);
             this.eventBus.broadcastThreadUpdated(savedThread);
 
-            // Trigger the AI loop to implement the changes
             await this.processAILoopWithStreaming(savedThread, true);
         } catch (error) {
             console.error('Error generating AI response to critique:', error);

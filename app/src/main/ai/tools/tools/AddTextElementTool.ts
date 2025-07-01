@@ -87,17 +87,14 @@ export class AddTextElementTool extends BaseTool {
         const width = Number(params.width) || 400;
         const height = Number(params.height) || 200;
 
-        // Use consistent default positioning - center the element if no position provided
         let xPos = x !== undefined ? Number(x) : 1280 / 2 - width / 2;
         let yPos = y !== undefined ? Number(y) : 720 / 2 - height / 2;
 
-        // Handle positioning based on positionReference (same as UpdateTextElementTool)
         if (positionReference === 'center') {
             xPos -= width / 2;
             yPos -= height / 2;
         }
 
-        // Get the current slide to check for overlaps
         const presentation = presentationService.getPresentation();
         const slide = presentation.slides.find((s) => s.id === slideId);
 
@@ -108,10 +105,8 @@ export class AddTextElementTool extends BaseTool {
             };
         }
 
-        // Use the provided z-index or default to 1
         const zIndex = params.zIndex !== undefined ? Number(params.zIndex) : 1;
 
-        // Create element first
         const element = createTextBox({
             content,
             position: { x: xPos, y: yPos },
@@ -122,7 +117,6 @@ export class AddTextElementTool extends BaseTool {
             zIndex,
         });
 
-        // Add element to slide
         const updatedSlide = presentationService.addElement(slideId, element);
 
         if (!updatedSlide) {
@@ -132,36 +126,32 @@ export class AddTextElementTool extends BaseTool {
             };
         }
 
-        // Run DOM-based measurement and overlap detection on the actual rendered element
         let textDimensions = null;
         let overlapCheck = null;
         let actualDimensions = null;
 
         try {
-            // Longer delay to ensure DOM updates, React rendering, and lazy-loaded components
             await new Promise((resolve) => setTimeout(resolve, 300));
 
             textDimensions = await textMeasurementService.measureQuillText(
                 element.id,
             );
 
-            // Get the actual DOM element dimensions and text layout
             actualDimensions =
                 await textMeasurementService.getActualElementDimensions(
                     element.id,
                 );
 
-            // Check for overlaps using the actual rendered element ID
             overlapCheck = await ElementValidator.checkElementOverlap(
                 element.id,
-                0, // no padding
+                0,
             );
         } catch (error) {
             console.warn(
                 'Post-creation measurement and overlap detection failed:',
                 error,
             );
-            // Create fallback results
+
             textDimensions = { height, width, lineBreakInfo: null };
             overlapCheck = {
                 hasOverlap: false,
@@ -170,10 +160,8 @@ export class AddTextElementTool extends BaseTool {
             };
         }
 
-        // Create message with text layout feedback
         let message = `Text element added successfully at position (${element.position.x}, ${element.position.y}) with size ${element.size.width}x${element.size.height}px.`;
 
-        // Add actual DOM dimensions if available
         if (actualDimensions?.elementFound) {
             const { containerBounds, textBounds, textOverflow } =
                 actualDimensions;
@@ -217,14 +205,12 @@ export class AddTextElementTool extends BaseTool {
             }
         }
 
-        // Add line break information with specific guidance (fallback if DOM measurement failed)
         if (
             textDimensions?.lineBreakInfo &&
             (!actualDimensions || !actualDimensions.elementFound)
         ) {
             message += `\n\n${textDimensions.lineBreakInfo}`;
 
-            // Add specific guidance based on the type of text layout
             if (textDimensions.lineBreakInfo.includes('TEXT OVERFLOW')) {
                 message += ` Use the updateTextElement tool to increase the width if single-line text is desired.`;
             } else if (textDimensions.lineBreakInfo.includes('TEXT WRAPPING')) {
@@ -232,7 +218,6 @@ export class AddTextElementTool extends BaseTool {
             }
         }
 
-        // Add DOM-based overlap and boundary feedback
         if (overlapCheck.isOutsideSlide) {
             message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). Consider adjusting the position to ensure visibility.`;
         }

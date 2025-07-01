@@ -65,10 +65,21 @@ export type CriticChannels =
     | 'critic:processing-error'
     | 'critic:message-chunk-received';
 
+export type LintingChannels =
+    | 'linting:lint-slide'
+    | 'linting:get-errors'
+    | 'linting:clear-errors'
+    | 'linting:has-errors'
+    | 'linting:get-errors-by-severity'
+    | 'linting:errors-updated'
+    | 'linting:slide-linted'
+    | 'linting:errors-cleared';
+
 type IpcChannels =
     | PresentationChannels
     | AIChannels
     | CriticChannels
+    | LintingChannels
     | AuthChannels;
 
 const electronHandler = {
@@ -242,6 +253,27 @@ const electronHandler = {
         },
         getSelectedSlide() {
             return ipcRenderer.invoke('presentation:get-selected-slide');
+        },
+    },
+
+    linting: {
+        lintSlide(slide: unknown) {
+            return ipcRenderer.invoke('linting:lint-slide', slide);
+        },
+        getLintingErrors(slideId?: string) {
+            return ipcRenderer.invoke('linting:get-errors', slideId);
+        },
+        clearErrors(slideId?: string) {
+            return ipcRenderer.invoke('linting:clear-errors', slideId);
+        },
+        hasErrors(slideId?: string) {
+            return ipcRenderer.invoke('linting:has-errors', slideId);
+        },
+        getErrorsBySeverity(severity: string) {
+            return ipcRenderer.invoke(
+                'linting:get-errors-by-severity',
+                severity,
+            );
         },
     },
 };

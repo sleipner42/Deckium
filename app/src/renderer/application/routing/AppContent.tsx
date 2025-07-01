@@ -2,6 +2,7 @@ import { Box, CircularProgress } from '@mui/material';
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import LoginScreen from '../components/auth/LoginScreen';
+import { LintingPanel } from '../components/common/LintingPanel';
 import FullScreenPresentationViewer from '../components/presentation/FullScreenPresentationViewer';
 import PresentationEditor from '../components/presentation/PresentationEditor';
 import PresentationViewer from '../components/presentation/PresentationViewer';
@@ -44,6 +45,7 @@ const AppContent: React.FC = () => {
             ) : (
                 <PresentationViewer />
             )}
+            <LintingPanel />
         </>
     );
 };

@@ -1,6 +1,6 @@
+import path from 'node:path';
 import * as dotenv from 'dotenv';
 import { app, BrowserWindow, shell } from 'electron';
-import path from 'path';
 import { IAIServiceFactory } from '../common/domain/interfaces/ai-service.interface';
 import { setupCriticIPC } from './ai/critic/ipc-handler';
 import { CriticService } from './ai/critic/service';
@@ -10,6 +10,7 @@ import { AIService } from './ai/service';
 import { AppImageIntegration } from './appimage-integration';
 import { setupAuthIPC } from './auth/ipc-handler';
 import AuthService from './auth/service';
+import { LintingIpcHandler, LintingService } from './linting';
 import MenuBuilder from './menu';
 import { setupPresentationIPC } from './presentation/ipc-handler';
 import { PresentationService } from './presentation/service';
@@ -26,6 +27,7 @@ let aiService: AIService;
 let criticService: CriticService;
 let aiServiceFactory: IAIServiceFactory;
 let authService: AuthService;
+let lintingService: LintingService;
 
 export default async function getScreenshotFromSecondaryWindow(): Promise<string> {
     if (!secondWindow) {
@@ -178,8 +180,9 @@ app.on('open-url', (event, url) => {
     }
 });
 
-app.on('second-instance', (event, commandLine) => {
+app.on('second-instance', (_event, commandLine) => {
     if (mainWindow) {
+        _event;
         if (mainWindow.isMinimized()) mainWindow.restore();
         mainWindow.focus();
     }
@@ -215,6 +218,9 @@ if (!gotTheLock) {
             presentationService = new PresentationService();
             authService = new AuthService();
 
+            lintingService = new LintingService();
+            lintingService.setPresentationService(presentationService);
+
             aiServiceFactory = new BackendAIServiceFactory(authService);
 
             const aiModel = aiServiceFactory.createService();
@@ -231,6 +237,7 @@ if (!gotTheLock) {
             setupCriticIPC(criticService);
             setupPresentationIPC(presentationService);
             setupTextMeasurementIPC();
+            new LintingIpcHandler(lintingService);
         })
         .catch(console.log);
 }
