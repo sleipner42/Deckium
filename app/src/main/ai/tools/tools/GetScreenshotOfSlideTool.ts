@@ -1,5 +1,5 @@
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
-import { getScreenshotFromSecondaryWindow } from '../../../main';
+import { getScreenshotFromSecondaryWindow, setSlideInHiddenWindow } from '../../../main';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 
@@ -35,9 +35,10 @@ export class GetScreenshotOfSlideTool extends BaseTool {
             };
         }
 
-        presentationService.setSelectedSlideInViewer(slideId);
+        // Set slide only in hidden window to avoid disturbing the user's current view
+        await setSlideInHiddenWindow(slideId);
 
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 800));
 
         const screenshot = await getScreenshotFromSecondaryWindow();
 

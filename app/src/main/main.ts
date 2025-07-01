@@ -32,6 +32,15 @@ let authService: AuthService;
 let lintingService: LintingService;
 let pdfExportService: PDFExportService;
 
+export async function setSlideInHiddenWindow(slideId: string): Promise<void> {
+    if (!secondWindow) {
+        throw new Error('Secondary window is not available');
+    }
+    
+    // Send the slide change directly to the hidden window only
+    secondWindow.webContents.send('presentation:set-selected-slide', slideId);
+}
+
 export default async function getScreenshotFromSecondaryWindow(): Promise<string> {
     if (!secondWindow) {
         console.error('Secondary window is not available');

@@ -5,6 +5,7 @@ import { jsPDF } from 'jspdf';
 import { PDFDocument } from 'pdf-lib';
 import { Presentation } from '../../common/domain/entities/types';
 import { PresentationService } from '../presentation/service';
+import { setSlideInHiddenWindow } from '../main';
 
 export interface PDFExportProgress {
     slideIndex: number;
@@ -25,6 +26,7 @@ export class PDFExportService {
     setSecondWindow(window: BrowserWindow): void {
         this.secondWindow = window;
     }
+
 
     /**
      * Export the entire presentation to PDF
@@ -133,9 +135,9 @@ export class PDFExportService {
                 message: `Generating PDF for slide ${i + 1}...`
             });
 
-            // Set the slide in the viewer
-            console.log(`Setting slide ${slide.id} in viewer for PDF generation`);
-            this.presentationService.setSelectedSlideInViewer(slide.id);
+            // Set the slide in the hidden viewer window only (don't disturb the main window)
+            console.log(`Setting slide ${slide.id} in hidden viewer for PDF generation`);
+            await setSlideInHiddenWindow(slide.id);
 
             // Wait for rendering
             await new Promise(resolve => setTimeout(resolve, 800));
@@ -221,9 +223,9 @@ export class PDFExportService {
                 message: `Capturing slide ${i + 1}...`
             });
 
-            // Set the slide in the viewer
-            console.log(`Setting slide ${slide.id} in viewer for capture`);
-            this.presentationService.setSelectedSlideInViewer(slide.id);
+            // Set the slide in the hidden viewer window only (don't disturb the main window)
+            console.log(`Setting slide ${slide.id} in hidden viewer for capture`);
+            await setSlideInHiddenWindow(slide.id);
 
             // Wait for rendering and slide change to take effect
             await new Promise(resolve => setTimeout(resolve, 800));
