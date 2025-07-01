@@ -282,10 +282,11 @@ const electronHandler = {
                 severity,
             );
         },
-        pdfExport: {
-            exportToPDF() {
-                return ipcRenderer.invoke('pdf-export:export-to-pdf');
-            },
+    },
+
+    pdfExport: {
+        exportToPDF() {
+            return ipcRenderer.invoke('pdf-export:export-to-pdf');
         },
     },
 };

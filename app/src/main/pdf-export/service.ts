@@ -33,16 +33,25 @@ export class PDFExportService {
         onProgress?: (progress: PDFExportProgress) => void
     ): Promise<string | null> {
         try {
+            console.log('Starting PDF export...');
+            
             if (!this.secondWindow) {
                 throw new Error('Secondary window not available for PDF export');
             }
 
             const presentation = this.presentationService.getPresentation();
+            console.log(`Presentation loaded: ${presentation.title}, slides: ${presentation.slides.length}`);
+            
             const slides = presentation.slides;
 
             if (slides.length === 0) {
                 throw new Error('No slides to export');
             }
+
+            // Log slide information
+            slides.forEach((slide, index) => {
+                console.log(`Slide ${index + 1}: ID=${slide.id}, Title="${slide.title || 'Untitled'}"`);
+            });
 
             // Show save dialog
             const savePath = await this.showSaveDialog(mainWindow, presentation);
@@ -124,17 +133,17 @@ export class PDFExportService {
             });
 
             // Set the slide in the viewer
+            console.log(`Setting slide ${slide.id} in viewer for PDF generation`);
             this.presentationService.setSelectedSlideInViewer(slide.id);
 
             // Wait for rendering
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 800));
 
             // Generate PDF for this slide
+            console.log(`Generating PDF for slide ${i + 1}/${slides.length}: ${slide.title || 'Untitled'}`);
+            
             const pdfData = await this.secondWindow!.webContents.printToPDF({
-                pageSize: {
-                    width: 160000, // 16cm * 10000 (microns to convert to electron units)
-                    height: 90000  // 9cm * 10000 (16:9 aspect ratio)
-                },
+                pageSize: 'A4',
                 margins: {
                     top: 0,
                     bottom: 0,
@@ -144,27 +153,22 @@ export class PDFExportService {
                 printBackground: true,
                 landscape: true
             });
+            
+            console.log(`PDF data generated, size: ${pdfData.length} bytes`);
 
             pdfBuffers.push(pdfData);
         }
 
-        // Merge PDFs using jsPDF (simple concatenation)
+        console.log(`Generated ${pdfBuffers.length} PDF buffers, total sizes: ${pdfBuffers.map(b => b.length).join(', ')} bytes`);
+        
+        // For single slide, return directly
         if (pdfBuffers.length === 1) {
             return pdfBuffers[0];
         }
 
-        // For multiple slides, we'll need to merge them
-        // This is a simplified approach - for production, consider using pdf-lib
-        const mergedPdf = new jsPDF({
-            orientation: 'landscape',
-            unit: 'mm',
-            format: [160, 90] // 16:9 aspect ratio in mm
-        });
-
-        // Note: This is a simplified merge - in reality, you'd need pdf-lib for proper merging
-        // For now, we'll return the first slide's PDF and log a warning
-        console.warn('PDF merging not fully implemented - returning first slide only');
-        return pdfBuffers[0];
+        // For multiple slides, let's use the fallback method instead
+        console.log('Multiple slides detected, falling back to image-based export for proper merging');
+        throw new Error('Multiple slides require image-based export for proper merging');
     }
 
     /**
@@ -177,7 +181,7 @@ export class PDFExportService {
         const pdf = new jsPDF({
             orientation: 'landscape',
             unit: 'mm',
-            format: [160, 90] // 16:9 aspect ratio
+            format: 'a4' // Use standard A4 size for better compatibility
         });
 
         let isFirstSlide = true;
@@ -194,15 +198,19 @@ export class PDFExportService {
             });
 
             // Set the slide in the viewer
+            console.log(`Setting slide ${slide.id} in viewer for capture`);
             this.presentationService.setSelectedSlideInViewer(slide.id);
 
-            // Wait for rendering
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Wait for rendering and slide change to take effect
+            await new Promise(resolve => setTimeout(resolve, 800));
 
             // Capture screenshot
+            console.log(`Capturing screenshot for slide ${i + 1}`);
             const screenshot = await this.secondWindow!.webContents.capturePage();
             const pngData = screenshot.toPNG();
             const base64Data = pngData.toString('base64');
+            
+            console.log(`Screenshot captured, PNG size: ${pngData.length} bytes, base64 size: ${base64Data.length} chars`);
 
             // Add page to PDF
             if (!isFirstSlide) {
@@ -210,18 +218,22 @@ export class PDFExportService {
             }
             isFirstSlide = false;
 
-            // Add image to PDF (full page)
+            // Add image to PDF (full page) - A4 landscape is 297x210mm
+            console.log(`Adding image to PDF page ${i + 1}`);
             pdf.addImage(
                 `data:image/png;base64,${base64Data}`,
                 'PNG',
                 0, 0,
-                160, 90, // Full page size
+                297, 210, // A4 landscape dimensions
                 undefined,
-                'FAST'
+                'SLOW' // Use SLOW for better quality
             );
         }
 
-        return Buffer.from(pdf.output('arraybuffer'));
+        console.log('Generating final PDF buffer...');
+        const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
+        console.log(`Final PDF generated, size: ${pdfBuffer.length} bytes`);
+        return pdfBuffer;
     }
 
     /**
