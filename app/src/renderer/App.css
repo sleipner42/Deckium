@@ -2,287 +2,287 @@
 
 /* Reset and Base Styles */
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-  font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Roboto",
-    "Helvetica Neue", sans-serif;
-  background-color: #1e1e1e;
-  color: white;
-  -webkit-font-smoothing: antialiased;
+    font-family:
+        -apple-system, BlinkMacSystemFont, "SF Pro Display", "Roboto",
+        "Helvetica Neue", sans-serif;
+    background-color: #1e1e1e;
+    color: white;
+    -webkit-font-smoothing: antialiased;
 }
 
 /* Apple Music specific styles */
 .apple-music-sidebar {
-  background-color: #212121;
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
+    background-color: #212121;
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .apple-music-list-item:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .apple-music-promo-banner {
-  background-color: #ff2d55;
-  border-radius: 8px;
-  color: white;
-  text-align: center;
-  padding: 24px;
+    background-color: #ff2d55;
+    border-radius: 8px;
+    color: white;
+    text-align: center;
+    padding: 24px;
 }
 
 /* Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.5);
 }
 
 /* Original styles with dark theme adjustments */
 .App {
-  text-align: center;
+    text-align: center;
 }
 
 .App-logo {
-  height: 40vmin;
-  pointer-events: none;
+    height: 40vmin;
+    pointer-events: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+    .App-logo {
+        animation: App-logo-spin infinite 20s linear;
+    }
 }
 
 .App-header {
-  background-color: #1e1e1e;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+    background-color: #1e1e1e;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(10px + 2vmin);
+    color: white;
 }
 
 .App-link {
-  color: #ff2d55;
+    color: #ff2d55;
 }
 
 @keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .app {
-  display: flex;
-  height: 100vh;
-  background-color: #1e1e1e;
+    display: flex;
+    height: 100vh;
+    background-color: #1e1e1e;
 }
 
 .welcome-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background-color: #1e1e1e;
-  color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #1e1e1e;
+    color: white;
 }
 
 .welcome-screen h1 {
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
 }
 
 .create-presentation-btn {
-  padding: 1rem 2rem;
-  font-size: 1.2rem;
-  background-color: #ff2d55;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    background-color: #ff2d55;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
 .create-presentation-btn:hover {
-  background-color: #ff1a43;
+    background-color: #ff1a43;
 }
 
 .sidebar {
-  width: 300px;
-  background-color: #212121;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  overflow-y: auto;
+    width: 300px;
+    background-color: #212121;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
 }
 
 .slide-thumbnail {
-  background-color: #2c2c2c;
-  color: white;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+    background-color: #2c2c2c;
+    color: white;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
 .slide-thumbnail:hover {
-  background-color: #3a3a3a;
+    background-color: #3a3a3a;
 }
 
 .slide-thumbnail.active {
-  background-color: #ff2d55;
+    background-color: #ff2d55;
 }
 
 .add-slide-btn {
-  width: 100%;
-  padding: 10px;
-  background-color: #ff2d55;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
+    width: 100%;
+    padding: 10px;
+    background-color: #ff2d55;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
 }
 
 .add-slide-btn:hover {
-  background-color: #ff1a43;
+    background-color: #ff1a43;
 }
 
 .slide-navigation {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .main-content {
-  flex: 1;
-  padding: 40px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #1e1e1e;
+    flex: 1;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #1e1e1e;
 }
 
 .slide-editor {
-  width: 100%;
-  max-width: 1200px;
-  aspect-ratio: 16 / 9;
-  background-color: #212121;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+    width: 100%;
+    max-width: 1200px;
+    aspect-ratio: 16 / 9;
+    background-color: #212121;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .toolbar {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
 }
 
 .element {
-  position: absolute;
+    position: absolute;
 }
 
 .slide-content {
-  width: 100%;
-  height: 500px;
-  border: none;
-  outline: none;
-  resize: none;
-  font-size: 18px;
-  line-height: 1.6;
-  padding: 20px;
-  background-color: #212121;
-  color: white;
+    width: 100%;
+    height: 500px;
+    border: none;
+    outline: none;
+    resize: none;
+    font-size: 18px;
+    line-height: 1.6;
+    padding: 20px;
+    background-color: #212121;
+    color: white;
 }
 
 button {
-  font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Roboto",
-    "Helvetica Neue", sans-serif;
+    font-family:
+        -apple-system, BlinkMacSystemFont, "SF Pro Display", "Roboto",
+        "Helvetica Neue", sans-serif;
 }
 
 button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+    cursor: not-allowed;
+    opacity: 0.5;
 }
 
 .ai-chat-container {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  height: 400px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  padding-top: 16px;
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    height: 400px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding-top: 16px;
 }
 
 .ai-chat-title {
-  color: white;
-  font-size: 1rem;
-  margin-bottom: 12px;
-  font-weight: 500;
+    color: white;
+    font-size: 1rem;
+    margin-bottom: 12px;
+    font-weight: 500;
 }
 
 .ai-chat-interface {
-  flex: 1;
-  border-radius: 8px;
-  background-color: #2c2c2c;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+    flex: 1;
+    border-radius: 8px;
+    background-color: #2c2c2c;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Ensure scrollable areas work properly */
 .sidebar {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 }
 
 .slide-navigation {
-  flex: 1;
-  overflow-y: auto;
-  margin-bottom: 16px;
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 16px;
 }
 
 /* Responsive adjustments */
 @media (max-height: 768px) {
-  .ai-chat-container {
-    height: 300px;
-  }
+    .ai-chat-container {
+        height: 300px;
+    }
 }
 
 @media (max-height: 600px) {
-  .ai-chat-container {
-    height: 200px;
-  }
+    .ai-chat-container {
+        height: 200px;
+    }
 }

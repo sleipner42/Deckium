@@ -1,67 +1,71 @@
 import { ipcMain } from 'electron';
 
 export interface TextMeasurementRequest {
-  content: string;
-  fontSize: number;
-  fontFamily: string;
-  width: number;
-  lineHeight?: number;
+    content: string;
+    fontSize: number;
+    fontFamily: string;
+    width: number;
+    lineHeight?: number;
 }
 
 export interface TextMeasurementResult {
-  actualHeight: number;
-  actualWidth: number;
-  lineCount: number;
-  naturalWidth: number; // Width without any constraints
-  hasOverflow: boolean;
-  lineBreaks: string[]; // Array of lines after wrapping
+    actualHeight: number;
+    actualWidth: number;
+    lineCount: number;
+    naturalWidth: number; // Width without any constraints
+    hasOverflow: boolean;
+    lineBreaks: string[]; // Array of lines after wrapping
 }
 
 export function setupTextMeasurementIPC() {
-  // New Quill-specific measurement handler
-  ipcMain.handle(
-    'text-measurement:measure-quill',
-    async (event, elementId: string) => {
-      const { textMeasurementService } = require('./service');
-      try {
-        return await textMeasurementService.measureQuillText(elementId);
-      } catch (error) {
-        console.error('Error measuring Quill text:', error);
-        throw error;
-      }
-    },
-  );
+    // New Quill-specific measurement handler
+    ipcMain.handle(
+        'text-measurement:measure-quill',
+        async (event, elementId: string) => {
+            const { textMeasurementService } = require('./service');
+            try {
+                return await textMeasurementService.measureQuillText(elementId);
+            } catch (error) {
+                console.error('Error measuring Quill text:', error);
+                throw error;
+            }
+        },
+    );
 
-  // Enhanced Quill dimensions handler
-  ipcMain.handle(
-    'text-measurement:quill-dimensions',
-    async (event, elementId: string) => {
-      const { textMeasurementService } = require('./service');
-      try {
-        return await textMeasurementService.getQuillTextDimensions(elementId);
-      } catch (error) {
-        console.error('Error getting Quill dimensions:', error);
-        throw error;
-      }
-    },
-  );
+    // Enhanced Quill dimensions handler
+    ipcMain.handle(
+        'text-measurement:quill-dimensions',
+        async (event, elementId: string) => {
+            const { textMeasurementService } = require('./service');
+            try {
+                return await textMeasurementService.getQuillTextDimensions(
+                    elementId,
+                );
+            } catch (error) {
+                console.error('Error getting Quill dimensions:', error);
+                throw error;
+            }
+        },
+    );
 
-  // Legacy text measurement (still used for non-Quill content)
-  ipcMain.handle(
-    'text-measurement:measure',
-    async (
-      event,
-      request: TextMeasurementRequest,
-    ): Promise<TextMeasurementResult> => {
-      // This will be handled by the renderer process
-      // We'll forward this to the main window
-      const { mainWindow } = global;
-      if (!mainWindow) {
-        throw new Error('Main window not available for text measurement');
-      }
+    // Legacy text measurement (still used for non-Quill content)
+    ipcMain.handle(
+        'text-measurement:measure',
+        async (
+            event,
+            request: TextMeasurementRequest,
+        ): Promise<TextMeasurementResult> => {
+            // This will be handled by the renderer process
+            // We'll forward this to the main window
+            const { mainWindow } = global;
+            if (!mainWindow) {
+                throw new Error(
+                    'Main window not available for text measurement',
+                );
+            }
 
-      try {
-        const result = await mainWindow.webContents.executeJavaScript(`
+            try {
+                const result = await mainWindow.webContents.executeJavaScript(`
         (() => {
           const measureText = (content, fontSize, fontFamily, width, lineHeight) => {
             // Create a temporary div for measurement
@@ -134,12 +138,12 @@ export function setupTextMeasurementIPC() {
         })()
       `);
 
-        return result;
-      } catch (error) {
-        console.error('Error measuring text:', error);
-        // Fallback to estimation
-        throw error;
-      }
-    },
-  );
+                return result;
+            } catch (error) {
+                console.error('Error measuring text:', error);
+                // Fallback to estimation
+                throw error;
+            }
+        },
+    );
 }

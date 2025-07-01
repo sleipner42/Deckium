@@ -12,26 +12,29 @@ import { Route, HashRouter as Router, Routes } from 'react-router-dom';
 import AppContent from './application/routing/AppContent';
 
 const App: React.FC = () => {
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <AuthProvider>
-          <PresentationProvider>
-            <TextEditingProvider>
-              <AIProvider>
-                <CriticProvider>
-                  <Routes>
-                    <Route path="/" element={<AppContent />} />
-                  </Routes>
-                </CriticProvider>
-              </AIProvider>
-            </TextEditingProvider>
-          </PresentationProvider>
-        </AuthProvider>
-      </Router>
-    </ThemeProvider>
-  );
+    return (
+        <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Router>
+                <AuthProvider>
+                    <PresentationProvider>
+                        <TextEditingProvider>
+                            <AIProvider>
+                                <CriticProvider>
+                                    <Routes>
+                                        <Route
+                                            path="/"
+                                            element={<AppContent />}
+                                        />
+                                    </Routes>
+                                </CriticProvider>
+                            </AIProvider>
+                        </TextEditingProvider>
+                    </PresentationProvider>
+                </AuthProvider>
+            </Router>
+        </ThemeProvider>
+    );
 };
 
 export default App;

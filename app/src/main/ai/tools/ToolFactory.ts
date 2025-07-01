@@ -28,36 +28,36 @@ import { UpdateSlideTool } from './tools/UpdateSlideTool';
 import { UpdateTextElementTool } from './tools/UpdateTextElementTool';
 
 export class ToolFactory {
-  static getBuiltInTools(authService?: AuthService): AITool[] {
-    return [
-      new GetPresentationInfoTool(),
-      new CreateSlideTool(),
-      new UpdateSlideTool(),
-      new DeleteSlideTool(),
-      new AddTextElementTool(),
-      new GetAllInfoAboutSlideTool(),
-      new GetScreenshotOfSlideTool(),
-      new UpdateTextElementTool(),
-      new CreateBarChartTool(),
-      new UpdateBarChartTool(),
-      new CreateShapeTool(),
-      new UpdateShapeTool(),
-      new AlignElementsTool(),
-      new SpaceElementsEvenlyTool(),
-      new GetDataFromUrl(),
-      new ChangeElementZIndexTool(),
-      new CalculatorTool(),
-      authService
-        ? new AddImageFromPexelsTool(authService)
-        : new AddImageFromPexelsTool(),
-      new UpdateImageElementTool(),
-      new DeleteElementTool(),
-      new CriticTool(),
-      new AlignToSlideTool(),
-      new GridAlignTool(),
-      new MatchSizeTool(),
-      new CreateSVGImageTool(),
-      new DuplicateSlideTool(),
-    ];
-  }
+    static getBuiltInTools(authService?: AuthService): AITool[] {
+        return [
+            new GetPresentationInfoTool(),
+            new CreateSlideTool(),
+            new UpdateSlideTool(),
+            new DeleteSlideTool(),
+            new AddTextElementTool(),
+            new GetAllInfoAboutSlideTool(),
+            new GetScreenshotOfSlideTool(),
+            new UpdateTextElementTool(),
+            new CreateBarChartTool(),
+            new UpdateBarChartTool(),
+            new CreateShapeTool(),
+            new UpdateShapeTool(),
+            new AlignElementsTool(),
+            new SpaceElementsEvenlyTool(),
+            new GetDataFromUrl(),
+            new ChangeElementZIndexTool(),
+            new CalculatorTool(),
+            authService
+                ? new AddImageFromPexelsTool(authService)
+                : new AddImageFromPexelsTool(),
+            new UpdateImageElementTool(),
+            new DeleteElementTool(),
+            new CriticTool(),
+            new AlignToSlideTool(),
+            new GridAlignTool(),
+            new MatchSizeTool(),
+            new CreateSVGImageTool(),
+            new DuplicateSlideTool(),
+        ];
+    }
 }

@@ -3,27 +3,29 @@ import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 
 export class GetPresentationInfoTool extends BaseTool {
-  name = 'getPresentationInfo';
+    name = 'getPresentationInfo';
 
-  description = 'Get information about the current presentation';
+    description = 'Get information about the current presentation';
 
-  requiredParams = {};
+    requiredParams = {};
 
-  protected async executeImpl(
-    params: Record<string, any>,
-    presentationService: PresentationService,
-  ): Promise<AIToolResult> {
-    const currentPresentation = presentationService.getPresentation();
+    protected async executeImpl(
+        params: Record<string, any>,
+        presentationService: PresentationService,
+    ): Promise<AIToolResult> {
+        const currentPresentation = presentationService.getPresentation();
 
-    return {
-      success: true,
-      data: {
-        presentation: {
-          slideCount: currentPresentation.slides.length,
-          slideIds: currentPresentation.slides.map((slide) => slide.id),
-        },
-      },
-      editedSlidesIds: [],
-    };
-  }
+        return {
+            success: true,
+            data: {
+                presentation: {
+                    slideCount: currentPresentation.slides.length,
+                    slideIds: currentPresentation.slides.map(
+                        (slide) => slide.id,
+                    ),
+                },
+            },
+            editedSlidesIds: [],
+        };
+    }
 }

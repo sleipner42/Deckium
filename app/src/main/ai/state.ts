@@ -5,275 +5,275 @@ import { MessageContent } from '../../common/domain/interfaces/ai-service.interf
 import { logger } from '../utils/logger';
 
 export class AIState {
-  private threads: Map<UUID, Thread> = new Map<UUID, Thread>();
+    private threads: Map<UUID, Thread> = new Map<UUID, Thread>();
 
-  getThreadIds(): Set<UUID> {
-    return new Set(this.threads.keys());
-  }
-
-  getThread(threadId: UUID): Thread | null {
-    return this.threads.get(threadId) || null;
-  }
-
-  saveThread(thread: Thread): Thread {
-    // Create a deep copy to avoid reference issues
-    const threadCopy = JSON.parse(JSON.stringify(thread)) as Thread;
-
-    // Restore Date objects since JSON.parse converts them to strings
-    threadCopy.createdAt = new Date(threadCopy.createdAt);
-    threadCopy.updatedAt = new Date(threadCopy.updatedAt);
-    threadCopy.messages.forEach((msg) => {
-      msg.timestamp = new Date(msg.timestamp);
-    });
-
-    // Store the thread copy
-    this.threads.set(thread.id, threadCopy);
-
-    // Return the copy, not the original
-    return threadCopy;
-  }
-
-  getThreadsForPresentation(presentationId: UUID): Thread[] {
-    return Array.from(this.threads.values()).filter(
-      (thread) => thread.presentationId === presentationId,
-    );
-  }
-
-  deleteThread(threadId: UUID): boolean {
-    return this.threads.delete(threadId);
-  }
-
-  createThread(
-    title: string,
-    presentationId: UUID,
-    developerPrompt: string,
-  ): Thread {
-    const newThread: Thread = {
-      id: uuidv4(),
-      title,
-      messages: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      presentationId,
-    };
-
-    const threadWithPrompt = this.addMessage(
-      newThread,
-      developerPrompt,
-      'system',
-    );
-
-    const threadWithWelcome = this.addMessage(
-      threadWithPrompt,
-      'Welcome to KeynoteAI Assistant. I can help you create and manage your presentation. Ask me to create slides, suggest content, or help with design.',
-      'assistant',
-    );
-
-    this.threads.set(threadWithWelcome.id, threadWithWelcome);
-    return threadWithWelcome;
-  }
-
-  addMessage(
-    thread: Thread,
-    content: string | MessageContent[],
-    role: 'user' | 'assistant' | 'system',
-  ): Thread {
-    const threadToUpdate = this.threads.get(thread.id) || thread;
-
-    const newMessage: Message = {
-      id: uuidv4(),
-      content,
-      role,
-      timestamp: new Date(),
-      threadId: thread.id,
-    };
-
-    // Log the message being added to the conversation
-    logger.logConversation(`Message added to thread [${role}]`, {
-      threadId: thread.id,
-      messageId: newMessage.id,
-      role,
-      content,
-      contentType: typeof content,
-      messageCount: threadToUpdate.messages.length + 1,
-    });
-
-    const updatedThread = {
-      ...threadToUpdate,
-      messages: [...threadToUpdate.messages, newMessage],
-      updatedAt: new Date(),
-    };
-
-    this.threads.set(updatedThread.id, updatedThread);
-    return updatedThread;
-  }
-
-  addMessageWithState(
-    thread: Thread,
-    content: string | MessageContent[],
-    role: 'user' | 'assistant' | 'system',
-    messageId: string = uuidv4(),
-    streamingState: 'streaming' | 'completed' = 'completed',
-  ): Thread {
-    const threadToUpdate = this.threads.get(thread.id) || thread;
-
-    const newMessage: Message = {
-      id: messageId,
-      content,
-      role,
-      timestamp: new Date(),
-      threadId: thread.id,
-      streamingState,
-    };
-
-    // Log the message being added with streaming state
-    // Skip logging empty assistant messages that will be filled via streaming
-    const shouldLog = !(
-      role === 'assistant' &&
-      streamingState === 'streaming' &&
-      (!content || content === '')
-    );
-
-    if (shouldLog) {
-      logger.logConversation(
-        `Message added to thread [${role}] with state [${streamingState}]`,
-        {
-          threadId: thread.id,
-          messageId,
-          role,
-          content,
-          streamingState,
-          contentType: typeof content,
-          messageCount: threadToUpdate.messages.length + 1,
-        },
-      );
+    getThreadIds(): Set<UUID> {
+        return new Set(this.threads.keys());
     }
 
-    const updatedThread = {
-      ...threadToUpdate,
-      messages: [...threadToUpdate.messages, newMessage],
-      updatedAt: new Date(),
-    };
-
-    this.threads.set(updatedThread.id, updatedThread);
-    return updatedThread;
-  }
-
-  updateMessageContent(
-    thread: Thread,
-    messageId: string,
-    content: string | MessageContent[],
-  ): Thread {
-    const threadToUpdate = this.threads.get(thread.id) || thread;
-
-    const messageIndex = threadToUpdate.messages.findIndex(
-      (message) => message.id === messageId,
-    );
-
-    if (messageIndex === -1) {
-      return threadToUpdate;
+    getThread(threadId: UUID): Thread | null {
+        return this.threads.get(threadId) || null;
     }
 
-    const updatedMessages = [...threadToUpdate.messages];
-    const originalMessage = updatedMessages[messageIndex];
-    updatedMessages[messageIndex] = {
-      ...originalMessage,
-      content,
-    };
+    saveThread(thread: Thread): Thread {
+        // Create a deep copy to avoid reference issues
+        const threadCopy = JSON.parse(JSON.stringify(thread)) as Thread;
 
-    // Content updates during streaming are logged when streaming completes
-    // via setMessageStreamingState, so we don't need to log here to avoid spam
+        // Restore Date objects since JSON.parse converts them to strings
+        threadCopy.createdAt = new Date(threadCopy.createdAt);
+        threadCopy.updatedAt = new Date(threadCopy.updatedAt);
+        threadCopy.messages.forEach((msg) => {
+            msg.timestamp = new Date(msg.timestamp);
+        });
 
-    const updatedThread = {
-      ...threadToUpdate,
-      messages: updatedMessages,
-      updatedAt: new Date(),
-    };
+        // Store the thread copy
+        this.threads.set(thread.id, threadCopy);
 
-    this.threads.set(updatedThread.id, updatedThread);
-    return updatedThread;
-  }
-
-  setMessageStreamingState(
-    thread: Thread,
-    messageId: string,
-    streamingState: 'streaming' | 'completed',
-  ): Thread {
-    const threadToUpdate = this.threads.get(thread.id) || thread;
-
-    const messageIndex = threadToUpdate.messages.findIndex(
-      (message) => message.id === messageId,
-    );
-
-    if (messageIndex === -1) {
-      return threadToUpdate;
+        // Return the copy, not the original
+        return threadCopy;
     }
 
-    const updatedMessages = [...threadToUpdate.messages];
-    const originalMessage = updatedMessages[messageIndex];
-    updatedMessages[messageIndex] = {
-      ...originalMessage,
-      streamingState,
-    };
-
-    // Log completed assistant messages to conversation file
-    if (
-      streamingState === 'completed' &&
-      originalMessage.role === 'assistant' &&
-      originalMessage.content
-    ) {
-      logger.logConversation(
-        `Assistant message completed [${originalMessage.role}]`,
-        {
-          threadId: thread.id,
-          messageId,
-          role: originalMessage.role,
-          content: originalMessage.content,
-          streamingState,
-          contentType: typeof originalMessage.content,
-          messageCount: updatedMessages.length,
-        },
-      );
+    getThreadsForPresentation(presentationId: UUID): Thread[] {
+        return Array.from(this.threads.values()).filter(
+            (thread) => thread.presentationId === presentationId,
+        );
     }
 
-    const updatedThread = {
-      ...threadToUpdate,
-      messages: updatedMessages,
-      updatedAt: new Date(),
-    };
-
-    this.threads.set(updatedThread.id, updatedThread);
-    return updatedThread;
-  }
-
-  updateSystemMessage(thread: Thread, newContent: string): Thread {
-    const updatedThread = { ...thread };
-
-    const firstSystemMessageIndex = updatedThread.messages.findIndex(
-      (m) => m.role === 'system',
-    );
-
-    if (firstSystemMessageIndex >= 0) {
-      const updatedMessages = [...updatedThread.messages];
-      updatedMessages[firstSystemMessageIndex] = {
-        ...updatedMessages[firstSystemMessageIndex],
-        content: newContent,
-      };
-
-      updatedThread.messages = updatedMessages;
-    } else {
-      const systemMessage: Message = {
-        id: uuidv4(),
-        content: newContent,
-        role: 'system',
-        timestamp: new Date(),
-        threadId: thread.id,
-      };
-
-      updatedThread.messages = [systemMessage, ...updatedThread.messages];
+    deleteThread(threadId: UUID): boolean {
+        return this.threads.delete(threadId);
     }
 
-    this.threads.set(updatedThread.id, updatedThread);
-    return updatedThread;
-  }
+    createThread(
+        title: string,
+        presentationId: UUID,
+        developerPrompt: string,
+    ): Thread {
+        const newThread: Thread = {
+            id: uuidv4(),
+            title,
+            messages: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            presentationId,
+        };
+
+        const threadWithPrompt = this.addMessage(
+            newThread,
+            developerPrompt,
+            'system',
+        );
+
+        const threadWithWelcome = this.addMessage(
+            threadWithPrompt,
+            'Welcome to KeynoteAI Assistant. I can help you create and manage your presentation. Ask me to create slides, suggest content, or help with design.',
+            'assistant',
+        );
+
+        this.threads.set(threadWithWelcome.id, threadWithWelcome);
+        return threadWithWelcome;
+    }
+
+    addMessage(
+        thread: Thread,
+        content: string | MessageContent[],
+        role: 'user' | 'assistant' | 'system',
+    ): Thread {
+        const threadToUpdate = this.threads.get(thread.id) || thread;
+
+        const newMessage: Message = {
+            id: uuidv4(),
+            content,
+            role,
+            timestamp: new Date(),
+            threadId: thread.id,
+        };
+
+        // Log the message being added to the conversation
+        logger.logConversation(`Message added to thread [${role}]`, {
+            threadId: thread.id,
+            messageId: newMessage.id,
+            role,
+            content,
+            contentType: typeof content,
+            messageCount: threadToUpdate.messages.length + 1,
+        });
+
+        const updatedThread = {
+            ...threadToUpdate,
+            messages: [...threadToUpdate.messages, newMessage],
+            updatedAt: new Date(),
+        };
+
+        this.threads.set(updatedThread.id, updatedThread);
+        return updatedThread;
+    }
+
+    addMessageWithState(
+        thread: Thread,
+        content: string | MessageContent[],
+        role: 'user' | 'assistant' | 'system',
+        messageId: string = uuidv4(),
+        streamingState: 'streaming' | 'completed' = 'completed',
+    ): Thread {
+        const threadToUpdate = this.threads.get(thread.id) || thread;
+
+        const newMessage: Message = {
+            id: messageId,
+            content,
+            role,
+            timestamp: new Date(),
+            threadId: thread.id,
+            streamingState,
+        };
+
+        // Log the message being added with streaming state
+        // Skip logging empty assistant messages that will be filled via streaming
+        const shouldLog = !(
+            role === 'assistant' &&
+            streamingState === 'streaming' &&
+            (!content || content === '')
+        );
+
+        if (shouldLog) {
+            logger.logConversation(
+                `Message added to thread [${role}] with state [${streamingState}]`,
+                {
+                    threadId: thread.id,
+                    messageId,
+                    role,
+                    content,
+                    streamingState,
+                    contentType: typeof content,
+                    messageCount: threadToUpdate.messages.length + 1,
+                },
+            );
+        }
+
+        const updatedThread = {
+            ...threadToUpdate,
+            messages: [...threadToUpdate.messages, newMessage],
+            updatedAt: new Date(),
+        };
+
+        this.threads.set(updatedThread.id, updatedThread);
+        return updatedThread;
+    }
+
+    updateMessageContent(
+        thread: Thread,
+        messageId: string,
+        content: string | MessageContent[],
+    ): Thread {
+        const threadToUpdate = this.threads.get(thread.id) || thread;
+
+        const messageIndex = threadToUpdate.messages.findIndex(
+            (message) => message.id === messageId,
+        );
+
+        if (messageIndex === -1) {
+            return threadToUpdate;
+        }
+
+        const updatedMessages = [...threadToUpdate.messages];
+        const originalMessage = updatedMessages[messageIndex];
+        updatedMessages[messageIndex] = {
+            ...originalMessage,
+            content,
+        };
+
+        // Content updates during streaming are logged when streaming completes
+        // via setMessageStreamingState, so we don't need to log here to avoid spam
+
+        const updatedThread = {
+            ...threadToUpdate,
+            messages: updatedMessages,
+            updatedAt: new Date(),
+        };
+
+        this.threads.set(updatedThread.id, updatedThread);
+        return updatedThread;
+    }
+
+    setMessageStreamingState(
+        thread: Thread,
+        messageId: string,
+        streamingState: 'streaming' | 'completed',
+    ): Thread {
+        const threadToUpdate = this.threads.get(thread.id) || thread;
+
+        const messageIndex = threadToUpdate.messages.findIndex(
+            (message) => message.id === messageId,
+        );
+
+        if (messageIndex === -1) {
+            return threadToUpdate;
+        }
+
+        const updatedMessages = [...threadToUpdate.messages];
+        const originalMessage = updatedMessages[messageIndex];
+        updatedMessages[messageIndex] = {
+            ...originalMessage,
+            streamingState,
+        };
+
+        // Log completed assistant messages to conversation file
+        if (
+            streamingState === 'completed' &&
+            originalMessage.role === 'assistant' &&
+            originalMessage.content
+        ) {
+            logger.logConversation(
+                `Assistant message completed [${originalMessage.role}]`,
+                {
+                    threadId: thread.id,
+                    messageId,
+                    role: originalMessage.role,
+                    content: originalMessage.content,
+                    streamingState,
+                    contentType: typeof originalMessage.content,
+                    messageCount: updatedMessages.length,
+                },
+            );
+        }
+
+        const updatedThread = {
+            ...threadToUpdate,
+            messages: updatedMessages,
+            updatedAt: new Date(),
+        };
+
+        this.threads.set(updatedThread.id, updatedThread);
+        return updatedThread;
+    }
+
+    updateSystemMessage(thread: Thread, newContent: string): Thread {
+        const updatedThread = { ...thread };
+
+        const firstSystemMessageIndex = updatedThread.messages.findIndex(
+            (m) => m.role === 'system',
+        );
+
+        if (firstSystemMessageIndex >= 0) {
+            const updatedMessages = [...updatedThread.messages];
+            updatedMessages[firstSystemMessageIndex] = {
+                ...updatedMessages[firstSystemMessageIndex],
+                content: newContent,
+            };
+
+            updatedThread.messages = updatedMessages;
+        } else {
+            const systemMessage: Message = {
+                id: uuidv4(),
+                content: newContent,
+                role: 'system',
+                timestamp: new Date(),
+                threadId: thread.id,
+            };
+
+            updatedThread.messages = [systemMessage, ...updatedThread.messages];
+        }
+
+        this.threads.set(updatedThread.id, updatedThread);
+        return updatedThread;
+    }
 }

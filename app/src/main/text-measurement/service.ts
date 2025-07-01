@@ -1,100 +1,100 @@
 import { BrowserWindow } from 'electron';
 import {
-  estimateTextDimensions,
-  TextDimensionResult,
+    estimateTextDimensions,
+    TextDimensionResult,
 } from '../ai/tools/utils/text-dimensions';
 import { TextMeasurementRequest, TextMeasurementResult } from './ipc-handler';
 
 export class TextMeasurementService {
-  private static instance: TextMeasurementService;
+    private static instance: TextMeasurementService;
 
-  private mainWindow: BrowserWindow | null = null;
+    private mainWindow: BrowserWindow | null = null;
 
-  private constructor() {}
+    private constructor() {}
 
-  static getInstance(): TextMeasurementService {
-    if (!TextMeasurementService.instance) {
-      TextMeasurementService.instance = new TextMeasurementService();
-    }
-    return TextMeasurementService.instance;
-  }
-
-  setMainWindow(window: BrowserWindow) {
-    this.mainWindow = window;
-  }
-
-  /**
-   * Measures text dimensions from actual Quill editor content
-   * More accurate than the legacy measureText method for Quill-based text
-   */
-  async measureQuillText(elementId: string): Promise<
-    TextDimensionResult & {
-      quillMetrics?: {
-        totalLength: number;
-        hasContent: boolean;
-        isScrollable: boolean;
-        contentOverflows: boolean;
-      };
-    }
-  > {
-    const quillDimensions = await this.getQuillTextDimensions(elementId);
-
-    if (!quillDimensions.elementFound) {
-      // Fallback to basic estimation
-      return {
-        height: -1,
-        width: -1,
-        lineBreakInfo:
-          'Could not measure Quill editor - using fallback dimensions',
-      };
+    static getInstance(): TextMeasurementService {
+        if (!TextMeasurementService.instance) {
+            TextMeasurementService.instance = new TextMeasurementService();
+        }
+        return TextMeasurementService.instance;
     }
 
-    const { containerBounds, textBounds, overflow, quillInstance } =
-      quillDimensions;
-
-    let lineBreakInfo = null;
-    if (overflow && overflow.lineCount > 1) {
-      if (overflow.overflowsContainer) {
-        lineBreakInfo = `⚠️ OVERFLOW: Text spans ${overflow.lineCount} lines and overflows container. Container: ${containerBounds?.width}x${containerBounds?.height}px, Content needs: ${textBounds?.width}x${textBounds?.height}px. Consider resizing the text box.`;
-      } else if (overflow.needsVerticalScroll) {
-        lineBreakInfo = `ℹ️ SCROLLING: Text spans ${overflow.lineCount} lines with vertical scrolling enabled. Content height: ${quillInstance?.scrollHeight}px, visible height: ${quillInstance?.clientHeight}px.`;
-      } else {
-        lineBreakInfo = `ℹ️ WRAPPING: Text naturally spans ${overflow.lineCount} lines within container. This is normal text wrapping behavior.`;
-      }
+    setMainWindow(window: BrowserWindow) {
+        this.mainWindow = window;
     }
 
-    return {
-      height: textBounds?.height || containerBounds?.height || 50,
-      width: textBounds?.width || containerBounds?.width || 200,
-      lineBreakInfo,
-      quillMetrics: quillInstance
-        ? {
-            totalLength: quillInstance.totalLength,
-            hasContent: quillInstance.hasContent,
-            isScrollable: quillInstance.isScrollable,
-            contentOverflows: quillInstance.contentOverflows,
-          }
-        : undefined,
-    };
-  }
+    /**
+     * Measures text dimensions from actual Quill editor content
+     * More accurate than the legacy measureText method for Quill-based text
+     */
+    async measureQuillText(elementId: string): Promise<
+        TextDimensionResult & {
+            quillMetrics?: {
+                totalLength: number;
+                hasContent: boolean;
+                isScrollable: boolean;
+                contentOverflows: boolean;
+            };
+        }
+    > {
+        const quillDimensions = await this.getQuillTextDimensions(elementId);
 
-  async measureText(
-    content: string,
-    fontSize: number,
-    fontFamily: string = 'Arial',
-    width: number,
-    lineHeight?: number,
-  ): Promise<TextDimensionResult> {
-    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
-      console.warn(
-        'Main window not available for precise text measurement, falling back to estimation',
-      );
-      return estimateTextDimensions(content, fontSize, width);
+        if (!quillDimensions.elementFound) {
+            // Fallback to basic estimation
+            return {
+                height: -1,
+                width: -1,
+                lineBreakInfo:
+                    'Could not measure Quill editor - using fallback dimensions',
+            };
+        }
+
+        const { containerBounds, textBounds, overflow, quillInstance } =
+            quillDimensions;
+
+        let lineBreakInfo = null;
+        if (overflow && overflow.lineCount > 1) {
+            if (overflow.overflowsContainer) {
+                lineBreakInfo = `⚠️ OVERFLOW: Text spans ${overflow.lineCount} lines and overflows container. Container: ${containerBounds?.width}x${containerBounds?.height}px, Content needs: ${textBounds?.width}x${textBounds?.height}px. Consider resizing the text box.`;
+            } else if (overflow.needsVerticalScroll) {
+                lineBreakInfo = `ℹ️ SCROLLING: Text spans ${overflow.lineCount} lines with vertical scrolling enabled. Content height: ${quillInstance?.scrollHeight}px, visible height: ${quillInstance?.clientHeight}px.`;
+            } else {
+                lineBreakInfo = `ℹ️ WRAPPING: Text naturally spans ${overflow.lineCount} lines within container. This is normal text wrapping behavior.`;
+            }
+        }
+
+        return {
+            height: textBounds?.height || containerBounds?.height || 50,
+            width: textBounds?.width || containerBounds?.width || 200,
+            lineBreakInfo,
+            quillMetrics: quillInstance
+                ? {
+                      totalLength: quillInstance.totalLength,
+                      hasContent: quillInstance.hasContent,
+                      isScrollable: quillInstance.isScrollable,
+                      contentOverflows: quillInstance.contentOverflows,
+                  }
+                : undefined,
+        };
     }
 
-    try {
-      // Execute JavaScript in the renderer process for precise measurement
-      const result = await this.mainWindow.webContents.executeJavaScript(`
+    async measureText(
+        content: string,
+        fontSize: number,
+        fontFamily: string = 'Arial',
+        width: number,
+        lineHeight?: number,
+    ): Promise<TextDimensionResult> {
+        if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+            console.warn(
+                'Main window not available for precise text measurement, falling back to estimation',
+            );
+            return estimateTextDimensions(content, fontSize, width);
+        }
+
+        try {
+            // Execute JavaScript in the renderer process for precise measurement
+            const result = await this.mainWindow.webContents.executeJavaScript(`
         (() => {
           const measureText = (content, fontSize, fontFamily, width, lineHeight) => {
             // Create a temporary div for measurement
@@ -174,104 +174,111 @@ export class TextMeasurementService {
         })()
       `);
 
-      // Convert to our expected format and provide specific feedback
-      let lineBreakInfo = null;
+            // Convert to our expected format and provide specific feedback
+            let lineBreakInfo = null;
 
-      if (result.lineCount > 1) {
-        if (result.hasOverflow) {
-          // Text overflows AND wraps - needs wider container
-          // Account for TextElement's 4px padding on each side (8px total) plus 10px margin
-          const recommendedWidth = Math.ceil(result.naturalWidth + 18);
-          lineBreakInfo = `⚠️ TEXT OVERFLOW: Text spans ${result.lineCount} lines and overflows container. Natural text width: ${result.naturalWidth}px (current container: ${width}px). Consider increasing container width to ${recommendedWidth}px to fit on one line.`;
-        } else {
-          // Text wraps but fits - just informational
-          lineBreakInfo = `ℹ️ TEXT WRAPPING: Text naturally spans ${result.lineCount} lines within the ${width}px container. This is normal text wrapping behavior.`;
+            if (result.lineCount > 1) {
+                if (result.hasOverflow) {
+                    // Text overflows AND wraps - needs wider container
+                    // Account for TextElement's 4px padding on each side (8px total) plus 10px margin
+                    const recommendedWidth = Math.ceil(
+                        result.naturalWidth + 18,
+                    );
+                    lineBreakInfo = `⚠️ TEXT OVERFLOW: Text spans ${result.lineCount} lines and overflows container. Natural text width: ${result.naturalWidth}px (current container: ${width}px). Consider increasing container width to ${recommendedWidth}px to fit on one line.`;
+                } else {
+                    // Text wraps but fits - just informational
+                    lineBreakInfo = `ℹ️ TEXT WRAPPING: Text naturally spans ${result.lineCount} lines within the ${width}px container. This is normal text wrapping behavior.`;
+                }
+            }
+
+            return {
+                height: result.actualHeight,
+                width: Math.min(result.naturalWidth, width), // Use natural width if it fits
+                lineBreakInfo,
+            };
+        } catch (error) {
+            console.error('Error measuring text with renderer:', error);
+            console.log('Falling back to estimation for text measurement');
+
+            // Fallback to estimation if renderer measurement fails
+            return estimateTextDimensions(content, fontSize, width);
         }
-      }
-
-      return {
-        height: result.actualHeight,
-        width: Math.min(result.naturalWidth, width), // Use natural width if it fits
-        lineBreakInfo,
-      };
-    } catch (error) {
-      console.error('Error measuring text with renderer:', error);
-      console.log('Falling back to estimation for text measurement');
-
-      // Fallback to estimation if renderer measurement fails
-      return estimateTextDimensions(content, fontSize, width);
-    }
-  }
-
-  /**
-   * Enhanced measurement that also returns positioning information
-   */
-  async measureTextWithPosition(
-    content: string,
-    fontSize: number,
-    fontFamily: string = 'Arial',
-    width: number,
-    height: number,
-    align: 'left' | 'center' | 'right' = 'left',
-    verticalAlign: 'top' | 'middle' | 'bottom' = 'top',
-  ): Promise<TextDimensionResult & { suggestedHeight?: number }> {
-    const measurement = await this.measureText(
-      content,
-      fontSize,
-      fontFamily,
-      width,
-    );
-
-    // Suggest height adjustment if current height is too small
-    let suggestedHeight: number | undefined;
-    if (measurement.height > height) {
-      suggestedHeight = Math.ceil(measurement.height);
     }
 
-    return {
-      ...measurement,
-      suggestedHeight,
-    };
-  }
+    /**
+     * Enhanced measurement that also returns positioning information
+     */
+    async measureTextWithPosition(
+        content: string,
+        fontSize: number,
+        fontFamily: string = 'Arial',
+        width: number,
+        height: number,
+        align: 'left' | 'center' | 'right' = 'left',
+        verticalAlign: 'top' | 'middle' | 'bottom' = 'top',
+    ): Promise<TextDimensionResult & { suggestedHeight?: number }> {
+        const measurement = await this.measureText(
+            content,
+            fontSize,
+            fontFamily,
+            width,
+        );
 
-  /**
-   * Checks for overlaps using an element ID to find the actual DOM element
-   * This is the most accurate method as it uses the real rendered element bounds
-   */
-  async checkOverlapWithElementId(
-    elementId: string,
-    padding: number = 0,
-  ): Promise<{
-    hasOverlap: boolean;
-    overlappingElements: Array<{
-      id: string;
-      type: string;
-      position: { x: number; y: number };
-      bounds: { left: number; top: number; right: number; bottom: number };
-    }>;
-    isOutsideSlide: boolean;
-    elementBounds?: {
-      left: number;
-      top: number;
-      right: number;
-      bottom: number;
-      width: number;
-      height: number;
-    };
-  }> {
-    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
-      console.warn(
-        'Main window not available for DOM-based element overlap detection',
-      );
-      return {
-        hasOverlap: false,
-        overlappingElements: [],
-        isOutsideSlide: false,
-      };
+        // Suggest height adjustment if current height is too small
+        let suggestedHeight: number | undefined;
+        if (measurement.height > height) {
+            suggestedHeight = Math.ceil(measurement.height);
+        }
+
+        return {
+            ...measurement,
+            suggestedHeight,
+        };
     }
 
-    try {
-      const result = await this.mainWindow.webContents.executeJavaScript(`
+    /**
+     * Checks for overlaps using an element ID to find the actual DOM element
+     * This is the most accurate method as it uses the real rendered element bounds
+     */
+    async checkOverlapWithElementId(
+        elementId: string,
+        padding: number = 0,
+    ): Promise<{
+        hasOverlap: boolean;
+        overlappingElements: Array<{
+            id: string;
+            type: string;
+            position: { x: number; y: number };
+            bounds: {
+                left: number;
+                top: number;
+                right: number;
+                bottom: number;
+            };
+        }>;
+        isOutsideSlide: boolean;
+        elementBounds?: {
+            left: number;
+            top: number;
+            right: number;
+            bottom: number;
+            width: number;
+            height: number;
+        };
+    }> {
+        if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+            console.warn(
+                'Main window not available for DOM-based element overlap detection',
+            );
+            return {
+                hasOverlap: false,
+                overlappingElements: [],
+                isOutsideSlide: false,
+            };
+        }
+
+        try {
+            const result = await this.mainWindow.webContents.executeJavaScript(`
         (() => {
           const SLIDE_WIDTH = 1280;
           const SLIDE_HEIGHT = 720;
@@ -380,46 +387,53 @@ export class TextMeasurementService {
         })()
       `);
 
-      return result;
-    } catch (error) {
-      console.error('Error checking element overlap with DOM:', error);
-      return {
-        hasOverlap: false,
-        overlappingElements: [],
-        isOutsideSlide: false,
-      };
-    }
-  }
-
-  /**
-   * Checks for overlaps using actual DOM bounding boxes from the frontend
-   * This is more accurate than calculation-based methods as it uses real rendered elements
-   */
-  async checkOverlapWithDOM(
-    newElementPosition: { x: number; y: number },
-    newElementSize: { width: number; height: number },
-    excludeElementId?: string,
-  ): Promise<{
-    hasOverlap: boolean;
-    overlappingElements: Array<{
-      id: string;
-      type: string;
-      position: { x: number; y: number };
-      bounds: { left: number; top: number; right: number; bottom: number };
-    }>;
-    isOutsideSlide: boolean;
-  }> {
-    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
-      console.warn('Main window not available for DOM-based overlap detection');
-      return {
-        hasOverlap: false,
-        overlappingElements: [],
-        isOutsideSlide: false,
-      };
+            return result;
+        } catch (error) {
+            console.error('Error checking element overlap with DOM:', error);
+            return {
+                hasOverlap: false,
+                overlappingElements: [],
+                isOutsideSlide: false,
+            };
+        }
     }
 
-    try {
-      const result = await this.mainWindow.webContents.executeJavaScript(`
+    /**
+     * Checks for overlaps using actual DOM bounding boxes from the frontend
+     * This is more accurate than calculation-based methods as it uses real rendered elements
+     */
+    async checkOverlapWithDOM(
+        newElementPosition: { x: number; y: number },
+        newElementSize: { width: number; height: number },
+        excludeElementId?: string,
+    ): Promise<{
+        hasOverlap: boolean;
+        overlappingElements: Array<{
+            id: string;
+            type: string;
+            position: { x: number; y: number };
+            bounds: {
+                left: number;
+                top: number;
+                right: number;
+                bottom: number;
+            };
+        }>;
+        isOutsideSlide: boolean;
+    }> {
+        if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+            console.warn(
+                'Main window not available for DOM-based overlap detection',
+            );
+            return {
+                hasOverlap: false,
+                overlappingElements: [],
+                isOutsideSlide: false,
+            };
+        }
+
+        try {
+            const result = await this.mainWindow.webContents.executeJavaScript(`
         (() => {
           const SLIDE_WIDTH = 1280;
           const SLIDE_HEIGHT = 720;
@@ -502,60 +516,60 @@ export class TextMeasurementService {
         })()
       `);
 
-      return result;
-    } catch (error) {
-      console.error('Error checking overlap with DOM:', error);
-      return {
-        hasOverlap: false,
-        overlappingElements: [],
-        isOutsideSlide: false,
-      };
-    }
-  }
-
-  /**
-   * Gets Quill-specific text dimensions and overflow information
-   * Uses both Quill's API and DOM measurement for comprehensive analysis
-   */
-  async getQuillTextDimensions(elementId: string): Promise<{
-    elementFound: boolean;
-    quillInstance?: {
-      totalLength: number;
-      hasContent: boolean;
-      scrollHeight: number;
-      clientHeight: number;
-      scrollWidth: number;
-      clientWidth: number;
-      isScrollable: boolean;
-      contentOverflows: boolean;
-    };
-    containerBounds?: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    };
-    textBounds?: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    };
-    overflow?: {
-      overflowsContainer: boolean;
-      overflowsSlide: boolean;
-      needsVerticalScroll: boolean;
-      needsHorizontalScroll: boolean;
-      lineCount: number;
-    };
-  }> {
-    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
-      console.warn('Main window not available for Quill measurement');
-      return { elementFound: false };
+            return result;
+        } catch (error) {
+            console.error('Error checking overlap with DOM:', error);
+            return {
+                hasOverlap: false,
+                overlappingElements: [],
+                isOutsideSlide: false,
+            };
+        }
     }
 
-    try {
-      const result = await this.mainWindow.webContents.executeJavaScript(`
+    /**
+     * Gets Quill-specific text dimensions and overflow information
+     * Uses both Quill's API and DOM measurement for comprehensive analysis
+     */
+    async getQuillTextDimensions(elementId: string): Promise<{
+        elementFound: boolean;
+        quillInstance?: {
+            totalLength: number;
+            hasContent: boolean;
+            scrollHeight: number;
+            clientHeight: number;
+            scrollWidth: number;
+            clientWidth: number;
+            isScrollable: boolean;
+            contentOverflows: boolean;
+        };
+        containerBounds?: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        };
+        textBounds?: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        };
+        overflow?: {
+            overflowsContainer: boolean;
+            overflowsSlide: boolean;
+            needsVerticalScroll: boolean;
+            needsHorizontalScroll: boolean;
+            lineCount: number;
+        };
+    }> {
+        if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+            console.warn('Main window not available for Quill measurement');
+            return { elementFound: false };
+        }
+
+        try {
+            const result = await this.mainWindow.webContents.executeJavaScript(`
         (() => {
           const SLIDE_WIDTH = 1280;
           const SLIDE_HEIGHT = 720;
@@ -661,60 +675,67 @@ export class TextMeasurementService {
         })()
       `);
 
-      return result;
-    } catch (error) {
-      console.error('Error getting Quill text dimensions:', error);
-      return { elementFound: false };
-    }
-  }
-
-  /**
-   * Gets the actual rendered dimensions and text layout from DOM
-   * This provides the most accurate information including all CSS effects
-   */
-  async getActualElementDimensions(elementId: string): Promise<{
-    elementFound: boolean;
-    containerBounds?: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      left: number;
-      top: number;
-      right: number;
-      bottom: number;
-    };
-    textBounds?: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      left: number;
-      top: number;
-      right: number;
-      bottom: number;
-    };
-    textOverflow?: {
-      overflowsContainer: boolean;
-      overflowsSlide: boolean;
-      actualTextHeight: number;
-      actualTextWidth: number;
-      containerHeight: number;
-      containerWidth: number;
-      lineCount: number;
-    };
-    positioning?: {
-      isOutsideSlide: boolean;
-      slideCoordinates: { x: number; y: number; width: number; height: number };
-    };
-  }> {
-    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
-      console.warn('Main window not available for DOM element dimension check');
-      return { elementFound: false };
+            return result;
+        } catch (error) {
+            console.error('Error getting Quill text dimensions:', error);
+            return { elementFound: false };
+        }
     }
 
-    try {
-      const result = await this.mainWindow.webContents.executeJavaScript(`
+    /**
+     * Gets the actual rendered dimensions and text layout from DOM
+     * This provides the most accurate information including all CSS effects
+     */
+    async getActualElementDimensions(elementId: string): Promise<{
+        elementFound: boolean;
+        containerBounds?: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+            left: number;
+            top: number;
+            right: number;
+            bottom: number;
+        };
+        textBounds?: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+            left: number;
+            top: number;
+            right: number;
+            bottom: number;
+        };
+        textOverflow?: {
+            overflowsContainer: boolean;
+            overflowsSlide: boolean;
+            actualTextHeight: number;
+            actualTextWidth: number;
+            containerHeight: number;
+            containerWidth: number;
+            lineCount: number;
+        };
+        positioning?: {
+            isOutsideSlide: boolean;
+            slideCoordinates: {
+                x: number;
+                y: number;
+                width: number;
+                height: number;
+            };
+        };
+    }> {
+        if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+            console.warn(
+                'Main window not available for DOM element dimension check',
+            );
+            return { elementFound: false };
+        }
+
+        try {
+            const result = await this.mainWindow.webContents.executeJavaScript(`
         (() => {
           const SLIDE_WIDTH = 1280;
           const SLIDE_HEIGHT = 720;
@@ -861,12 +882,12 @@ export class TextMeasurementService {
         })()
       `);
 
-      return result;
-    } catch (error) {
-      console.error('Error getting actual element dimensions:', error);
-      return { elementFound: false };
+            return result;
+        } catch (error) {
+            console.error('Error getting actual element dimensions:', error);
+            return { elementFound: false };
+        }
     }
-  }
 }
 
 export const textMeasurementService = TextMeasurementService.getInstance();

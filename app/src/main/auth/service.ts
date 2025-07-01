@@ -3,342 +3,368 @@ import * as path from 'node:path';
 import { URL } from 'node:url';
 import { app, shell } from 'electron';
 import type {
-  IAuthService,
-  IUser,
+    IAuthService,
+    IUser,
 } from '../../common/domain/interfaces/auth.interface';
 import { Logger } from '../utils/logger';
 
 const CONFIG = {
-  apiBaseUrl: process.env.BACKEND_API_URL || 'https://api.deckium.xyz',
-  sessionPartition: 'persist:main',
-  windowWidth: 800,
-  windowHeight: 600,
-  tokenExpiry: 60 * 24 * 365, // 1 year
-  userDataFile: path.join(app.getPath('userData'), 'user-auth.json'),
-  authTimeoutMs: 120000,
+    apiBaseUrl: process.env.BACKEND_API_URL || 'https://api.deckium.xyz',
+    sessionPartition: 'persist:main',
+    windowWidth: 800,
+    windowHeight: 600,
+    tokenExpiry: 60 * 24 * 365, // 1 year
+    userDataFile: path.join(app.getPath('userData'), 'user-auth.json'),
+    authTimeoutMs: 120000,
 };
 
 export default class AuthService implements IAuthService {
-  private user: IUser | null = null;
+    private user: IUser | null = null;
 
-  private authPromise: Promise<void> | null = null;
+    private authPromise: Promise<void> | null = null;
 
-  private authResolver: (() => void) | null = null;
+    private authResolver: (() => void) | null = null;
 
-  private authRejecter: ((error: Error) => void) | null = null;
+    private authRejecter: ((error: Error) => void) | null = null;
 
-  private logger: Logger;
+    private logger: Logger;
 
-  constructor() {
-    this.logger = Logger.getInstance();
-    this.loadUserFromFile();
-  }
+    constructor() {
+        this.logger = Logger.getInstance();
+        this.loadUserFromFile();
+    }
 
-  private loadUserFromFile(): void {
-    this.logger.logSystem('Trying to load user data from file', 'info');
-    try {
-      if (fs.existsSync(CONFIG.userDataFile)) {
-        const userData = fs.readFileSync(CONFIG.userDataFile, 'utf8');
-        if (userData) {
-          const parsedUser = JSON.parse(userData);
+    private loadUserFromFile(): void {
+        this.logger.logSystem('Trying to load user data from file', 'info');
+        try {
+            if (fs.existsSync(CONFIG.userDataFile)) {
+                const userData = fs.readFileSync(CONFIG.userDataFile, 'utf8');
+                if (userData) {
+                    const parsedUser = JSON.parse(userData);
 
-          // Check if token is expired
-          if (parsedUser.expiresAt && parsedUser.expiresAt < Date.now()) {
-            this.logger.logSystem('Found expired user data, clearing', 'info');
-            this.clearUserData();
-            return;
-          }
+                    // Check if token is expired
+                    if (
+                        parsedUser.expiresAt &&
+                        parsedUser.expiresAt < Date.now()
+                    ) {
+                        this.logger.logSystem(
+                            'Found expired user data, clearing',
+                            'info',
+                        );
+                        this.clearUserData();
+                        return;
+                    }
 
-          this.logger.logSystem('Found valid user data', 'info');
-          this.user = parsedUser;
-          return;
+                    this.logger.logSystem('Found valid user data', 'info');
+                    this.user = parsedUser;
+                    return;
+                }
+            }
+            this.logger.logSystem('Found no user data', 'info');
+        } catch (error) {
+            this.logger.logSystem(
+                'Failed to load user data from file',
+                'warn',
+                {
+                    error:
+                        error instanceof Error ? error.message : String(error),
+                    filePath: CONFIG.userDataFile,
+                },
+            );
         }
-      }
-      this.logger.logSystem('Found no user data', 'info');
-    } catch (error) {
-      this.logger.logSystem('Failed to load user data from file', 'warn', {
-        error: error instanceof Error ? error.message : String(error),
-        filePath: CONFIG.userDataFile,
-      });
+
+        const fallbackAuthUrl = process.env.FALLBACK_AUTH_URL;
+        if (fallbackAuthUrl) {
+            try {
+                this.loadUserFromFallbackUrl(fallbackAuthUrl);
+                this.logger.logSystem('User loaded from fallback URL', 'info');
+            } catch (fallbackError) {
+                this.logger.logSystem(
+                    'Failed to load user data from fallback URL',
+                    'warn',
+                    {
+                        error:
+                            fallbackError instanceof Error
+                                ? fallbackError.message
+                                : String(fallbackError),
+                        fallbackUrl: fallbackAuthUrl,
+                    },
+                );
+            }
+        }
     }
 
-    const fallbackAuthUrl = process.env.FALLBACK_AUTH_URL;
-    if (fallbackAuthUrl) {
-      try {
-        this.loadUserFromFallbackUrl(fallbackAuthUrl);
-        this.logger.logSystem('User loaded from fallback URL', 'info');
-      } catch (fallbackError) {
-        this.logger.logSystem(
-          'Failed to load user data from fallback URL',
-          'warn',
-          {
-            error:
-              fallbackError instanceof Error
-                ? fallbackError.message
-                : String(fallbackError),
-            fallbackUrl: fallbackAuthUrl,
-          },
-        );
-      }
-    }
-  }
+    private loadUserFromFallbackUrl(fallbackUrl: string): void {
+        const parsedUrl = new URL(fallbackUrl);
 
-  private loadUserFromFallbackUrl(fallbackUrl: string): void {
-    const parsedUrl = new URL(fallbackUrl);
+        const token = parsedUrl.searchParams.get('token');
+        const userId = parsedUrl.searchParams.get('userId');
+        const email = parsedUrl.searchParams.get('email');
+        const name = parsedUrl.searchParams.get('name');
 
-    const token = parsedUrl.searchParams.get('token');
-    const userId = parsedUrl.searchParams.get('userId');
-    const email = parsedUrl.searchParams.get('email');
-    const name = parsedUrl.searchParams.get('name');
+        if (!token || !userId || !email) {
+            throw new Error(
+                'Missing required authentication parameters in fallback URL',
+            );
+        }
 
-    if (!token || !userId || !email) {
-      throw new Error(
-        'Missing required authentication parameters in fallback URL',
-      );
+        const expirationDate = Date.now() + CONFIG.tokenExpiry * 1000;
+
+        this.saveUserToFile({
+            id: userId,
+            username: name || email.split('@')[0],
+            email,
+            accessToken: token,
+            expiresAt: expirationDate,
+        });
+
+        this.logger.logSystem('User loaded from fallback URL', 'info', {
+            userId,
+            email,
+        });
     }
 
-    const expirationDate = Date.now() + CONFIG.tokenExpiry * 1000;
-
-    this.saveUserToFile({
-      id: userId,
-      username: name || email.split('@')[0],
-      email,
-      accessToken: token,
-      expiresAt: expirationDate,
-    });
-
-    this.logger.logSystem('User loaded from fallback URL', 'info', {
-      userId,
-      email,
-    });
-  }
-
-  private saveUserToFile(user: IUser): void {
-    this.user = user;
-    try {
-      fs.writeFileSync(CONFIG.userDataFile, JSON.stringify(user), 'utf8');
-      this.logger.logSystem('User data saved successfully', 'debug');
-    } catch (error) {
-      this.logger.logSystem('Failed to save user data to file', 'error', {
-        error: error instanceof Error ? error.message : String(error),
-        filePath: CONFIG.userDataFile,
-      });
-    }
-  }
-
-  private clearUserData(): void {
-    this.user = null;
-    try {
-      if (fs.existsSync(CONFIG.userDataFile)) {
-        fs.unlinkSync(CONFIG.userDataFile);
-        this.logger.logSystem('User data file cleared', 'debug');
-      }
-    } catch (error) {
-      this.logger.logSystem('Failed to clear user data file', 'warn', {
-        error: error instanceof Error ? error.message : String(error),
-        filePath: CONFIG.userDataFile,
-      });
-    }
-  }
-
-  async login(): Promise<void> {
-    if (this.authPromise) {
-      return this.authPromise;
+    private saveUserToFile(user: IUser): void {
+        this.user = user;
+        try {
+            fs.writeFileSync(CONFIG.userDataFile, JSON.stringify(user), 'utf8');
+            this.logger.logSystem('User data saved successfully', 'debug');
+        } catch (error) {
+            this.logger.logSystem('Failed to save user data to file', 'error', {
+                error: error instanceof Error ? error.message : String(error),
+                filePath: CONFIG.userDataFile,
+            });
+        }
     }
 
-    this.authPromise = new Promise((resolve, reject) => {
-      this.authResolver = resolve;
-      this.authRejecter = reject;
+    private clearUserData(): void {
+        this.user = null;
+        try {
+            if (fs.existsSync(CONFIG.userDataFile)) {
+                fs.unlinkSync(CONFIG.userDataFile);
+                this.logger.logSystem('User data file cleared', 'debug');
+            }
+        } catch (error) {
+            this.logger.logSystem('Failed to clear user data file', 'warn', {
+                error: error instanceof Error ? error.message : String(error),
+                filePath: CONFIG.userDataFile,
+            });
+        }
+    }
 
-      const authUrl = `${CONFIG.apiBaseUrl}/auth/login?redirect_type=desktop`;
+    async login(): Promise<void> {
+        if (this.authPromise) {
+            return this.authPromise;
+        }
 
-      shell.openExternal(authUrl).catch((error) => {
-        this.logger.logSystem(
-          'Failed to open external browser for auth',
-          'error',
-          {
-            error: error instanceof Error ? error.message : String(error),
-            authUrl,
-          },
-        );
-        this.cleanupAuthPromise();
-        reject(new Error('Failed to open browser for authentication'));
-      });
+        this.authPromise = new Promise((resolve, reject) => {
+            this.authResolver = resolve;
+            this.authRejecter = reject;
 
-      setTimeout(() => {
+            const authUrl = `${CONFIG.apiBaseUrl}/auth/login?redirect_type=desktop`;
+
+            shell.openExternal(authUrl).catch((error) => {
+                this.logger.logSystem(
+                    'Failed to open external browser for auth',
+                    'error',
+                    {
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                        authUrl,
+                    },
+                );
+                this.cleanupAuthPromise();
+                reject(new Error('Failed to open browser for authentication'));
+            });
+
+            setTimeout(() => {
+                if (this.authRejecter) {
+                    this.logger.logSystem('Authentication timeout', 'warn', {
+                        timeoutMs: CONFIG.authTimeoutMs,
+                    });
+                    this.cleanupAuthPromise();
+                    reject(
+                        new Error('Authentication timeout - please try again'),
+                    );
+                }
+            }, CONFIG.authTimeoutMs);
+        });
+
+        return this.authPromise;
+    }
+
+    handleDeepLink(url: string): void {
+        try {
+            const parsedUrl = new URL(url);
+            this.logger.logSystem('Processing deep link', 'debug', { url });
+
+            if (parsedUrl.protocol !== 'deckium:') {
+                return;
+            }
+
+            if (parsedUrl.hostname === 'auth') {
+                if (parsedUrl.pathname === '/success') {
+                    this.handleAuthSuccess(parsedUrl);
+                } else if (parsedUrl.pathname === '/error') {
+                    this.handleAuthError(parsedUrl);
+                }
+            }
+        } catch (error) {
+            this.logger.logSystem('Error processing deep link', 'error', {
+                error: error instanceof Error ? error.message : String(error),
+                url,
+            });
+            this.handleAuthError(
+                new URL('deckium://auth/error?error=Invalid deep link'),
+            );
+        }
+    }
+
+    private async handleAuthSuccess(url: URL): Promise<void> {
+        try {
+            const token = url.searchParams.get('token');
+            const userId = url.searchParams.get('userId');
+            const email = url.searchParams.get('email');
+            const name = url.searchParams.get('name');
+
+            if (!token || !userId || !email) {
+                throw new Error('Missing required authentication parameters');
+            }
+
+            const expirationDate = Date.now() + CONFIG.tokenExpiry * 1000;
+
+            this.saveUserToFile({
+                id: userId,
+                username: name || email.split('@')[0],
+                email,
+                accessToken: token,
+                expiresAt: expirationDate,
+            });
+
+            this.logger.logSystem('Authentication successful', 'info', {
+                userId,
+                email,
+            });
+
+            if (this.authResolver) {
+                this.authResolver();
+                this.cleanupAuthPromise();
+            }
+        } catch (error) {
+            this.logger.logSystem(
+                'Authentication success handling failed',
+                'error',
+                {
+                    error:
+                        error instanceof Error ? error.message : String(error),
+                },
+            );
+            if (this.authRejecter) {
+                this.authRejecter(
+                    error instanceof Error ? error : new Error(String(error)),
+                );
+                this.cleanupAuthPromise();
+            }
+        }
+    }
+
+    private handleAuthError(url: URL): void {
+        const errorMessage =
+            url.searchParams.get('error') || 'Authentication failed';
+
+        this.logger.logSystem('Authentication error received', 'error', {
+            errorMessage,
+            url: url.toString(),
+        });
+
         if (this.authRejecter) {
-          this.logger.logSystem('Authentication timeout', 'warn', {
-            timeoutMs: CONFIG.authTimeoutMs,
-          });
-          this.cleanupAuthPromise();
-          reject(new Error('Authentication timeout - please try again'));
+            this.authRejecter(new Error(errorMessage));
+            this.cleanupAuthPromise();
         }
-      }, CONFIG.authTimeoutMs);
-    });
+    }
 
-    return this.authPromise;
-  }
+    private cleanupAuthPromise(): void {
+        this.authPromise = null;
+        this.authResolver = null;
+        this.authRejecter = null;
+    }
 
-  handleDeepLink(url: string): void {
-    try {
-      const parsedUrl = new URL(url);
-      this.logger.logSystem('Processing deep link', 'debug', { url });
+    async logout(): Promise<void> {
+        this.clearUserData();
 
-      if (parsedUrl.protocol !== 'deckium:') {
-        return;
-      }
-
-      if (parsedUrl.hostname === 'auth') {
-        if (parsedUrl.pathname === '/success') {
-          this.handleAuthSuccess(parsedUrl);
-        } else if (parsedUrl.pathname === '/error') {
-          this.handleAuthError(parsedUrl);
+        try {
+            await fetch(`${CONFIG.apiBaseUrl}/auth/logout`, {
+                credentials: 'include',
+            });
+            this.logger.logSystem('User logout successful', 'info');
+        } catch (error) {
+            this.logger.logSystem('Logout request failed (ignoring)', 'debug', {
+                error: error instanceof Error ? error.message : String(error),
+            });
         }
-      }
-    } catch (error) {
-      this.logger.logSystem('Error processing deep link', 'error', {
-        error: error instanceof Error ? error.message : String(error),
-        url,
-      });
-      this.handleAuthError(
-        new URL('deckium://auth/error?error=Invalid deep link'),
-      );
     }
-  }
 
-  private async handleAuthSuccess(url: URL): Promise<void> {
-    try {
-      const token = url.searchParams.get('token');
-      const userId = url.searchParams.get('userId');
-      const email = url.searchParams.get('email');
-      const name = url.searchParams.get('name');
-
-      if (!token || !userId || !email) {
-        throw new Error('Missing required authentication parameters');
-      }
-
-      const expirationDate = Date.now() + CONFIG.tokenExpiry * 1000;
-
-      this.saveUserToFile({
-        id: userId,
-        username: name || email.split('@')[0],
-        email,
-        accessToken: token,
-        expiresAt: expirationDate,
-      });
-
-      this.logger.logSystem('Authentication successful', 'info', {
-        userId,
-        email,
-      });
-
-      if (this.authResolver) {
-        this.authResolver();
-        this.cleanupAuthPromise();
-      }
-    } catch (error) {
-      this.logger.logSystem('Authentication success handling failed', 'error', {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      if (this.authRejecter) {
-        this.authRejecter(
-          error instanceof Error ? error : new Error(String(error)),
-        );
-        this.cleanupAuthPromise();
-      }
+    async getUser(): Promise<IUser | null> {
+        // Don't automatically refresh expired tokens, just clear them
+        if (this.user?.expiresAt && this.user.expiresAt < Date.now()) {
+            this.logger.logSystem(
+                'Token expired, clearing user session',
+                'info',
+            );
+            this.clearUserData();
+        }
+        return this.user;
     }
-  }
 
-  private handleAuthError(url: URL): void {
-    const errorMessage =
-      url.searchParams.get('error') || 'Authentication failed';
+    async getBalance(): Promise<number> {
+        try {
+            const user = await this.getUser();
+            if (!user) {
+                return 0;
+            }
 
-    this.logger.logSystem('Authentication error received', 'error', {
-      errorMessage,
-      url: url.toString(),
-    });
+            const response = await fetch(
+                `${CONFIG.apiBaseUrl}/transactions/balance`,
+                {
+                    headers: {
+                        Cookie: `access_token=Bearer ${user.accessToken}`,
+                    },
+                    credentials: 'include',
+                },
+            );
 
-    if (this.authRejecter) {
-      this.authRejecter(new Error(errorMessage));
-      this.cleanupAuthPromise();
+            if (!response.ok) {
+                throw new Error(
+                    `Failed to get balance: ${response.statusText}`,
+                );
+            }
+
+            const data = await response.text();
+            const balance = parseFloat(data);
+
+            return Number.isNaN(balance) ? 0 : balance;
+        } catch (error) {
+            this.logger.logSystem('Error fetching user balance', 'warn', {
+                error: error instanceof Error ? error.message : String(error),
+            });
+            return 0;
+        }
     }
-  }
 
-  private cleanupAuthPromise(): void {
-    this.authPromise = null;
-    this.authResolver = null;
-    this.authRejecter = null;
-  }
-
-  async logout(): Promise<void> {
-    this.clearUserData();
-
-    try {
-      await fetch(`${CONFIG.apiBaseUrl}/auth/logout`, {
-        credentials: 'include',
-      });
-      this.logger.logSystem('User logout successful', 'info');
-    } catch (error) {
-      this.logger.logSystem('Logout request failed (ignoring)', 'debug', {
-        error: error instanceof Error ? error.message : String(error),
-      });
+    async refreshTokens(): Promise<boolean> {
+        // This method is now only for explicit user-initiated refresh
+        // It should not be called automatically for expired tokens
+        this.logger.logSystem('Manual token refresh requested', 'info');
+        try {
+            await this.login();
+            return !!this.user;
+        } catch (error) {
+            this.logger.logSystem('Manual token refresh failed', 'warn', {
+                error: error instanceof Error ? error.message : String(error),
+            });
+            return false;
+        }
     }
-  }
-
-  async getUser(): Promise<IUser | null> {
-    // Don't automatically refresh expired tokens, just clear them
-    if (this.user?.expiresAt && this.user.expiresAt < Date.now()) {
-      this.logger.logSystem('Token expired, clearing user session', 'info');
-      this.clearUserData();
-    }
-    return this.user;
-  }
-
-  async getBalance(): Promise<number> {
-    try {
-      const user = await this.getUser();
-      if (!user) {
-        return 0;
-      }
-
-      const response = await fetch(
-        `${CONFIG.apiBaseUrl}/transactions/balance`,
-        {
-          headers: {
-            Cookie: `access_token=Bearer ${user.accessToken}`,
-          },
-          credentials: 'include',
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to get balance: ${response.statusText}`);
-      }
-
-      const data = await response.text();
-      const balance = parseFloat(data);
-
-      return Number.isNaN(balance) ? 0 : balance;
-    } catch (error) {
-      this.logger.logSystem('Error fetching user balance', 'warn', {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return 0;
-    }
-  }
-
-  async refreshTokens(): Promise<boolean> {
-    // This method is now only for explicit user-initiated refresh
-    // It should not be called automatically for expired tokens
-    this.logger.logSystem('Manual token refresh requested', 'info');
-    try {
-      await this.login();
-      return !!this.user;
-    } catch (error) {
-      this.logger.logSystem('Manual token refresh failed', 'warn', {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return false;
-    }
-  }
 }
