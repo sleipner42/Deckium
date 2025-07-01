@@ -103,6 +103,8 @@ const createWindow = async () => {
             process.platform === 'darwin' ? 'hiddenInset' : 'default',
         trafficLightPosition:
             process.platform === 'darwin' ? { x: 10, y: 10 } : undefined,
+        backgroundColor: '#1e1e1e',
+        darkTheme: true,
         webPreferences: {
             preload: app.isPackaged
                 ? path.join(__dirname, 'preload.js')
@@ -113,6 +115,11 @@ const createWindow = async () => {
     });
 
     mainWindow.loadURL(resolveHtmlPath('index.html'));
+
+    // Set dark theme for Linux window decorations
+    if (process.platform === 'linux') {
+        mainWindow.setMenuBarVisibility(true);
+    }
 
     mainWindow.on('ready-to-show', () => {
         if (!mainWindow) {
