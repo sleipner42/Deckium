@@ -16,6 +16,8 @@ import { setupPresentationIPC } from './presentation/ipc-handler';
 import { PresentationService } from './presentation/service';
 import { setupTextMeasurementIPC } from './text-measurement/ipc-handler';
 import { textMeasurementService } from './text-measurement/service';
+import { setupPDFExportIPC } from './pdf-export/ipc-handler';
+import { PDFExportService } from './pdf-export/service';
 import { getProtocolArgs, resolveHtmlPath } from './util';
 
 dotenv.config();
@@ -28,6 +30,7 @@ let criticService: CriticService;
 let aiServiceFactory: IAIServiceFactory;
 let authService: AuthService;
 let lintingService: LintingService;
+let pdfExportService: PDFExportService;
 
 export default async function getScreenshotFromSecondaryWindow(): Promise<string> {
     if (!secondWindow) {
@@ -95,9 +98,11 @@ const createWindow = async () => {
         fullscreen: false,
         width: 1280,
         height: 800,
-        frame: false,
-        titleBarStyle: 'hiddenInset',
-        trafficLightPosition: { x: 10, y: 10 },
+        frame: process.platform === 'linux',
+        titleBarStyle:
+            process.platform === 'darwin' ? 'hiddenInset' : 'default',
+        trafficLightPosition:
+            process.platform === 'darwin' ? { x: 10, y: 10 } : undefined,
         webPreferences: {
             preload: app.isPackaged
                 ? path.join(__dirname, 'preload.js')
@@ -165,6 +170,11 @@ const createSecondWindow = async () => {
     secondWindow.on('closed', () => {
         secondWindow = null;
     });
+
+    // Set secondary window for PDF export service if it exists
+    if (pdfExportService) {
+        pdfExportService.setSecondWindow(secondWindow);
+    }
 };
 
 app.on('window-all-closed', () => {
@@ -217,6 +227,7 @@ if (!gotTheLock) {
 
             presentationService = new PresentationService();
             authService = new AuthService();
+            pdfExportService = new PDFExportService(presentationService);
 
             lintingService = new LintingService();
             lintingService.setPresentationService(presentationService);
@@ -238,6 +249,12 @@ if (!gotTheLock) {
             setupPresentationIPC(presentationService);
             setupTextMeasurementIPC();
             new LintingIpcHandler(lintingService);
+            setupPDFExportIPC(pdfExportService);
+
+            // Set secondary window for PDF export service if it exists
+            if (secondWindow) {
+                pdfExportService.setSecondWindow(secondWindow);
+            }
         })
         .catch(console.log);
 }

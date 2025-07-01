@@ -130,6 +130,20 @@ export default class MenuBuilder {
                         }
                     },
                 },
+                { type: 'separator' },
+                {
+                    label: 'Export to PDF...',
+                    accelerator: 'Command+E',
+                    click: async () => {
+                        try {
+                            await this.mainWindow.webContents.executeJavaScript(`
+                                window.electron.pdfExport.exportToPDF();
+                            `);
+                        } catch (error) {
+                            console.error('PDF export error:', error);
+                        }
+                    },
+                },
             ],
         };
 
@@ -305,6 +319,20 @@ export default class MenuBuilder {
                                     this.mainWindow,
                                     true,
                                 );
+                            }
+                        },
+                    },
+                    { type: 'separator' as const },
+                    {
+                        label: '&Export to PDF...',
+                        accelerator: 'Ctrl+E',
+                        click: async () => {
+                            try {
+                                await this.mainWindow.webContents.executeJavaScript(`
+                                    window.electron.pdfExport.exportToPDF();
+                                `);
+                            } catch (error) {
+                                console.error('PDF export error:', error);
                             }
                         },
                     },

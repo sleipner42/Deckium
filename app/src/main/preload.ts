@@ -75,12 +75,19 @@ export type LintingChannels =
     | 'linting:slide-linted'
     | 'linting:errors-cleared';
 
+export type PDFExportChannels =
+    | 'pdf-export:export-to-pdf'
+    | 'pdf-export:progress'
+    | 'pdf-export:complete'
+    | 'pdf-export:error';
+
 type IpcChannels =
     | PresentationChannels
     | AIChannels
     | CriticChannels
     | LintingChannels
-    | AuthChannels;
+    | AuthChannels
+    | PDFExportChannels;
 
 const electronHandler = {
     ipcRenderer: {
@@ -274,6 +281,11 @@ const electronHandler = {
                 'linting:get-errors-by-severity',
                 severity,
             );
+        },
+        pdfExport: {
+            exportToPDF() {
+                return ipcRenderer.invoke('pdf-export:export-to-pdf');
+            },
         },
     },
 };
