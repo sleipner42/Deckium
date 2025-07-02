@@ -2,7 +2,7 @@ import { Box } from '@mui/material';
 import Quill from 'quill';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import type { TextBox } from '../../../../../common/domain/entities/types';
+import type { TextBox, ContentElement } from '../../../../../common/domain/entities/types';
 import { useTextEditing } from '../../../context/TextEditingContext';
 import { ResizeHandles } from '../ResizeHandles';
 
@@ -44,6 +44,9 @@ interface TextElementProps {
     element: TextBox;
     onClick: (event?: React.MouseEvent) => void;
     onContextMenu?: (event: React.MouseEvent) => void;
+    onMultiElementUpdate?: (updates: Array<{elementId: string, updates: Partial<ContentElement>}>) => void;
+    selectedElementIds?: string[];
+    slideElements?: ContentElement[];
     isSelected: boolean;
     isEditing: boolean;
     onStartEditing: () => void;

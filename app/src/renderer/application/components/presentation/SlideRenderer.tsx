@@ -286,6 +286,16 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         }
     };
 
+    // Handle multi-element updates for dragging multiple selected elements
+    const handleMultiElementUpdate = (updates: Array<{elementId: string, updates: Partial<ContentElement>}>) => {
+        if (readOnly) return;
+        
+        // Apply all updates
+        updates.forEach(({elementId, updates: elementUpdates}) => {
+            updateElementWithSnap(elementId, elementUpdates);
+        });
+    };
+
     const renderElement = (element: ContentElement) => {
         const commonProps = {
             element,
@@ -294,6 +304,9 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             onContextMenu: (event: React.MouseEvent) =>
                 handleContextMenu(event, element.id),
             onElementUpdate: readOnly ? undefined : updateElementWithSnap,
+            onMultiElementUpdate: readOnly ? undefined : handleMultiElementUpdate,
+            selectedElementIds,
+            slideElements: slide.elements,
             isSelected:
                 !readOnly && selectableElements && isSelected(element.id),
             isEditing: !readOnly && selectableElements && isEditing(element.id),
@@ -311,6 +324,9 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 handleElementClick(element.id, event),
             onContextMenu: (event: React.MouseEvent) =>
                 handleContextMenu(event, element.id),
+            onMultiElementUpdate: readOnly ? undefined : handleMultiElementUpdate,
+            selectedElementIds,
+            slideElements: slide.elements,
             isSelected:
                 !readOnly && selectableElements && isSelected(element.id),
             isEditing: !readOnly && selectableElements && isEditing(element.id),

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Shape } from '../../../../../common/domain/entities/types';
+import { Shape, ContentElement } from '../../../../../common/domain/entities/types';
 import { ResizeHandles } from '../ResizeHandles';
 
 interface ShapeElementProps {
@@ -7,6 +7,9 @@ interface ShapeElementProps {
     onClick?: (event?: React.MouseEvent) => void;
     onContextMenu?: (event: React.MouseEvent) => void;
     onElementUpdate?: (elementId: string, updates: Partial<Shape>) => void;
+    onMultiElementUpdate?: (updates: Array<{elementId: string, updates: Partial<ContentElement>}>) => void;
+    selectedElementIds?: string[];
+    slideElements?: ContentElement[];
     isSelected: boolean;
     isEditing: boolean;
     readOnly?: boolean;
@@ -17,6 +20,9 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
     onClick,
     onContextMenu,
     onElementUpdate,
+    onMultiElementUpdate,
+    selectedElementIds = [],
+    slideElements = [],
     isSelected,
     isEditing,
     readOnly = false,
@@ -33,11 +39,14 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
     } = element;
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const [initialPositions, setInitialPositions] = useState<{[key: string]: {x: number, y: number}}>({});
 
     const onElementUpdateRef = useRef(onElementUpdate);
+    const onMultiElementUpdateRef = useRef(onMultiElementUpdate);
     useEffect(() => {
         onElementUpdateRef.current = onElementUpdate;
-    }, [onElementUpdate]);
+        onMultiElementUpdateRef.current = onMultiElementUpdate;
+    }, [onElementUpdate, onMultiElementUpdate]);
 
     const commonStyles: React.CSSProperties = {
         position: 'absolute',
@@ -71,13 +80,38 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
     // Setup mouse move and mouse up event listeners
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            if (isDragging && onElementUpdateRef.current) {
-                onElementUpdateRef.current(element.id, {
-                    position: {
-                        x: e.clientX - dragOffset.x,
-                        y: e.clientY - dragOffset.y,
-                    },
-                });
+            if (isDragging) {
+                const newX = e.clientX - dragOffset.x;
+                const newY = e.clientY - dragOffset.y;
+                const deltaX = newX - position.x;
+                const deltaY = newY - position.y;
+
+                // Check if multiple elements are selected and we have multi-element update capability
+                if (selectedElementIds.length > 1 && onMultiElementUpdateRef.current) {
+                    // Move all selected elements
+                    const updates = selectedElementIds.map(elementId => {
+                        const elem = slideElements.find(el => el.id === elementId);
+                        if (elem) {
+                            return {
+                                elementId,
+                                updates: {
+                                    position: {
+                                        x: elem.position.x + deltaX,
+                                        y: elem.position.y + deltaY,
+                                    }
+                                }
+                            };
+                        }
+                        return null;
+                    }).filter(Boolean) as Array<{elementId: string, updates: Partial<ContentElement>}>;
+                    
+                    onMultiElementUpdateRef.current(updates);
+                } else if (onElementUpdateRef.current) {
+                    // Single element move
+                    onElementUpdateRef.current(element.id, {
+                        position: { x: newX, y: newY },
+                    });
+                }
             }
         };
 
@@ -94,7 +128,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, dragOffset, element.id]);
+    }, [isDragging, dragOffset, element.id, selectedElementIds, slideElements, position.x, position.y]);
 
     const handleClick = (e: React.MouseEvent) => {
         if (readOnly) return;
