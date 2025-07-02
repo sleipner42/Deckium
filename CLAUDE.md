@@ -20,8 +20,8 @@ npm install
 
 # Development
 npm start             # Start the app in development mode
-npm run lint          # Run linting
-npm run lint:fix      # Run linting with auto-fix
+npm run check         # Check linting and formatting
+npm run check:fix     # Auto-fix linting and formatting issues
 npm test              # Run tests
 
 # Building and Packaging
@@ -119,3 +119,100 @@ The FastAPI backend provides:
 3. The frontend and backend are separate applications:
    - They can be developed and run independently
    - The backend is not strictly required for basic app functionality
+
+## Code Quality and Formatting
+
+The project uses **Biome** for linting and code formatting:
+
+1. **Configuration**: Located in `/app/biome.json`
+   - Linting rules with recommended defaults
+   - Formatting with 4-space indentation
+   - Single quotes for JavaScript, double quotes for JSX
+   - Line width of 80 characters
+
+2. **Available Scripts**:
+   ```bash
+   # Linting (code quality checks)
+   npm run lint          # Check linting issues only
+   npm run lint:fix      # Auto-fix linting issues
+   
+   # Formatting (code style)
+   npm run format        # Format code and save changes
+   npm run format:check  # Check formatting without changing files
+   
+   # Combined operations
+   npm run check         # Check both linting and formatting
+   npm run check:fix     # Fix both linting and formatting issues
+   
+   # Direct Biome commands (equivalent)
+   biome check src/                 # Same as npm run lint
+   biome check --write src/         # Same as npm run lint:fix
+   biome format --write src/        # Same as npm run format
+   biome format src/                # Same as npm run format:check
+   ```
+
+3. **Integration**: 
+   - Biome replaces ESLint and Prettier for this project
+   - Rules are configured to be strict but practical for development
+   - Some TypeScript-specific rules are disabled for flexibility
+
+4. **Recommended Workflow**:
+   ```bash
+   # Before committing code
+   npm run check:fix     # Fix all linting and formatting issues
+   npm run build         # Ensure code compiles successfully
+   
+   # For quick checks during development
+   npm run check         # Check without modifying files
+   ```
+
+## User Interface Features
+
+### Multi-Element Selection and Manipulation
+
+The presentation editor supports advanced multi-element operations:
+
+1. **Selection**:
+   - **Single Click**: Select individual elements
+   - **Ctrl+Click** (Cmd+Click on Mac): Toggle element selection for multi-selection
+   - **Background Click**: Clear all selections
+   - **Delete Key**: Delete all selected elements
+
+2. **Multi-Element Dragging**:
+   - When multiple elements are selected, dragging any element moves the entire group
+   - **Smart Snapping**: Only the dragged element snaps to alignment guides
+   - **Relative Positioning**: Other elements maintain their relative positions to the dragged element
+   - **Implementation**: Located in element components (`/app/src/renderer/application/components/presentation/elements/`)
+
+3. **Supported Elements**:
+   - ✅ ShapeElement (rectangles, circles, triangles)
+   - ✅ TextElement (text boxes with rich editing)
+   - ✅ ImageElement (embedded images)
+   - 🔄 PlotElement and BarChartElement (partial support)
+
+4. **Technical Implementation**:
+   - Primary element receives snap calculations via `calculateSnapPosition()`
+   - Secondary elements receive the same delta movement without individual snapping
+   - Coordinated through `handleMultiElementUpdate()` in SlideRenderer
+   - State managed via `selectedElementIds[]` in PresentationContext
+
+### PDF Export System
+
+The application includes a comprehensive PDF export system:
+
+1. **Features**:
+   - Export single slides or entire presentations
+   - Preserves text as real text (not images) with accurate positioning
+   - High-quality output using Electron's native PDF generation
+   - PDF merging for multi-slide exports using pdf-lib
+
+2. **Implementation**:
+   - **Service**: `/app/src/main/pdf-export/service.ts`
+   - **Hidden Window Rendering**: Uses off-screen window for slide capture
+   - **Menu Integration**: File > Export to PDF (Ctrl+E / Cmd+E)
+   - **Background Processing**: No UI disruption during export
+
+3. **Technical Details**:
+   - Uses `webContents.printToPDF()` for native PDF generation
+   - Cycles through slides in hidden window only
+   - Merges multiple PDFs using pdf-lib for seamless output
