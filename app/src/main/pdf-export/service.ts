@@ -1,11 +1,11 @@
 import { BrowserWindow, dialog } from 'electron';
 import fs from 'fs';
-import path from 'path';
 import { jsPDF } from 'jspdf';
+import path from 'path';
 import { PDFDocument } from 'pdf-lib';
 import { Presentation } from '../../common/domain/entities/types';
-import { PresentationService } from '../presentation/service';
 import { setSlideInHiddenWindow } from '../main';
+import { PresentationService } from '../presentation/service';
 
 export interface PDFExportProgress {
     slideIndex: number;
@@ -27,24 +27,27 @@ export class PDFExportService {
         this.secondWindow = window;
     }
 
-
     /**
      * Export the entire presentation to PDF
      */
     async exportToPDF(
         mainWindow: BrowserWindow,
-        onProgress?: (progress: PDFExportProgress) => void
+        onProgress?: (progress: PDFExportProgress) => void,
     ): Promise<string | null> {
         try {
             console.log('Starting PDF export...');
-            
+
             if (!this.secondWindow) {
-                throw new Error('Secondary window not available for PDF export');
+                throw new Error(
+                    'Secondary window not available for PDF export',
+                );
             }
 
             const presentation = this.presentationService.getPresentation();
-            console.log(`Presentation loaded: ${presentation.title}, slides: ${presentation.slides.length}`);
-            
+            console.log(
+                `Presentation loaded: ${presentation.title}, slides: ${presentation.slides.length}`,
+            );
+
             const slides = presentation.slides;
 
             if (slides.length === 0) {
@@ -53,11 +56,16 @@ export class PDFExportService {
 
             // Log slide information
             slides.forEach((slide, index) => {
-                console.log(`Slide ${index + 1}: ID=${slide.id}, Title="${slide.title || 'Untitled'}"`);
+                console.log(
+                    `Slide ${index + 1}: ID=${slide.id}, Title="${slide.title || 'Untitled'}"`,
+                );
             });
 
             // Show save dialog
-            const savePath = await this.showSaveDialog(mainWindow, presentation);
+            const savePath = await this.showSaveDialog(
+                mainWindow,
+                presentation,
+            );
             if (!savePath) {
                 return null; // User cancelled
             }
@@ -67,41 +75,49 @@ export class PDFExportService {
                 totalSlides: slides.length,
                 currentSlide: slides[0]?.title || 'Slide 1',
                 status: 'starting',
-                message: 'Initializing PDF export...'
+                message: 'Initializing PDF export...',
             });
 
             // Try Electron's printToPDF first (preserves real text)
             try {
-                const pdfData = await this.exportWithElectronPDF(slides, onProgress);
+                const pdfData = await this.exportWithElectronPDF(
+                    slides,
+                    onProgress,
+                );
                 await fs.promises.writeFile(savePath, pdfData);
-                
+
                 onProgress?.({
                     slideIndex: slides.length,
                     totalSlides: slides.length,
                     currentSlide: '',
                     status: 'complete',
-                    message: 'PDF export completed successfully'
+                    message: 'PDF export completed successfully',
                 });
 
                 return savePath;
             } catch (electronError) {
-                console.warn('Electron PDF export failed, falling back to image-based export:', electronError);
-                
+                console.warn(
+                    'Electron PDF export failed, falling back to image-based export:',
+                    electronError,
+                );
+
                 // Fallback to image-based export
-                const pdfBuffer = await this.exportWithImageFallback(slides, onProgress);
+                const pdfBuffer = await this.exportWithImageFallback(
+                    slides,
+                    onProgress,
+                );
                 await fs.promises.writeFile(savePath, pdfBuffer);
-                
+
                 onProgress?.({
                     slideIndex: slides.length,
                     totalSlides: slides.length,
                     currentSlide: '',
                     status: 'complete',
-                    message: 'PDF export completed (image-based)'
+                    message: 'PDF export completed (image-based)',
                 });
 
                 return savePath;
             }
-
         } catch (error) {
             console.error('PDF export error:', error);
             onProgress?.({
@@ -109,7 +125,10 @@ export class PDFExportService {
                 totalSlides: 0,
                 currentSlide: '',
                 status: 'error',
-                message: error instanceof Error ? error.message : 'Unknown error occurred'
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : 'Unknown error occurred',
             });
             throw error;
         }
@@ -120,50 +139,56 @@ export class PDFExportService {
      */
     private async exportWithElectronPDF(
         slides: any[],
-        onProgress?: (progress: PDFExportProgress) => void
+        onProgress?: (progress: PDFExportProgress) => void,
     ): Promise<Buffer> {
         const pdfBuffers: Buffer[] = [];
 
         for (let i = 0; i < slides.length; i++) {
             const slide = slides[i];
-            
+
             onProgress?.({
                 slideIndex: i + 1,
                 totalSlides: slides.length,
                 currentSlide: slide.title || `Slide ${i + 1}`,
                 status: 'processing',
-                message: `Generating PDF for slide ${i + 1}...`
+                message: `Generating PDF for slide ${i + 1}...`,
             });
 
             // Set the slide in the hidden viewer window only (don't disturb the main window)
-            console.log(`Setting slide ${slide.id} in hidden viewer for PDF generation`);
+            console.log(
+                `Setting slide ${slide.id} in hidden viewer for PDF generation`,
+            );
             await setSlideInHiddenWindow(slide.id);
 
             // Wait for rendering
-            await new Promise(resolve => setTimeout(resolve, 800));
+            await new Promise((resolve) => setTimeout(resolve, 800));
 
             // Generate PDF for this slide
-            console.log(`Generating PDF for slide ${i + 1}/${slides.length}: ${slide.title || 'Untitled'}`);
-            
+            console.log(
+                `Generating PDF for slide ${i + 1}/${slides.length}: ${slide.title || 'Untitled'}`,
+            );
+
             const pdfData = await this.secondWindow!.webContents.printToPDF({
                 pageSize: 'A4',
                 margins: {
                     top: 0,
                     bottom: 0,
                     left: 0,
-                    right: 0
+                    right: 0,
                 },
                 printBackground: true,
-                landscape: true
+                landscape: true,
             });
-            
+
             console.log(`PDF data generated, size: ${pdfData.length} bytes`);
 
             pdfBuffers.push(pdfData);
         }
 
-        console.log(`Generated ${pdfBuffers.length} PDF buffers, total sizes: ${pdfBuffers.map(b => b.length).join(', ')} bytes`);
-        
+        console.log(
+            `Generated ${pdfBuffers.length} PDF buffers, total sizes: ${pdfBuffers.map((b) => b.length).join(', ')} bytes`,
+        );
+
         // For single slide, return directly
         if (pdfBuffers.length === 1) {
             return pdfBuffers[0];
@@ -179,21 +204,28 @@ export class PDFExportService {
      */
     private async mergePDFs(pdfBuffers: Buffer[]): Promise<Buffer> {
         console.log(`Merging ${pdfBuffers.length} PDFs...`);
-        
+
         const mergedPdf = await PDFDocument.create();
 
         for (let i = 0; i < pdfBuffers.length; i++) {
-            console.log(`Processing PDF ${i + 1}/${pdfBuffers.length} (${pdfBuffers[i].length} bytes)`);
-            
+            console.log(
+                `Processing PDF ${i + 1}/${pdfBuffers.length} (${pdfBuffers[i].length} bytes)`,
+            );
+
             const pdfDoc = await PDFDocument.load(pdfBuffers[i]);
-            const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
-            
+            const pages = await mergedPdf.copyPages(
+                pdfDoc,
+                pdfDoc.getPageIndices(),
+            );
+
             pages.forEach((page) => mergedPdf.addPage(page));
         }
 
         const mergedPdfBytes = await mergedPdf.save();
-        console.log(`Merged PDF created, final size: ${mergedPdfBytes.length} bytes`);
-        
+        console.log(
+            `Merged PDF created, final size: ${mergedPdfBytes.length} bytes`,
+        );
+
         return Buffer.from(mergedPdfBytes);
     }
 
@@ -202,46 +234,52 @@ export class PDFExportService {
      */
     private async exportWithImageFallback(
         slides: any[],
-        onProgress?: (progress: PDFExportProgress) => void
+        onProgress?: (progress: PDFExportProgress) => void,
     ): Promise<Buffer> {
         const pdf = new jsPDF({
             orientation: 'landscape',
             unit: 'mm',
-            format: 'a4' // Use standard A4 size for better compatibility
+            format: 'a4', // Use standard A4 size for better compatibility
         });
 
         let isFirstSlide = true;
 
         for (let i = 0; i < slides.length; i++) {
             const slide = slides[i];
-            
+
             onProgress?.({
                 slideIndex: i + 1,
                 totalSlides: slides.length,
                 currentSlide: slide.title || `Slide ${i + 1}`,
                 status: 'processing',
-                message: `Capturing slide ${i + 1}...`
+                message: `Capturing slide ${i + 1}...`,
             });
 
             // Set the slide in the hidden viewer window only (don't disturb the main window)
-            console.log(`Setting slide ${slide.id} in hidden viewer for capture`);
+            console.log(
+                `Setting slide ${slide.id} in hidden viewer for capture`,
+            );
             await setSlideInHiddenWindow(slide.id);
 
             // Wait for rendering and slide change to take effect
-            await new Promise(resolve => setTimeout(resolve, 800));
+            await new Promise((resolve) => setTimeout(resolve, 800));
 
             // Capture screenshot at higher resolution
             console.log(`Capturing screenshot for slide ${i + 1}`);
-            const screenshot = await this.secondWindow!.webContents.capturePage({
-                x: 0,
-                y: 0,
-                width: 1280,
-                height: 720
-            });
+            const screenshot = await this.secondWindow!.webContents.capturePage(
+                {
+                    x: 0,
+                    y: 0,
+                    width: 1280,
+                    height: 720,
+                },
+            );
             const pngData = screenshot.toPNG();
             const base64Data = pngData.toString('base64');
-            
-            console.log(`Screenshot captured, PNG size: ${pngData.length} bytes, base64 size: ${base64Data.length} chars`);
+
+            console.log(
+                `Screenshot captured, PNG size: ${pngData.length} bytes, base64 size: ${base64Data.length} chars`,
+            );
 
             // Add page to PDF
             if (!isFirstSlide) {
@@ -254,10 +292,12 @@ export class PDFExportService {
             pdf.addImage(
                 `data:image/png;base64,${base64Data}`,
                 'PNG',
-                0, 0,
-                297, 210, // A4 landscape dimensions
+                0,
+                0,
+                297,
+                210, // A4 landscape dimensions
                 undefined,
-                'SLOW' // Use SLOW for better quality
+                'SLOW', // Use SLOW for better quality
             );
         }
 
@@ -272,7 +312,7 @@ export class PDFExportService {
      */
     private async showSaveDialog(
         window: BrowserWindow,
-        presentation: Presentation
+        presentation: Presentation,
     ): Promise<string | null> {
         const defaultPath = `${presentation.title}.pdf`;
 
@@ -281,8 +321,8 @@ export class PDFExportService {
             defaultPath,
             filters: [
                 { name: 'PDF Files', extensions: ['pdf'] },
-                { name: 'All Files', extensions: ['*'] }
-            ]
+                { name: 'All Files', extensions: ['*'] },
+            ],
         });
 
         return canceled ? null : filePath || null;

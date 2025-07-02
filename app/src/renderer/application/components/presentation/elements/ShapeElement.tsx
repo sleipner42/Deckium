@@ -4,7 +4,7 @@ import { ResizeHandles } from '../ResizeHandles';
 
 interface ShapeElementProps {
     element: Shape;
-    onClick?: () => void;
+    onClick?: (event?: React.MouseEvent) => void;
     onContextMenu?: (event: React.MouseEvent) => void;
     onElementUpdate?: (elementId: string, updates: Partial<Shape>) => void;
     isSelected: boolean;
@@ -101,7 +101,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
 
         e.stopPropagation();
         if (onClick) {
-            onClick();
+            onClick(e);
         }
     };
 

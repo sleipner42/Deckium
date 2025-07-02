@@ -1,5 +1,8 @@
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
-import { getScreenshotFromSecondaryWindow, setSlideInHiddenWindow } from '../../../main';
+import {
+    getScreenshotFromSecondaryWindow,
+    setSlideInHiddenWindow,
+} from '../../../main';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 

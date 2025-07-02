@@ -42,7 +42,7 @@ if (!document.querySelector('#quill-toolbar-zindex')) {
 
 interface TextElementProps {
     element: TextBox;
-    onClick: () => void;
+    onClick: (event?: React.MouseEvent) => void;
     onContextMenu?: (event: React.MouseEvent) => void;
     isSelected: boolean;
     isEditing: boolean;
@@ -351,7 +351,7 @@ export const TextElement: React.FC<TextElementProps> = ({
 
         e.stopPropagation();
         if (!isEditing) {
-            onClick();
+            onClick(e);
         }
     };
 

@@ -6,7 +6,7 @@ interface PlotElementProps {
     element: Plot;
     isSelected: boolean;
     isEditing: boolean;
-    onClick?: () => void;
+    onClick?: (event?: React.MouseEvent) => void;
     onContextMenu?: (event: React.MouseEvent) => void;
     onElementUpdate?: (elementId: string, updates: Partial<Plot>) => void;
     readOnly?: boolean;
@@ -76,7 +76,7 @@ export const PlotElement: React.FC<PlotElementProps> = ({
         if (readOnly) return;
 
         e.stopPropagation();
-        if (onClick) onClick();
+        if (onClick) onClick(e);
     };
 
     // This is a placeholder for actual plot rendering

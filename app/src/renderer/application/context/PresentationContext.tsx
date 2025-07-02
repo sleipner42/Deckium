@@ -19,6 +19,8 @@ interface PresentationContextState {
     selectedSlide: Slide | null;
     currentSlideIndex: number;
     selectedElementId: string | null;
+    selectedElementIds: string[];
+    editingElementId: string | null;
     isLoading: boolean;
     error: string | null;
     currentFilePath: string | null;
@@ -40,6 +42,9 @@ interface PresentationContextActions {
     previousSlide: () => void;
     goToSlide: (index: number) => void;
     selectElement: (elementId: string | null) => void;
+    selectMultipleElements: (elementIds: string[]) => void;
+    toggleElementSelection: (elementId: string) => void;
+    clearElementSelection: () => void;
     addElement: (element: ContentElement) => void;
     updateElement: (
         elementId: string,
@@ -85,6 +90,8 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
         selectedSlide,
         currentSlideIndex,
         selectedElementId,
+        selectedElementIds,
+        editingElementId,
         isLoading,
         error,
         currentFilePath,
@@ -100,6 +107,11 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
         previousSlide,
         goToSlide,
         selectElement,
+        selectMultipleElements,
+        toggleElementSelection,
+        clearElementSelection,
+        startEditingElement,
+        stopEditingElement,
         addElement,
         updateElement,
         reorderSlides,
@@ -119,6 +131,8 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
         selectedSlide,
         currentSlideIndex,
         selectedElementId,
+        selectedElementIds,
+        editingElementId,
         isLoading,
         error,
         currentFilePath,
@@ -138,16 +152,27 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
                 previousSlide,
                 goToSlide,
                 selectElement,
+                selectMultipleElements,
+                toggleElementSelection,
+                clearElementSelection,
                 addElement,
                 updateElement,
                 reorderSlides,
                 savePresentation,
                 savePresentationAs,
                 loadPresentation,
-                startEditingElement: () => {},
-                stopEditingElement: () => {},
-                moveElement: () => {},
-                resizeElement: () => {},
+                startEditingElement,
+                stopEditingElement,
+                moveElement: (elementId: string, x: number, y: number) => {
+                    updateElement(elementId, { position: { x, y } });
+                },
+                resizeElement: (
+                    elementId: string,
+                    width: number,
+                    height: number,
+                ) => {
+                    updateElement(elementId, { size: { width, height } });
+                },
                 openFullscreen,
                 closeFullscreen,
                 isFullscreenOpen,

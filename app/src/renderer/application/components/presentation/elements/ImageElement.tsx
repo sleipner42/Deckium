@@ -6,7 +6,7 @@ interface ImageElementProps {
     element: Image;
     isSelected: boolean;
     isEditing: boolean;
-    onClick?: () => void;
+    onClick?: (event?: React.MouseEvent) => void;
     onContextMenu?: (event: React.MouseEvent) => void;
     onElementUpdate?: (elementId: string, updates: Partial<Image>) => void;
     readOnly?: boolean;
@@ -76,7 +76,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
         if (readOnly) return;
 
         e.stopPropagation();
-        if (onClick) onClick();
+        if (onClick) onClick(e);
     };
 
     return (

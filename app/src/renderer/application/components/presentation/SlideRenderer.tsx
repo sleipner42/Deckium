@@ -10,7 +10,6 @@ import {
 } from '../../../../common/domain/entities/types';
 import { PRESENTATION_DIMENSIONS } from '../../../../common/utils/constants';
 import { usePresentation } from '../../context/PresentationContext';
-import { useElementState } from '../../hooks/useElementState';
 import { useSnapSystem } from '../../hooks/useSnapSystem';
 import { BarChartPropertiesDialog } from './BarChartPropertiesDialog';
 import { ElementContextMenu } from './ElementContextMenu';
@@ -41,16 +40,27 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     maintainAspectRatio = true,
     selectableElements = true,
 }) => {
-    const { updateElement, updateSlide } = usePresentation();
     const {
+        updateElement,
+        updateSlide,
         selectedElementId,
+        selectedElementIds,
         editingElementId,
         selectElement,
+        toggleElementSelection,
+        clearElementSelection,
         startEditingElement,
         stopEditingElement,
-        isSelected,
-        isEditing,
-    } = useElementState();
+    } = usePresentation();
+
+    // Define helper functions to use PresentationContext state
+    const isSelected = (elementId: string): boolean => {
+        return selectedElementIds.includes(elementId);
+    };
+
+    const isEditing = (elementId: string): boolean => {
+        return editingElementId === elementId;
+    };
 
     // Initialize snap system
     const { activeGuides, calculateSnapPosition, clearGuides } = useSnapSystem({
@@ -127,21 +137,25 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
             if (
                 (e.key === 'Backspace' || e.key === 'Delete') &&
-                selectedElementId &&
+                (selectedElementId || selectedElementIds.length > 0) &&
                 !editingElementId &&
                 selectableElements &&
                 !isInputFocused
             ) {
-                const elementToDelete = slide.elements.find(
-                    (el) => el.id === selectedElementId,
-                );
-                if (elementToDelete) {
+                // Delete multiple selected elements or single selected element
+                const elementsToDelete =
+                    selectedElementIds.length > 0
+                        ? selectedElementIds
+                        : selectedElementId
+                          ? [selectedElementId]
+                          : [];
+
+                if (elementsToDelete.length > 0) {
                     const updatedElements = slide.elements.filter(
-                        (el) => el.id !== selectedElementId,
+                        (el) => !elementsToDelete.includes(el.id),
                     );
 
-                    selectElement(null);
-
+                    clearElementSelection();
                     updateSlide(slide.id, { elements: updatedElements });
                 }
             }
@@ -162,9 +176,17 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         updateSlide,
     ]);
 
-    const handleElementClick = (elementId: string) => {
+    const handleElementClick = (
+        elementId: string,
+        event?: React.MouseEvent,
+    ) => {
         if (!readOnly && selectableElements) {
-            selectElement(elementId);
+            // Check if Ctrl (or Cmd on Mac) is pressed for multi-selection
+            if (event && (event.ctrlKey || event.metaKey)) {
+                toggleElementSelection(elementId);
+            } else {
+                selectElement(elementId);
+            }
         }
     };
 
@@ -267,7 +289,8 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     const renderElement = (element: ContentElement) => {
         const commonProps = {
             element,
-            onClick: () => handleElementClick(element.id),
+            onClick: (event?: React.MouseEvent) =>
+                handleElementClick(element.id, event),
             onContextMenu: (event: React.MouseEvent) =>
                 handleContextMenu(event, element.id),
             onElementUpdate: readOnly ? undefined : updateElementWithSnap,
@@ -284,7 +307,8 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
         const textProps = {
             element: element as TextBox,
-            onClick: () => handleElementClick(element.id),
+            onClick: (event?: React.MouseEvent) =>
+                handleElementClick(element.id, event),
             onContextMenu: (event: React.MouseEvent) =>
                 handleContextMenu(event, element.id),
             isSelected:
@@ -362,7 +386,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             className={className}
             onClick={() => {
                 if (!readOnly && selectableElements) {
-                    selectElement(null);
+                    clearElementSelection();
                     clearGuides(); // Clear guides when clicking background
                 }
             }}

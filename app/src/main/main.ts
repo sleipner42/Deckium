@@ -12,12 +12,12 @@ import { setupAuthIPC } from './auth/ipc-handler';
 import AuthService from './auth/service';
 import { LintingIpcHandler, LintingService } from './linting';
 import MenuBuilder from './menu';
+import { setupPDFExportIPC } from './pdf-export/ipc-handler';
+import { PDFExportService } from './pdf-export/service';
 import { setupPresentationIPC } from './presentation/ipc-handler';
 import { PresentationService } from './presentation/service';
 import { setupTextMeasurementIPC } from './text-measurement/ipc-handler';
 import { textMeasurementService } from './text-measurement/service';
-import { setupPDFExportIPC } from './pdf-export/ipc-handler';
-import { PDFExportService } from './pdf-export/service';
 import { getProtocolArgs, resolveHtmlPath } from './util';
 
 dotenv.config();
@@ -36,7 +36,7 @@ export async function setSlideInHiddenWindow(slideId: string): Promise<void> {
     if (!secondWindow) {
         throw new Error('Secondary window is not available');
     }
-    
+
     // Send the slide change directly to the hidden window only
     secondWindow.webContents.send('presentation:set-selected-slide', slideId);
 }

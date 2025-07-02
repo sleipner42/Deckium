@@ -1,11 +1,11 @@
 import { BrowserWindow, ipcMain } from 'electron';
-import { PDFExportService, PDFExportProgress } from './service';
+import { PDFExportProgress, PDFExportService } from './service';
 
 const PDF_EXPORT_CHANNELS = {
     EXPORT_TO_PDF: 'pdf-export:export-to-pdf',
     EXPORT_PROGRESS: 'pdf-export:progress',
     EXPORT_COMPLETE: 'pdf-export:complete',
-    EXPORT_ERROR: 'pdf-export:error'
+    EXPORT_ERROR: 'pdf-export:error',
 } as const;
 
 export function setupPDFExportIPC(pdfExportService: PDFExportService): void {
@@ -19,22 +19,35 @@ export function setupPDFExportIPC(pdfExportService: PDFExportService): void {
         try {
             // Set up progress handler
             const progressHandler = (progress: PDFExportProgress) => {
-                event.sender.send(PDF_EXPORT_CHANNELS.EXPORT_PROGRESS, progress);
+                event.sender.send(
+                    PDF_EXPORT_CHANNELS.EXPORT_PROGRESS,
+                    progress,
+                );
             };
 
             // Start the export
-            const exportPath = await pdfExportService.exportToPDF(senderWindow, progressHandler);
-            
+            const exportPath = await pdfExportService.exportToPDF(
+                senderWindow,
+                progressHandler,
+            );
+
             if (exportPath) {
-                event.sender.send(PDF_EXPORT_CHANNELS.EXPORT_COMPLETE, { path: exportPath });
+                event.sender.send(PDF_EXPORT_CHANNELS.EXPORT_COMPLETE, {
+                    path: exportPath,
+                });
                 return { success: true, path: exportPath };
             } else {
                 // User cancelled
                 return { success: false, cancelled: true };
             }
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            event.sender.send(PDF_EXPORT_CHANNELS.EXPORT_ERROR, { message: errorMessage });
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Unknown error occurred';
+            event.sender.send(PDF_EXPORT_CHANNELS.EXPORT_ERROR, {
+                message: errorMessage,
+            });
             throw new Error(`PDF export failed: ${errorMessage}`);
         }
     });

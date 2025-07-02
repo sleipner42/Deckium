@@ -8,7 +8,7 @@ interface BarChartElementProps {
     element: BarChart;
     isSelected: boolean;
     isEditing: boolean;
-    onClick?: () => void;
+    onClick?: (event?: React.MouseEvent) => void;
     onContextMenu?: (event: React.MouseEvent) => void;
     onElementUpdate?: (elementId: string, updates: Partial<BarChart>) => void;
     onStartEditing?: () => void;
@@ -90,7 +90,7 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
         if (readOnly) return;
 
         e.stopPropagation();
-        if (onClick) onClick();
+        if (onClick) onClick(e);
     };
 
     const handleDoubleClick = (e: React.MouseEvent) => {

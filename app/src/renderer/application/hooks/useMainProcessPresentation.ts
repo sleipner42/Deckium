@@ -72,6 +72,10 @@ export const useMainProcessPresentation = () => {
     const [selectedElementId, setSelectedElementId] = useState<string | null>(
         null,
     );
+    const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
+    const [editingElementId, setEditingElementId] = useState<string | null>(
+        null,
+    );
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
@@ -431,8 +435,76 @@ export const useMainProcessPresentation = () => {
         [selectedSlide],
     );
 
-    const selectElement = useCallback((elementId: string | null) => {
+    const selectElement = useCallback(
+        (elementId: string | null) => {
+            setSelectedElementId(elementId);
+            setSelectedElementIds(elementId ? [elementId] : []);
+            // When selecting a new element, stop editing any current element
+            if (editingElementId && elementId !== editingElementId) {
+                setEditingElementId(null);
+            }
+        },
+        [editingElementId],
+    );
+
+    const selectMultipleElements = useCallback(
+        (elementIds: string[]) => {
+            setSelectedElementIds(elementIds);
+            setSelectedElementId(
+                elementIds.length === 1 ? elementIds[0] : null,
+            );
+            // Stop editing when multi-selecting
+            if (elementIds.length > 1 && editingElementId) {
+                setEditingElementId(null);
+            }
+        },
+        [editingElementId],
+    );
+
+    const toggleElementSelection = useCallback(
+        (elementId: string) => {
+            setSelectedElementIds((current) => {
+                const isCurrentlySelected = current.includes(elementId);
+                let newSelection: string[];
+
+                if (isCurrentlySelected) {
+                    // Remove from selection
+                    newSelection = current.filter((id) => id !== elementId);
+                } else {
+                    // Add to selection
+                    newSelection = [...current, elementId];
+                }
+
+                // Update single selection state
+                setSelectedElementId(
+                    newSelection.length === 1 ? newSelection[0] : null,
+                );
+
+                // Stop editing when multi-selecting
+                if (newSelection.length > 1 && editingElementId) {
+                    setEditingElementId(null);
+                }
+
+                return newSelection;
+            });
+        },
+        [editingElementId],
+    );
+
+    const clearElementSelection = useCallback(() => {
+        setSelectedElementId(null);
+        setSelectedElementIds([]);
+        setEditingElementId(null);
+    }, []);
+
+    const startEditingElement = useCallback((elementId: string) => {
         setSelectedElementId(elementId);
+        setSelectedElementIds([elementId]);
+        setEditingElementId(elementId);
+    }, []);
+
+    const stopEditingElement = useCallback(() => {
+        setEditingElementId(null);
     }, []);
 
     const addElement = useCallback(
@@ -616,6 +688,8 @@ export const useMainProcessPresentation = () => {
         selectedSlide,
         currentSlideIndex,
         selectedElementId,
+        selectedElementIds,
+        editingElementId,
         isLoading,
         error,
         currentFilePath,
@@ -630,6 +704,11 @@ export const useMainProcessPresentation = () => {
         previousSlide,
         goToSlide,
         selectElement,
+        selectMultipleElements,
+        toggleElementSelection,
+        clearElementSelection,
+        startEditingElement,
+        stopEditingElement,
         addElement,
         updateElement,
         reorderSlides,
