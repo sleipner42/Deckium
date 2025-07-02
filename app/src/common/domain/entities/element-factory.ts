@@ -83,3 +83,39 @@ export function createImage(options: {
         zIndex: options.zIndex || 1,
     };
 }
+
+/**
+ * Creates a deep copy of an element with a new UUID
+ * Useful for copy/paste and duplication operations
+ */
+export function cloneElement(
+    element: ContentElement,
+    positionOffset?: { x: number; y: number },
+): ContentElement {
+    const newId = uuidv4();
+    const offset = positionOffset || { x: 10, y: 10 }; // Default offset to avoid overlap
+
+    const clonedElement: ContentElement = {
+        ...element,
+        id: newId,
+        position: {
+            x: element.position.x + offset.x,
+            y: element.position.y + offset.y,
+        },
+    };
+
+    return clonedElement;
+}
+
+/**
+ * Creates deep copies of multiple elements with new UUIDs
+ * Maintains relative positioning between elements
+ */
+export function cloneElements(
+    elements: ContentElement[],
+    positionOffset?: { x: number; y: number },
+): ContentElement[] {
+    const offset = positionOffset || { x: 10, y: 10 };
+
+    return elements.map((element) => cloneElement(element, offset));
+}

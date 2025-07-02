@@ -1,3 +1,4 @@
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import FlipToBackIcon from '@mui/icons-material/FlipToBack';
 import FlipToFrontIcon from '@mui/icons-material/FlipToFront';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -16,6 +17,7 @@ interface ElementContextMenuProps {
     anchorEl: HTMLElement | null;
     open: boolean;
     onClose: () => void;
+    onCopy?: () => void;
     onMoveForward: () => void;
     onMoveBackward: () => void;
     onMoveToTop: () => void;
@@ -28,6 +30,7 @@ export const ElementContextMenu: React.FC<ElementContextMenuProps> = ({
     anchorEl,
     open,
     onClose,
+    onCopy,
     onMoveForward,
     onMoveBackward,
     onMoveToTop,
@@ -54,6 +57,19 @@ export const ElementContextMenu: React.FC<ElementContextMenuProps> = ({
                 horizontal: 'right',
             }}
         >
+            {/* Copy option */}
+            {onCopy && (
+                <>
+                    <MenuItem onClick={() => handleMenuItemClick(onCopy)}>
+                        <ListItemIcon>
+                            <ContentCopyIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>Copy</ListItemText>
+                    </MenuItem>
+                    <Divider />
+                </>
+            )}
+
             {/* Show Properties option for shapes and charts */}
             {(elementType === 'rectangle' ||
                 elementType === 'circle' ||

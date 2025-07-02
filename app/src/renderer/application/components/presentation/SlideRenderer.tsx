@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { createImage } from '../../../../common/domain/entities/element-factory';
+import {
+    cloneElements,
+    createImage,
+} from '../../../../common/domain/entities/element-factory';
 import {
     BarChart,
     ContentElement,
@@ -10,6 +13,7 @@ import {
     TextBox,
 } from '../../../../common/domain/entities/types';
 import { PRESENTATION_DIMENSIONS } from '../../../../common/utils/constants';
+import { useClipboard } from '../../context/ClipboardContext';
 import { usePresentation } from '../../context/PresentationContext';
 import { useSnapSystem } from '../../hooks/useSnapSystem';
 import { BarChartPropertiesDialog } from './BarChartPropertiesDialog';
@@ -20,6 +24,7 @@ import { PlotElement } from './elements/PlotElement';
 import { ShapeElement } from './elements/ShapeElement';
 import { TextElement } from './elements/TextElement';
 import { ShapePropertiesDialog } from './ShapePropertiesDialog';
+import { SlideContextMenu } from './SlideContextMenu';
 import { SnapGuides } from './SnapGuides';
 
 interface SlideRendererProps {
@@ -53,6 +58,9 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         startEditingElement,
         stopEditingElement,
     } = usePresentation();
+
+    const { copyElements, getCopiedElements, hasCopiedElements } =
+        useClipboard();
 
     // Define helper functions to use PresentationContext state
     const isSelected = (elementId: string): boolean => {
@@ -114,6 +122,11 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         elementId: string;
     } | null>(null);
 
+    const [slideContextMenu, setSlideContextMenu] = useState<{
+        mouseX: number;
+        mouseY: number;
+    } | null>(null);
+
     const [propertiesDialog, setPropertiesDialog] = useState<{
         open: boolean;
         elementId: string | null;
@@ -135,6 +148,46 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 (activeElement.tagName === 'INPUT' ||
                     activeElement.tagName === 'TEXTAREA' ||
                     activeElement.contentEditable === 'true');
+
+            // Handle Copy (Ctrl+C or Cmd+C)
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+                if (selectedElementIds.length > 0 && selectableElements) {
+                    e.preventDefault();
+                    const selectedElements = slide.elements.filter((element) =>
+                        selectedElementIds.includes(element.id),
+                    );
+                    copyElements(selectedElements);
+                }
+                return;
+            }
+
+            // Handle Paste (Ctrl+V or Cmd+V)
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+                if (hasCopiedElements && selectableElements) {
+                    e.preventDefault();
+                    const copiedElements = getCopiedElements();
+                    const clonedElements = cloneElements(copiedElements);
+
+                    // Add all cloned elements to the current slide
+                    const updatedElements = [
+                        ...slide.elements,
+                        ...clonedElements,
+                    ];
+                    updateSlide(slide.id, { elements: updatedElements });
+
+                    // Select the newly pasted elements
+                    const newElementIds = clonedElements.map((el) => el.id);
+                    if (newElementIds.length === 1) {
+                        selectElement(newElementIds[0]);
+                    } else {
+                        clearElementSelection();
+                        newElementIds.forEach((id) =>
+                            toggleElementSelection(id),
+                        );
+                    }
+                }
+                return;
+            }
 
             if (
                 (e.key === 'Backspace' || e.key === 'Delete') &&
@@ -237,8 +290,12 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                         const imageElement = createImage({
                             content: base64Data,
                             position: {
-                                x: PRESENTATION_DIMENSIONS.WIDTH / 2 - width / 2,
-                                y: PRESENTATION_DIMENSIONS.HEIGHT / 2 - height / 2,
+                                x:
+                                    PRESENTATION_DIMENSIONS.WIDTH / 2 -
+                                    width / 2,
+                                y:
+                                    PRESENTATION_DIMENSIONS.HEIGHT / 2 -
+                                    height / 2,
                             },
                             size: {
                                 width: Math.round(width),
@@ -247,7 +304,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                         });
 
                         // Add image to slide
-                        const updatedElements = [...slide.elements, imageElement];
+                        const updatedElements = [
+                            ...slide.elements,
+                            imageElement,
+                        ];
                         updateSlide(slide.id, { elements: updatedElements });
 
                         // Select the newly created image
@@ -302,6 +362,40 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
     const handleCloseContextMenu = () => {
         setContextMenu(null);
+    };
+
+    const handleSlideContextMenu = (event: React.MouseEvent) => {
+        event.preventDefault();
+        if (readOnly || !selectableElements) return;
+
+        setSlideContextMenu({
+            mouseX: event.clientX - 2,
+            mouseY: event.clientY - 4,
+        });
+    };
+
+    const handleCloseSlideContextMenu = () => {
+        setSlideContextMenu(null);
+    };
+
+    const handlePasteElements = () => {
+        if (hasCopiedElements && selectableElements) {
+            const copiedElements = getCopiedElements();
+            const clonedElements = cloneElements(copiedElements);
+
+            // Add all cloned elements to the current slide
+            const updatedElements = [...slide.elements, ...clonedElements];
+            updateSlide(slide.id, { elements: updatedElements });
+
+            // Select the newly pasted elements
+            const newElementIds = clonedElements.map((el) => el.id);
+            if (newElementIds.length === 1) {
+                selectElement(newElementIds[0]);
+            } else {
+                clearElementSelection();
+                newElementIds.forEach((id) => toggleElementSelection(id));
+            }
+        }
     };
 
     const getElementZIndex = (elementId: string): number => {
@@ -381,6 +475,17 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     const handleUpdateChartProperties = (updates: Partial<BarChart>) => {
         if (chartPropertiesDialog.elementId) {
             updateElement(chartPropertiesDialog.elementId, updates);
+        }
+    };
+
+    const handleCopyElement = () => {
+        if (contextMenu?.elementId) {
+            const selectedElements = slide.elements.filter((element) =>
+                selectedElementIds.includes(element.id),
+            );
+            if (selectedElements.length > 0) {
+                copyElements(selectedElements);
+            }
         }
     };
 
@@ -541,6 +646,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     clearGuides(); // Clear guides when clicking background
                 }
             }}
+            onContextMenu={handleSlideContextMenu}
         >
             {slide.elements.map(renderElement)}
 
@@ -558,6 +664,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 anchorEl={contextMenu ? document.body : null}
                 open={Boolean(contextMenu)}
                 onClose={handleCloseContextMenu}
+                onCopy={handleCopyElement}
                 onMoveForward={() =>
                     contextMenu && moveElementForward(contextMenu.elementId)
                 }
@@ -582,12 +689,34 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 }
             />
 
+            <SlideContextMenu
+                anchorEl={slideContextMenu ? document.body : null}
+                open={Boolean(slideContextMenu)}
+                onClose={handleCloseSlideContextMenu}
+                onPaste={handlePasteElements}
+                canPaste={hasCopiedElements}
+            />
+
             {contextMenu && (
                 <div
                     style={{
                         position: 'fixed',
                         top: contextMenu.mouseY,
                         left: contextMenu.mouseX,
+                        width: 1,
+                        height: 1,
+                        pointerEvents: 'none',
+                        zIndex: 9999,
+                    }}
+                />
+            )}
+
+            {slideContextMenu && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: slideContextMenu.mouseY,
+                        left: slideContextMenu.mouseX,
                         width: 1,
                         height: 1,
                         pointerEvents: 'none',

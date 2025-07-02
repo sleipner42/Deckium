@@ -143,7 +143,8 @@ export const useMainProcessPresentation = () => {
             async (...args: unknown[]) => {
                 const newSlide = args[0] as Slide;
                 // Refresh the entire presentation to get the correct slide ordering
-                const updatedPresentation = await electronAPI.presentation.getPresentation() as Presentation;
+                const updatedPresentation =
+                    (await electronAPI.presentation.getPresentation()) as Presentation;
                 setSlides(updatedPresentation.slides);
                 setSelectedSlide(newSlide);
             },
@@ -438,35 +439,32 @@ export const useMainProcessPresentation = () => {
         [selectedSlide],
     );
 
-    const duplicateSlide = useCallback(
-        async (slideId: string) => {
-            try {
-                if (!slideId) {
-                    setError('No slide ID provided');
-                    return null;
-                }
-
-                setIsLoading(true);
-                setError(null);
-
-                const duplicatedSlide =
-                    await electronAPI.presentation.duplicateSlide(slideId);
-
-                // The slide will be added to the state automatically via the 'presentation:slide-added' event
-                // No need to manually update state here
-
-                return duplicatedSlide;
-            } catch (err) {
-                const errorMessage =
-                    err instanceof Error ? err.message : 'An error occurred';
-                setError(errorMessage);
-                throw err;
-            } finally {
-                setIsLoading(false);
+    const duplicateSlide = useCallback(async (slideId: string) => {
+        try {
+            if (!slideId) {
+                setError('No slide ID provided');
+                return null;
             }
-        },
-        [],
-    );
+
+            setIsLoading(true);
+            setError(null);
+
+            const duplicatedSlide =
+                await electronAPI.presentation.duplicateSlide(slideId);
+
+            // The slide will be added to the state automatically via the 'presentation:slide-added' event
+            // No need to manually update state here
+
+            return duplicatedSlide;
+        } catch (err) {
+            const errorMessage =
+                err instanceof Error ? err.message : 'An error occurred';
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
     const selectElement = useCallback(
         (elementId: string | null) => {
