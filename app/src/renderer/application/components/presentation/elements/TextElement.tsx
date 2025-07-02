@@ -44,7 +44,11 @@ interface TextElementProps {
     element: TextBox;
     onClick: (event?: React.MouseEvent) => void;
     onContextMenu?: (event: React.MouseEvent) => void;
-    onMultiElementUpdate?: (updates: Array<{elementId: string, updates: Partial<ContentElement>}>) => void;
+    onMultiElementUpdate?: (
+        primaryElementId: string, 
+        primaryUpdates: Partial<ContentElement>,
+        allUpdates: Array<{elementId: string, updates: Partial<ContentElement>}>
+    ) => void;
     selectedElementIds?: string[];
     slideElements?: ContentElement[];
     isSelected: boolean;
@@ -59,6 +63,9 @@ export const TextElement: React.FC<TextElementProps> = ({
     element,
     onClick,
     onContextMenu,
+    onMultiElementUpdate,
+    selectedElementIds = [],
+    slideElements = [],
     isSelected,
     isEditing,
     onStartEditing,
@@ -281,19 +288,48 @@ export const TextElement: React.FC<TextElementProps> = ({
     };
 
     const onElementUpdateRef = useRef(onElementUpdate);
+    const onMultiElementUpdateRef = useRef(onMultiElementUpdate);
     useEffect(() => {
         onElementUpdateRef.current = onElementUpdate;
-    }, [onElementUpdate]);
+        onMultiElementUpdateRef.current = onMultiElementUpdate;
+    }, [onElementUpdate, onMultiElementUpdate]);
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            if (isDragging && onElementUpdateRef.current) {
-                onElementUpdateRef.current(element.id, {
-                    position: {
-                        x: e.clientX - dragOffset.x,
-                        y: e.clientY - dragOffset.y,
-                    },
-                });
+            if (isDragging) {
+                const newX = e.clientX - dragOffset.x;
+                const newY = e.clientY - dragOffset.y;
+                const deltaX = newX - position.x;
+                const deltaY = newY - position.y;
+
+                // Check if multiple elements are selected and we have multi-element update capability
+                if (selectedElementIds.length > 1 && onMultiElementUpdateRef.current) {
+                    // Prepare updates for all selected elements
+                    const allUpdates = selectedElementIds.map(elementId => {
+                        const elem = slideElements.find(el => el.id === elementId);
+                        if (elem) {
+                            return {
+                                elementId,
+                                updates: {
+                                    position: {
+                                        x: elem.position.x + deltaX,
+                                        y: elem.position.y + deltaY,
+                                    }
+                                }
+                            };
+                        }
+                        return null;
+                    }).filter(Boolean) as Array<{elementId: string, updates: Partial<ContentElement>}>;
+                    
+                    // Call with primary element (this one being dragged), its intended position, and all updates
+                    const primaryUpdates = { position: { x: newX, y: newY } };
+                    onMultiElementUpdateRef.current(element.id, primaryUpdates, allUpdates);
+                } else if (onElementUpdateRef.current) {
+                    // Single element move
+                    onElementUpdateRef.current(element.id, {
+                        position: { x: newX, y: newY },
+                    });
+                }
             }
         };
 
@@ -310,7 +346,7 @@ export const TextElement: React.FC<TextElementProps> = ({
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, dragOffset, element.id]);
+    }, [isDragging, dragOffset, element.id, selectedElementIds, slideElements, position.x, position.y]);
 
     const handleDoubleClick = (e: React.MouseEvent) => {
         if (readOnly) return;

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Image } from '../../../../../common/domain/entities/types';
+import { Image, ContentElement } from '../../../../../common/domain/entities/types';
 import { ResizeHandles } from '../ResizeHandles';
 
 interface ImageElementProps {
@@ -9,6 +9,13 @@ interface ImageElementProps {
     onClick?: (event?: React.MouseEvent) => void;
     onContextMenu?: (event: React.MouseEvent) => void;
     onElementUpdate?: (elementId: string, updates: Partial<Image>) => void;
+    onMultiElementUpdate?: (
+        primaryElementId: string, 
+        primaryUpdates: Partial<ContentElement>,
+        allUpdates: Array<{elementId: string, updates: Partial<ContentElement>}>
+    ) => void;
+    selectedElementIds?: string[];
+    slideElements?: ContentElement[];
     readOnly?: boolean;
 }
 
@@ -19,6 +26,9 @@ export const ImageElement: React.FC<ImageElementProps> = ({
     onClick,
     onContextMenu,
     onElementUpdate,
+    onMultiElementUpdate,
+    selectedElementIds = [],
+    slideElements = [],
     readOnly = false,
 }) => {
     const { position, size, content, style, zIndex } = element;
@@ -26,9 +36,11 @@ export const ImageElement: React.FC<ImageElementProps> = ({
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
     const onElementUpdateRef = useRef(onElementUpdate);
+    const onMultiElementUpdateRef = useRef(onMultiElementUpdate);
     useEffect(() => {
         onElementUpdateRef.current = onElementUpdate;
-    }, [onElementUpdate]);
+        onMultiElementUpdateRef.current = onMultiElementUpdate;
+    }, [onElementUpdate, onMultiElementUpdate]);
 
     // Handle mouse events for dragging
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -47,13 +59,40 @@ export const ImageElement: React.FC<ImageElementProps> = ({
     // Setup mouse move and mouse up event listeners
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            if (isDragging && onElementUpdateRef.current) {
-                onElementUpdateRef.current(element.id, {
-                    position: {
-                        x: e.clientX - dragOffset.x,
-                        y: e.clientY - dragOffset.y,
-                    },
-                });
+            if (isDragging) {
+                const newX = e.clientX - dragOffset.x;
+                const newY = e.clientY - dragOffset.y;
+                const deltaX = newX - position.x;
+                const deltaY = newY - position.y;
+
+                // Check if multiple elements are selected and we have multi-element update capability
+                if (selectedElementIds.length > 1 && onMultiElementUpdateRef.current) {
+                    // Prepare updates for all selected elements
+                    const allUpdates = selectedElementIds.map(elementId => {
+                        const elem = slideElements.find(el => el.id === elementId);
+                        if (elem) {
+                            return {
+                                elementId,
+                                updates: {
+                                    position: {
+                                        x: elem.position.x + deltaX,
+                                        y: elem.position.y + deltaY,
+                                    }
+                                }
+                            };
+                        }
+                        return null;
+                    }).filter(Boolean) as Array<{elementId: string, updates: Partial<ContentElement>}>;
+                    
+                    // Call with primary element (this one being dragged), its intended position, and all updates
+                    const primaryUpdates = { position: { x: newX, y: newY } };
+                    onMultiElementUpdateRef.current(element.id, primaryUpdates, allUpdates);
+                } else if (onElementUpdateRef.current) {
+                    // Single element move
+                    onElementUpdateRef.current(element.id, {
+                        position: { x: newX, y: newY },
+                    });
+                }
             }
         };
 
@@ -70,7 +109,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, dragOffset, element.id]);
+    }, [isDragging, dragOffset, element.id, selectedElementIds, slideElements, position.x, position.y]);
 
     const handleClick = (e: React.MouseEvent) => {
         if (readOnly) return;

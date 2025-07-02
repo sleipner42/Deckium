@@ -9,6 +9,13 @@ interface PlotElementProps {
     onClick?: (event?: React.MouseEvent) => void;
     onContextMenu?: (event: React.MouseEvent) => void;
     onElementUpdate?: (elementId: string, updates: Partial<Plot>) => void;
+    onMultiElementUpdate?: (
+        primaryElementId: string, 
+        primaryUpdates: Partial<ContentElement>,
+        allUpdates: Array<{elementId: string, updates: Partial<ContentElement>}>
+    ) => void;
+    selectedElementIds?: string[];
+    slideElements?: ContentElement[];
     readOnly?: boolean;
 }
 
