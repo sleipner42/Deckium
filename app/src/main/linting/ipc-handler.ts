@@ -1,17 +1,17 @@
-import { ipcMain } from "electron";
-import type { LintingService } from "./service";
+import { ipcMain } from 'electron';
+import type { LintingService } from './service';
 
 export class LintingIpcHandler {
-	private lintingService: LintingService;
+    private lintingService: LintingService;
 
-	constructor(lintingService: LintingService) {
-		this.lintingService = lintingService;
-		this.setupIpcHandlers();
-	}
+    constructor(lintingService: LintingService) {
+        this.lintingService = lintingService;
+        this.setupIpcHandlers();
+    }
 
-	private setupIpcHandlers(): void {
-		ipcMain.handle("linting:lint-slide", async (_event, slide) => {
-			return await this.lintingService.lintSlide(slide);
-		});
-	}
+    private setupIpcHandlers(): void {
+        ipcMain.handle('linting:lint-slide', async (_event, slide) => {
+            return await this.lintingService.lintSlide(slide);
+        });
+    }
 }
