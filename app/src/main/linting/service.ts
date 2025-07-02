@@ -1,424 +1,667 @@
-import {
-    BarChart,
-    ContentElement,
-    Slide,
-    TextBox,
-} from '../../common/domain/entities/types';
-import { ElementValidator } from '../presentation/element-validator';
-import { PresentationService } from '../presentation/service';
-import { textMeasurementService } from '../text-measurement/service';
-import { LintingEventBus } from './event-bus';
-import { LintingStateManager } from './state';
-import { LintingError, SlideLintingResult } from './types';
+import type {
+	BarChart,
+	ContentElement,
+	Shape,
+	Slide,
+	TextBox,
+} from "../../common/domain/entities/types";
+import { ElementValidator } from "../presentation/element-validator";
+import type { PresentationService } from "../presentation/service";
+import { textMeasurementService } from "../text-measurement/service";
+import { LintingEventBus } from "./event-bus";
+import { LintingStateManager } from "./state";
+import type { LintingError, SlideLintingResult } from "./types";
 
 export class LintingService {
-    private state: LintingStateManager;
-    private eventBus: LintingEventBus;
-    private presentationService: PresentationService | null = null;
+	private state: LintingStateManager;
+	private eventBus: LintingEventBus;
+	private presentationService: PresentationService | null = null;
 
-    constructor() {
-        this.state = new LintingStateManager();
-        this.eventBus = new LintingEventBus();
-    }
+	constructor() {
+		this.state = new LintingStateManager();
+		this.eventBus = new LintingEventBus();
+	}
 
-    setPresentationService(presentationService: PresentationService): void {
-        this.presentationService = presentationService;
-    }
+	setPresentationService(presentationService: PresentationService): void {
+		this.presentationService = presentationService;
+	}
 
-    async lintSlide(slide: Slide): Promise<SlideLintingResult> {
-        const errors: LintingError[] = [];
-        const slideId = slide.id;
+	async lintSlide(slide: Slide): Promise<SlideLintingResult> {
+		const errors: LintingError[] = [];
+		const slideId = slide.id;
 
-        this.state.clearSlideErrors(slideId);
+		this.state.clearSlideErrors(slideId);
 
-        errors.push(...this.lintContentQuality(slide));
+		for (const element of slide.elements) {
+			const elementErrors = await this.lintElement(element, slide);
+			errors.push(...elementErrors);
+		}
 
-        for (const element of slide.elements) {
-            const elementErrors = await this.lintElement(element, slideId);
-            errors.push(...elementErrors);
-        }
+		this.state.setSlideErrors(slideId, errors);
 
-        this.state.setSlideErrors(slideId, errors);
+		const result: SlideLintingResult = {
+			slideId,
+			errors,
+			hasErrors: errors.length > 0,
+			lintedAt: new Date(),
+		};
 
-        const result: SlideLintingResult = {
-            slideId,
-            errors,
-            hasErrors: errors.length > 0,
-            lintedAt: new Date(),
-        };
+		this.eventBus.broadcastToWindows(
+			LintingEventBus.events.SLIDE_LINTED,
+			result,
+		);
 
-        this.eventBus.broadcastToWindows(
-            LintingEventBus.events.SLIDE_LINTED,
-            result,
-        );
+		if (errors.length > 0) {
+			this.eventBus.broadcastToWindows(LintingEventBus.events.ERRORS_UPDATED, {
+				slideId,
+				errors,
+			});
+		}
 
-        if (errors.length > 0) {
-            this.eventBus.broadcastToWindows(
-                LintingEventBus.events.ERRORS_UPDATED,
-                { slideId, errors },
-            );
-        }
+		return result;
+	}
 
-        return result;
-    }
+	async checkDOMOverlap(elementId: string): Promise<LintingError[]> {
+		const errors: LintingError[] = [];
 
-    validateParameters(
-        params: Record<string, any>,
-        requiredParams: string[],
-    ): LintingError[] {
-        const errors: LintingError[] = [];
+		try {
+			const overlapCheck = await ElementValidator.checkElementOverlap(
+				elementId,
+				0,
+			);
 
-        for (const param of requiredParams) {
-            if (!params[param]) {
-                errors.push(
-                    this.createError(
-                        `missing-${param}`,
-                        'unknown',
-                        'unknown',
-                        'parameter_validation',
-                        `${param} is required`,
-                        'error',
-                    ),
-                );
-            }
-        }
+			if (overlapCheck.isOutsideSlide) {
+				errors.push(
+					this.createError(
+						`${elementId}-outside-slide`,
+						elementId,
+						"unknown",
+						"outside_slide",
+						"Element is positioned outside the slide boundaries (1280x720)",
+						"warning",
+						overlapCheck.suggestedPosition
+							? `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y})`
+							: undefined,
+					),
+				);
+			}
 
-        return errors;
-    }
+			if (overlapCheck.hasOverlap) {
+				errors.push(
+					this.createError(
+						`${elementId}-overlap`,
+						elementId,
+						"unknown",
+						"dom_overlap",
+						`Element overlaps with other elements: ${overlapCheck.overlappingElements.join(", ")}`,
+						"info",
+						overlapCheck.suggestedPosition
+							? `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y})`
+							: "Adjust element positions or use z-index to control layering",
+					),
+				);
+			}
+		} catch (error) {
+			console.warn("DOM overlap detection failed:", error);
+		}
 
-    async validateElementExists(
-        elementId: string,
-    ): Promise<LintingError | null> {
-        if (!this.presentationService) return null;
+		return errors;
+	}
 
-        const presentation = this.presentationService.getPresentation();
-        for (const slide of presentation.slides) {
-            const element = slide.elements.find((e) => e.id === elementId);
-            if (element) return null;
-        }
+	async checkTextOverflow(elementId: string): Promise<LintingError[]> {
+		const errors: LintingError[] = [];
 
-        return this.createError(
-            `element-not-found-${elementId}`,
-            elementId,
-            'unknown',
-            'element_not_found',
-            `Element with ID ${elementId} not found`,
-            'error',
-        );
-    }
+		try {
+			const actualDimensions =
+				await textMeasurementService.getActualElementDimensions(elementId);
 
-    validateSlideExists(slideId: string): LintingError | null {
-        if (!this.presentationService) return null;
+			if (actualDimensions?.elementFound && actualDimensions.textOverflow) {
+				const { textOverflow } = actualDimensions;
 
-        const presentation = this.presentationService.getPresentation();
-        const slide = presentation.slides.find((s) => s.id === slideId);
+				if (textOverflow.overflowsContainer) {
+					errors.push(
+						this.createError(
+							`${elementId}-text-overflow`,
+							elementId,
+							"unknown",
+							"text_overflow",
+							`Text extends outside its container. Text size: ${textOverflow.actualTextWidth}x${textOverflow.actualTextHeight}px, Container: ${textOverflow.containerWidth}x${textOverflow.containerHeight}px`,
+							"warning",
+							"Consider increasing container size or reducing font size",
+						),
+					);
+				}
 
-        if (!slide) {
-            return this.createError(
-                `slide-not-found-${slideId}`,
-                'unknown',
-                slideId,
-                'slide_not_found',
-                `Slide with ID ${slideId} not found`,
-                'error',
-            );
-        }
+				if (textOverflow.overflowsSlide) {
+					errors.push(
+						this.createError(
+							`${elementId}-slide-overflow`,
+							elementId,
+							"unknown",
+							"outside_slide",
+							"Text extends outside slide boundaries (1280x720)",
+							"warning",
+						),
+					);
+				}
+			}
 
-        return null;
-    }
+			const textDimensions =
+				await textMeasurementService.measureQuillText(elementId);
+			if (textDimensions.lineBreakInfo?.includes("TEXT OVERFLOW")) {
+				errors.push(
+					this.createError(
+						`${elementId}-line-overflow`,
+						elementId,
+						"unknown",
+						"text_overflow",
+						"Text content causes line breaks and potential overflow",
+						"info",
+						"Use updateTextElement tool to increase width if single-line text is desired",
+					),
+				);
+			}
+		} catch (error) {
+			console.warn("Text overflow detection failed:", error);
+		}
 
-    async checkDOMOverlap(elementId: string): Promise<LintingError[]> {
-        const errors: LintingError[] = [];
+		return errors;
+	}
 
-        try {
-            const overlapCheck = await ElementValidator.checkElementOverlap(
-                elementId,
-                0,
-            );
+	validateBarChartData(data: { x: any[]; y: any[] }): LintingError[] {
+		const errors: LintingError[] = [];
 
-            if (overlapCheck.isOutsideSlide) {
-                errors.push(
-                    this.createError(
-                        `${elementId}-outside-slide`,
-                        elementId,
-                        'unknown',
-                        'outside_slide',
-                        'Element is positioned outside the slide boundaries (1280x720)',
-                        'warning',
-                        overlapCheck.suggestedPosition
-                            ? `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y})`
-                            : undefined,
-                    ),
-                );
-            }
+		if (!data.x || !data.y) {
+			errors.push(
+				this.createError(
+					"barchart-missing-data",
+					"unknown",
+					"unknown",
+					"data_validation",
+					"BarChart is missing required data (x or y values)",
+					"error",
+					"Provide both x and y data arrays for the chart",
+				),
+			);
+		} else if (data.x.length !== data.y.length) {
+			errors.push(
+				this.createError(
+					"barchart-data-mismatch",
+					"unknown",
+					"unknown",
+					"data_validation",
+					"BarChart x and y data arrays have different lengths",
+					"error",
+					"Ensure x and y data arrays have the same number of elements",
+				),
+			);
+		}
 
-            if (overlapCheck.hasOverlap) {
-                errors.push(
-                    this.createError(
-                        `${elementId}-overlap`,
-                        elementId,
-                        'unknown',
-                        'dom_overlap',
-                        `Element overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}`,
-                        'info',
-                        overlapCheck.suggestedPosition
-                            ? `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y})`
-                            : 'Adjust element positions or use z-index to control layering',
-                    ),
-                );
-            }
-        } catch (error) {
-            console.warn('DOM overlap detection failed:', error);
-        }
+		return errors;
+	}
 
-        return errors;
-    }
+	getLintingErrors(slideId?: string): LintingError[] {
+		if (slideId) {
+			return this.state.getSlideErrors(slideId);
+		}
+		return this.state.getAllErrors();
+	}
 
-    async checkTextOverflow(elementId: string): Promise<LintingError[]> {
-        const errors: LintingError[] = [];
+	clearErrors(slideId?: string): void {
+		if (slideId) {
+			this.state.clearSlideErrors(slideId);
+		} else {
+			this.state.clearAllErrors();
+		}
 
-        try {
-            const actualDimensions =
-                await textMeasurementService.getActualElementDimensions(
-                    elementId,
-                );
+		this.eventBus.broadcastToWindows(LintingEventBus.events.ERRORS_CLEARED, {
+			slideId,
+		});
+	}
 
-            if (
-                actualDimensions?.elementFound &&
-                actualDimensions.textOverflow
-            ) {
-                const { textOverflow } = actualDimensions;
+	hasErrors(slideId?: string): boolean {
+		if (slideId) {
+			return this.state.hasSlideErrors(slideId);
+		}
+		return this.state.hasErrors();
+	}
 
-                if (textOverflow.overflowsContainer) {
-                    errors.push(
-                        this.createError(
-                            `${elementId}-text-overflow`,
-                            elementId,
-                            'unknown',
-                            'text_overflow',
-                            `Text extends outside its container. Text size: ${textOverflow.actualTextWidth}x${textOverflow.actualTextHeight}px, Container: ${textOverflow.containerWidth}x${textOverflow.containerHeight}px`,
-                            'warning',
-                            'Consider increasing container size or reducing font size',
-                        ),
-                    );
-                }
+	getErrorsBySeverity(severity: LintingError["severity"]): LintingError[] {
+		return this.state.getErrorsBySeverity(severity);
+	}
 
-                if (textOverflow.overflowsSlide) {
-                    errors.push(
-                        this.createError(
-                            `${elementId}-slide-overflow`,
-                            elementId,
-                            'unknown',
-                            'outside_slide',
-                            'Text extends outside slide boundaries (1280x720)',
-                            'warning',
-                        ),
-                    );
-                }
-            }
+	onEvent(eventName: string, listener: (...args: any[]) => void): void {
+		this.eventBus.on(eventName, listener);
+	}
 
-            const textDimensions =
-                await textMeasurementService.measureQuillText(elementId);
-            if (textDimensions.lineBreakInfo?.includes('TEXT OVERFLOW')) {
-                errors.push(
-                    this.createError(
-                        `${elementId}-line-overflow`,
-                        elementId,
-                        'unknown',
-                        'text_overflow',
-                        'Text content causes line breaks and potential overflow',
-                        'info',
-                        'Use updateTextElement tool to increase width if single-line text is desired',
-                    ),
-                );
-            }
-        } catch (error) {
-            console.warn('Text overflow detection failed:', error);
-        }
+	offEvent(eventName: string, listener: (...args: any[]) => void): void {
+		this.eventBus.off(eventName, listener);
+	}
 
-        return errors;
-    }
+	private async lintElement(
+		element: ContentElement,
+		slide: Slide,
+	): Promise<LintingError[]> {
+		const errors: LintingError[] = [];
 
-    validateBarChartData(data: { x: any[]; y: any[] }): LintingError[] {
-        const errors: LintingError[] = [];
+		if (element.type === "textbox") {
+			errors.push(...(await this.lintTextBox(element as TextBox, slide)));
+		} else if (
+			element.type === "rectangle" ||
+			element.type === "circle" ||
+			element.type === "triangle"
+		) {
+			errors.push(...(await this.lintShape(element as Shape, slide)));
+		} else if (element.type === "barchart") {
+			errors.push(...this.lintBarChart(element as BarChart, slide));
+		}
 
-        if (!data.x || !data.y) {
-            errors.push(
-                this.createError(
-                    'barchart-missing-data',
-                    'unknown',
-                    'unknown',
-                    'data_validation',
-                    'BarChart is missing required data (x or y values)',
-                    'error',
-                    'Provide both x and y data arrays for the chart',
-                ),
-            );
-        } else if (data.x.length !== data.y.length) {
-            errors.push(
-                this.createError(
-                    'barchart-data-mismatch',
-                    'unknown',
-                    'unknown',
-                    'data_validation',
-                    'BarChart x and y data arrays have different lengths',
-                    'error',
-                    'Ensure x and y data arrays have the same number of elements',
-                ),
-            );
-        }
+		return errors;
+	}
 
-        return errors;
-    }
+	private async lintTextBox(
+		textBox: TextBox,
+		slide: Slide,
+	): Promise<LintingError[]> {
+		const errors: LintingError[] = [];
 
-    getLintingErrors(slideId?: string): LintingError[] {
-        if (slideId) {
-            return this.state.getSlideErrors(slideId);
-        }
-        return this.state.getAllErrors();
-    }
+		const currentTextboxSize =
+			await textMeasurementService.getActualTextSizeAndPosition(textBox.id);
 
-    clearErrors(slideId?: string): void {
-        if (slideId) {
-            this.state.clearSlideErrors(slideId);
-        } else {
-            this.state.clearAllErrors();
-        }
+		if (!currentTextboxSize.elementFound) {
+			return errors;
+		}
 
-        this.eventBus.broadcastToWindows(
-            LintingEventBus.events.ERRORS_CLEARED,
-            { slideId },
-        );
-    }
+		errors.push(
+			...(await this.checkTextToTextOverlap(
+				textBox,
+				slide,
+				currentTextboxSize,
+			)),
+		);
+		errors.push(
+			...this.checkTextSizeVsContainer(textBox, slide, currentTextboxSize),
+		);
+		errors.push(
+			...this.checkTextOutsideSlide(textBox, slide, currentTextboxSize),
+		);
+		errors.push(
+			...(await this.checkShapeCoveringText(
+				textBox,
+				slide,
+				currentTextboxSize,
+			)),
+		);
 
-    hasErrors(slideId?: string): boolean {
-        if (slideId) {
-            return this.state.hasSlideErrors(slideId);
-        }
-        return this.state.hasErrors();
-    }
+		return errors;
+	}
 
-    getErrorsBySeverity(severity: LintingError['severity']): LintingError[] {
-        return this.state.getErrorsBySeverity(severity);
-    }
+	private async checkTextToTextOverlap(
+		textBox: TextBox,
+		slide: Slide,
+		currentTextboxSize: {
+			x?: number;
+			y?: number;
+			width?: number;
+			height?: number;
+		},
+	): Promise<LintingError[]> {
+		const errors: LintingError[] = [];
+		const overlappingTexts = [];
+		const textElements = slide.elements.filter(
+			(e) => e.type === "textbox" && e.id !== textBox.id,
+		);
 
-    onEvent(eventName: string, listener: (...args: any[]) => void): void {
-        this.eventBus.on(eventName, listener);
-    }
+		for (const textElement of textElements) {
+			if (textBox.id > textElement.id) {
+				continue;
+			}
 
-    offEvent(eventName: string, listener: (...args: any[]) => void): void {
-        this.eventBus.off(eventName, listener);
-    }
+			const otherTextboxSize =
+				await textMeasurementService.getActualTextSizeAndPosition(
+					textElement.id,
+				);
 
-    private async lintElement(
-        element: ContentElement,
-        slideId: string,
-    ): Promise<LintingError[]> {
-        const errors: LintingError[] = [];
+			if (
+				otherTextboxSize.elementFound &&
+				this.checkActualTextOverlap(currentTextboxSize, otherTextboxSize)
+			) {
+				overlappingTexts.push(textElement);
+			}
+		}
 
-        if (element.type === 'textbox') {
-            errors.push(
-                ...(await this.lintTextBox(element as TextBox, slideId)),
-            );
-        } else if (element.type === 'barchart') {
-            errors.push(...this.lintBarChart(element as BarChart, slideId));
-        }
+		if (overlappingTexts.length > 0) {
+			const overlappingIds = overlappingTexts.map((t) => t.id).join(", ");
+			errors.push(
+				this.createError(
+					`${textBox.id}-text-overlap`,
+					textBox.id,
+					slide.id,
+					"text_overlap",
+					`Text overlaps with other text elements: ${overlappingIds}`,
+					"warning",
+				),
+			);
+		}
 
-        return errors;
-    }
+		return errors;
+	}
 
-    private async lintTextBox(
-        textBox: TextBox,
-        _slideId: string,
-    ): Promise<LintingError[]> {
-        const errors: LintingError[] = [];
+	private checkTextSizeVsContainer(
+		textBox: TextBox,
+		slide: Slide,
+		currentTextboxSize: {
+			x?: number;
+			y?: number;
+			width?: number;
+			height?: number;
+		},
+	): LintingError[] {
+		const errors: LintingError[] = [];
 
-        errors.push(...(await this.checkDOMOverlap(textBox.id)));
-        errors.push(...(await this.checkTextOverflow(textBox.id)));
+		if (!currentTextboxSize.width || !currentTextboxSize.height) {
+			return errors;
+		}
 
-        return errors;
-    }
+		const containerWidth = textBox.size.width;
+		const containerHeight = textBox.size.height;
 
-    private lintBarChart(barChart: BarChart, _slideId: string): LintingError[] {
-        const errors: LintingError[] = [];
+		if (currentTextboxSize.width > containerWidth) {
+			errors.push(
+				this.createError(
+					`${textBox.id}-text-width-overflow`,
+					textBox.id,
+					slide.id,
+					"text_overflow",
+					`Text width (${currentTextboxSize.width}px) exceeds container width (${containerWidth}px)`,
+					"warning",
+					"Consider increasing container width or reducing font size",
+				),
+			);
+		}
 
-        if (barChart.data) {
-            errors.push(...this.validateBarChartData(barChart.data));
-        }
+		if (currentTextboxSize.height > containerHeight) {
+			errors.push(
+				this.createError(
+					`${textBox.id}-text-height-overflow`,
+					textBox.id,
+					slide.id,
+					"text_overflow",
+					`Text height (${currentTextboxSize.height}px) exceeds container height (${containerHeight}px)`,
+					"warning",
+					"Consider increasing container height or reducing font size",
+				),
+			);
+		}
 
-        return errors;
-    }
+		return errors;
+	}
 
-    private lintContentQuality(slide: Slide): LintingError[] {
-        const errors: LintingError[] = [];
-        const elementCount = slide.elements.length;
+	private checkTextOutsideSlide(
+		textBox: TextBox,
+		slide: Slide,
+		currentTextboxSize: {
+			x?: number;
+			y?: number;
+			width?: number;
+			height?: number;
+		},
+	): LintingError[] {
+		const errors: LintingError[] = [];
 
-        if (elementCount === 0) {
-            errors.push(
-                this.createError(
-                    `${slide.id}-empty-slide`,
-                    'unknown',
-                    slide.id,
-                    'content_quality',
-                    'The slide is completely empty - it needs content to be effective',
-                    'warning',
-                    'Add a title and main content to give the slide purpose',
-                ),
-            );
-        } else if (elementCount > 8) {
-            errors.push(
-                this.createError(
-                    `${slide.id}-overcrowded`,
-                    'unknown',
-                    slide.id,
-                    'content_quality',
-                    'The slide may be overcrowded with too many elements - consider simplifying',
-                    'warning',
-                    'Consider consolidating content or splitting into multiple slides',
-                ),
-            );
-        }
+		if (
+			currentTextboxSize.x === undefined ||
+			currentTextboxSize.y === undefined ||
+			!currentTextboxSize.width ||
+			!currentTextboxSize.height
+		) {
+			return errors;
+		}
 
-        const textElements = slide.elements.filter(
-            (e) => e.type === 'textbox',
-        ) as TextBox[];
-        textElements.forEach((element, index) => {
-            if (element.content && element.content.length > 200) {
-                errors.push(
-                    this.createError(
-                        `${element.id}-long-text`,
-                        element.id,
-                        slide.id,
-                        'content_quality',
-                        `Text element ${index + 1} is quite long - consider breaking it into smaller chunks`,
-                        'info',
-                        'Break long text into bullet points or shorter paragraphs',
-                    ),
-                );
-            }
-        });
+		const SLIDE_WIDTH = 1280;
+		const SLIDE_HEIGHT = 720;
 
-        return errors;
-    }
+		const textRight = currentTextboxSize.x + currentTextboxSize.width;
+		const textBottom = currentTextboxSize.y + currentTextboxSize.height;
 
-    private createError(
-        id: string,
-        elementId: string,
-        slideId: string,
-        type: LintingError['type'],
-        message: string,
-        severity: LintingError['severity'],
-        suggestedFix?: string,
-    ): LintingError {
-        return {
-            id,
-            elementId,
-            slideId,
-            type,
-            message,
-            severity,
-            suggestedFix,
-            createdAt: new Date(),
-        };
-    }
+		if (currentTextboxSize.x < 0) {
+			errors.push(
+				this.createError(
+					`${textBox.id}-text-left-outside`,
+					textBox.id,
+					slide.id,
+					"outside_slide",
+					`Text extends beyond left edge of slide (x: ${currentTextboxSize.x}px)`,
+					"warning",
+					"Adjust text position to keep it within slide boundaries",
+				),
+			);
+		}
+
+		if (currentTextboxSize.y < 0) {
+			errors.push(
+				this.createError(
+					`${textBox.id}-text-top-outside`,
+					textBox.id,
+					slide.id,
+					"outside_slide",
+					`Text extends beyond top edge of slide (y: ${currentTextboxSize.y}px)`,
+					"warning",
+					"Adjust text position to keep it within slide boundaries",
+				),
+			);
+		}
+
+		if (textRight > SLIDE_WIDTH) {
+			errors.push(
+				this.createError(
+					`${textBox.id}-text-right-outside`,
+					textBox.id,
+					slide.id,
+					"outside_slide",
+					`Text extends beyond right edge of slide (right edge: ${textRight}px, slide width: ${SLIDE_WIDTH}px)`,
+					"warning",
+					"Adjust text position or reduce text width to keep it within slide boundaries",
+				),
+			);
+		}
+
+		if (textBottom > SLIDE_HEIGHT) {
+			errors.push(
+				this.createError(
+					`${textBox.id}-text-bottom-outside`,
+					textBox.id,
+					slide.id,
+					"outside_slide",
+					`Text extends beyond bottom edge of slide (bottom edge: ${textBottom}px, slide height: ${SLIDE_HEIGHT}px)`,
+					"warning",
+					"Adjust text position or reduce text height to keep it within slide boundaries",
+				),
+			);
+		}
+
+		return errors;
+	}
+
+	private async checkShapeCoveringText(
+		textBox: TextBox,
+		slide: Slide,
+		currentTextboxSize: {
+			x?: number;
+			y?: number;
+			width?: number;
+			height?: number;
+		},
+	): Promise<LintingError[]> {
+		const errors: LintingError[] = [];
+
+		if (
+			currentTextboxSize.x === undefined ||
+			currentTextboxSize.y === undefined ||
+			!currentTextboxSize.width ||
+			!currentTextboxSize.height
+		) {
+			return errors;
+		}
+
+		const shapes = slide.elements.filter(
+			(e) =>
+				e.type === "rectangle" || e.type === "circle" || e.type === "triangle",
+		) as Shape[];
+
+		for (const shape of shapes) {
+			const zIndexComparison = await textMeasurementService.isElementInFrontOf(
+				shape.id,
+				textBox.id,
+			);
+
+			console.log(zIndexComparison);
+
+			if (
+				zIndexComparison.elementAFound &&
+				zIndexComparison.elementBFound &&
+				zIndexComparison.isAInFrontOfB
+			) {
+				const textBounds = {
+					x: currentTextboxSize.x,
+					y: currentTextboxSize.y,
+					width: currentTextboxSize.width,
+					height: currentTextboxSize.height,
+				};
+
+				const shapeBounds = {
+					x: shape.position.x,
+					y: shape.position.y,
+					width: shape.size.width,
+					height: shape.size.height,
+				};
+
+				if (this.checkBoundsOverlap(textBounds, shapeBounds)) {
+					errors.push(
+						this.createError(
+							`${textBox.id}-covered-by-shape`,
+							textBox.id,
+							slide.id,
+							"zindex_issue",
+							`Text is covered by shape "${shape.id}" (shape z-index: ${zIndexComparison.zIndexA}, text z-index: ${zIndexComparison.zIndexB})`,
+							"warning",
+							"Increase text z-index or decrease shape z-index to make text visible",
+						),
+					);
+				}
+			}
+		}
+
+		return errors;
+	}
+
+	private checkBoundsOverlap(
+		boundsA: { x: number; y: number; width: number; height: number },
+		boundsB: { x: number; y: number; width: number; height: number },
+	): boolean {
+		return !(
+			boundsA.x >= boundsB.x + boundsB.width ||
+			boundsA.x + boundsA.width <= boundsB.x ||
+			boundsA.y >= boundsB.y + boundsB.height ||
+			boundsA.y + boundsA.height <= boundsB.y
+		);
+	}
+
+	private checkActualTextOverlap(
+		textA: { x?: number; y?: number; width?: number; height?: number },
+		textB: { x?: number; y?: number; width?: number; height?: number },
+	): boolean {
+		if (
+			!textA.x ||
+			!textA.y ||
+			!textA.width ||
+			!textA.height ||
+			!textB.x ||
+			!textB.y ||
+			!textB.width ||
+			!textB.height
+		) {
+			return false;
+		}
+
+		return !(
+			textA.x >= textB.x + textB.width ||
+			textA.x + textA.width <= textB.x ||
+			textA.y >= textB.y + textB.height ||
+			textA.y + textA.height <= textB.y
+		);
+	}
+
+	private async lintShape(shape: Shape, slide: Slide): Promise<LintingError[]> {
+		const errors: LintingError[] = [];
+
+		const overlappingShapes = slide.elements.filter(
+			(e) =>
+				(e.type === "rectangle" ||
+					e.type === "circle" ||
+					e.type === "triangle") &&
+				e.id !== shape.id &&
+				this.checkElementsOverlap(shape, e),
+		);
+
+		if (overlappingShapes.length > 0) {
+			errors.push(
+				this.createError(
+					`${shape.id}-shape-overlap`,
+					shape.id,
+					slide.id,
+					"shape_overlap",
+					`Shape overlaps with other shapes`,
+					"warning",
+				),
+			);
+		}
+
+		return errors;
+	}
+
+	private checkElementsOverlap(a: ContentElement, b: ContentElement): boolean {
+		const aPos = a.position;
+		const bPos = b.position;
+		const aSize = a.size;
+		const bSize = b.size;
+
+		return !(
+			aPos.x >= bPos.x + bSize.width ||
+			aPos.x + aSize.width <= bPos.x ||
+			aPos.y >= bPos.y + bSize.height ||
+			aPos.y + aSize.height <= bPos.y
+		);
+	}
+
+	private lintBarChart(barChart: BarChart, _slide: Slide): LintingError[] {
+		const errors: LintingError[] = [];
+
+		if (barChart.data) {
+			errors.push(...this.validateBarChartData(barChart.data));
+		}
+
+		return errors;
+	}
+
+	private createError(
+		id: string,
+		elementId: string,
+		slideId: string,
+		type: LintingError["type"],
+		message: string,
+		severity: LintingError["severity"],
+		suggestedFix?: string,
+	): LintingError {
+		return {
+			id,
+			elementId,
+			slideId,
+			type,
+			message,
+			severity,
+			suggestedFix,
+			createdAt: new Date(),
+		};
+	}
 }

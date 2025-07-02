@@ -403,7 +403,10 @@ export class TextMeasurementService {
      */
     async checkOverlapWithDOM(
         newElementPosition: { x: number; y: number },
-        newElementSize: { width: number; height: number },
+        newElementSize: {
+            width: number;
+            height: number;
+        },
         excludeElementId?: string,
     ): Promise<{
         hasOverlap: boolean;
@@ -885,6 +888,152 @@ export class TextMeasurementService {
         } catch (error) {
             console.error('Error getting actual element dimensions:', error);
             return { elementFound: false };
+        }
+    }
+
+    async getActualTextSizeAndPosition(elementId: string): Promise<{
+        elementFound: boolean;
+        x?: number;
+        y?: number;
+        width?: number;
+        height?: number;
+    }> {
+        if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+            console.warn('Main window not available for textbox measurement');
+            return { elementFound: false };
+        }
+
+        try {
+            const result = await this.mainWindow.webContents.executeJavaScript(`
+        (() => {
+          const targetElement = document.querySelector('[data-element-id="${elementId}"]');
+          if (!targetElement) {
+            return { elementFound: false };
+          }
+
+          const qlEditor = targetElement.querySelector('.ql-editor');
+          if (!qlEditor) {
+            return { elementFound: false };
+          }
+
+                    const SLIDE_WIDTH = 1280;
+          const SLIDE_HEIGHT = 720;
+
+          const slideContainer = document.querySelector('[data-slide-container]') || document.body;
+          const containerRect = slideContainer.getBoundingClientRect();
+
+          const scaleX = SLIDE_WIDTH / containerRect.width;
+          const scaleY = SLIDE_HEIGHT / containerRect.height;
+
+          const childElements = qlEditor.children;
+
+          if (childElements.length === 0) {
+            return { elementFound: false };
+          }
+
+          let minX = Number.MAX_VALUE;
+          let minY = Number.MAX_VALUE;
+          let maxRight = Number.MIN_VALUE;
+          let maxBottom = Number.MIN_VALUE;
+
+          for (let i = 0; i < childElements.length; i++) {
+            const element = childElements[i];
+            const rect = element.getBoundingClientRect();
+
+            if (rect.width > 0 && rect.height > 0) {
+              const scaledX = (rect.left - containerRect.left) * scaleX;
+              const scaledY = (rect.top - containerRect.top) * scaleY;
+              const scaledWidth = rect.width * scaleX;
+              const scaledHeight = rect.height * scaleY;
+              const scaledRight = scaledX + scaledWidth;
+              const scaledBottom = scaledY + scaledHeight;
+
+              minX = Math.min(minX, scaledX);
+              minY = Math.min(minY, scaledY);
+              maxRight = Math.max(maxRight, scaledRight);
+              maxBottom = Math.max(maxBottom, scaledBottom);
+            }
+          }
+
+          return {
+            elementFound: true,
+            x: Math.round(minX),
+            y: Math.round(minY),
+            width: Math.round(maxRight - minX),
+            height: Math.round(maxBottom - minY)
+          };
+        })()
+      `);
+
+            return result;
+        } catch (error) {
+            console.error('Error getting textbox size and position:', error);
+            return { elementFound: false };
+        }
+    }
+
+    async isElementInFrontOf(
+        elementIdA: string,
+        elementIdB: string,
+    ): Promise<{
+        elementAFound: boolean;
+        elementBFound: boolean;
+        isAInFrontOfB: boolean;
+        zIndexA?: number;
+        zIndexB?: number;
+    }> {
+        if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+            console.warn('Main window not available for z-index comparison');
+            return {
+                elementAFound: false,
+                elementBFound: false,
+                isAInFrontOfB: false,
+            };
+        }
+
+        try {
+            const result = await this.mainWindow.webContents.executeJavaScript(`
+        (() => {
+          const elementA = document.querySelector('[data-element-id="${elementIdA}"]');
+          const elementB = document.querySelector('[data-element-id="${elementIdB}"]');
+
+          if (!elementA || !elementB) {
+            return {
+              elementAFound: !!elementA,
+              elementBFound: !!elementB,
+              isAInFrontOfB: false
+            };
+          }
+
+          // Get computed z-index values
+          const computedStyleA = window.getComputedStyle(elementA);
+          const computedStyleB = window.getComputedStyle(elementB);
+
+          let zIndexA = parseInt(computedStyleA.zIndex);
+          let zIndexB = parseInt(computedStyleB.zIndex);
+
+          // Handle 'auto' z-index values (default to 0)
+          if (isNaN(zIndexA)) zIndexA = 0;
+          if (isNaN(zIndexB)) zIndexB = 0;
+
+          return {
+            elementAFound: true,
+            elementBFound: true,
+            isAInFrontOfB: zIndexA > zIndexB,
+            zIndexA,
+            zIndexB
+          };
+        })()
+      `);
+
+            return result;
+        } catch (error) {
+            console.error('Error comparing element z-index values:', error);
+            return {
+                elementAFound: false,
+                elementBFound: false,
+                isAInFrontOfB: false,
+            };
         }
     }
 }

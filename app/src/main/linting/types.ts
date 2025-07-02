@@ -1,13 +1,13 @@
 export type LintingErrorType =
-    | 'parameter_validation'
-    | 'element_not_found'
-    | 'slide_not_found'
-    | 'dom_overlap'
-    | 'text_overflow'
-    | 'outside_slide'
     | 'data_validation'
-    | 'content_quality'
-    | 'spacing_layout';
+    | 'dom_overlap'
+    | 'outside_slide'
+    | 'text_overlap'
+    | 'shape_overlap'
+    | 'zindex_issue'
+    | 'text_overflow';
+
+export type LintingSeverity = 'error' | 'warning' | 'info';
 
 export interface LintingError {
     id: string;
@@ -15,7 +15,7 @@ export interface LintingError {
     slideId: string;
     type: LintingErrorType;
     message: string;
-    severity: 'error' | 'warning' | 'info';
+    severity: LintingSeverity;
     line?: number;
     column?: number;
     suggestedFix?: string;
