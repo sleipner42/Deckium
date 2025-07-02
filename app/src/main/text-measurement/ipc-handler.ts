@@ -21,7 +21,7 @@ export function setupTextMeasurementIPC() {
     // New Quill-specific measurement handler
     ipcMain.handle(
         'text-measurement:measure-quill',
-        async (event, elementId: string) => {
+        async (_event, elementId: string) => {
             const { textMeasurementService } = require('./service');
             try {
                 return await textMeasurementService.measureQuillText(elementId);
@@ -35,7 +35,7 @@ export function setupTextMeasurementIPC() {
     // Enhanced Quill dimensions handler
     ipcMain.handle(
         'text-measurement:quill-dimensions',
-        async (event, elementId: string) => {
+        async (_event, elementId: string) => {
             const { textMeasurementService } = require('./service');
             try {
                 return await textMeasurementService.getQuillTextDimensions(
@@ -52,7 +52,7 @@ export function setupTextMeasurementIPC() {
     ipcMain.handle(
         'text-measurement:measure',
         async (
-            event,
+            _event,
             request: TextMeasurementRequest,
         ): Promise<TextMeasurementResult> => {
             // This will be handled by the renderer process

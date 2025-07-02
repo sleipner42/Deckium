@@ -10,7 +10,7 @@ export class GetPresentationInfoTool extends BaseTool {
     requiredParams = {};
 
     protected async executeImpl(
-        params: Record<string, any>,
+        _params: Record<string, any>,
         presentationService: PresentationService,
     ): Promise<AIToolResult> {
         const currentPresentation = presentationService.getPresentation();

@@ -4,7 +4,6 @@ import { ElementValidator } from '../../../presentation/element-validator';
 import { PresentationService } from '../../../presentation/service';
 import { textMeasurementService } from '../../../text-measurement/service';
 import { BaseTool } from '../BaseTool';
-import { estimateTextDimensions } from '../utils/text-dimensions';
 
 export class UpdateTextElementTool extends BaseTool {
     name = 'updateTextElement';
@@ -220,7 +219,7 @@ export class UpdateTextElementTool extends BaseTool {
         let message = 'Text element updated successfully';
 
         // Add actual DOM dimensions if available
-        if (actualDimensions && actualDimensions.elementFound) {
+        if (actualDimensions?.elementFound) {
             const { containerBounds, textBounds, textOverflow } =
                 actualDimensions;
 

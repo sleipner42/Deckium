@@ -1,10 +1,9 @@
-import { Box, Paper, useTheme } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import React from 'react';
-import Toolbar from '../common/Toolbar';
 import { SlideView } from './SlideView';
 
 const PresentationViewer: React.FC = () => {
-    const theme = useTheme();
+    const _theme = useTheme();
 
     return (
         <Box

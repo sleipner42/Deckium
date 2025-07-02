@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { usePresentation } from '../../context/PresentationContext';
-import { SlideRenderer } from './SlideRenderer';
 import { SlideView } from './SlideView';
 
 interface SlideNavigationProps {

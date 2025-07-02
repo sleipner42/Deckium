@@ -71,7 +71,7 @@ export class ChangeElementZIndexTool extends BaseTool {
         if (isRelative) {
             // Parse as a delta value (can be negative or positive)
             const deltaZIndex = Number(zIndex);
-            if (isNaN(deltaZIndex)) {
+            if (Number.isNaN(deltaZIndex)) {
                 return {
                     success: false,
                     error: 'zIndex must be a number when using relative mode',
@@ -81,7 +81,7 @@ export class ChangeElementZIndexTool extends BaseTool {
         } else {
             // Parse as absolute value
             newZIndex = Number(zIndex);
-            if (isNaN(newZIndex)) {
+            if (Number.isNaN(newZIndex)) {
                 return {
                     success: false,
                     error: 'zIndex must be a number',

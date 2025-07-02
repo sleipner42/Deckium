@@ -2,7 +2,6 @@ import { Message } from '../../../common/domain/entities/ai-types';
 import {
     IAIService,
     IAIServiceFactory,
-    MessageContent,
 } from '../../../common/domain/interfaces/ai-service.interface';
 import AuthService from '../../auth/service';
 
@@ -23,10 +22,10 @@ export class BackendAIService implements IAIService {
         const overallStartTime = performance.now();
 
         try {
-            const formatStartTime = performance.now();
-            const formatEndTime = performance.now();
+            const _formatStartTime = performance.now();
+            const _formatEndTime = performance.now();
 
-            const originalSize = JSON.stringify(messages).length;
+            const _originalSize = JSON.stringify(messages).length;
 
             const accessToken = await this.getAuthToken();
 
@@ -52,14 +51,14 @@ export class BackendAIService implements IAIService {
             }
 
             const apiCallEndTime = performance.now();
-            const apiCallDuration = apiCallEndTime - apiCallStartTime;
+            const _apiCallDuration = apiCallEndTime - apiCallStartTime;
 
-            const processingStartTime = performance.now();
+            const _processingStartTime = performance.now();
             const data = await response.json();
             const aiResponse = data.content;
-            const processingEndTime = performance.now();
+            const _processingEndTime = performance.now();
 
-            const overallEndTime = performance.now();
+            const _overallEndTime = performance.now();
 
             return aiResponse;
         } catch (error) {
@@ -81,8 +80,8 @@ export class BackendAIService implements IAIService {
         const overallStartTime = performance.now();
 
         try {
-            const formatStartTime = performance.now();
-            const formatEndTime = performance.now();
+            const _formatStartTime = performance.now();
+            const _formatEndTime = performance.now();
 
             const accessToken = await this.getAuthToken();
 
@@ -129,9 +128,9 @@ export class BackendAIService implements IAIService {
                 }
 
                 const apiCallEndTime = performance.now();
-                const apiCallDuration = apiCallEndTime - apiCallStartTime;
+                const _apiCallDuration = apiCallEndTime - apiCallStartTime;
 
-                const overallEndTime = performance.now();
+                const _overallEndTime = performance.now();
 
                 return completeResponse;
             } catch (streamError) {
@@ -173,7 +172,7 @@ export class BackendAIServiceFactory implements IAIServiceFactory {
         try {
             console.log('[BackendAIService] Using backend service at', API_URL);
 
-            const initEndTime = performance.now();
+            const _initEndTime = performance.now();
 
             return new BackendAIService(this.authService);
         } catch (error) {

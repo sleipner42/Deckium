@@ -154,7 +154,7 @@ export function assertElementsAligned(
 
     const firstValue = getAlignValue(elements[0]);
 
-    elements.forEach((element, index) => {
+    elements.forEach((element, _index) => {
         const value = getAlignValue(element);
         expect(Math.abs(value - firstValue)).toBeLessThanOrEqual(tolerance);
     });

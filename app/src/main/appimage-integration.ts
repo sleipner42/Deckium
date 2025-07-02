@@ -1,7 +1,7 @@
-import { exec } from 'child_process';
+import { exec } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 import { app } from 'electron';
-import fs from 'fs';
-import path from 'path';
 
 export class AppImageIntegration {
     private static isAppImage(): boolean {
@@ -13,7 +13,7 @@ export class AppImageIntegration {
     }
 
     private static async checkDesktopFileExists(): Promise<boolean> {
-        const homeDir = require('os').homedir();
+        const homeDir = require('node:os').homedir();
         const desktopFilePath = path.join(
             homeDir,
             '.local/share/applications/deckium.desktop',
@@ -28,7 +28,7 @@ export class AppImageIntegration {
     }
 
     private static async installDesktopFile(): Promise<void> {
-        const homeDir = require('os').homedir();
+        const homeDir = require('node:os').homedir();
         const appImagePath = AppImageIntegration.getAppImagePath();
 
         if (!appImagePath) {
@@ -70,7 +70,7 @@ MimeType=x-scheme-handler/deckium;
     }
 
     private static async installIcon(): Promise<void> {
-        const homeDir = require('os').homedir();
+        const homeDir = require('node:os').homedir();
         const iconsDir = path.join(homeDir, '.local/share/icons/hicolor');
 
         // Get icon from AppImage resources
@@ -103,8 +103,8 @@ MimeType=x-scheme-handler/deckium;
     }
 
     private static async updateDesktopDatabase(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const homeDir = require('os').homedir();
+        return new Promise((resolve, _reject) => {
+            const homeDir = require('node:os').homedir();
             const applicationsDir = path.join(
                 homeDir,
                 '.local/share/applications',
@@ -121,7 +121,7 @@ MimeType=x-scheme-handler/deckium;
     }
 
     private static async registerProtocolHandler(): Promise<void> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _reject) => {
             exec(
                 'xdg-mime default deckium.desktop x-scheme-handler/deckium',
                 (error) => {

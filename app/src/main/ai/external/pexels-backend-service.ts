@@ -132,7 +132,7 @@ export class PexelsServiceFactory {
         try {
             console.log('[PexelsService] Using backend service at', API_URL);
 
-            const initEndTime = performance.now();
+            const _initEndTime = performance.now();
 
             return new PexelsBackendService(this.authService);
         } catch (error) {

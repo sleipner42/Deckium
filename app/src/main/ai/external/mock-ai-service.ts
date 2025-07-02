@@ -6,7 +6,7 @@ import {
 } from '../../../common/domain/interfaces/ai-service.interface';
 
 export class MockAIService implements IAIService {
-    async chat(messages: Message[], deploymentName?: string): Promise<string> {
+    async chat(messages: Message[], _deploymentName?: string): Promise<string> {
         console.log('Using MockAIService for chat completion');
 
         let userMessage = '';

@@ -1,4 +1,3 @@
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -7,7 +6,6 @@ import SendIcon from '@mui/icons-material/Send';
 import {
     Box,
     Button,
-    Chip,
     CircularProgress,
     Collapse,
     Divider,
@@ -30,7 +28,7 @@ export const CriticFeedback: React.FC<CriticFeedbackProps> = ({ slideId }) => {
     const [showFeedbackButton, setShowFeedbackButton] = useState(true);
     const critic = useCritic();
     const ai = useAI();
-    const presentation = usePresentation();
+    const _presentation = usePresentation();
 
     const handleReviewSlide = async () => {
         try {

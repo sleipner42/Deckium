@@ -118,7 +118,7 @@ export class CriticTool extends BaseTool {
         }
     }
 
-    private generateCriticism(slide: any, slideInfo: string): string {
+    private generateCriticism(slide: any, _slideInfo: string): string {
         const issues: string[] = [];
         const positives: string[] = [];
 
@@ -228,7 +228,7 @@ export class CriticTool extends BaseTool {
         return criticism;
     }
 
-    private generateRecommendations(slide: any, slideInfo: string): string[] {
+    private generateRecommendations(slide: any, _slideInfo: string): string[] {
         const recommendations: string[] = [];
 
         const textElements = slide.elements.filter(

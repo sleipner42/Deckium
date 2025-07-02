@@ -49,7 +49,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
     } = element;
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-    const [initialPositions, setInitialPositions] = useState<{
+    const [_initialPositions, _setInitialPositions] = useState<{
         [key: string]: { x: number; y: number };
     }>({});
 
@@ -60,7 +60,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
         onMultiElementUpdateRef.current = onMultiElementUpdate;
     }, [onElementUpdate, onMultiElementUpdate]);
 
-    const commonStyles: React.CSSProperties = {
+    const _commonStyles: React.CSSProperties = {
         position: 'absolute',
         left: `${position.x}px`,
         top: `${position.y}px`,

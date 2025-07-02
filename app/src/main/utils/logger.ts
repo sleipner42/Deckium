@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 export interface LogEntry {
     timestamp: string;
@@ -62,7 +62,7 @@ export class Logger {
                     }
                 });
             }
-        } catch (error) {
+        } catch (_error) {
             console.warn(
                 'Could not read .env file, using default logging configuration',
             );

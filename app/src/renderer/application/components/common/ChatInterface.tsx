@@ -60,7 +60,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const [inputValue, setInputValue] = useState('');
     const [pastedImages, setPastedImages] = useState<string[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [processingSessionId, setProcessingSessionId] = useState<
+    const [_processingSessionId, setProcessingSessionId] = useState<
         string | null
     >(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);

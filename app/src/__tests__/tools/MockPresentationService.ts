@@ -5,7 +5,6 @@ import {
     Presentation,
     Slide,
 } from '../../common/domain/entities/types';
-import { PresentationService } from '../../main/presentation/service';
 
 /**
  * Mock PresentationService for testing tools

@@ -100,7 +100,7 @@ export const useMainProcessPresentation = () => {
                     }
                     setIsInitialized(true);
                 })
-                .catch((err) => {
+                .catch((_err) => {
                     setIsInitialized(true);
                 })
                 .finally(() => {

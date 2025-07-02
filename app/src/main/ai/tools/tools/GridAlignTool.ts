@@ -45,7 +45,7 @@ export class GridAlignTool extends BaseTool {
             };
         }
 
-        if (!gridSize || isNaN(Number(gridSize))) {
+        if (!gridSize || Number.isNaN(Number(gridSize))) {
             return {
                 success: false,
                 error: 'gridSize is required and must be a number',
@@ -64,7 +64,7 @@ export class GridAlignTool extends BaseTool {
         const originParts = gridOrigin.split(',').map((s: string) => s.trim());
         if (
             originParts.length !== 2 ||
-            originParts.some((p: string) => isNaN(Number(p)))
+            originParts.some((p: string) => Number.isNaN(Number(p)))
         ) {
             return {
                 success: false,

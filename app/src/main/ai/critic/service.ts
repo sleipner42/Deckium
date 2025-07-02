@@ -1,9 +1,4 @@
-import {
-    AIRequest,
-    AIResponse,
-    AIToolCall,
-    Thread,
-} from '../../../common/domain/entities/ai-types';
+import { AIToolCall, Thread } from '../../../common/domain/entities/ai-types';
 import { UUID } from '../../../common/domain/entities/types';
 import {
     IAIService,
@@ -38,7 +33,7 @@ export class CriticService {
     }
 
     createThread(title: string, presentationId: UUID): Thread {
-        const presentation = this.presentationService.getPresentation();
+        const _presentation = this.presentationService.getPresentation();
         const criticPrompt = CriticPrompt;
 
         const thread = this.state.createThread(

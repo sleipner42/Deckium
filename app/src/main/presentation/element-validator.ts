@@ -1,10 +1,4 @@
-import {
-    ContentElement,
-    Position,
-    Size,
-    Slide,
-    TextBox,
-} from '../../common/domain/entities/types';
+import { Position, Size, Slide } from '../../common/domain/entities/types';
 import { textMeasurementService } from '../text-measurement/service';
 
 export class ElementValidator {
@@ -212,8 +206,8 @@ export class ElementValidator {
             };
         }>,
         newElementSize: Size,
-        slide: Slide,
-        excludeElementId?: string,
+        _slide: Slide,
+        _excludeElementId?: string,
         padding: number = 0,
     ): Position {
         // Use the first overlapping element as reference

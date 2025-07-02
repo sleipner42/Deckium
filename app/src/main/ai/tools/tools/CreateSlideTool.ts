@@ -8,7 +8,7 @@ export class CreateSlideTool extends BaseTool {
     description = 'Create a new slide in the current presentation';
 
     protected async executeImpl(
-        params: Record<string, any>,
+        _params: Record<string, any>,
         presentationService: PresentationService,
     ): Promise<AIToolResult> {
         const newSlide = presentationService.addSlide();

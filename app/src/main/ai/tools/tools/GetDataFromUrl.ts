@@ -15,7 +15,7 @@ export class GetDataFromUrl extends BaseTool {
 
     protected async executeImpl(
         params: Record<string, any>,
-        presentationService: PresentationService,
+        _presentationService: PresentationService,
     ): Promise<AIToolResult> {
         const { url } = params;
         const response = await axios.get(url, {

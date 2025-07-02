@@ -1,6 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { BrowserWindow, dialog, screen } from 'electron';
-import fs from 'fs';
-import path from 'path';
 import {
     ContentElement,
     Presentation,
@@ -310,7 +310,7 @@ export class PresentationService {
             return;
         }
 
-        const displays = screen.getAllDisplays();
+        const _displays = screen.getAllDisplays();
         const primaryDisplay = screen.getPrimaryDisplay();
 
         this.fullscreenWindow = new BrowserWindow({

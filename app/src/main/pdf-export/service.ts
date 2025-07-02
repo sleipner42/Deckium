@@ -1,7 +1,6 @@
+import fs from 'node:fs';
 import { BrowserWindow, dialog } from 'electron';
-import fs from 'fs';
 import { jsPDF } from 'jspdf';
-import path from 'path';
 import { PDFDocument } from 'pdf-lib';
 import { Presentation } from '../../common/domain/entities/types';
 import { setSlideInHiddenWindow } from '../main';

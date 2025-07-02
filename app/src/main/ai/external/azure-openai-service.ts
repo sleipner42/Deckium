@@ -1,13 +1,11 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import * as dotenv from 'dotenv';
-import * as fs from 'fs';
 import { AzureOpenAI } from 'openai';
-import * as path from 'path';
 import { Message } from '../../../common/domain/entities/ai-types';
 import {
-    IAIModelClient,
     IAIService,
     IAIServiceFactory,
-    MessageContent,
 } from '../../../common/domain/interfaces/ai-service.interface';
 
 const envPath = path.resolve(process.cwd(), '.env');
@@ -26,12 +24,12 @@ export class AzureOpenAIService implements IAIService {
         this.client = client;
     }
 
-    async chat(messages: Message[], deploymentName?: string): Promise<string> {
+    async chat(messages: Message[], _deploymentName?: string): Promise<string> {
         const overallStartTime = performance.now();
         // console.log( `[AzureOpenAI] Starting chat request with ${messages.length} messages`,);
 
         try {
-            const formatStartTime = performance.now();
+            const _formatStartTime = performance.now();
 
             const userMessages = messages.filter((msg) => msg.role === 'user');
             const latestUserMessageId =
@@ -40,7 +38,7 @@ export class AzureOpenAIService implements IAIService {
                     : null;
 
             const formattedMessages = messages.map(
-                (msg, index, allMessages) => {
+                (msg, _index, _allMessages) => {
                     const baseMessage = {
                         role: msg.role as 'user' | 'assistant' | 'system',
                     };
@@ -82,12 +80,12 @@ export class AzureOpenAIService implements IAIService {
                 },
             );
 
-            const formatEndTime = performance.now();
+            const _formatEndTime = performance.now();
             // console.log( `[AzureOpenAI] Message formatting took ${formatEndTime - formatStartTime}ms`,);
 
             const originalSize = JSON.stringify(messages).length;
             const optimizedSize = JSON.stringify(formattedMessages).length;
-            const sizeSaved = originalSize - optimizedSize;
+            const _sizeSaved = originalSize - optimizedSize;
 
             // console.log(
             //   `[AzureOpenAI] Payload optimization: Original ${(originalSize / 1024).toFixed(2)} KB → Optimized ${(optimizedSize / 1024).toFixed(2)} KB (${(sizeSaved / 1024).toFixed(2)} KB saved, ${((sizeSaved / originalSize) * 100).toFixed(2)}%)`,);
@@ -95,9 +93,9 @@ export class AzureOpenAIService implements IAIService {
             const modelName = 'gpt-4.1-mini';
             // console.log(`[AzureOpenAI] Using deployment: ${modelName}`);
 
-            let requestSize = 0;
+            let _requestSize = 0;
             try {
-                requestSize = JSON.stringify(formattedMessages).length;
+                _requestSize = JSON.stringify(formattedMessages).length;
                 // console.log( `[AzureOpenAI] Request payload size: ${(requestSize / 1024).toFixed(2)} KB`,);
             } catch (err) {
                 console.log(
@@ -112,16 +110,16 @@ export class AzureOpenAIService implements IAIService {
                 messages: formattedMessages as any,
             });
             const apiCallEndTime = performance.now();
-            const apiCallDuration = apiCallEndTime - apiCallStartTime;
+            const _apiCallDuration = apiCallEndTime - apiCallStartTime;
             // console.log(`[AzureOpenAI] API call took ${apiCallDuration}ms`);
 
             if (!response.choices || response.choices.length === 0) {
                 throw new Error('No response from AI service');
             }
 
-            const processingStartTime = performance.now();
+            const _processingStartTime = performance.now();
             const aiResponse = response.choices[0].message?.content || '';
-            const processingEndTime = performance.now();
+            const _processingEndTime = performance.now();
 
             // console.log( `[AzureOpenAI] Response processing took ${processingEndTime - processingStartTime}ms`,);
             // console.log( `[AzureOpenAI] Received response from Azure OpenAI. Response length: ${aiResponse.length} characters`,);
@@ -132,7 +130,7 @@ export class AzureOpenAIService implements IAIService {
                 );
             }
 
-            const overallEndTime = performance.now();
+            const _overallEndTime = performance.now();
             // console.log( `[AzureOpenAI] Total request time: ${overallEndTime - overallStartTime}ms`,);
 
             return aiResponse;
@@ -149,13 +147,13 @@ export class AzureOpenAIService implements IAIService {
     async chatStream(
         messages: Message[],
         onChunk: (chunk: string) => void,
-        deploymentName?: string,
+        _deploymentName?: string,
     ): Promise<string> {
         const overallStartTime = performance.now();
         // console.log( `[AzureOpenAI] Starting streaming chat request with ${messages.length} messages`,);
 
         try {
-            const formatStartTime = performance.now();
+            const _formatStartTime = performance.now();
 
             const userMessages = messages.filter((msg) => msg.role === 'user');
             const latestUserMessageId =
@@ -202,7 +200,7 @@ export class AzureOpenAIService implements IAIService {
                 };
             });
 
-            const formatEndTime = performance.now();
+            const _formatEndTime = performance.now();
             // console.log( `[AzureOpenAI] Message formatting took ${formatEndTime - formatStartTime}ms`,);
 
             const modelName = 'gpt-4.1-mini';
@@ -232,11 +230,11 @@ export class AzureOpenAIService implements IAIService {
                 }
 
                 const apiCallEndTime = performance.now();
-                const apiCallDuration = apiCallEndTime - apiCallStartTime;
+                const _apiCallDuration = apiCallEndTime - apiCallStartTime;
                 // console.log( `[AzureOpenAI] Streaming API call completed in ${apiCallDuration}ms`,);
                 // console.log( `[AzureOpenAI] Total streamed response length: ${completeResponse.length} characters`,);
 
-                const overallEndTime = performance.now();
+                const _overallEndTime = performance.now();
                 // console.log( `[AzureOpenAI] Total streaming request time: ${overallEndTime - overallStartTime}ms`,);
 
                 return completeResponse;
@@ -278,18 +276,18 @@ export class AzureOpenAIServiceFactory implements IAIServiceFactory {
                 );
             }
 
-            const createClientStartTime = performance.now();
+            const _createClientStartTime = performance.now();
             const client = new AzureOpenAI({
                 apiKey,
                 endpoint,
                 apiVersion: '2024-10-21',
             });
-            const createClientEndTime = performance.now();
+            const _createClientEndTime = performance.now();
 
             // console.log( `[AzureOpenAI] Client creation took ${createClientEndTime - createClientStartTime}ms`,);
             // console.log('[AzureOpenAI] Client initialized successfully');
 
-            const initEndTime = performance.now();
+            const _initEndTime = performance.now();
             // console.log( `[AzureOpenAI] Total initialization time: ${initEndTime - initStartTime}ms`,);
 
             return new AzureOpenAIService(client);

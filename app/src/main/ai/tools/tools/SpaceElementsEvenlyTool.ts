@@ -116,7 +116,7 @@ export class SpaceElementsEvenlyTool extends BaseTool {
             // Calculate the size of each gap
             let gapSize;
 
-            if (spacing !== undefined && !isNaN(Number(spacing))) {
+            if (spacing !== undefined && !Number.isNaN(Number(spacing))) {
                 // Use fixed spacing if provided
                 gapSize = Number(spacing);
             } else {
@@ -168,7 +168,7 @@ export class SpaceElementsEvenlyTool extends BaseTool {
             // Calculate the size of each gap
             let gapSize;
 
-            if (spacing !== undefined && !isNaN(Number(spacing))) {
+            if (spacing !== undefined && !Number.isNaN(Number(spacing))) {
                 // Use fixed spacing if provided
                 gapSize = Number(spacing);
             } else {

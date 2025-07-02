@@ -13,7 +13,7 @@ export const SlideView: React.FC<{
     const { selectedSlide } = usePresentation();
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(defaultScale);
-    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+    const [_dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
     useEffect(() => {
         const updateScale = () => {

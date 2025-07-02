@@ -3,7 +3,6 @@ import {
     estimateTextDimensions,
     TextDimensionResult,
 } from '../ai/tools/utils/text-dimensions';
-import { TextMeasurementRequest, TextMeasurementResult } from './ipc-handler';
 
 export class TextMeasurementService {
     private static instance: TextMeasurementService;
@@ -214,8 +213,8 @@ export class TextMeasurementService {
         fontFamily: string = 'Arial',
         width: number,
         height: number,
-        align: 'left' | 'center' | 'right' = 'left',
-        verticalAlign: 'top' | 'middle' | 'bottom' = 'top',
+        _align: 'left' | 'center' | 'right' = 'left',
+        _verticalAlign: 'top' | 'middle' | 'bottom' = 'top',
     ): Promise<TextDimensionResult & { suggestedHeight?: number }> {
         const measurement = await this.measureText(
             content,

@@ -1,5 +1,5 @@
 import AddIcon from '@mui/icons-material/Add';
-import { Box, Button, Paper, Typography } from '@mui/material';
+import { Box, Button, Paper } from '@mui/material';
 import React from 'react';
 import { usePresentation } from '../../context/PresentationContext';
 import { ChatInterface } from '../common/ChatInterface';

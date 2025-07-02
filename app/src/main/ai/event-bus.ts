@@ -1,5 +1,5 @@
+import { EventEmitter } from 'node:events';
 import { BrowserWindow } from 'electron';
-import { EventEmitter } from 'events';
 import { Thread } from '../../common/domain/entities/ai-types';
 import { UUID } from '../../common/domain/entities/types';
 

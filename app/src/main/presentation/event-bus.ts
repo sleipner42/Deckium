@@ -1,5 +1,5 @@
+import { EventEmitter } from 'node:events';
 import { BrowserWindow } from 'electron';
-import { EventEmitter } from 'events';
 
 export class PresentationEventBus extends EventEmitter {
     static events = {

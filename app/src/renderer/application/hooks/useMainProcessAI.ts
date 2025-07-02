@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-    AIRequest,
-    AIResponse,
-    Thread,
-} from '../../../common/domain/entities/ai-types';
+import { AIRequest, Thread } from '../../../common/domain/entities/ai-types';
 import { UUID } from '../../../common/domain/entities/types';
 import { MessageContent } from '../../../common/domain/interfaces/ai-service.interface';
 
@@ -42,7 +38,7 @@ export const useMainProcessAI = (presentationId: UUID) => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
-    const [isCreatingInitialThread, setIsCreatingInitialThread] =
+    const [isCreatingInitialThread, _setIsCreatingInitialThread] =
         useState<boolean>(false);
 
     const loadThreads = useCallback(async () => {
