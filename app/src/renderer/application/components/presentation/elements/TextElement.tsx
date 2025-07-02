@@ -2,7 +2,10 @@ import { Box } from '@mui/material';
 import Quill from 'quill';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import type { TextBox, ContentElement } from '../../../../../common/domain/entities/types';
+import type {
+    ContentElement,
+    TextBox,
+} from '../../../../../common/domain/entities/types';
 import { useTextEditing } from '../../../context/TextEditingContext';
 import { ResizeHandles } from '../ResizeHandles';
 
@@ -45,9 +48,12 @@ interface TextElementProps {
     onClick: (event?: React.MouseEvent) => void;
     onContextMenu?: (event: React.MouseEvent) => void;
     onMultiElementUpdate?: (
-        primaryElementId: string, 
+        primaryElementId: string,
         primaryUpdates: Partial<ContentElement>,
-        allUpdates: Array<{elementId: string, updates: Partial<ContentElement>}>
+        allUpdates: Array<{
+            elementId: string;
+            updates: Partial<ContentElement>;
+        }>,
     ) => void;
     selectedElementIds?: string[];
     slideElements?: ContentElement[];
@@ -303,27 +309,41 @@ export const TextElement: React.FC<TextElementProps> = ({
                 const deltaY = newY - position.y;
 
                 // Check if multiple elements are selected and we have multi-element update capability
-                if (selectedElementIds.length > 1 && onMultiElementUpdateRef.current) {
+                if (
+                    selectedElementIds.length > 1 &&
+                    onMultiElementUpdateRef.current
+                ) {
                     // Prepare updates for all selected elements
-                    const allUpdates = selectedElementIds.map(elementId => {
-                        const elem = slideElements.find(el => el.id === elementId);
-                        if (elem) {
-                            return {
-                                elementId,
-                                updates: {
-                                    position: {
-                                        x: elem.position.x + deltaX,
-                                        y: elem.position.y + deltaY,
-                                    }
-                                }
-                            };
-                        }
-                        return null;
-                    }).filter(Boolean) as Array<{elementId: string, updates: Partial<ContentElement>}>;
-                    
+                    const allUpdates = selectedElementIds
+                        .map((elementId) => {
+                            const elem = slideElements.find(
+                                (el) => el.id === elementId,
+                            );
+                            if (elem) {
+                                return {
+                                    elementId,
+                                    updates: {
+                                        position: {
+                                            x: elem.position.x + deltaX,
+                                            y: elem.position.y + deltaY,
+                                        },
+                                    },
+                                };
+                            }
+                            return null;
+                        })
+                        .filter(Boolean) as Array<{
+                        elementId: string;
+                        updates: Partial<ContentElement>;
+                    }>;
+
                     // Call with primary element (this one being dragged), its intended position, and all updates
                     const primaryUpdates = { position: { x: newX, y: newY } };
-                    onMultiElementUpdateRef.current(element.id, primaryUpdates, allUpdates);
+                    onMultiElementUpdateRef.current(
+                        element.id,
+                        primaryUpdates,
+                        allUpdates,
+                    );
                 } else if (onElementUpdateRef.current) {
                     // Single element move
                     onElementUpdateRef.current(element.id, {
@@ -346,7 +366,15 @@ export const TextElement: React.FC<TextElementProps> = ({
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, dragOffset, element.id, selectedElementIds, slideElements, position.x, position.y]);
+    }, [
+        isDragging,
+        dragOffset,
+        element.id,
+        selectedElementIds,
+        slideElements,
+        position.x,
+        position.y,
+    ]);
 
     const handleDoubleClick = (e: React.MouseEvent) => {
         if (readOnly) return;
