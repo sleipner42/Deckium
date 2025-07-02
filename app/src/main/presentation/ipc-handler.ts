@@ -30,6 +30,10 @@ export function setupPresentationIPC(service: PresentationService) {
         return service.deleteSlide(slideId);
     });
 
+    ipcMain.handle('presentation:duplicate-slide', (_, slideId: string) => {
+        return service.duplicateSlide(slideId);
+    });
+
     ipcMain.handle(
         'presentation:reorder-slides',
         (_, fromIndex: number, toIndex: number) => {

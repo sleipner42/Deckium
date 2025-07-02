@@ -31,6 +31,7 @@ interface PresentationContextActions {
         updates: Partial<Slide>,
     ) => Promise<Slide | null>;
     deleteSlide: (slideId: string) => Promise<string | null>;
+    duplicateSlide: (slideId: string) => Promise<Slide | null>;
     nextSlide: () => void;
     previousSlide: () => void;
     goToSlide: (index: number) => void;
@@ -96,6 +97,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
         selectSlide,
         updateSlide,
         deleteSlide,
+        duplicateSlide,
         nextSlide,
         previousSlide,
         goToSlide,
@@ -141,6 +143,7 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
                 selectSlide,
                 updateSlide,
                 deleteSlide,
+                duplicateSlide,
                 nextSlide,
                 previousSlide,
                 goToSlide,

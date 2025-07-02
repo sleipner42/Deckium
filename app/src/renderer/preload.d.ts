@@ -72,6 +72,8 @@ declare global {
                     updates: unknown,
                 ): Promise<unknown>;
                 deleteSlide(slideId: string): Promise<unknown>;
+                duplicateSlide(slideId: string): Promise<unknown>;
+                reorderSlides(fromIndex: number, toIndex: number): Promise<unknown>;
                 addElement(slideId: string, element: unknown): Promise<unknown>;
                 updateElement(
                     elementId: string,

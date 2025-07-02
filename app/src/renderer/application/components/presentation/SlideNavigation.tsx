@@ -29,6 +29,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
         previousSlide,
         goToSlide,
         deleteSlide,
+        duplicateSlide,
         reorderSlides,
     } = usePresentation();
 
@@ -58,6 +59,13 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
     const handleDeleteSlide = () => {
         if (contextMenuSlideId) {
             deleteSlide(contextMenuSlideId);
+        }
+        handleContextMenuClose();
+    };
+
+    const handleDuplicateSlide = () => {
+        if (contextMenuSlideId) {
+            duplicateSlide(contextMenuSlideId);
         }
         handleContextMenuClose();
     };
@@ -391,6 +399,12 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
                     'aria-labelledby': 'slide-context-menu',
                 }}
             >
+                <MenuItem
+                    onClick={handleDuplicateSlide}
+                    disabled={!contextMenuSlideId}
+                >
+                    Duplicate Slide
+                </MenuItem>
                 <MenuItem
                     onClick={handleDeleteSlide}
                     disabled={!contextMenuSlideId}

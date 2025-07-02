@@ -36,6 +36,7 @@ interface ElectronWindow {
                 updates: Partial<Slide>,
             ) => Promise<Slide>;
             deleteSlide: (slideId: string) => Promise<string>;
+            duplicateSlide: (slideId: string) => Promise<Slide>;
             reorderSlides: (
                 fromIndex: number,
                 toIndex: number,
@@ -139,9 +140,11 @@ export const useMainProcessPresentation = () => {
 
         const slideAddedUnsubscribe = electronAPI.ipcRenderer.on(
             'presentation:slide-added',
-            (...args: unknown[]) => {
+            async (...args: unknown[]) => {
                 const newSlide = args[0] as Slide;
-                setSlides((prev) => [...prev, newSlide]);
+                // Refresh the entire presentation to get the correct slide ordering
+                const updatedPresentation = await electronAPI.presentation.getPresentation() as Presentation;
+                setSlides(updatedPresentation.slides);
                 setSelectedSlide(newSlide);
             },
         );
@@ -435,6 +438,36 @@ export const useMainProcessPresentation = () => {
         [selectedSlide],
     );
 
+    const duplicateSlide = useCallback(
+        async (slideId: string) => {
+            try {
+                if (!slideId) {
+                    setError('No slide ID provided');
+                    return null;
+                }
+
+                setIsLoading(true);
+                setError(null);
+
+                const duplicatedSlide =
+                    await electronAPI.presentation.duplicateSlide(slideId);
+
+                // The slide will be added to the state automatically via the 'presentation:slide-added' event
+                // No need to manually update state here
+
+                return duplicatedSlide;
+            } catch (err) {
+                const errorMessage =
+                    err instanceof Error ? err.message : 'An error occurred';
+                setError(errorMessage);
+                throw err;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [],
+    );
+
     const selectElement = useCallback(
         (elementId: string | null) => {
             setSelectedElementId(elementId);
@@ -700,6 +733,7 @@ export const useMainProcessPresentation = () => {
         selectSlide,
         updateSlide,
         deleteSlide,
+        duplicateSlide,
         nextSlide,
         previousSlide,
         goToSlide,

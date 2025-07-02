@@ -8,6 +8,7 @@ export type PresentationChannels =
     | 'presentation:add-slide'
     | 'presentation:update-slide'
     | 'presentation:delete-slide'
+    | 'presentation:duplicate-slide'
     | 'presentation:reorder-slides'
     | 'presentation:add-element'
     | 'presentation:update-element'
@@ -209,6 +210,9 @@ const electronHandler = {
         },
         deleteSlide(slideId: string) {
             return ipcRenderer.invoke('presentation:delete-slide', slideId);
+        },
+        duplicateSlide(slideId: string) {
+            return ipcRenderer.invoke('presentation:duplicate-slide', slideId);
         },
         reorderSlides(fromIndex: number, toIndex: number) {
             return ipcRenderer.invoke(
