@@ -25,6 +25,7 @@ import { ShapeElement } from './elements/ShapeElement';
 import { TextElement } from './elements/TextElement';
 import { ShapePropertiesDialog } from './ShapePropertiesDialog';
 import { SlideContextMenu } from './SlideContextMenu';
+import { SlidePropertiesDialog } from './SlidePropertiesDialog';
 import { SnapGuides } from './SnapGuides';
 
 interface SlideRendererProps {
@@ -136,6 +137,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         open: boolean;
         elementId: string | null;
     }>({ open: false, elementId: null });
+
+    const [slidePropertiesDialog, setSlidePropertiesDialog] = useState<{
+        open: boolean;
+    }>({ open: false });
 
     useEffect(() => {
         if (readOnly) return;
@@ -368,10 +373,17 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         event.preventDefault();
         if (readOnly || !selectableElements) return;
 
-        setSlideContextMenu({
-            mouseX: event.clientX - 2,
-            mouseY: event.clientY - 4,
-        });
+        // Only show slide context menu if clicking on the slide background
+        // (not on any elements)
+        const target = event.target as HTMLElement;
+        const isSlideBackground = target.hasAttribute('data-slide-container');
+
+        if (isSlideBackground) {
+            setSlideContextMenu({
+                mouseX: event.clientX - 2,
+                mouseY: event.clientY - 4,
+            });
+        }
     };
 
     const handleCloseSlideContextMenu = () => {
@@ -396,6 +408,18 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 newElementIds.forEach((id) => toggleElementSelection(id));
             }
         }
+    };
+
+    const handleSlideProperties = () => {
+        setSlidePropertiesDialog({ open: true });
+    };
+
+    const handleCloseSlidePropertiesDialog = () => {
+        setSlidePropertiesDialog({ open: false });
+    };
+
+    const handleUpdateSlideProperties = (updates: Partial<Slide>) => {
+        updateSlide(slide.id, updates);
     };
 
     const getElementZIndex = (elementId: string): number => {
@@ -694,6 +718,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 open={Boolean(slideContextMenu)}
                 onClose={handleCloseSlideContextMenu}
                 onPaste={handlePasteElements}
+                onProperties={handleSlideProperties}
                 canPaste={hasCopiedElements}
             />
 
@@ -749,6 +774,13 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                         : null
                 }
                 onUpdate={handleUpdateChartProperties}
+            />
+
+            <SlidePropertiesDialog
+                open={slidePropertiesDialog.open}
+                onClose={handleCloseSlidePropertiesDialog}
+                slide={slide}
+                onUpdate={handleUpdateSlideProperties}
             />
         </div>
     );
