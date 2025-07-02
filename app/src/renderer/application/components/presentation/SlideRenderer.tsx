@@ -228,11 +228,17 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     }, [
         readOnly,
         selectedElementId,
+        selectedElementIds,
         editingElementId,
         selectableElements,
         slide,
         selectElement,
+        toggleElementSelection,
+        clearElementSelection,
         updateSlide,
+        hasCopiedElements,
+        getCopiedElements,
+        copyElements,
     ]);
 
     // Handle image paste from clipboard
