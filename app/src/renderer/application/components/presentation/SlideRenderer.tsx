@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { createImage } from '../../../../common/domain/entities/element-factory';
 import {
     BarChart,
     ContentElement,
-    Image,
+    Image as ImageType,
     Plot,
     Shape,
     Slide,
@@ -174,6 +175,103 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         slide,
         selectElement,
         updateSlide,
+    ]);
+
+    // Handle image paste from clipboard
+    useEffect(() => {
+        if (readOnly) return;
+
+        const handlePaste = async (e: ClipboardEvent) => {
+            // Check if focus is on an input, textarea, or contenteditable element
+            const activeElement = document.activeElement;
+            const isInputFocused =
+                activeElement &&
+                (activeElement.tagName === 'INPUT' ||
+                    activeElement.tagName === 'TEXTAREA' ||
+                    activeElement.contentEditable === 'true');
+
+            // Don't handle paste if we're editing text
+            if (isInputFocused || editingElementId) {
+                return;
+            }
+
+            const clipboardData = e.clipboardData;
+            if (!clipboardData) return;
+
+            // Check if clipboard contains image data
+            const items = Array.from(clipboardData.items);
+            const imageItem = items.find((item) =>
+                item.type.startsWith('image/'),
+            );
+
+            if (imageItem) {
+                e.preventDefault();
+
+                const file = imageItem.getAsFile();
+                if (!file) return;
+
+                // Convert image to base64
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64Data = event.target?.result as string;
+                    if (!base64Data) return;
+
+                    // Create a temporary image to get dimensions
+                    const img = new Image();
+                    img.onload = () => {
+                        // Calculate appropriate size while maintaining aspect ratio
+                        const maxWidth = 400;
+                        const maxHeight = 300;
+                        let { width, height } = img;
+
+                        // Scale down if too large
+                        if (width > maxWidth || height > maxHeight) {
+                            const widthRatio = maxWidth / width;
+                            const heightRatio = maxHeight / height;
+                            const ratio = Math.min(widthRatio, heightRatio);
+                            width *= ratio;
+                            height *= ratio;
+                        }
+
+                        // Create image element at center of slide
+                        const imageElement = createImage({
+                            content: base64Data,
+                            position: {
+                                x: PRESENTATION_DIMENSIONS.WIDTH / 2 - width / 2,
+                                y: PRESENTATION_DIMENSIONS.HEIGHT / 2 - height / 2,
+                            },
+                            size: {
+                                width: Math.round(width),
+                                height: Math.round(height),
+                            },
+                        });
+
+                        // Add image to slide
+                        const updatedElements = [...slide.elements, imageElement];
+                        updateSlide(slide.id, { elements: updatedElements });
+
+                        // Select the newly created image
+                        selectElement(imageElement.id);
+                    };
+                    img.src = base64Data;
+                };
+
+                reader.readAsDataURL(file);
+            }
+        };
+
+        document.addEventListener('paste', handlePaste);
+
+        return () => {
+            document.removeEventListener('paste', handlePaste);
+        };
+    }, [
+        readOnly,
+        editingElementId,
+        slide.elements,
+        slide.id,
+        updateSlide,
+        selectElement,
     ]);
 
     const handleElementClick = (
@@ -401,7 +499,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     <ImageElement
                         key={element.id}
                         {...commonProps}
-                        element={element as Image}
+                        element={element as ImageType}
                     />
                 );
             case 'plot':
