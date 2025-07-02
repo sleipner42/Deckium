@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Plot } from '../../../../../common/domain/entities/types';
+import {
+    ContentElement,
+    Plot,
+} from '../../../../../common/domain/entities/types';
 import { ResizeHandles } from '../ResizeHandles';
 
 interface PlotElementProps {
@@ -29,16 +32,22 @@ export const PlotElement: React.FC<PlotElementProps> = ({
     onClick,
     onContextMenu,
     onElementUpdate,
+    onMultiElementUpdate,
+    selectedElementIds = [],
+    slideElements = [],
     readOnly = false,
 }) => {
     const { position, size, data, plotType, style } = element;
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const [hasDragged, setHasDragged] = useState(false);
 
     const onElementUpdateRef = useRef(onElementUpdate);
+    const onMultiElementUpdateRef = useRef(onMultiElementUpdate);
     useEffect(() => {
         onElementUpdateRef.current = onElementUpdate;
-    }, [onElementUpdate]);
+        onMultiElementUpdateRef.current = onMultiElementUpdate;
+    }, [onElementUpdate, onMultiElementUpdate]);
 
     // Handle mouse events for dragging
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -47,6 +56,7 @@ export const PlotElement: React.FC<PlotElementProps> = ({
         if (isSelected) {
             e.stopPropagation();
             setIsDragging(true);
+            setHasDragged(false);
             setDragOffset({
                 x: e.clientX - position.x,
                 y: e.clientY - position.y,
@@ -57,13 +67,55 @@ export const PlotElement: React.FC<PlotElementProps> = ({
     // Setup mouse move and mouse up event listeners
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            if (isDragging && onElementUpdateRef.current) {
-                onElementUpdateRef.current(element.id, {
-                    position: {
-                        x: e.clientX - dragOffset.x,
-                        y: e.clientY - dragOffset.y,
-                    },
-                });
+            if (isDragging) {
+                setHasDragged(true);
+                const newX = e.clientX - dragOffset.x;
+                const newY = e.clientY - dragOffset.y;
+                const deltaX = newX - position.x;
+                const deltaY = newY - position.y;
+
+                // Check if multiple elements are selected and we have multi-element update capability
+                if (
+                    selectedElementIds.length > 1 &&
+                    onMultiElementUpdateRef.current
+                ) {
+                    // Prepare updates for all selected elements
+                    const allUpdates = selectedElementIds
+                        .map((elementId) => {
+                            const elem = slideElements.find(
+                                (el) => el.id === elementId,
+                            );
+                            if (elem) {
+                                return {
+                                    elementId,
+                                    updates: {
+                                        position: {
+                                            x: elem.position.x + deltaX,
+                                            y: elem.position.y + deltaY,
+                                        },
+                                    },
+                                };
+                            }
+                            return null;
+                        })
+                        .filter(Boolean) as Array<{
+                        elementId: string;
+                        updates: Partial<ContentElement>;
+                    }>;
+
+                    // Call with primary element (this one being dragged), its intended position, and all updates
+                    const primaryUpdates = { position: { x: newX, y: newY } };
+                    onMultiElementUpdateRef.current(
+                        element.id,
+                        primaryUpdates,
+                        allUpdates,
+                    );
+                } else if (onElementUpdateRef.current) {
+                    // Single element move
+                    onElementUpdateRef.current(element.id, {
+                        position: { x: newX, y: newY },
+                    });
+                }
             }
         };
 
@@ -80,13 +132,26 @@ export const PlotElement: React.FC<PlotElementProps> = ({
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, dragOffset, element.id]);
+    }, [
+        isDragging,
+        dragOffset,
+        element.id,
+        selectedElementIds,
+        slideElements,
+        position.x,
+        position.y,
+    ]);
 
     const handleClick = (e: React.MouseEvent) => {
         if (readOnly) return;
 
         e.stopPropagation();
-        if (onClick) onClick(e);
+        // Don't trigger click if we just finished dragging
+        if (!hasDragged && onClick) {
+            onClick(e);
+        }
+        // Reset drag flag after a short delay to allow for future clicks
+        setTimeout(() => setHasDragged(false), 100);
     };
 
     // This is a placeholder for actual plot rendering

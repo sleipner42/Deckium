@@ -93,6 +93,7 @@ export const TextElement: React.FC<TextElementProps> = ({
     const [preventBlur, setPreventBlur] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const [hasDragged, setHasDragged] = useState(false);
     const { setActiveEditor } = useTextEditing();
 
     useEffect(() => {
@@ -286,6 +287,7 @@ export const TextElement: React.FC<TextElementProps> = ({
         if (isSelected && !isEditing) {
             e.stopPropagation();
             setIsDragging(true);
+            setHasDragged(false);
             setDragOffset({
                 x: e.clientX - position.x,
                 y: e.clientY - position.y,
@@ -303,6 +305,7 @@ export const TextElement: React.FC<TextElementProps> = ({
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (isDragging) {
+                setHasDragged(true);
                 const newX = e.clientX - dragOffset.x;
                 const newY = e.clientY - dragOffset.y;
                 const deltaX = newX - position.x;
@@ -417,9 +420,12 @@ export const TextElement: React.FC<TextElementProps> = ({
         }
 
         e.stopPropagation();
-        if (!isEditing) {
+        // Don't trigger click if we just finished dragging
+        if (!isEditing && !hasDragged) {
             onClick(e);
         }
+        // Reset drag flag after a short delay to allow for future clicks
+        setTimeout(() => setHasDragged(false), 100);
     };
 
     const renderContent = () => {

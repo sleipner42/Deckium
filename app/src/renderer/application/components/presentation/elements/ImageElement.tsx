@@ -40,6 +40,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
     const { position, size, content, style, zIndex } = element;
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const [hasDragged, setHasDragged] = useState(false);
 
     const onElementUpdateRef = useRef(onElementUpdate);
     const onMultiElementUpdateRef = useRef(onMultiElementUpdate);
@@ -55,6 +56,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
         if (isSelected) {
             e.stopPropagation();
             setIsDragging(true);
+            setHasDragged(false);
             setDragOffset({
                 x: e.clientX - position.x,
                 y: e.clientY - position.y,
@@ -66,6 +68,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (isDragging) {
+                setHasDragged(true);
                 const newX = e.clientX - dragOffset.x;
                 const newY = e.clientY - dragOffset.y;
                 const deltaX = newX - position.x;
@@ -143,7 +146,12 @@ export const ImageElement: React.FC<ImageElementProps> = ({
         if (readOnly) return;
 
         e.stopPropagation();
-        if (onClick) onClick(e);
+        // Don't trigger click if we just finished dragging
+        if (!hasDragged && onClick) {
+            onClick(e);
+        }
+        // Reset drag flag after a short delay to allow for future clicks
+        setTimeout(() => setHasDragged(false), 100);
     };
 
     return (

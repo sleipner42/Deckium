@@ -49,6 +49,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
     } = element;
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const [hasDragged, setHasDragged] = useState(false);
     const [_initialPositions, _setInitialPositions] = useState<{
         [key: string]: { x: number; y: number };
     }>({});
@@ -82,6 +83,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
         if (isSelected) {
             e.stopPropagation();
             setIsDragging(true);
+            setHasDragged(false);
             setDragOffset({
                 x: e.clientX - position.x,
                 y: e.clientY - position.y,
@@ -93,6 +95,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (isDragging) {
+                setHasDragged(true);
                 const newX = e.clientX - dragOffset.x;
                 const newY = e.clientY - dragOffset.y;
                 const deltaX = newX - position.x;
@@ -170,9 +173,12 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
         if (readOnly) return;
 
         e.stopPropagation();
-        if (onClick) {
+        // Don't trigger click if we just finished dragging
+        if (!hasDragged && onClick) {
             onClick(e);
         }
+        // Reset drag flag after a short delay to allow for future clicks
+        setTimeout(() => setHasDragged(false), 100);
     };
 
     const renderShape = () => {
