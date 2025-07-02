@@ -7,7 +7,11 @@ interface ShapeElementProps {
     onClick?: (event?: React.MouseEvent) => void;
     onContextMenu?: (event: React.MouseEvent) => void;
     onElementUpdate?: (elementId: string, updates: Partial<Shape>) => void;
-    onMultiElementUpdate?: (updates: Array<{elementId: string, updates: Partial<ContentElement>}>) => void;
+    onMultiElementUpdate?: (
+        primaryElementId: string, 
+        primaryUpdates: Partial<ContentElement>,
+        allUpdates: Array<{elementId: string, updates: Partial<ContentElement>}>
+    ) => void;
     selectedElementIds?: string[];
     slideElements?: ContentElement[];
     isSelected: boolean;
@@ -88,8 +92,8 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
 
                 // Check if multiple elements are selected and we have multi-element update capability
                 if (selectedElementIds.length > 1 && onMultiElementUpdateRef.current) {
-                    // Move all selected elements
-                    const updates = selectedElementIds.map(elementId => {
+                    // Prepare updates for all selected elements
+                    const allUpdates = selectedElementIds.map(elementId => {
                         const elem = slideElements.find(el => el.id === elementId);
                         if (elem) {
                             return {
@@ -105,7 +109,9 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
                         return null;
                     }).filter(Boolean) as Array<{elementId: string, updates: Partial<ContentElement>}>;
                     
-                    onMultiElementUpdateRef.current(updates);
+                    // Call with primary element (this one being dragged), its intended position, and all updates
+                    const primaryUpdates = { position: { x: newX, y: newY } };
+                    onMultiElementUpdateRef.current(element.id, primaryUpdates, allUpdates);
                 } else if (onElementUpdateRef.current) {
                     // Single element move
                     onElementUpdateRef.current(element.id, {

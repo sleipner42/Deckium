@@ -287,12 +287,37 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     };
 
     // Handle multi-element updates for dragging multiple selected elements
-    const handleMultiElementUpdate = (updates: Array<{elementId: string, updates: Partial<ContentElement>}>) => {
+    const handleMultiElementUpdate = (
+        primaryElementId: string, 
+        primaryUpdates: Partial<ContentElement>,
+        allUpdates: Array<{elementId: string, updates: Partial<ContentElement>}>
+    ) => {
         if (readOnly) return;
         
-        // Apply all updates
-        updates.forEach(({elementId, updates: elementUpdates}) => {
-            updateElementWithSnap(elementId, elementUpdates);
+        // Apply snapping only to the primary element being dragged
+        const primaryElement = slide.elements.find(el => el.id === primaryElementId);
+        if (!primaryElement || !primaryUpdates.position) return;
+
+        const snapResult = calculateSnapPosition(primaryElement, primaryUpdates.position);
+        const snappedPosition = snapResult.position;
+        
+        // Calculate the delta from the original intended position to the snapped position
+        const deltaX = snappedPosition.x - primaryUpdates.position.x;
+        const deltaY = snappedPosition.y - primaryUpdates.position.y;
+        
+        // Apply the snapped position to the primary element
+        updateElement(primaryElementId, { position: snappedPosition });
+        
+        // Apply the same delta to all other selected elements (without snapping)
+        allUpdates.forEach(({elementId, updates: elementUpdates}) => {
+            if (elementId !== primaryElementId && elementUpdates.position) {
+                updateElement(elementId, {
+                    position: {
+                        x: elementUpdates.position.x + deltaX,
+                        y: elementUpdates.position.y + deltaY,
+                    }
+                });
+            }
         });
     };
 
