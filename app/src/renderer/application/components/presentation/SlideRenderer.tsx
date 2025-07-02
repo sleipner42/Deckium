@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     cloneElements,
     createImage,
@@ -241,9 +241,13 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         copyElements,
     ]);
 
-    // Handle image paste from clipboard
+    // Handle image paste from clipboard on this specific slide
+    const slideRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
-        if (readOnly) return;
+        if (readOnly || !slideRef.current) return;
+
+        const slideElement = slideRef.current;
 
         const handlePaste = async (e: ClipboardEvent) => {
             // Check if focus is on an input, textarea, or contenteditable element
@@ -254,8 +258,14 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     activeElement.tagName === 'TEXTAREA' ||
                     activeElement.contentEditable === 'true');
 
-            // Don't handle paste if we're editing text
-            if (isInputFocused || editingElementId) {
+            // Check if we're in the agent input field
+            const isAgentInput = activeElement && (
+                activeElement.closest('[data-testid="agent-input"]') ||
+                activeElement.closest('.chat-interface')
+            );
+
+            // Don't handle paste if we're editing text or in agent input
+            if (isInputFocused || editingElementId || isAgentInput) {
                 return;
             }
 
@@ -270,6 +280,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
             if (imageItem) {
                 e.preventDefault();
+                e.stopPropagation(); // Prevent other handlers from processing this event
 
                 const file = imageItem.getAsFile();
                 if (!file) return;
@@ -280,7 +291,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     const base64Data = event.target?.result as string;
                     if (!base64Data) return;
 
-                    // Create a temporary image to get dimensions
+                    // Create image element on slide
                     const img = new Image();
                     img.onload = () => {
                         // Calculate appropriate size while maintaining aspect ratio
@@ -331,10 +342,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             }
         };
 
-        document.addEventListener('paste', handlePaste);
+        slideElement.addEventListener('paste', handlePaste);
 
         return () => {
-            document.removeEventListener('paste', handlePaste);
+            slideElement.removeEventListener('paste', handlePaste);
         };
     }, [
         readOnly,
@@ -660,13 +671,16 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
     return (
         <div
+            ref={slideRef}
             data-slide-container
+            tabIndex={0}
             style={{
                 width: PRESENTATION_DIMENSIONS.WIDTH,
                 height: PRESENTATION_DIMENSIONS.HEIGHT,
                 backgroundColor: slide.background,
                 overflow: 'hidden',
                 position: 'relative',
+                outline: 'none', // Remove focus outline
                 ...style,
             }}
             className={className}

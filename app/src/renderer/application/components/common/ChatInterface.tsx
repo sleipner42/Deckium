@@ -363,7 +363,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     return (
         <Box
-            className={className}
+            className={`chat-interface ${className}`}
             sx={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -1023,6 +1023,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     disabled={isProcessing || !currentThread}
                     variant="outlined"
                     inputRef={inputRef}
+                    inputProps={{
+                        'data-testid': 'agent-input',
+                    }}
                     InputProps={{
                         endAdornment: (
                             <InputAdornment position="end">
