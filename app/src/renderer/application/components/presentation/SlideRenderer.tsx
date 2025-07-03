@@ -53,6 +53,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         selectedElementIds,
         editingElementId,
         selectElement,
+        selectMultipleElements,
         toggleElementSelection,
         clearElementSelection,
         startEditingElement,
@@ -229,6 +230,25 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 return;
             }
 
+            // Handle Select All (Ctrl+A or Cmd+A)
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+                // Check if we're in text editing mode or an input field
+                const isAgentInput = activeElement && (
+                    activeElement.closest('[data-testid="agent-input"]') ||
+                    activeElement.closest('.chat-interface') ||
+                    activeElement.closest('.ql-editor')
+                );
+
+                if (!isInputFocused && !isAgentInput && !editingElementId && selectableElements) {
+                    e.preventDefault();
+                    const allElementIds = slide.elements.map(el => el.id);
+                    if (allElementIds.length > 0) {
+                        selectMultipleElements(allElementIds);
+                    }
+                }
+                return;
+            }
+
             if (
                 (e.key === 'Backspace' || e.key === 'Delete') &&
                 (selectedElementId || selectedElementIds.length > 0) &&
@@ -268,6 +288,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         selectableElements,
         slide,
         selectElement,
+        selectMultipleElements,
         toggleElementSelection,
         clearElementSelection,
         updateSlide,

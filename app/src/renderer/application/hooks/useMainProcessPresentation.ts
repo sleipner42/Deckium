@@ -376,6 +376,50 @@ export const useMainProcessPresentation = () => {
             },
         );
 
+        // Listen for menu copy event
+        const menuCopyUnsubscribe = electronAPI.ipcRenderer.on(
+            'menu:copy',
+            () => {
+                console.log('Menu copy event received');
+                // Trigger copy for selected elements on current slide
+                const copyEvent = new KeyboardEvent('keydown', {
+                    ctrlKey: true,
+                    metaKey: true,
+                    key: 'c',
+                    code: 'KeyC',
+                    bubbles: true,
+                    cancelable: true,
+                });
+                document.dispatchEvent(copyEvent);
+            },
+        );
+
+        // Listen for menu select-all event
+        const menuSelectAllUnsubscribe = electronAPI.ipcRenderer.on(
+            'menu:select-all',
+            () => {
+                console.log('Menu select all event received');
+                // Select all elements on current slide if we're not in an input field
+                const activeElement = document.activeElement;
+                const isInputFocused =
+                    activeElement &&
+                    (activeElement.tagName === 'INPUT' ||
+                        activeElement.tagName === 'TEXTAREA' ||
+                        activeElement.contentEditable === 'true');
+
+                const isAgentInput = activeElement && (
+                    activeElement.closest('[data-testid="agent-input"]') ||
+                    activeElement.closest('.chat-interface') ||
+                    activeElement.closest('.ql-editor')
+                );
+
+                if (!isInputFocused && !isAgentInput && selectedSlide) {
+                    const allElementIds = selectedSlide.elements.map(el => el.id);
+                    selectMultipleElements(allElementIds);
+                }
+            },
+        );
+
         return () => {
             metaUpdatedUnsubscribe();
             slideAddedUnsubscribe();
@@ -391,6 +435,8 @@ export const useMainProcessPresentation = () => {
             slideChangedUnsubscribe();
             menuUndoUnsubscribe();
             menuRedoUnsubscribe();
+            menuCopyUnsubscribe();
+            menuSelectAllUnsubscribe();
         };
     }, [selectedSlide]);
 

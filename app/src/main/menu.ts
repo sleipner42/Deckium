@@ -162,7 +162,14 @@ export default class MenuBuilder {
                     },
                 },
                 { type: 'separator' },
-                { label: 'Copy', accelerator: 'Command+C', selector: 'copy:' },
+                {
+                    label: 'Copy',
+                    accelerator: 'Command+C',
+                    click: () => {
+                        console.log('Menu Copy clicked');
+                        this.mainWindow.webContents.send('menu:copy');
+                    },
+                },
                 {
                     label: 'Paste',
                     accelerator: 'Command+V',
@@ -171,7 +178,10 @@ export default class MenuBuilder {
                 {
                     label: 'Select All',
                     accelerator: 'Command+A',
-                    selector: 'selectAll:',
+                    click: () => {
+                        console.log('Menu Select All clicked');
+                        this.mainWindow.webContents.send('menu:select-all');
+                    },
                 },
             ],
         };
@@ -281,7 +291,10 @@ export default class MenuBuilder {
                     {
                         label: '&Copy',
                         accelerator: 'Ctrl+C',
-                        role: 'copy',
+                        click: () => {
+                            console.log('Windows menu Copy clicked');
+                            this.mainWindow.webContents.send('menu:copy');
+                        },
                     },
                     {
                         label: '&Paste',
@@ -291,7 +304,10 @@ export default class MenuBuilder {
                     {
                         label: 'Select &All',
                         accelerator: 'Ctrl+A',
-                        role: 'selectall',
+                        click: () => {
+                            console.log('Windows menu Select All clicked');
+                            this.mainWindow.webContents.send('menu:select-all');
+                        },
                     },
                 ],
             },
