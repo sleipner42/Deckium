@@ -76,6 +76,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
             const { items } = e.clipboardData;
 
+            // Check for images first (prioritize images over text)
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf('image') !== -1) {
                     const blob = items[i].getAsFile();
@@ -126,10 +127,28 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         reader.readAsDataURL(blob);
 
                         e.preventDefault();
-                        break;
+                        return; // Exit early if image was processed
                     }
                 }
             }
+            
+            // If no image was processed, check for element data
+            navigator.clipboard.readText().then(text => {
+                if (text) {
+                    try {
+                        const elementData = JSON.parse(text);
+                        if (elementData.type === 'kraftpo-elements' && elementData.elementIds) {
+                            // Add element IDs to input value
+                            const elementIdsText = `Element IDs: ${elementData.elementIds.join(', ')}`;
+                            setInputValue(prev => prev ? `${prev}\n${elementIdsText}` : elementIdsText);
+                        }
+                    } catch (parseError) {
+                        // Not valid JSON or not our element data, ignore
+                    }
+                }
+            }).catch(() => {
+                // Failed to read clipboard text, ignore
+            });
         };
 
         document.addEventListener('paste', handlePaste);

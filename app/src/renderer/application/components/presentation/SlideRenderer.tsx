@@ -161,37 +161,117 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     const selectedElements = slide.elements.filter((element) =>
                         selectedElementIds.includes(element.id),
                     );
+                    
+                    // Store in app context
                     copyElements(selectedElements);
+                    
+                    // Also store in system clipboard with marker
+                    const elementData = {
+                        type: 'kraftpo-elements',
+                        version: '1.0',
+                        elements: selectedElements,
+                        elementIds: selectedElements.map(el => el.id),
+                        timestamp: Date.now()
+                    };
+                    
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(JSON.stringify(elementData)).catch(() => {
+                            // Fallback: silent failure, app clipboard still works
+                        });
+                    }
                 }
                 return;
             }
 
-            // Handle Paste (Ctrl+V or Cmd+V)
+            // Handle Paste (Ctrl+V or Cmd+V) for app elements only
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-                if (hasCopiedElements && selectableElements) {
+                if (selectableElements && hasCopiedElements) {
                     e.preventDefault();
-                    const copiedElements = getCopiedElements();
-                    const clonedElements = cloneElements(copiedElements);
+                    
+                    // First try to read system clipboard text for app elements
+                    navigator.clipboard.readText().then(text => {
+                        let handled = false;
+                        
+                        if (text) {
+                            try {
+                                const elementData = JSON.parse(text);
+                                if (elementData.type === 'kraftpo-elements' && elementData.elements) {
+                                    // Valid app element data found
+                                    const clonedElements = cloneElements(elementData.elements);
 
-                    // Add all cloned elements to the current slide
-                    const updatedElements = [
-                        ...slide.elements,
-                        ...clonedElements,
-                    ];
-                    updateSlide(slide.id, { elements: updatedElements });
+                                    // Add all cloned elements to the current slide
+                                    const updatedElements = [
+                                        ...slide.elements,
+                                        ...clonedElements,
+                                    ];
+                                    updateSlide(slide.id, { elements: updatedElements });
 
-                    // Select the newly pasted elements
-                    const newElementIds = clonedElements.map((el) => el.id);
-                    if (newElementIds.length === 1) {
-                        selectElement(newElementIds[0]);
-                    } else {
-                        clearElementSelection();
-                        newElementIds.forEach((id) =>
-                            toggleElementSelection(id),
-                        );
-                    }
+                                    // Select the newly pasted elements
+                                    const newElementIds = clonedElements.map((el) => el.id);
+                                    if (newElementIds.length === 1) {
+                                        selectElement(newElementIds[0]);
+                                    } else {
+                                        clearElementSelection();
+                                        newElementIds.forEach((id) =>
+                                            toggleElementSelection(id),
+                                        );
+                                    }
+                                    handled = true;
+                                    return;
+                                }
+                            } catch (parseError) {
+                                // Not valid JSON or not our element data
+                            }
+                        }
+                        
+                        // If no valid system clipboard data, use app clipboard
+                        if (!handled) {
+                            const copiedElements = getCopiedElements();
+                            const clonedElements = cloneElements(copiedElements);
+
+                            // Add all cloned elements to the current slide
+                            const updatedElements = [
+                                ...slide.elements,
+                                ...clonedElements,
+                            ];
+                            updateSlide(slide.id, { elements: updatedElements });
+
+                            // Select the newly pasted elements
+                            const newElementIds = clonedElements.map((el) => el.id);
+                            if (newElementIds.length === 1) {
+                                selectElement(newElementIds[0]);
+                            } else {
+                                clearElementSelection();
+                                newElementIds.forEach((id) =>
+                                    toggleElementSelection(id),
+                                );
+                            }
+                        }
+                    }).catch(() => {
+                        // Clipboard read failed, use app clipboard
+                        const copiedElements = getCopiedElements();
+                        const clonedElements = cloneElements(copiedElements);
+
+                        // Add all cloned elements to the current slide
+                        const updatedElements = [
+                            ...slide.elements,
+                            ...clonedElements,
+                        ];
+                        updateSlide(slide.id, { elements: updatedElements });
+
+                        // Select the newly pasted elements
+                        const newElementIds = clonedElements.map((el) => el.id);
+                        if (newElementIds.length === 1) {
+                            selectElement(newElementIds[0]);
+                        } else {
+                            clearElementSelection();
+                            newElementIds.forEach((id) =>
+                                toggleElementSelection(id),
+                            );
+                        }
+                    });
                 }
-                return;
+                // Don't return here - let image paste handler deal with images
             }
 
             if (
@@ -525,7 +605,23 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 selectedElementIds.includes(element.id),
             );
             if (selectedElements.length > 0) {
+                // Store in app context
                 copyElements(selectedElements);
+                
+                // Also store in system clipboard with marker
+                const elementData = {
+                    type: 'kraftpo-elements',
+                    version: '1.0',
+                    elements: selectedElements,
+                    elementIds: selectedElements.map(el => el.id),
+                    timestamp: Date.now()
+                };
+                
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(JSON.stringify(elementData)).catch(() => {
+                        // Fallback: silent failure, app clipboard still works
+                    });
+                }
             }
         }
     };
