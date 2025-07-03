@@ -313,6 +313,13 @@ export class LintingService {
                 currentTextboxSize,
             )),
         );
+        errors.push(
+            ...(await this.checkTextPartlyOutsideShape(
+                textBox,
+                slide,
+                currentTextboxSize,
+            )),
+        );
 
         return errors;
     }
@@ -581,6 +588,110 @@ export class LintingService {
         }
 
         return errors;
+    }
+
+    private async checkTextPartlyOutsideShape(
+        textBox: TextBox,
+        slide: Slide,
+        currentTextboxSize: {
+            x?: number;
+            y?: number;
+            width?: number;
+            height?: number;
+        },
+    ): Promise<LintingError[]> {
+        const errors: LintingError[] = [];
+
+        if (
+            currentTextboxSize.x === undefined ||
+            currentTextboxSize.y === undefined ||
+            !currentTextboxSize.width ||
+            !currentTextboxSize.height
+        ) {
+            return errors;
+        }
+
+        const shapes = slide.elements.filter(
+            (e) =>
+                e.type === 'rectangle' ||
+                e.type === 'circle' ||
+                e.type === 'triangle',
+        ) as Shape[];
+
+        for (const shape of shapes) {
+            const zIndexComparison =
+                await textMeasurementService.isElementInFrontOf(
+                    textBox.id,
+                    shape.id,
+                );
+
+            if (
+                zIndexComparison.elementAFound &&
+                zIndexComparison.elementBFound &&
+                zIndexComparison.isAInFrontOfB
+            ) {
+                const textBounds = {
+                    x: currentTextboxSize.x,
+                    y: currentTextboxSize.y,
+                    width: currentTextboxSize.width,
+                    height: currentTextboxSize.height,
+                };
+
+                const shapeBounds = {
+                    x: shape.position.x,
+                    y: shape.position.y,
+                    width: shape.size.width,
+                    height: shape.size.height,
+                };
+
+                if (this.isTextPartlyOutsideShape(textBounds, shapeBounds)) {
+                    errors.push(
+                        this.createError(
+                            `${textBox.id}-partly-outside-shape`,
+                            textBox.id,
+                            slide.id,
+                            'text_shape_boundary',
+                            `TEXT_PARTLY_OUTSIDE_SHAPE: Text element "${textBox.id}" is positioned partly outside shape "${shape.id}". Text should be either completely inside or completely outside the shape for better visual clarity.`,
+                            'warning',
+                            'ACTION_REQUIRED: Use updateTextElement tool to reposition text to be either completely inside or completely outside the shape boundaries',
+                        ),
+                    );
+                }
+            }
+        }
+
+        return errors;
+    }
+
+    private isTextPartlyOutsideShape(
+        textBounds: { x: number; y: number; width: number; height: number },
+        shapeBounds: { x: number; y?: number; width: number; height: number },
+    ): boolean {
+        if (!shapeBounds.y) return false;
+
+        const textLeft = textBounds.x;
+        const textRight = textBounds.x + textBounds.width;
+        const textTop = textBounds.y;
+        const textBottom = textBounds.y + textBounds.height;
+
+        const shapeLeft = shapeBounds.x;
+        const shapeRight = shapeBounds.x + shapeBounds.width;
+        const shapeTop = shapeBounds.y;
+        const shapeBottom = shapeBounds.y + shapeBounds.height;
+
+        const textCompletelyInside =
+            textLeft >= shapeLeft &&
+            textRight <= shapeRight &&
+            textTop >= shapeTop &&
+            textBottom <= shapeBottom;
+
+        const textCompletelyOutside =
+            textRight <= shapeLeft ||
+            textLeft >= shapeRight ||
+            textBottom <= shapeTop ||
+            textTop >= shapeBottom;
+
+        return !textCompletelyInside && !textCompletelyOutside;
     }
 
     private checkBoundsOverlap(

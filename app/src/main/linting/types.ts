@@ -5,7 +5,8 @@ export type LintingErrorType =
     | 'text_overlap'
     | 'shape_overlap'
     | 'zindex_issue'
-    | 'text_overflow';
+    | 'text_overflow'
+    | 'text_shape_boundary';
 
 export type LintingSeverity = 'error' | 'warning' | 'info';
 

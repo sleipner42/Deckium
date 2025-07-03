@@ -349,7 +349,8 @@ export class AIService {
         const loopStartTime = performance.now();
         let updatedThread = this.initializeThreadForLoop(thread);
         let iterationCount = 0;
-        let consecutiveEmptyIterations = 0;
+        let _consecutiveEmptyIterations = 0;
+        let shouldBreakOnEmpty = false;
 
         const constants = {
             MAX_ITERATIONS: 20,
@@ -387,24 +388,23 @@ export class AIService {
                 const toolCall = this.toolsService.extractToolCall(aiResponse);
 
                 if (!toolCall) {
-                    const shouldContinue = this.shouldContinueWithoutToolCall(
-                        aiResponse,
-                        consecutiveEmptyIterations,
-                        constants.MAX_CONSECUTIVE_EMPTY_ITERATIONS,
-                    );
-
-                    if (shouldContinue) {
-                        updatedThread =
-                            this.addContinuationMessage(updatedThread);
-                        iterationCount++;
-                        consecutiveEmptyIterations++;
-                        continue;
+                    if (shouldBreakOnEmpty) {
+                        break;
                     }
 
-                    break;
+                    updatedThread = this.state.addMessage(
+                        updatedThread,
+                        'Please go ahead with your task, otherwise respond with empty space',
+                        'system',
+                    );
+
+                    shouldBreakOnEmpty = true;
+                    iterationCount++;
+                    continue;
                 }
 
-                consecutiveEmptyIterations = 0;
+                shouldBreakOnEmpty = false;
+                _consecutiveEmptyIterations = 0;
 
                 this.checkAborted(abortSignal, 'before tool execution');
 
