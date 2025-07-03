@@ -13,7 +13,6 @@ import {
     TextBox,
 } from '../../../../common/domain/entities/types';
 import { PRESENTATION_DIMENSIONS } from '../../../../common/utils/constants';
-import { useClipboard } from '../../context/ClipboardContext';
 import { usePresentation } from '../../context/PresentationContext';
 import { useSnapSystem } from '../../hooks/useSnapSystem';
 import { BarChartPropertiesDialog } from './BarChartPropertiesDialog';
@@ -60,8 +59,6 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         stopEditingElement,
     } = usePresentation();
 
-    const { copyElements, getCopiedElements, hasCopiedElements } =
-        useClipboard();
 
     // Define helper functions to use PresentationContext state
     const isSelected = (elementId: string): boolean => {
@@ -142,6 +139,19 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         open: boolean;
     }>({ open: false });
 
+    const [canPasteElements, setCanPasteElements] = useState(false);
+
+    // Check clipboard for valid elements when opening context menu
+    const checkClipboardForElements = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            const elementData = JSON.parse(text);
+            setCanPasteElements(elementData.type === 'kraftpo-elements' && elementData.elements);
+        } catch (error) {
+            setCanPasteElements(false);
+        }
+    };
+
     useEffect(() => {
         if (readOnly) return;
 
@@ -162,10 +172,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                         selectedElementIds.includes(element.id),
                     );
                     
-                    // Store in app context
-                    copyElements(selectedElements);
-                    
-                    // Also store in system clipboard with marker
+                    // Store only in system clipboard with marker
                     const elementData = {
                         type: 'kraftpo-elements',
                         version: '1.0',
@@ -176,145 +183,11 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(JSON.stringify(elementData)).catch(() => {
-                            // Fallback: silent failure, app clipboard still works
+                            console.warn('Failed to copy elements to clipboard');
                         });
                     }
                 }
                 return;
-            }
-
-            // Handle Paste (Ctrl+V or Cmd+V) - check for images first, then elements
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-                if (selectableElements) {
-                    // First check if clipboard contains image data
-                    navigator.clipboard.read().then(async (clipboardItems) => {
-                        let hasImageData = false;
-                        
-                        // Check for actual image data
-                        for (const item of clipboardItems) {
-                            if (item.types.some(type => type.startsWith('image/'))) {
-                                hasImageData = true;
-                                break;
-                            }
-                        }
-                        
-                        // If no image data and we have copied elements, handle element pasting
-                        if (!hasImageData && hasCopiedElements) {
-                            e.preventDefault();
-                            
-                            // Try to read system clipboard text for app elements
-                            try {
-                                const text = await navigator.clipboard.readText();
-                                let handled = false;
-                                
-                                if (text) {
-                                    try {
-                                        const elementData = JSON.parse(text);
-                                        if (elementData.type === 'kraftpo-elements' && elementData.elements) {
-                                            // Valid app element data found
-                                            const clonedElements = cloneElements(elementData.elements);
-
-                                            // Add all cloned elements to the current slide
-                                            const updatedElements = [
-                                                ...slide.elements,
-                                                ...clonedElements,
-                                            ];
-                                            updateSlide(slide.id, { elements: updatedElements });
-
-                                            // Select the newly pasted elements
-                                            const newElementIds = clonedElements.map((el) => el.id);
-                                            if (newElementIds.length === 1) {
-                                                selectElement(newElementIds[0]);
-                                            } else {
-                                                clearElementSelection();
-                                                newElementIds.forEach((id) =>
-                                                    toggleElementSelection(id),
-                                                );
-                                            }
-                                            handled = true;
-                                            return;
-                                        }
-                                    } catch (parseError) {
-                                        // Not valid JSON or not our element data
-                                    }
-                                }
-                                
-                                // If no valid system clipboard data, use app clipboard
-                                if (!handled) {
-                                    const copiedElements = getCopiedElements();
-                                    const clonedElements = cloneElements(copiedElements);
-
-                                    // Add all cloned elements to the current slide
-                                    const updatedElements = [
-                                        ...slide.elements,
-                                        ...clonedElements,
-                                    ];
-                                    updateSlide(slide.id, { elements: updatedElements });
-
-                                    // Select the newly pasted elements
-                                    const newElementIds = clonedElements.map((el) => el.id);
-                                    if (newElementIds.length === 1) {
-                                        selectElement(newElementIds[0]);
-                                    } else {
-                                        clearElementSelection();
-                                        newElementIds.forEach((id) =>
-                                            toggleElementSelection(id),
-                                        );
-                                    }
-                                }
-                            } catch (clipboardError) {
-                                // Clipboard read failed, use app clipboard
-                                const copiedElements = getCopiedElements();
-                                const clonedElements = cloneElements(copiedElements);
-
-                                // Add all cloned elements to the current slide
-                                const updatedElements = [
-                                    ...slide.elements,
-                                    ...clonedElements,
-                                ];
-                                updateSlide(slide.id, { elements: updatedElements });
-
-                                // Select the newly pasted elements
-                                const newElementIds = clonedElements.map((el) => el.id);
-                                if (newElementIds.length === 1) {
-                                    selectElement(newElementIds[0]);
-                                } else {
-                                    clearElementSelection();
-                                    newElementIds.forEach((id) =>
-                                        toggleElementSelection(id),
-                                    );
-                                }
-                            }
-                        }
-                        // If image data exists, let the paste event handler deal with it
-                    }).catch((error) => {
-                        // Fallback: if clipboard API fails and we have copied elements, paste them
-                        if (hasCopiedElements) {
-                            e.preventDefault();
-                            const copiedElements = getCopiedElements();
-                            const clonedElements = cloneElements(copiedElements);
-
-                            // Add all cloned elements to the current slide
-                            const updatedElements = [
-                                ...slide.elements,
-                                ...clonedElements,
-                            ];
-                            updateSlide(slide.id, { elements: updatedElements });
-
-                            // Select the newly pasted elements
-                            const newElementIds = clonedElements.map((el) => el.id);
-                            if (newElementIds.length === 1) {
-                                selectElement(newElementIds[0]);
-                            } else {
-                                clearElementSelection();
-                                newElementIds.forEach((id) =>
-                                    toggleElementSelection(id),
-                                );
-                            }
-                        }
-                    });
-                }
-                // Don't return here - let image paste handler deal with images if no elements were pasted
             }
 
             if (
@@ -359,9 +232,6 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         toggleElementSelection,
         clearElementSelection,
         updateSlide,
-        hasCopiedElements,
-        getCopiedElements,
-        copyElements,
     ]);
 
     // Handle image paste from clipboard on this specific slide
@@ -465,12 +335,39 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 return;
             }
 
-            // Check for text that might be a file path
+            // Check for text content (elements or file paths)
             const textItem = items.find((item) => item.type === 'text/plain');
             if (textItem) {
                 textItem.getAsString(async (text) => {
-                    // Check if the text looks like a file path to an image
                     const trimmedText = text.trim();
+                    
+                    // First, check if it's element data from our app
+                    try {
+                        const elementData = JSON.parse(trimmedText);
+                        if (elementData.type === 'kraftpo-elements' && elementData.elements) {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            // Clone and paste elements
+                            const clonedElements = cloneElements(elementData.elements);
+                            const updatedElements = [...slide.elements, ...clonedElements];
+                            updateSlide(slide.id, { elements: updatedElements });
+
+                            // Select the newly pasted elements
+                            const newElementIds = clonedElements.map((el) => el.id);
+                            if (newElementIds.length === 1) {
+                                selectElement(newElementIds[0]);
+                            } else {
+                                clearElementSelection();
+                                newElementIds.forEach((id) => toggleElementSelection(id));
+                            }
+                            return;
+                        }
+                    } catch (parseError) {
+                        // Not JSON or not our element data, continue to check for file paths
+                    }
+
+                    // Check if it's a file path to an image
                     const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg'];
                     const isImagePath = imageExtensions.some(ext => 
                         trimmedText.toLowerCase().endsWith(ext)
@@ -511,12 +408,8 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                                     const imageElement = createImage({
                                         content: base64Data,
                                         position: {
-                                            x:
-                                                PRESENTATION_DIMENSIONS.WIDTH / 2 -
-                                                width / 2,
-                                            y:
-                                                PRESENTATION_DIMENSIONS.HEIGHT / 2 -
-                                                height / 2,
+                                            x: PRESENTATION_DIMENSIONS.WIDTH / 2 - width / 2,
+                                            y: PRESENTATION_DIMENSIONS.HEIGHT / 2 - height / 2,
                                         },
                                         size: {
                                             width: Math.round(width),
@@ -525,10 +418,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                                     });
 
                                     // Add image to slide
-                                    const updatedElements = [
-                                        ...slide.elements,
-                                        imageElement,
-                                    ];
+                                    const updatedElements = [...slide.elements, imageElement];
                                     updateSlide(slide.id, { elements: updatedElements });
 
                                     // Select the newly created image
@@ -557,6 +447,8 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         slide.id,
         updateSlide,
         selectElement,
+        clearElementSelection,
+        toggleElementSelection,
     ]);
 
     const handleElementClick = (
@@ -589,7 +481,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         setContextMenu(null);
     };
 
-    const handleSlideContextMenu = (event: React.MouseEvent) => {
+    const handleSlideContextMenu = async (event: React.MouseEvent) => {
         event.preventDefault();
         if (readOnly || !selectableElements) return;
 
@@ -599,6 +491,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         const isSlideBackground = target.hasAttribute('data-slide-container');
 
         if (isSlideBackground) {
+            await checkClipboardForElements();
             setSlideContextMenu({
                 mouseX: event.clientX - 2,
                 mouseY: event.clientY - 4,
@@ -610,23 +503,31 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         setSlideContextMenu(null);
     };
 
-    const handlePasteElements = () => {
-        if (hasCopiedElements && selectableElements) {
-            const copiedElements = getCopiedElements();
-            const clonedElements = cloneElements(copiedElements);
+    const handlePasteElements = async () => {
+        if (!selectableElements) return;
+        
+        try {
+            const text = await navigator.clipboard.readText();
+            const elementData = JSON.parse(text);
+            
+            if (elementData.type === 'kraftpo-elements' && elementData.elements) {
+                const clonedElements = cloneElements(elementData.elements);
+                
+                // Add all cloned elements to the current slide
+                const updatedElements = [...slide.elements, ...clonedElements];
+                updateSlide(slide.id, { elements: updatedElements });
 
-            // Add all cloned elements to the current slide
-            const updatedElements = [...slide.elements, ...clonedElements];
-            updateSlide(slide.id, { elements: updatedElements });
-
-            // Select the newly pasted elements
-            const newElementIds = clonedElements.map((el) => el.id);
-            if (newElementIds.length === 1) {
-                selectElement(newElementIds[0]);
-            } else {
-                clearElementSelection();
-                newElementIds.forEach((id) => toggleElementSelection(id));
+                // Select the newly pasted elements
+                const newElementIds = clonedElements.map((el) => el.id);
+                if (newElementIds.length === 1) {
+                    selectElement(newElementIds[0]);
+                } else {
+                    clearElementSelection();
+                    newElementIds.forEach((id) => toggleElementSelection(id));
+                }
             }
+        } catch (error) {
+            console.warn('No valid elements to paste');
         }
     };
 
@@ -728,10 +629,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 selectedElementIds.includes(element.id),
             );
             if (selectedElements.length > 0) {
-                // Store in app context
-                copyElements(selectedElements);
-                
-                // Also store in system clipboard with marker
+                // Store only in system clipboard with marker
                 const elementData = {
                     type: 'kraftpo-elements',
                     version: '1.0',
@@ -742,7 +640,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(JSON.stringify(elementData)).catch(() => {
-                        // Fallback: silent failure, app clipboard still works
+                        console.warn('Failed to copy elements to clipboard');
                     });
                 }
             }
@@ -958,7 +856,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 onClose={handleCloseSlideContextMenu}
                 onPaste={handlePasteElements}
                 onProperties={handleSlideProperties}
-                canPaste={hasCopiedElements}
+                canPaste={canPasteElements}
             />
 
             {contextMenu && (

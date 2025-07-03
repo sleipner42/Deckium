@@ -2,7 +2,6 @@ import { CssBaseline, ThemeProvider } from '@mui/material';
 import React from 'react';
 import { AIProvider } from './application/context/AIContext';
 import { AuthProvider } from './application/context/AuthContext';
-import { ClipboardProvider } from './application/context/ClipboardContext';
 import { CriticProvider } from './application/context/CriticContext';
 import { LintingProvider } from './application/context/LintingContext';
 import { PresentationProvider } from './application/context/PresentationContext';
@@ -20,22 +19,20 @@ const App: React.FC = () => {
             <Router>
                 <AuthProvider>
                     <PresentationProvider>
-                        <ClipboardProvider>
-                            <LintingProvider>
-                                <TextEditingProvider>
-                                    <AIProvider>
-                                        <CriticProvider>
-                                            <Routes>
-                                                <Route
-                                                    path="/"
-                                                    element={<AppContent />}
-                                                />
-                                            </Routes>
-                                        </CriticProvider>
-                                    </AIProvider>
-                                </TextEditingProvider>
-                            </LintingProvider>
-                        </ClipboardProvider>
+                        <LintingProvider>
+                            <TextEditingProvider>
+                                <AIProvider>
+                                    <CriticProvider>
+                                        <Routes>
+                                            <Route
+                                                path="/"
+                                                element={<AppContent />}
+                                            />
+                                        </Routes>
+                                    </CriticProvider>
+                                </AIProvider>
+                            </TextEditingProvider>
+                        </LintingProvider>
                     </PresentationProvider>
                 </AuthProvider>
             </Router>
