@@ -251,10 +251,11 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     activeElement.tagName === 'TEXTAREA' ||
                     activeElement.contentEditable === 'true');
 
-            // Check if we're in the agent input field
+            // Check if we're in the agent input field or any chat interface
             const isAgentInput = activeElement && (
                 activeElement.closest('[data-testid="agent-input"]') ||
-                activeElement.closest('.chat-interface')
+                activeElement.closest('.chat-interface') ||
+                activeElement.getAttribute('data-testid') === 'agent-input'
             );
 
             // Don't handle paste if we're editing text or in agent input
@@ -353,14 +354,16 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                             const updatedElements = [...slide.elements, ...clonedElements];
                             updateSlide(slide.id, { elements: updatedElements });
 
-                            // Select the newly pasted elements
-                            const newElementIds = clonedElements.map((el) => el.id);
-                            if (newElementIds.length === 1) {
-                                selectElement(newElementIds[0]);
-                            } else {
-                                clearElementSelection();
-                                newElementIds.forEach((id) => toggleElementSelection(id));
-                            }
+                            // Select the newly pasted elements after a small delay to prevent DOM conflicts
+                            setTimeout(() => {
+                                const newElementIds = clonedElements.map((el) => el.id);
+                                if (newElementIds.length === 1) {
+                                    selectElement(newElementIds[0]);
+                                } else {
+                                    clearElementSelection();
+                                    newElementIds.forEach((id) => toggleElementSelection(id));
+                                }
+                            }, 10);
                             return;
                         }
                     } catch (parseError) {
@@ -517,14 +520,16 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 const updatedElements = [...slide.elements, ...clonedElements];
                 updateSlide(slide.id, { elements: updatedElements });
 
-                // Select the newly pasted elements
-                const newElementIds = clonedElements.map((el) => el.id);
-                if (newElementIds.length === 1) {
-                    selectElement(newElementIds[0]);
-                } else {
-                    clearElementSelection();
-                    newElementIds.forEach((id) => toggleElementSelection(id));
-                }
+                // Select the newly pasted elements after a small delay to prevent DOM conflicts
+                setTimeout(() => {
+                    const newElementIds = clonedElements.map((el) => el.id);
+                    if (newElementIds.length === 1) {
+                        selectElement(newElementIds[0]);
+                    } else {
+                        clearElementSelection();
+                        newElementIds.forEach((id) => toggleElementSelection(id));
+                    }
+                }, 10);
             }
         } catch (error) {
             console.warn('No valid elements to paste');
@@ -809,7 +814,19 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             }}
             onContextMenu={handleSlideContextMenu}
         >
-            {slide.elements.map(renderElement)}
+            {slide.elements
+                .filter((element, index, array) => {
+                    // Filter out elements with duplicate IDs (keep first occurrence)
+                    return array.findIndex(el => el.id === element.id) === index;
+                })
+                .map((element) => {
+                    try {
+                        return renderElement(element);
+                    } catch (error) {
+                        console.warn('Error rendering element:', element.id, error);
+                        return null;
+                    }
+                })}
 
             {/* Snap guides overlay */}
             {!readOnly && (

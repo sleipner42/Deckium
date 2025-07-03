@@ -132,23 +132,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 }
             }
             
-            // If no image was processed, check for element data
-            navigator.clipboard.readText().then(text => {
-                if (text) {
-                    try {
-                        const elementData = JSON.parse(text);
-                        if (elementData.type === 'kraftpo-elements' && elementData.elementIds) {
-                            // Add element IDs to input value
-                            const elementIdsText = `Element IDs: ${elementData.elementIds.join(', ')}`;
-                            setInputValue(prev => prev ? `${prev}\n${elementIdsText}` : elementIdsText);
-                        }
-                    } catch (parseError) {
-                        // Not valid JSON or not our element data, ignore
-                    }
-                }
-            }).catch(() => {
-                // Failed to read clipboard text, ignore
-            });
+            // Allow normal text pasting to continue in the input field
         };
 
         document.addEventListener('paste', handlePaste);
