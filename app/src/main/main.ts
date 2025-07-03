@@ -10,6 +10,7 @@ import { AIService } from './ai/service';
 import { AppImageIntegration } from './appimage-integration';
 import { setupAuthIPC } from './auth/ipc-handler';
 import AuthService from './auth/service';
+import { FileSystemIpcHandler } from './fs/ipc-handler';
 import { LintingIpcHandler, LintingService } from './linting';
 import MenuBuilder from './menu';
 import { setupPDFExportIPC } from './pdf-export/ipc-handler';
@@ -265,6 +266,7 @@ if (!gotTheLock) {
             setupPresentationIPC(presentationService);
             setupTextMeasurementIPC();
             new LintingIpcHandler(lintingService);
+            new FileSystemIpcHandler();
             setupPDFExportIPC(pdfExportService);
 
             // Set secondary window for PDF export service if it exists

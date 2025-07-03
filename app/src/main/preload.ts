@@ -293,6 +293,12 @@ const electronHandler = {
             return ipcRenderer.invoke('pdf-export:export-to-pdf');
         },
     },
+
+    fs: {
+        readFile(filePath: string) {
+            return ipcRenderer.invoke('fs:read-file', filePath);
+        },
+    },
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);

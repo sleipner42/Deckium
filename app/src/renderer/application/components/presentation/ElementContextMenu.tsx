@@ -59,16 +59,14 @@ export const ElementContextMenu: React.FC<ElementContextMenuProps> = ({
         >
             {/* Copy option */}
             {onCopy && (
-                <>
-                    <MenuItem onClick={() => handleMenuItemClick(onCopy)}>
-                        <ListItemIcon>
-                            <ContentCopyIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText>Copy</ListItemText>
-                    </MenuItem>
-                    <Divider />
-                </>
+                <MenuItem onClick={() => handleMenuItemClick(onCopy)}>
+                    <ListItemIcon>
+                        <ContentCopyIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Copy</ListItemText>
+                </MenuItem>
             )}
+            {onCopy && <Divider />}
 
             {/* Show Properties option for shapes and charts */}
             {(elementType === 'rectangle' ||
@@ -76,20 +74,22 @@ export const ElementContextMenu: React.FC<ElementContextMenuProps> = ({
                 elementType === 'triangle' ||
                 elementType === 'barchart') &&
                 onEditProperties && (
-                    <>
-                        <MenuItem
-                            onClick={() =>
-                                handleMenuItemClick(onEditProperties)
-                            }
-                        >
-                            <ListItemIcon>
-                                <SettingsIcon fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText>Properties</ListItemText>
-                        </MenuItem>
-                        <Divider />
-                    </>
+                    <MenuItem
+                        onClick={() =>
+                            handleMenuItemClick(onEditProperties)
+                        }
+                    >
+                        <ListItemIcon>
+                            <SettingsIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>Properties</ListItemText>
+                    </MenuItem>
                 )}
+            {(elementType === 'rectangle' ||
+                elementType === 'circle' ||
+                elementType === 'triangle' ||
+                elementType === 'barchart') &&
+                onEditProperties && <Divider />}
 
             <MenuItem onClick={() => handleMenuItemClick(onMoveToTop)}>
                 <ListItemIcon>

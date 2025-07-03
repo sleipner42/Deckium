@@ -183,21 +183,66 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 return;
             }
 
-            // Handle Paste (Ctrl+V or Cmd+V) for app elements only
+            // Handle Paste (Ctrl+V or Cmd+V) - check for images first, then elements
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-                if (selectableElements && hasCopiedElements) {
-                    e.preventDefault();
-                    
-                    // First try to read system clipboard text for app elements
-                    navigator.clipboard.readText().then(text => {
-                        let handled = false;
+                if (selectableElements) {
+                    // First check if clipboard contains image data
+                    navigator.clipboard.read().then(async (clipboardItems) => {
+                        let hasImageData = false;
                         
-                        if (text) {
+                        // Check for actual image data
+                        for (const item of clipboardItems) {
+                            if (item.types.some(type => type.startsWith('image/'))) {
+                                hasImageData = true;
+                                break;
+                            }
+                        }
+                        
+                        // If no image data and we have copied elements, handle element pasting
+                        if (!hasImageData && hasCopiedElements) {
+                            e.preventDefault();
+                            
+                            // Try to read system clipboard text for app elements
                             try {
-                                const elementData = JSON.parse(text);
-                                if (elementData.type === 'kraftpo-elements' && elementData.elements) {
-                                    // Valid app element data found
-                                    const clonedElements = cloneElements(elementData.elements);
+                                const text = await navigator.clipboard.readText();
+                                let handled = false;
+                                
+                                if (text) {
+                                    try {
+                                        const elementData = JSON.parse(text);
+                                        if (elementData.type === 'kraftpo-elements' && elementData.elements) {
+                                            // Valid app element data found
+                                            const clonedElements = cloneElements(elementData.elements);
+
+                                            // Add all cloned elements to the current slide
+                                            const updatedElements = [
+                                                ...slide.elements,
+                                                ...clonedElements,
+                                            ];
+                                            updateSlide(slide.id, { elements: updatedElements });
+
+                                            // Select the newly pasted elements
+                                            const newElementIds = clonedElements.map((el) => el.id);
+                                            if (newElementIds.length === 1) {
+                                                selectElement(newElementIds[0]);
+                                            } else {
+                                                clearElementSelection();
+                                                newElementIds.forEach((id) =>
+                                                    toggleElementSelection(id),
+                                                );
+                                            }
+                                            handled = true;
+                                            return;
+                                        }
+                                    } catch (parseError) {
+                                        // Not valid JSON or not our element data
+                                    }
+                                }
+                                
+                                // If no valid system clipboard data, use app clipboard
+                                if (!handled) {
+                                    const copiedElements = getCopiedElements();
+                                    const clonedElements = cloneElements(copiedElements);
 
                                     // Add all cloned elements to the current slide
                                     const updatedElements = [
@@ -216,16 +261,36 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                                             toggleElementSelection(id),
                                         );
                                     }
-                                    handled = true;
-                                    return;
                                 }
-                            } catch (parseError) {
-                                // Not valid JSON or not our element data
+                            } catch (clipboardError) {
+                                // Clipboard read failed, use app clipboard
+                                const copiedElements = getCopiedElements();
+                                const clonedElements = cloneElements(copiedElements);
+
+                                // Add all cloned elements to the current slide
+                                const updatedElements = [
+                                    ...slide.elements,
+                                    ...clonedElements,
+                                ];
+                                updateSlide(slide.id, { elements: updatedElements });
+
+                                // Select the newly pasted elements
+                                const newElementIds = clonedElements.map((el) => el.id);
+                                if (newElementIds.length === 1) {
+                                    selectElement(newElementIds[0]);
+                                } else {
+                                    clearElementSelection();
+                                    newElementIds.forEach((id) =>
+                                        toggleElementSelection(id),
+                                    );
+                                }
                             }
                         }
-                        
-                        // If no valid system clipboard data, use app clipboard
-                        if (!handled) {
+                        // If image data exists, let the paste event handler deal with it
+                    }).catch((error) => {
+                        // Fallback: if clipboard API fails and we have copied elements, paste them
+                        if (hasCopiedElements) {
+                            e.preventDefault();
                             const copiedElements = getCopiedElements();
                             const clonedElements = cloneElements(copiedElements);
 
@@ -247,31 +312,9 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                                 );
                             }
                         }
-                    }).catch(() => {
-                        // Clipboard read failed, use app clipboard
-                        const copiedElements = getCopiedElements();
-                        const clonedElements = cloneElements(copiedElements);
-
-                        // Add all cloned elements to the current slide
-                        const updatedElements = [
-                            ...slide.elements,
-                            ...clonedElements,
-                        ];
-                        updateSlide(slide.id, { elements: updatedElements });
-
-                        // Select the newly pasted elements
-                        const newElementIds = clonedElements.map((el) => el.id);
-                        if (newElementIds.length === 1) {
-                            selectElement(newElementIds[0]);
-                        } else {
-                            clearElementSelection();
-                            newElementIds.forEach((id) =>
-                                toggleElementSelection(id),
-                            );
-                        }
                     });
                 }
-                // Don't return here - let image paste handler deal with images
+                // Don't return here - let image paste handler deal with images if no elements were pasted
             }
 
             if (
@@ -419,6 +462,86 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 };
 
                 reader.readAsDataURL(file);
+                return;
+            }
+
+            // Check for text that might be a file path
+            const textItem = items.find((item) => item.type === 'text/plain');
+            if (textItem) {
+                textItem.getAsString(async (text) => {
+                    // Check if the text looks like a file path to an image
+                    const trimmedText = text.trim();
+                    const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg'];
+                    const isImagePath = imageExtensions.some(ext => 
+                        trimmedText.toLowerCase().endsWith(ext)
+                    );
+
+                    if (isImagePath && (trimmedText.startsWith('/') || trimmedText.match(/^[a-zA-Z]:\\/))) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        try {
+                            // Use Electron's file reading capability
+                            const fileBuffer = await window.electron.fs.readFile(trimmedText);
+                            const blob = new Blob([fileBuffer]);
+                            
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                const base64Data = event.target?.result as string;
+                                if (!base64Data) return;
+
+                                // Create image element on slide
+                                const img = new Image();
+                                img.onload = () => {
+                                    // Calculate appropriate size while maintaining aspect ratio
+                                    const maxWidth = 400;
+                                    const maxHeight = 300;
+                                    let { width, height } = img;
+
+                                    // Scale down if too large
+                                    if (width > maxWidth || height > maxHeight) {
+                                        const widthRatio = maxWidth / width;
+                                        const heightRatio = maxHeight / height;
+                                        const ratio = Math.min(widthRatio, heightRatio);
+                                        width *= ratio;
+                                        height *= ratio;
+                                    }
+
+                                    // Create image element at center of slide
+                                    const imageElement = createImage({
+                                        content: base64Data,
+                                        position: {
+                                            x:
+                                                PRESENTATION_DIMENSIONS.WIDTH / 2 -
+                                                width / 2,
+                                            y:
+                                                PRESENTATION_DIMENSIONS.HEIGHT / 2 -
+                                                height / 2,
+                                        },
+                                        size: {
+                                            width: Math.round(width),
+                                            height: Math.round(height),
+                                        },
+                                    });
+
+                                    // Add image to slide
+                                    const updatedElements = [
+                                        ...slide.elements,
+                                        imageElement,
+                                    ];
+                                    updateSlide(slide.id, { elements: updatedElements });
+
+                                    // Select the newly created image
+                                    selectElement(imageElement.id);
+                                };
+                                img.src = base64Data;
+                            };
+                            reader.readAsDataURL(blob);
+                        } catch (error) {
+                            console.warn('Failed to read image file:', error);
+                        }
+                    }
+                });
             }
         };
 

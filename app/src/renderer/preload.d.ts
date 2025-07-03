@@ -92,6 +92,9 @@ declare global {
                 setSelectedSlide(slideId: string): Promise<void>;
                 getSelectedSlide(): Promise<string | null>;
             };
+            fs: {
+                readFile(filePath: string): Promise<Buffer>;
+            };
         };
     }
 }
