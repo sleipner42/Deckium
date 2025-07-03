@@ -8,6 +8,12 @@ import type {
 } from '../../../../../common/domain/entities/types';
 import { useTextEditing } from '../../../context/TextEditingContext';
 import { ResizeHandles } from '../ResizeHandles';
+import 'katex/dist/katex.min.css';
+import katex from 'katex';
+
+// Make KaTeX available globally for Quill
+(window as any).katex = katex;
+
 const SizeStyle = Quill.import('attributors/style/size') as any;
 SizeStyle.whitelist = [
     '8px',
@@ -479,6 +485,7 @@ export const TextElement: React.FC<TextElementProps> = ({
                                 ['link'],
                                 [{ align: [] }],
                                 ['emoji'],
+                                ['code', 'formula'],
                                 ['clean'],
                             ],
                             handlers: {
