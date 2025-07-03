@@ -1,5 +1,5 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import { promises as fs } from 'node:fs';
+import { extname } from 'node:path';
 import { ipcMain } from 'electron';
 
 export class FileSystemIpcHandler {
@@ -10,21 +10,28 @@ export class FileSystemIpcHandler {
     private setupIpcHandlers(): void {
         ipcMain.handle('fs:read-file', async (_event, filePath: string) => {
             try {
-                const absolutePath = path.resolve(filePath);
-                const content = await fs.promises.readFile(
-                    absolutePath,
-                    'utf-8',
-                );
-                return { success: true, content };
+                // Security check: only allow image files
+                const ext = extname(filePath).toLowerCase();
+                const allowedExtensions = [
+                    '.png',
+                    '.jpg',
+                    '.jpeg',
+                    '.gif',
+                    '.bmp',
+                    '.webp',
+                    '.svg',
+                ];
+
+                if (!allowedExtensions.includes(ext)) {
+                    throw new Error('File type not allowed');
+                }
+
+                // Read the file and return as Buffer
+                const fileBuffer = await fs.readFile(filePath);
+                return fileBuffer;
             } catch (error) {
-                console.error('Error reading file:', error);
-                return {
-                    success: false,
-                    error:
-                        error instanceof Error
-                            ? error.message
-                            : 'Unknown error',
-                };
+                console.error('Failed to read file:', error);
+                throw error;
             }
         });
     }

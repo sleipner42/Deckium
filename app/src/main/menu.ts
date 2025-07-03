@@ -5,7 +5,6 @@ import {
     MenuItemConstructorOptions,
     shell,
 } from 'electron';
-import { PresentationService } from './presentation/service';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
     selector?: string;
@@ -15,14 +14,8 @@ interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
 export default class MenuBuilder {
     mainWindow: BrowserWindow;
 
-    presentationService: PresentationService | null;
-
-    constructor(
-        mainWindow: BrowserWindow,
-        presentationService?: PresentationService,
-    ) {
+    constructor(mainWindow: BrowserWindow) {
         this.mainWindow = mainWindow;
-        this.presentationService = presentationService || null;
     }
 
     buildMenu(): Menu {
@@ -42,6 +35,10 @@ export default class MenuBuilder {
         Menu.setApplicationMenu(menu);
 
         return menu;
+    }
+
+    updateMenu(): void {
+        this.buildMenu();
     }
 
     setupDevelopmentEnvironment(): void {
@@ -150,14 +147,21 @@ export default class MenuBuilder {
         const subMenuEdit: DarwinMenuItemConstructorOptions = {
             label: 'Edit',
             submenu: [
-                { label: 'Undo', accelerator: 'Command+Z', selector: 'undo:' },
+                {
+                    label: 'Undo',
+                    accelerator: 'Command+Z',
+                    click: () => {
+                        this.mainWindow.webContents.send('menu:undo');
+                    },
+                },
                 {
                     label: 'Redo',
                     accelerator: 'Shift+Command+Z',
-                    selector: 'redo:',
+                    click: () => {
+                        this.mainWindow.webContents.send('menu:redo');
+                    },
                 },
                 { type: 'separator' },
-                { label: 'Cut', accelerator: 'Command+X', selector: 'cut:' },
                 { label: 'Copy', accelerator: 'Command+C', selector: 'copy:' },
                 {
                     label: 'Paste',
@@ -253,6 +257,41 @@ export default class MenuBuilder {
                         click: () => {
                             this.mainWindow.close();
                         },
+                    },
+                ],
+            },
+            {
+                label: '&Edit',
+                submenu: [
+                    {
+                        label: '&Undo',
+                        accelerator: 'Ctrl+Z',
+                        click: () => {
+                            this.mainWindow.webContents.send('menu:undo');
+                        },
+                    },
+                    {
+                        label: '&Redo',
+                        accelerator: 'Ctrl+Y',
+                        click: () => {
+                            this.mainWindow.webContents.send('menu:redo');
+                        },
+                    },
+                    { type: 'separator' as const },
+                    {
+                        label: '&Copy',
+                        accelerator: 'Ctrl+C',
+                        role: 'copy',
+                    },
+                    {
+                        label: '&Paste',
+                        accelerator: 'Ctrl+V',
+                        role: 'paste',
+                    },
+                    {
+                        label: 'Select &All',
+                        accelerator: 'Ctrl+A',
+                        role: 'selectall',
                     },
                 ],
             },

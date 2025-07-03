@@ -6,6 +6,10 @@ import {
 
 export class PresentationState {
     private presentation: Presentation;
+    private history: Presentation[] = [];
+    private historyIndex: number = -1;
+    private maxHistorySize: number = 150;
+    private isApplyingHistory: boolean = false;
 
     constructor() {
         const titleSlide = this.createSlide();
@@ -16,6 +20,7 @@ export class PresentationState {
             createdAt: new Date(),
             updatedAt: new Date(),
         };
+        this.saveToHistory();
     }
 
     private createSlide(): Slide {
@@ -42,6 +47,7 @@ export class PresentationState {
             updatedAt: new Date(),
         };
 
+        this.saveToHistory();
         return this.presentation;
     }
 
@@ -56,6 +62,10 @@ export class PresentationState {
             updatedAt: new Date(), // Update the timestamp when loading
         };
 
+        // Reset history when loading a new presentation
+        this.history = [];
+        this.historyIndex = -1;
+        this.saveToHistory();
         return this.presentation;
     }
 
@@ -66,6 +76,7 @@ export class PresentationState {
             updatedAt: new Date(),
         };
 
+        this.saveToHistory();
         return this.presentation;
     }
 
@@ -78,6 +89,7 @@ export class PresentationState {
             updatedAt: new Date(),
         };
 
+        this.saveToHistory();
         return newSlide;
     }
 
@@ -108,6 +120,7 @@ export class PresentationState {
             updatedAt: new Date(),
         };
 
+        this.saveToHistory();
         return duplicatedSlide;
     }
 
@@ -129,6 +142,7 @@ export class PresentationState {
             updatedAt: new Date(),
         };
 
+        this.saveToHistory();
         return updatedSlide;
     }
 
@@ -150,6 +164,7 @@ export class PresentationState {
             updatedAt: new Date(),
         };
 
+        this.saveToHistory();
         return slideId;
     }
 
@@ -174,12 +189,15 @@ export class PresentationState {
             updatedAt: new Date(),
         };
 
+        this.saveToHistory();
         return this.presentation;
     }
 
     addElement(slideId: string, element: ContentElement): Slide | null {
         const slideIndex = this.findSlideIndex(slideId);
-        if (slideIndex === -1) return null;
+        if (slideIndex === -1) {
+            return null;
+        }
 
         const slide = this.presentation.slides[slideIndex];
         const updatedSlide = {
@@ -196,12 +214,15 @@ export class PresentationState {
             updatedAt: new Date(),
         };
 
+        this.saveToHistory();
+
         return updatedSlide;
     }
 
     updateElement(
         elementId: string,
         updates: Partial<ContentElement>,
+        skipHistory = false,
     ): Slide | null {
         for (let i = 0; i < this.presentation.slides.length; i++) {
             const slide = this.presentation.slides[i];
@@ -231,6 +252,10 @@ export class PresentationState {
                     slides: updatedSlides,
                     updatedAt: new Date(),
                 };
+
+                if (!skipHistory) {
+                    this.saveToHistory();
+                }
 
                 return updatedSlide;
             }
@@ -265,6 +290,7 @@ export class PresentationState {
                     updatedAt: new Date(),
                 };
 
+                this.saveToHistory();
                 return updatedSlide;
             }
         }
@@ -284,5 +310,109 @@ export class PresentationState {
             if (element) return element;
         }
         return null;
+    }
+
+    private saveToHistory(): void {
+        if (this.isApplyingHistory) {
+            return;
+        }
+
+        const currentState = this.deepClonePresentation(this.presentation);
+
+        // Remove any forward history when making new changes
+        if (this.historyIndex < this.history.length - 1) {
+            this.history = this.history.slice(0, this.historyIndex + 1);
+        }
+
+        // Add current state to history
+        this.history.push(currentState);
+        this.historyIndex = this.history.length - 1;
+
+        // Limit history size
+        if (this.history.length > this.maxHistorySize) {
+            this.history.shift();
+            this.historyIndex--;
+        }
+    }
+
+    private deepClonePresentation(presentation: Presentation): Presentation {
+        return {
+            id: presentation.id,
+            title: presentation.title,
+            slides: presentation.slides.map((slide) => ({
+                id: slide.id,
+                background: slide.background,
+                transition: slide.transition || 'none',
+                elements: slide.elements.map((element) => ({ ...element })),
+            })),
+            createdAt: new Date(presentation.createdAt),
+            updatedAt: new Date(presentation.updatedAt),
+        };
+    }
+
+    public canUndo(): boolean {
+        const result = this.historyIndex > 0;
+        return result;
+    }
+
+    public canRedo(): boolean {
+        const result = this.historyIndex < this.history.length - 1;
+        return result;
+    }
+
+    public undo(): Presentation | null {
+        if (!this.canUndo()) return null;
+
+        this.isApplyingHistory = true;
+        this.historyIndex--;
+        this.presentation = this.deepClonePresentation(
+            this.history[this.historyIndex],
+        );
+        this.isApplyingHistory = false;
+
+        return this.presentation;
+    }
+
+    public redo(): Presentation | null {
+        if (!this.canRedo()) return null;
+
+        this.isApplyingHistory = true;
+        this.historyIndex++;
+        this.presentation = this.deepClonePresentation(
+            this.history[this.historyIndex],
+        );
+        this.isApplyingHistory = false;
+
+        return this.presentation;
+    }
+
+    public clearHistory(): void {
+        this.history = [];
+        this.historyIndex = -1;
+        this.saveToHistory();
+    }
+
+    public getHistoryStats(): {
+        size: number;
+        currentIndex: number;
+        maxSize: number;
+    } {
+        return {
+            size: this.history.length,
+            currentIndex: this.historyIndex,
+            maxSize: this.maxHistorySize,
+        };
+    }
+
+    public setMaxHistorySize(newMax: number): void {
+        if (newMax < 1) newMax = 1;
+        this.maxHistorySize = newMax;
+
+        // Trim history if it exceeds the new limit
+        if (this.history.length > this.maxHistorySize) {
+            const itemsToRemove = this.history.length - this.maxHistorySize;
+            this.history.splice(0, itemsToRemove);
+            this.historyIndex = Math.max(0, this.historyIndex - itemsToRemove);
+        }
     }
 }

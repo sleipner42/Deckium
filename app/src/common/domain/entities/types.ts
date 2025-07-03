@@ -96,6 +96,7 @@ export interface Slide {
     id: UUID;
     elements: ContentElement[];
     background: string;
+    transition?: string;
 }
 
 export interface Presentation {

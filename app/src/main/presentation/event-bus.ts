@@ -14,6 +14,9 @@ export class PresentationEventBus extends EventEmitter {
         LOADED: 'presentation:loaded',
         FULLSCREEN_OPENED: 'presentation:fullscreen-opened',
         FULLSCREEN_CLOSED: 'presentation:fullscreen-closed',
+        UNDO_EXECUTED: 'presentation:undo-executed',
+        REDO_EXECUTED: 'presentation:redo-executed',
+        HISTORY_CHANGED: 'presentation:history-changed',
     };
 
     broadcastToWindows(eventName: string, data: any): void {
@@ -21,5 +24,14 @@ export class PresentationEventBus extends EventEmitter {
             window.webContents.send(eventName, data);
         });
         this.emit(eventName, data);
+    }
+
+    // Override EventEmitter methods to add debugging
+    on(eventName: string | symbol, listener: (...args: any[]) => void): this {
+        return super.on(eventName, listener);
+    }
+
+    off(eventName: string | symbol, listener: (...args: any[]) => void): this {
+        return super.off(eventName, listener);
     }
 }

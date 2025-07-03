@@ -48,7 +48,13 @@ interface ElectronWindow {
             updateElement: (
                 elementId: string,
                 updates: Partial<ContentElement>,
+                skipHistory?: boolean,
             ) => Promise<Slide>;
+            deleteElement: (elementId: string) => Promise<Slide>;
+            undo: () => Promise<Presentation | null>;
+            redo: () => Promise<Presentation | null>;
+            canUndo: () => Promise<boolean>;
+            canRedo: () => Promise<boolean>;
             savePresentation: () => Promise<string | null>;
             savePresentationAs: () => Promise<string | null>;
             loadPresentation: (
@@ -81,6 +87,8 @@ export const useMainProcessPresentation = () => {
     const [error, setError] = useState<string | null>(null);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
     const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
+    const [canUndo, setCanUndo] = useState<boolean>(false);
+    const [canRedo, setCanRedo] = useState<boolean>(false);
 
     useEffect(() => {
         if (!isInitialized) {
@@ -273,6 +281,101 @@ export const useMainProcessPresentation = () => {
             },
         );
 
+        const undoExecutedUnsubscribe = electronAPI.ipcRenderer.on(
+            'presentation:undo-executed',
+            (...args: unknown[]) => {
+                const presentation = args[0] as Presentation;
+                setTitle(presentation.title);
+                setCreatedAt(new Date(presentation.createdAt));
+                setUpdatedAt(new Date(presentation.updatedAt));
+                setSlides(presentation.slides);
+
+                // Update selected slide if it still exists
+                if (selectedSlide) {
+                    const updatedSelectedSlide = presentation.slides.find(
+                        (s) => s.id === selectedSlide.id,
+                    );
+                    if (updatedSelectedSlide) {
+                        setSelectedSlide(updatedSelectedSlide);
+                    } else if (presentation.slides.length > 0) {
+                        setSelectedSlide(presentation.slides[0]);
+                    } else {
+                        setSelectedSlide(null);
+                    }
+                }
+
+                // Clear element selection after undo
+                setSelectedElementId(null);
+                setSelectedElementIds([]);
+                setEditingElementId(null);
+
+                // Update undo/redo capabilities
+                electronAPI.presentation.canUndo().then(setCanUndo);
+                electronAPI.presentation.canRedo().then(setCanRedo);
+            },
+        );
+
+        const redoExecutedUnsubscribe = electronAPI.ipcRenderer.on(
+            'presentation:redo-executed',
+            (...args: unknown[]) => {
+                const presentation = args[0] as Presentation;
+                setTitle(presentation.title);
+                setCreatedAt(new Date(presentation.createdAt));
+                setUpdatedAt(new Date(presentation.updatedAt));
+                setSlides(presentation.slides);
+
+                // Update selected slide if it still exists
+                if (selectedSlide) {
+                    const updatedSelectedSlide = presentation.slides.find(
+                        (s) => s.id === selectedSlide.id,
+                    );
+                    if (updatedSelectedSlide) {
+                        setSelectedSlide(updatedSelectedSlide);
+                    } else if (presentation.slides.length > 0) {
+                        setSelectedSlide(presentation.slides[0]);
+                    } else {
+                        setSelectedSlide(null);
+                    }
+                }
+
+                // Clear element selection after redo
+                setSelectedElementId(null);
+                setSelectedElementIds([]);
+                setEditingElementId(null);
+
+                // Update undo/redo capabilities
+                electronAPI.presentation.canUndo().then(setCanUndo);
+                electronAPI.presentation.canRedo().then(setCanRedo);
+            },
+        );
+
+        // Update undo/redo capabilities on slide changes
+        const updateHistoryCapabilities = () => {
+            electronAPI.presentation.canUndo().then(setCanUndo);
+            electronAPI.presentation.canRedo().then(setCanRedo);
+        };
+
+        // Listen for slide updates to refresh undo/redo state
+        const slideChangedUnsubscribe = electronAPI.ipcRenderer.on(
+            'presentation:slide-updated',
+            updateHistoryCapabilities,
+        );
+
+        // Listen for menu undo/redo events
+        const menuUndoUnsubscribe = electronAPI.ipcRenderer.on(
+            'menu:undo',
+            () => {
+                undo();
+            },
+        );
+
+        const menuRedoUnsubscribe = electronAPI.ipcRenderer.on(
+            'menu:redo',
+            () => {
+                redo();
+            },
+        );
+
         return () => {
             metaUpdatedUnsubscribe();
             slideAddedUnsubscribe();
@@ -283,6 +386,11 @@ export const useMainProcessPresentation = () => {
             presentationSavedUnsubscribe();
             presentationLoadedUnsubscribe();
             slidesReorderedUnsubscribe();
+            undoExecutedUnsubscribe();
+            redoExecutedUnsubscribe();
+            slideChangedUnsubscribe();
+            menuUndoUnsubscribe();
+            menuRedoUnsubscribe();
         };
     }, [selectedSlide]);
 
@@ -566,7 +674,11 @@ export const useMainProcessPresentation = () => {
     );
 
     const updateElement = useCallback(
-        async (elementId: string, updates: Partial<ContentElement>) => {
+        async (
+            elementId: string,
+            updates: Partial<ContentElement>,
+            skipHistory = false,
+        ) => {
             try {
                 setIsLoading(true);
                 setError(null);
@@ -575,6 +687,7 @@ export const useMainProcessPresentation = () => {
                     await electronAPI.presentation.updateElement(
                         elementId,
                         updates,
+                        skipHistory,
                     );
 
                 return updatedSlide;
@@ -589,6 +702,58 @@ export const useMainProcessPresentation = () => {
         },
         [],
     );
+
+    const deleteElement = useCallback(async (elementId: string) => {
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            const updatedSlide =
+                await electronAPI.presentation.deleteElement(elementId);
+            return updatedSlide;
+        } catch (err) {
+            const errorMessage =
+                err instanceof Error ? err.message : 'An error occurred';
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    const undo = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            const result = await electronAPI.presentation.undo();
+            return result;
+        } catch (err) {
+            const errorMessage =
+                err instanceof Error ? err.message : 'An error occurred';
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    const redo = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            const result = await electronAPI.presentation.redo();
+            return result;
+        } catch (err) {
+            const errorMessage =
+                err instanceof Error ? err.message : 'An error occurred';
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
     const currentSlideIndex = useMemo(() => {
         if (!selectedSlide || slides.length === 0) return 0;
@@ -724,6 +889,8 @@ export const useMainProcessPresentation = () => {
         isLoading,
         error,
         currentFilePath,
+        canUndo,
+        canRedo,
 
         initializePresentation,
         updatePresentationMeta,
@@ -743,6 +910,9 @@ export const useMainProcessPresentation = () => {
         stopEditingElement,
         addElement,
         updateElement,
+        deleteElement,
+        undo,
+        redo,
         reorderSlides,
         savePresentation,
         savePresentationAs,

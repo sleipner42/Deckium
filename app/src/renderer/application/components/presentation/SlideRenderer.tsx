@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     cloneElements,
     createImage,
@@ -81,7 +81,13 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         },
     });
 
-    // Enhanced updateElement with snap support
+    // Track mouse state for debounced updates
+    const [isMouseDown, setIsMouseDown] = useState(false);
+    const pendingUpdatesRef = useRef<{
+        [elementId: string]: Partial<ContentElement>;
+    }>({});
+
+    // Enhanced updateElement with snap support and debounced history
     const updateElementWithSnap = (
         elementId: string,
         updates: Partial<ContentElement>,
@@ -95,23 +101,51 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             updates.position = snapResult.position;
         }
 
-        updateElement(elementId, updates);
+        // If mouse is down, skip history to avoid flooding undo stack
+        const skipHistory = isMouseDown;
+        updateElement(elementId, updates, skipHistory);
+
+        // Track pending updates for final history save
+        if (isMouseDown) {
+            pendingUpdatesRef.current[elementId] = {
+                ...pendingUpdatesRef.current[elementId],
+                ...updates,
+            };
+        }
     };
 
-    // Add mouse up event listener to clear guides when dragging ends
-    useEffect(() => {
-        const handleMouseUp = () => {
-            // Delay clearing guides to let element mouseup handlers fire first
-            setTimeout(() => {
-                clearGuides();
-            }, 0);
-        };
+    // Save final state to history when mouse is released
+    const handleMouseUp = useCallback(() => {
+        if (isMouseDown && Object.keys(pendingUpdatesRef.current).length > 0) {
+            // Save final state with history
+            Object.entries(pendingUpdatesRef.current).forEach(
+                ([elementId, updates]) => {
+                    updateElement(elementId, updates, false); // Save to history
+                },
+            );
+            pendingUpdatesRef.current = {};
+        }
+        setIsMouseDown(false);
 
+        // Clear snap guides
+        setTimeout(() => {
+            clearGuides();
+        }, 0);
+    }, [isMouseDown, updateElement, clearGuides]);
+
+    const handleMouseDown = useCallback(() => {
+        setIsMouseDown(true);
+    }, []);
+
+    // Add mouse event listeners for debounced updates
+    useEffect(() => {
         document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('mousedown', handleMouseDown);
         return () => {
             document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('mousedown', handleMouseDown);
         };
-    }, [clearGuides]);
+    }, [handleMouseUp, handleMouseDown]);
 
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;

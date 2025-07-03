@@ -489,7 +489,7 @@ export const TextElement: React.FC<TextElementProps> = ({
                                 ['clean'],
                             ],
                             handlers: {
-                                emoji: function () {
+                                emoji: () => {
                                     showEmojiPicker(quill);
                                 },
                             },

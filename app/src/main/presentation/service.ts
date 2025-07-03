@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { BrowserWindow, dialog, screen } from 'electron';
+import crypto from 'node:crypto';
 import {
     ContentElement,
     Presentation,
@@ -9,7 +10,6 @@ import {
 import { resolveHtmlPath } from '../util';
 import { PresentationEventBus } from './event-bus';
 import { PresentationState } from './state';
-
 const FILE_EXTENSION = '.kpres';
 
 export class PresentationService {
@@ -123,8 +123,13 @@ export class PresentationService {
     updateElement(
         elementId: string,
         updates: Partial<ContentElement>,
+        skipHistory = false,
     ): Slide | null {
-        const updatedSlide = this.state.updateElement(elementId, updates);
+        const updatedSlide = this.state.updateElement(
+            elementId,
+            updates,
+            skipHistory,
+        );
         if (updatedSlide) {
             this.eventBus.broadcastToWindows(
                 PresentationEventBus.events.SLIDE_UPDATED,
@@ -387,5 +392,72 @@ export class PresentationService {
      */
     getSelectedSlideId(): string | null {
         return this.selectedSlideId;
+    }
+
+    /**
+     * Undo the last action
+     */
+    undo(): Presentation | null {
+        const undoResult = this.state.undo();
+        if (undoResult) {
+            this.eventBus.broadcastToWindows(
+                PresentationEventBus.events.UNDO_EXECUTED,
+                undoResult,
+            );
+        }
+        return undoResult;
+    }
+
+    /**
+     * Redo the last undone action
+     */
+    redo(): Presentation | null {
+        const redoResult = this.state.redo();
+        if (redoResult) {
+            this.eventBus.broadcastToWindows(
+                PresentationEventBus.events.REDO_EXECUTED,
+                redoResult,
+            );
+        }
+        return redoResult;
+    }
+
+    /**
+     * Check if undo is available
+     */
+    canUndo(): boolean {
+        const result = this.state.canUndo();
+        return result;
+    }
+
+    /**
+     * Check if redo is available
+     */
+    canRedo(): boolean {
+        const result = this.state.canRedo();
+        return result;
+    }
+
+    // TEST METHOD - to be removed later
+    testAddElement(): void {
+        const slides = this.state.getPresentation().slides;
+        if (slides.length > 0) {
+            const testElement = {
+                id: crypto.randomUUID(),
+                type: 'rectangle' as const,
+                position: { x: 100, y: 100 },
+                size: { width: 200, height: 100 },
+                fillColor: '#3b82f6',
+                strokeColor: '#1e40af',
+                strokeWidth: 2,
+            };
+
+            this.addElement(slides[0].id, testElement);
+        }
+    }
+
+    // DEBUG METHOD - to be removed later
+    getEventBus(): PresentationEventBus {
+        return this.eventBus;
     }
 }

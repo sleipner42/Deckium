@@ -32,6 +32,7 @@ let aiServiceFactory: IAIServiceFactory;
 let authService: AuthService;
 let lintingService: LintingService;
 let pdfExportService: PDFExportService;
+let menuBuilder: MenuBuilder;
 
 export async function setSlideInHiddenWindow(slideId: string): Promise<void> {
     if (!secondWindow) {
@@ -40,6 +41,10 @@ export async function setSlideInHiddenWindow(slideId: string): Promise<void> {
 
     // Send the slide change directly to the hidden window only
     secondWindow.webContents.send('presentation:set-selected-slide', slideId);
+}
+
+export function getMenuBuilder(): MenuBuilder | null {
+    return menuBuilder;
 }
 
 export default async function getScreenshotFromSecondaryWindow(): Promise<string> {
@@ -153,7 +158,7 @@ const createWindow = async () => {
         mainWindow = null;
     });
 
-    const menuBuilder = new MenuBuilder(mainWindow, presentationService);
+    menuBuilder = new MenuBuilder(mainWindow);
     menuBuilder.buildMenu();
 
     mainWindow.webContents.setWindowOpenHandler((edata) => {

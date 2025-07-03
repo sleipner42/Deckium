@@ -50,10 +50,19 @@ export function setupPresentationIPC(service: PresentationService) {
 
     ipcMain.handle(
         'presentation:update-element',
-        (_, elementId: string, updates: Partial<ContentElement>) => {
-            return service.updateElement(elementId, updates);
+        (
+            _,
+            elementId: string,
+            updates: Partial<ContentElement>,
+            skipHistory?: boolean,
+        ) => {
+            return service.updateElement(elementId, updates, skipHistory);
         },
     );
+
+    ipcMain.handle('presentation:delete-element', (_, elementId: string) => {
+        return service.deleteElement(elementId);
+    });
 
     ipcMain.handle('presentation:save', async (event) => {
         const window = BrowserWindow.fromWebContents(event.sender);
@@ -101,5 +110,21 @@ export function setupPresentationIPC(service: PresentationService) {
 
     ipcMain.handle('presentation:get-selected-slide', () => {
         return service.getSelectedSlideId();
+    });
+
+    ipcMain.handle('presentation:undo', () => {
+        return service.undo();
+    });
+
+    ipcMain.handle('presentation:redo', () => {
+        return service.redo();
+    });
+
+    ipcMain.handle('presentation:can-undo', () => {
+        return service.canUndo();
+    });
+
+    ipcMain.handle('presentation:can-redo', () => {
+        return service.canRedo();
     });
 }
