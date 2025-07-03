@@ -374,6 +374,15 @@ const toolbarStyles = `
   .ql-picker-options {
     z-index: 10000 !important;
   }
+  .ql-toolbar .ql-emoji::before {
+    content: "😀";
+    font-size: 16px;
+    line-height: 1;
+  }
+  .ql-toolbar .ql-emoji {
+    width: auto !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+  }
 `;
 
 if (!document.querySelector('#quill-toolbar-zindex')) {
