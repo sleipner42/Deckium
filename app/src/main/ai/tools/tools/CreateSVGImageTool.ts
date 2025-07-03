@@ -1,6 +1,5 @@
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createImage } from '../../../../common/domain/entities/element-factory';
-import { ElementValidator } from '../../../presentation/element-validator';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 
@@ -115,42 +114,8 @@ export class CreateSVGImageTool extends BaseTool {
             };
         }
 
-        // Run DOM-based overlap detection after element creation for accuracy
-        let overlapCheck = null;
-        try {
-            // Small delay to ensure DOM updates
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            overlapCheck = await ElementValidator.checkElementOverlap(
-                element.id,
-                0,
-            );
-        } catch (error) {
-            console.warn('Post-creation overlap detection failed:', error);
-            // Create a fallback empty result
-            overlapCheck = {
-                hasOverlap: false,
-                overlappingElements: [],
-                isOutsideSlide: false,
-            };
-        }
-
         // Create appropriate message based on whether there was an overlap
-        let message = 'SVG image added successfully';
-
-        // Add DOM-based overlap and boundary feedback
-        if (overlapCheck.isOutsideSlide) {
-            message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). Consider adjusting the position to ensure visibility.`;
-        }
-
-        if (overlapCheck.hasOverlap) {
-            message += `\n\nWARNING: OVERLAP DETECTED. This SVG image visually overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}. `;
-
-            if (overlapCheck.suggestedPosition) {
-                message += `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}). You could also change the zIndex.`;
-            } else {
-                message += `Please check the SVG placement and zIndex to avoid visual conflicts.`;
-            }
-        }
+        const message = 'SVG image added successfully';
 
         return {
             success: true,

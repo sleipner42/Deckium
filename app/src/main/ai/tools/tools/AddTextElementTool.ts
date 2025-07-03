@@ -1,8 +1,6 @@
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createTextBox } from '../../../../common/domain/entities/element-factory';
-import { ElementValidator } from '../../../presentation/element-validator';
 import type { PresentationService } from '../../../presentation/service';
-import { textMeasurementService } from '../../../text-measurement/service';
 import { BaseTool } from '../BaseTool';
 
 export class AddTextElementTool extends BaseTool {
@@ -126,111 +124,7 @@ export class AddTextElementTool extends BaseTool {
             };
         }
 
-        let textDimensions = null;
-        let overlapCheck = null;
-        let actualDimensions = null;
-
-        try {
-            await new Promise((resolve) => setTimeout(resolve, 300));
-
-            textDimensions = await textMeasurementService.measureQuillText(
-                element.id,
-            );
-
-            actualDimensions =
-                await textMeasurementService.getActualElementDimensions(
-                    element.id,
-                );
-
-            overlapCheck = await ElementValidator.checkElementOverlap(
-                element.id,
-                0,
-            );
-        } catch (error) {
-            console.warn(
-                'Post-creation measurement and overlap detection failed:',
-                error,
-            );
-
-            textDimensions = { height, width, lineBreakInfo: null };
-            overlapCheck = {
-                hasOverlap: false,
-                overlappingElements: [],
-                isOutsideSlide: false,
-            };
-        }
-
-        let message = `Text element added successfully at position (${element.position.x}, ${element.position.y}) with size ${element.size.width}x${element.size.height}px.`;
-
-        if (actualDimensions?.elementFound) {
-            const { containerBounds, textBounds, textOverflow } =
-                actualDimensions;
-
-            message += `\n\nActual rendered dimensions:`;
-            if (containerBounds) {
-                message += `\n  Container: x: ${containerBounds.x}, y: ${containerBounds.y}, width: ${containerBounds.width}, height: ${containerBounds.height}`;
-            }
-
-            if (textBounds) {
-                message += `\n  Text content: x: ${textBounds.x}, y: ${textBounds.y}, width: ${textBounds.width}, height: ${textBounds.height}`;
-            }
-
-            if (textOverflow) {
-                if (textOverflow.overflowsContainer) {
-                    message += `\n\n⚠️ TEXT OVERFLOW DETECTED: Text extends outside its container.`;
-                    message += `\n  Text size: ${textOverflow.actualTextWidth}x${textOverflow.actualTextHeight}px`;
-                    message += `\n  Container size: ${textOverflow.containerWidth}x${textOverflow.containerHeight}px`;
-                    message += `\n  Lines: ${textOverflow.lineCount}`;
-
-                    if (
-                        textOverflow.actualTextHeight >
-                        textOverflow.containerHeight
-                    ) {
-                        message += `\n  Text is ${(textOverflow.actualTextHeight - textOverflow.containerHeight).toFixed(1)}px taller than container.`;
-                    }
-                    if (
-                        textOverflow.actualTextWidth >
-                        textOverflow.containerWidth
-                    ) {
-                        message += `\n  Text is ${(textOverflow.actualTextWidth - textOverflow.containerWidth).toFixed(1)}px wider than container.`;
-                    }
-                    message += `\n  Consider increasing container size or reducing font size.`;
-                } else if (textOverflow.lineCount > 1) {
-                    message += `\n\nℹ️ TEXT WRAPPING: Text spans ${textOverflow.lineCount} lines within container. This is normal multi-line behavior.`;
-                }
-
-                if (textOverflow.overflowsSlide) {
-                    message += `\n\n⚠️ SLIDE OVERFLOW: Text extends outside slide boundaries (1280x720).`;
-                }
-            }
-        }
-
-        if (
-            textDimensions?.lineBreakInfo &&
-            (!actualDimensions || !actualDimensions.elementFound)
-        ) {
-            message += `\n\n${textDimensions.lineBreakInfo}`;
-
-            if (textDimensions.lineBreakInfo.includes('TEXT OVERFLOW')) {
-                message += ` Use the updateTextElement tool to increase the width if single-line text is desired.`;
-            } else if (textDimensions.lineBreakInfo.includes('TEXT WRAPPING')) {
-                message += ` This is expected behavior for multi-line text content.`;
-            }
-        }
-
-        if (overlapCheck.isOutsideSlide) {
-            message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). Consider adjusting the position to ensure visibility.`;
-        }
-
-        if (overlapCheck.hasOverlap) {
-            message += `\n\nWARNING: OVERLAP DETECTED. This text element visually overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}. `;
-
-            if (overlapCheck.suggestedPosition) {
-                message += `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}).`;
-            } else {
-                message += `Please check the text placement to ensure readability.`;
-            }
-        }
+        const message = `Text element added successfully at position (${element.position.x}, ${element.position.y}) with size ${element.size.width}x${element.size.height}px.`;
 
         return {
             success: true,

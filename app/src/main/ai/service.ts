@@ -11,6 +11,7 @@ import type {
     MessageContent,
 } from '../../common/domain/interfaces/ai-service.interface';
 import AuthService from '../auth/service';
+import { LintingService } from '../linting/service';
 import { PresentationService } from '../presentation/service';
 
 import { generateSlideGrid } from '../presentation/utils';
@@ -33,6 +34,8 @@ export class AIService {
 
     private presentationService: PresentationService;
 
+    private lintingService: LintingService;
+
     private activeRequests: Map<UUID, AbortController> = new Map();
 
     private processingThreads: Set<UUID> = new Set();
@@ -40,6 +43,7 @@ export class AIService {
     constructor(
         aiClient: IAIService,
         presentationService: PresentationService,
+        lintingService: LintingService,
         authService?: AuthService,
     ) {
         this.state = new AIState();
@@ -47,6 +51,7 @@ export class AIService {
         this.toolsService = new AIToolsService(authService);
         this.aiClient = aiClient;
         this.presentationService = presentationService;
+        this.lintingService = lintingService;
         this.createThread('Thread 1', presentationService.getPresentation().id);
     }
 
@@ -630,6 +635,10 @@ export class AIService {
             iterationCount,
         );
 
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        this.checkAborted(abortSignal, 'after tool execution delay');
+
         const toolResultsFormatted =
             this.toolsService.formatToolResults(toolResults);
         let updatedThread = this.addToolResultsToThread(
@@ -640,7 +649,77 @@ export class AIService {
 
         updatedThread = this.addSlideGridsIfNeeded(updatedThread, toolResults);
 
+        updatedThread = await this.runLintingOnEditedSlides(
+            updatedThread,
+            toolResults,
+        );
+
         return updatedThread;
+    }
+
+    private async runLintingOnEditedSlides(
+        thread: Thread,
+        toolResults: any[],
+    ): Promise<Thread> {
+        const editedSlides = toolResults.reduce((acc, result) => {
+            if (result.editedSlidesIds) {
+                acc.push(...result.editedSlidesIds);
+            }
+            return acc;
+        }, [] as string[]);
+
+        if (editedSlides.length === 0) return thread;
+
+        const presentation = this.presentationService.getPresentation();
+        const lintingResults = [];
+
+        for (const slideId of editedSlides) {
+            const slide = presentation.slides.find((s) => s.id === slideId);
+            if (slide) {
+                try {
+                    const lintingResult =
+                        await this.lintingService.lintSlide(slide);
+                    lintingResults.push(lintingResult);
+                } catch (error) {
+                    console.warn(`Failed to lint slide ${slideId}:`, error);
+                }
+            }
+        }
+
+        if (lintingResults.length === 0) return thread;
+
+        const lintingMessage = this.formatLintingResults(lintingResults);
+
+        if (lintingMessage.trim()) {
+            return this.state.addMessage(thread, lintingMessage, 'system');
+        }
+
+        return thread;
+    }
+
+    private formatLintingResults(lintingResults: any[]): string {
+        const hasErrors = lintingResults.some((result) => result.hasErrors);
+
+        if (!hasErrors) {
+            return 'Linting completed successfully - no issues found with the updated slides.';
+        }
+
+        const errorMessages = [];
+
+        for (const result of lintingResults) {
+            if (result.hasErrors) {
+                const slideErrors = result.errors
+                    .map(
+                        (error: any) =>
+                            `- ${error.message}${error.suggestedFix ? ` (Suggestion: ${error.suggestedFix})` : ''}`,
+                    )
+                    .join('\n');
+
+                errorMessages.push(`Slide ${result.slideId}:\n${slideErrors}`);
+            }
+        }
+
+        return `Linting found the following issues:\n\n${errorMessages.join('\n\n')}`;
     }
 
     private addToolResultsToThread(

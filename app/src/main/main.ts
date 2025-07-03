@@ -256,6 +256,7 @@ if (!gotTheLock) {
             aiService = new AIService(
                 aiModel,
                 presentationService,
+                lintingService,
                 authService,
             );
             criticService = new CriticService(aiModel, presentationService);

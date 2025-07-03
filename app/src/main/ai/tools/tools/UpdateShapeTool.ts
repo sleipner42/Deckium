@@ -1,6 +1,5 @@
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { Shape } from '../../../../common/domain/entities/types';
-import { ElementValidator } from '../../../presentation/element-validator';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 
@@ -132,43 +131,7 @@ export class UpdateShapeTool extends BaseTool {
             };
         }
 
-        // Run post-update overlap detection on the actual rendered element
-        let overlapCheck = null;
-        try {
-            // Allow time for DOM to update
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            overlapCheck = await ElementValidator.checkElementOverlap(
-                elementId,
-                0,
-            );
-        } catch (error) {
-            console.warn('Could not perform overlap detection:', error);
-        }
-
-        // Create appropriate message based on whether there was an overlap
-        let message = 'Shape updated successfully';
-
-        if (overlapCheck) {
-            // Only warn about elements outside slide boundaries
-            if (overlapCheck.isOutsideSlide) {
-                message += `\n\nWARNING: This shape is now positioned outside the slide boundaries (1280x720). `;
-
-                if (overlapCheck.suggestedPosition) {
-                    message += `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to ensure visibility.`;
-                }
-            }
-
-            // Warn about text overlaps
-            if (overlapCheck.hasOverlap) {
-                message += `\n\nWARNING: OVERLAP DETECTED. This shape now overlaps with text elements: ${overlapCheck.overlappingElements.join(', ')}. `;
-
-                if (overlapCheck.suggestedPosition) {
-                    message += `The closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}). Alternatively, you can adjust the z-index to control which element appears on top.`;
-                } else {
-                    message += `Consider adjusting the z-index using the changeElementZIndex tool to control which elements appear on top. Elements with higher z-index values appear on top of elements with lower z-index values.`;
-                }
-            }
-        }
+        const message = 'Shape updated successfully';
 
         return {
             success: true,

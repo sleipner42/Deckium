@@ -906,7 +906,12 @@ export class TextMeasurementService {
         try {
             const result = await this.mainWindow.webContents.executeJavaScript(`
         (() => {
-          const targetElement = document.querySelector('[data-element-id="${elementId}"]');
+          const slideNavigation = document.querySelector(".slide-navigation");
+          if (!slideNavigation) {
+            return { elementFound: false };
+          }
+
+          const targetElement = slideNavigation.querySelector('[data-element-id="${elementId}"]');
           if (!targetElement) {
             return { elementFound: false };
           }
@@ -916,10 +921,14 @@ export class TextMeasurementService {
             return { elementFound: false };
           }
 
-                    const SLIDE_WIDTH = 1280;
+          const slideContainer = targetElement.closest('.slide-container');
+          if (!slideContainer) {
+            return { elementFound: false };
+          }
+
+          const SLIDE_WIDTH = 1280;
           const SLIDE_HEIGHT = 720;
 
-          const slideContainer = document.querySelector('[data-slide-container]') || document.body;
           const containerRect = slideContainer.getBoundingClientRect();
 
           const scaleX = SLIDE_WIDTH / containerRect.width;

@@ -177,7 +177,7 @@ export const LintingPanel: React.FC = () => {
                 style={{
                     position: 'fixed',
                     bottom: '20px',
-                    right: '20px',
+                    left: '20px',
                     zIndex: 1000,
                     backgroundColor: totalErrors > 0 ? '#fee2e2' : '#f0fdf4',
                     border:

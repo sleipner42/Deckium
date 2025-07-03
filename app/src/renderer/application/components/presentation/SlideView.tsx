@@ -64,6 +64,7 @@ export const SlideView: React.FC<{
         >
             <Paper
                 elevation={2}
+                className="slide-container"
                 sx={{
                     width: PRESENTATION_DIMENSIONS.WIDTH,
                     height: PRESENTATION_DIMENSIONS.HEIGHT,

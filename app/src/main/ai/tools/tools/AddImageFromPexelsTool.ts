@@ -1,7 +1,6 @@
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createImage } from '../../../../common/domain/entities/element-factory';
 import AuthService from '../../../auth/service';
-import { ElementValidator } from '../../../presentation/element-validator';
 import type { PresentationService } from '../../../presentation/service';
 import {
     PexelsBackendService,
@@ -136,11 +135,6 @@ export class AddImageFromPexelsTool extends BaseTool {
 
             const elementPosition = { x: xPos, y: yPos };
             const elementSize = { width, height };
-            const _isOutsideSlide =
-                xPos < 0 ||
-                yPos < 0 ||
-                xPos + width > 1280 ||
-                yPos + height > 720;
 
             const element = createImage({
                 content: imageUrl,
@@ -161,43 +155,13 @@ export class AddImageFromPexelsTool extends BaseTool {
                 };
             }
 
-            let overlapCheck = null;
-            try {
-                await new Promise((resolve) => setTimeout(resolve, 100));
-                overlapCheck = await ElementValidator.checkElementOverlap(
-                    element.id,
-                    0,
-                );
-            } catch (error) {
-                console.warn('Post-creation overlap detection failed:', error);
-                overlapCheck = {
-                    hasOverlap: false,
-                    overlappingElements: [],
-                    isOutsideSlide: false,
-                };
-            }
-
-            let message = `Image added successfully from Pexels.\n
+            const message = `Image added successfully from Pexels.\n
 Image details:
 - Title: ${data.description || query}
 - Photographer: ${data.photographer}
 - Source URL: ${data.source_url}
 - Position: (${xPos}, ${yPos})
 - Size: ${width} x ${height}`;
-
-            if (overlapCheck.isOutsideSlide) {
-                message += `\n\nWARNING: This element is positioned outside the slide boundaries (1280x720). Consider adjusting the position to ensure visibility.`;
-            }
-
-            if (overlapCheck.hasOverlap) {
-                message += `\n\nWARNING: OVERLAP DETECTED. This image visually overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}. `;
-
-                if (overlapCheck.suggestedPosition) {
-                    message += `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}).`;
-                } else {
-                    message += `Please check the image placement to avoid visual conflicts.`;
-                }
-            }
 
             return {
                 success: true,

@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { Image } from '../../../../common/domain/entities/types';
-import { ElementValidator } from '../../../presentation/element-validator';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 
@@ -217,24 +216,9 @@ export class UpdateImageElementTool extends BaseTool {
                 };
             }
 
-            // Run post-update overlap detection on the actual rendered element
-            let overlapCheck = null;
-            try {
-                // Allow time for DOM to update
-                await new Promise((resolve) => setTimeout(resolve, 100));
-                overlapCheck = await ElementValidator.checkElementOverlap(
-                    elementId,
-                    0,
-                );
-            } catch (error) {
-                console.warn('Could not perform overlap detection:', error);
-            }
-
-            // Create response message
-            let message = 'Image element updated successfully';
+            const message = 'Image element updated successfully';
             let photoCredit = '';
 
-            // Add photo credit information if we retrieved a new image
             if (query && updates.content) {
                 const response = await axios.get(
                     'https://api.pexels.com/v1/search',
@@ -253,29 +237,6 @@ export class UpdateImageElementTool extends BaseTool {
                 if (response.data?.photos?.length > 0) {
                     const photo = response.data.photos[0];
                     photoCredit = `\nImage details:\n- Title: ${photo.alt || query}\n- Photographer: ${photo.photographer}\n- Source URL: ${photo.url}`;
-                }
-            }
-
-            // Add warnings about overlap or outside slide
-            if (overlapCheck) {
-                if (overlapCheck.isOutsideSlide) {
-                    message += `\n\nWARNING: This image is now positioned outside the slide boundaries (1280x720). `;
-
-                    if (overlapCheck.suggestedPosition) {
-                        message += `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}) to ensure visibility.`;
-                    }
-                }
-
-                if (overlapCheck.hasOverlap) {
-                    message += `\n\nWARNING: OVERLAP DETECTED. This image now overlaps with other elements: ${overlapCheck.overlappingElements.join(
-                        ', ',
-                    )}. `;
-
-                    if (overlapCheck.suggestedPosition) {
-                        message += `The closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}). Alternatively, you can increase the z-index of this element using the changeElementZIndex tool to make it appear on top.`;
-                    } else {
-                        message += `Please check the image placement. You can also use the changeElementZIndex tool to adjust which elements appear on top of others.`;
-                    }
                 }
             }
 

@@ -1,6 +1,7 @@
 import type {
     BarChart,
     ContentElement,
+    Image,
     Shape,
     Slide,
     TextBox,
@@ -80,11 +81,11 @@ export class LintingService {
                         elementId,
                         'unknown',
                         'outside_slide',
-                        'Element is positioned outside the slide boundaries (1280x720)',
+                        `ELEMENT_OUTSIDE_SLIDE: Element "${elementId}" is positioned outside slide boundaries (1280x720). Current position causes element to extend beyond slide edges.`,
                         'warning',
                         overlapCheck.suggestedPosition
-                            ? `Consider repositioning to (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y})`
-                            : undefined,
+                            ? `ACTION_REQUIRED: Use updateTextElement, updateShapeTool, or updateImageElement tool to reposition element to x:${overlapCheck.suggestedPosition.x}, y:${overlapCheck.suggestedPosition.y}`
+                            : 'ACTION_REQUIRED: Use appropriate update tool to move element within slide boundaries (0-1280 width, 0-720 height)',
                     ),
                 );
             }
@@ -96,11 +97,11 @@ export class LintingService {
                         elementId,
                         'unknown',
                         'dom_overlap',
-                        `Element overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}`,
+                        `ELEMENT_OVERLAP_DETECTED: Element "${elementId}" overlaps with elements: ${overlapCheck.overlappingElements.join(', ')}. Visual collision detected.`,
                         'info',
                         overlapCheck.suggestedPosition
-                            ? `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y})`
-                            : 'Adjust element positions or use z-index to control layering',
+                            ? `ACTION_SUGGESTED: Use appropriate update tool to move element to non-overlapping position x:${overlapCheck.suggestedPosition.x}, y:${overlapCheck.suggestedPosition.y}, or use changeElementZIndex tool to control layering`
+                            : 'ACTION_SUGGESTED: Use appropriate update tool to adjust element positions or changeElementZIndex tool to manage visual layering',
                     ),
                 );
             }
@@ -133,9 +134,9 @@ export class LintingService {
                             elementId,
                             'unknown',
                             'text_overflow',
-                            `Text extends outside its container. Text size: ${textOverflow.actualTextWidth}x${textOverflow.actualTextHeight}px, Container: ${textOverflow.containerWidth}x${textOverflow.containerHeight}px`,
+                            `TEXT_CONTAINER_OVERFLOW: Text in element "${elementId}" exceeds container boundaries. Text size: ${textOverflow.actualTextWidth}x${textOverflow.actualTextHeight}px, Container: ${textOverflow.containerWidth}x${textOverflow.containerHeight}px`,
                             'warning',
-                            'Consider increasing container size or reducing font size',
+                            'ACTION_REQUIRED: Use updateTextElement tool to increase container width/height or reduce font size to fit text within container',
                         ),
                     );
                 }
@@ -147,8 +148,9 @@ export class LintingService {
                             elementId,
                             'unknown',
                             'outside_slide',
-                            'Text extends outside slide boundaries (1280x720)',
+                            `TEXT_SLIDE_OVERFLOW: Text in element "${elementId}" extends beyond slide boundaries (1280x720). Text content exceeds slide viewport.`,
                             'warning',
+                            'ACTION_REQUIRED: Use updateTextElement tool to reposition text within slide boundaries or reduce text size',
                         ),
                     );
                 }
@@ -163,9 +165,9 @@ export class LintingService {
                         elementId,
                         'unknown',
                         'text_overflow',
-                        'Text content causes line breaks and potential overflow',
+                        `TEXT_LINE_OVERFLOW: Text content in element "${elementId}" causes unexpected line breaks and potential overflow. Single-line text intended but wrapping occurred.`,
                         'info',
-                        'Use updateTextElement tool to increase width if single-line text is desired',
+                        'ACTION_SUGGESTED: Use updateTextElement tool to increase width if single-line text layout is desired',
                     ),
                 );
             }
@@ -186,9 +188,9 @@ export class LintingService {
                     'unknown',
                     'unknown',
                     'data_validation',
-                    'BarChart is missing required data (x or y values)',
+                    'BARCHART_MISSING_DATA: BarChart element is missing required data arrays. Both x and y data arrays are required for chart rendering.',
                     'error',
-                    'Provide both x and y data arrays for the chart',
+                    'ACTION_REQUIRED: Use updateBarChart tool to provide both x and y data arrays for the chart',
                 ),
             );
         } else if (data.x.length !== data.y.length) {
@@ -198,9 +200,9 @@ export class LintingService {
                     'unknown',
                     'unknown',
                     'data_validation',
-                    'BarChart x and y data arrays have different lengths',
+                    `BARCHART_DATA_MISMATCH: BarChart x and y data arrays have mismatched lengths. X array: ${data.x.length} items, Y array: ${data.y.length} items. Arrays must have equal length.`,
                     'error',
-                    'Ensure x and y data arrays have the same number of elements',
+                    'ACTION_REQUIRED: Use updateBarChart tool to ensure x and y data arrays have the same number of elements',
                 ),
             );
         }
@@ -265,6 +267,8 @@ export class LintingService {
             errors.push(...(await this.lintShape(element as Shape, slide)));
         } else if (element.type === 'barchart') {
             errors.push(...this.lintBarChart(element as BarChart, slide));
+        } else if (element.type === 'image') {
+            errors.push(...(await this.lintImage(element as Image, slide)));
         }
 
         return errors;
@@ -358,8 +362,9 @@ export class LintingService {
                     textBox.id,
                     slide.id,
                     'text_overlap',
-                    `Text overlaps with other text elements: ${overlappingIds}`,
+                    `TEXT_ELEMENT_OVERLAP: Text element "${textBox.id}" visually overlaps with other text elements: ${overlappingIds}. This reduces readability and creates visual confusion.`,
                     'warning',
+                    'ACTION_REQUIRED: Use updateTextElement tool to reposition overlapping text elements to ensure clear separation and readability',
                 ),
             );
         }
@@ -393,9 +398,9 @@ export class LintingService {
                     textBox.id,
                     slide.id,
                     'text_overflow',
-                    `Text width (${currentTextboxSize.width}px) exceeds container width (${containerWidth}px)`,
+                    `TEXT_WIDTH_OVERFLOW: Text content in element "${textBox.id}" exceeds container width. Text width: ${currentTextboxSize.width}px, Container width: ${containerWidth}px. Horizontal overflow detected.`,
                     'warning',
-                    'Consider increasing container width or reducing font size',
+                    'ACTION_REQUIRED: Use updateTextElement tool to increase container width or reduce font size to fit content horizontally',
                 ),
             );
         }
@@ -407,9 +412,9 @@ export class LintingService {
                     textBox.id,
                     slide.id,
                     'text_overflow',
-                    `Text height (${currentTextboxSize.height}px) exceeds container height (${containerHeight}px)`,
+                    `TEXT_HEIGHT_OVERFLOW: Text content in element "${textBox.id}" exceeds container height. Text height: ${currentTextboxSize.height}px, Container height: ${containerHeight}px. Vertical overflow detected.`,
                     'warning',
-                    'Consider increasing container height or reducing font size',
+                    'ACTION_REQUIRED: Use updateTextElement tool to increase container height or reduce font size to fit content vertically',
                 ),
             );
         }
@@ -451,9 +456,9 @@ export class LintingService {
                     textBox.id,
                     slide.id,
                     'outside_slide',
-                    `Text extends beyond left edge of slide (x: ${currentTextboxSize.x}px)`,
+                    `TEXT_LEFT_BOUNDARY_VIOLATION: Text element "${textBox.id}" extends beyond left slide edge. Current x position: ${currentTextboxSize.x}px (negative values exceed left boundary).`,
                     'warning',
-                    'Adjust text position to keep it within slide boundaries',
+                    'ACTION_REQUIRED: Use updateTextElement tool to set x position to 0 or greater to keep text within slide boundaries',
                 ),
             );
         }
@@ -465,9 +470,9 @@ export class LintingService {
                     textBox.id,
                     slide.id,
                     'outside_slide',
-                    `Text extends beyond top edge of slide (y: ${currentTextboxSize.y}px)`,
+                    `TEXT_TOP_BOUNDARY_VIOLATION: Text element "${textBox.id}" extends beyond top slide edge. Current y position: ${currentTextboxSize.y}px (negative values exceed top boundary).`,
                     'warning',
-                    'Adjust text position to keep it within slide boundaries',
+                    'ACTION_REQUIRED: Use updateTextElement tool to set y position to 0 or greater to keep text within slide boundaries',
                 ),
             );
         }
@@ -479,9 +484,9 @@ export class LintingService {
                     textBox.id,
                     slide.id,
                     'outside_slide',
-                    `Text extends beyond right edge of slide (right edge: ${textRight}px, slide width: ${SLIDE_WIDTH}px)`,
+                    `TEXT_RIGHT_BOUNDARY_VIOLATION: Text element "${textBox.id}" extends beyond right slide edge. Right edge position: ${textRight}px exceeds slide width: ${SLIDE_WIDTH}px.`,
                     'warning',
-                    'Adjust text position or reduce text width to keep it within slide boundaries',
+                    'ACTION_REQUIRED: Use updateTextElement tool to reduce x position or width to ensure right edge stays within slide boundaries',
                 ),
             );
         }
@@ -493,9 +498,9 @@ export class LintingService {
                     textBox.id,
                     slide.id,
                     'outside_slide',
-                    `Text extends beyond bottom edge of slide (bottom edge: ${textBottom}px, slide height: ${SLIDE_HEIGHT}px)`,
+                    `TEXT_BOTTOM_BOUNDARY_VIOLATION: Text element "${textBox.id}" extends beyond bottom slide edge. Bottom edge position: ${textBottom}px exceeds slide height: ${SLIDE_HEIGHT}px.`,
                     'warning',
-                    'Adjust text position or reduce text height to keep it within slide boundaries',
+                    'ACTION_REQUIRED: Use updateTextElement tool to reduce y position or height to ensure bottom edge stays within slide boundaries',
                 ),
             );
         }
@@ -566,9 +571,9 @@ export class LintingService {
                             textBox.id,
                             slide.id,
                             'zindex_issue',
-                            `Text is covered by shape "${shape.id}" (shape z-index: ${zIndexComparison.zIndexA}, text z-index: ${zIndexComparison.zIndexB})`,
+                            `TEXT_VISIBILITY_BLOCKED: Text element "${textBox.id}" is visually covered by shape "${shape.id}". Shape z-index: ${zIndexComparison.zIndexA}, Text z-index: ${zIndexComparison.zIndexB}. Text content may be unreadable.`,
                             'warning',
-                            'Increase text z-index or decrease shape z-index to make text visible',
+                            'ACTION_REQUIRED: Use changeElementZIndex tool to increase text z-index above shape z-index, or decrease shape z-index to make text visible',
                         ),
                     );
                 }
@@ -621,24 +626,137 @@ export class LintingService {
     ): Promise<LintingError[]> {
         const errors: LintingError[] = [];
 
-        const overlappingShapes = slide.elements.filter(
+        errors.push(...this.checkElementOutsideSlide(shape, slide));
+        errors.push(...this.checkElementCollisions(shape, slide));
+
+        return errors;
+    }
+
+    private checkElementOutsideSlide(
+        element: Shape | Image | BarChart,
+        slide: Slide,
+    ): LintingError[] {
+        const errors: LintingError[] = [];
+        const SLIDE_WIDTH = 1280;
+        const SLIDE_HEIGHT = 720;
+
+        const elementRight = element.position.x + element.size.width;
+        const elementBottom = element.position.y + element.size.height;
+        const elementTypeName =
+            element.type === 'barchart'
+                ? 'Chart'
+                : element.type === 'image'
+                  ? 'Image'
+                  : 'Shape';
+        const toolName =
+            element.type === 'barchart'
+                ? 'updateBarChart'
+                : element.type === 'image'
+                  ? 'updateImageElement'
+                  : 'updateShapeTool';
+
+        if (element.position.x < 0) {
+            errors.push(
+                this.createError(
+                    `${element.id}-left-outside`,
+                    element.id,
+                    slide.id,
+                    'outside_slide',
+                    `${elementTypeName.toUpperCase()}_LEFT_BOUNDARY_VIOLATION: ${elementTypeName} element "${element.id}" extends beyond left slide edge. Current x position: ${element.position.x}px (negative values exceed left boundary).`,
+                    'warning',
+                    `ACTION_REQUIRED: Use ${toolName} tool to set x position to 0 or greater to keep element within slide boundaries`,
+                ),
+            );
+        }
+
+        if (element.position.y < 0) {
+            errors.push(
+                this.createError(
+                    `${element.id}-top-outside`,
+                    element.id,
+                    slide.id,
+                    'outside_slide',
+                    `${elementTypeName.toUpperCase()}_TOP_BOUNDARY_VIOLATION: ${elementTypeName} element "${element.id}" extends beyond top slide edge. Current y position: ${element.position.y}px (negative values exceed top boundary).`,
+                    'warning',
+                    `ACTION_REQUIRED: Use ${toolName} tool to set y position to 0 or greater to keep element within slide boundaries`,
+                ),
+            );
+        }
+
+        if (elementRight > SLIDE_WIDTH) {
+            errors.push(
+                this.createError(
+                    `${element.id}-right-outside`,
+                    element.id,
+                    slide.id,
+                    'outside_slide',
+                    `${elementTypeName.toUpperCase()}_RIGHT_BOUNDARY_VIOLATION: ${elementTypeName} element "${element.id}" extends beyond right slide edge. Right edge position: ${elementRight}px exceeds slide width: ${SLIDE_WIDTH}px.`,
+                    'warning',
+                    `ACTION_REQUIRED: Use ${toolName} tool to reduce x position or width to ensure right edge stays within slide boundaries`,
+                ),
+            );
+        }
+
+        if (elementBottom > SLIDE_HEIGHT) {
+            errors.push(
+                this.createError(
+                    `${element.id}-bottom-outside`,
+                    element.id,
+                    slide.id,
+                    'outside_slide',
+                    `${elementTypeName.toUpperCase()}_BOTTOM_BOUNDARY_VIOLATION: ${elementTypeName} element "${element.id}" extends beyond bottom slide edge. Bottom edge position: ${elementBottom}px exceeds slide height: ${SLIDE_HEIGHT}px.`,
+                    'warning',
+                    `ACTION_REQUIRED: Use ${toolName} tool to reduce y position or height to ensure bottom edge stays within slide boundaries`,
+                ),
+            );
+        }
+
+        return errors;
+    }
+
+    private checkElementCollisions(
+        element: Shape | Image | BarChart,
+        slide: Slide,
+    ): LintingError[] {
+        const errors: LintingError[] = [];
+        const elementTypeName =
+            element.type === 'barchart'
+                ? 'Chart'
+                : element.type === 'image'
+                  ? 'Image'
+                  : 'Shape';
+        const toolName =
+            element.type === 'barchart'
+                ? 'updateBarChart'
+                : element.type === 'image'
+                  ? 'updateImageElement'
+                  : 'updateShapeTool';
+
+        const overlappingElements = slide.elements.filter(
             (e) =>
                 (e.type === 'rectangle' ||
                     e.type === 'circle' ||
-                    e.type === 'triangle') &&
-                e.id !== shape.id &&
-                this.checkElementsOverlap(shape, e),
+                    e.type === 'triangle' ||
+                    e.type === 'image' ||
+                    e.type === 'barchart') &&
+                e.id !== element.id &&
+                element.id < e.id &&
+                this.checkElementsOverlap(element, e),
         );
 
-        if (overlappingShapes.length > 0) {
+        if (overlappingElements.length > 0) {
+            const overlappingIds = overlappingElements
+                .map((e) => e.id)
+                .join(', ');
             errors.push(
                 this.createError(
-                    `${shape.id}-shape-overlap`,
-                    shape.id,
+                    `${element.id}-collision`,
+                    element.id,
                     slide.id,
                     'shape_overlap',
-                    `Shape overlaps with other shapes`,
+                    `${elementTypeName.toUpperCase()}_ELEMENT_COLLISION: ${elementTypeName} element "${element.id}" spatially overlaps with other elements: ${overlappingIds}. Visual collision may cause content conflicts.`,
                     'warning',
+                    `ACTION_SUGGESTED: Use ${toolName} tool to adjust element positions to avoid overlap, or use changeElementZIndex tool to control visual layering if intentional overlap is desired`,
                 ),
             );
         }
@@ -663,12 +781,27 @@ export class LintingService {
         );
     }
 
-    private lintBarChart(barChart: BarChart, _slide: Slide): LintingError[] {
+    private lintBarChart(barChart: BarChart, slide: Slide): LintingError[] {
         const errors: LintingError[] = [];
 
         if (barChart.data) {
             errors.push(...this.validateBarChartData(barChart.data));
         }
+
+        errors.push(...this.checkElementOutsideSlide(barChart, slide));
+        errors.push(...this.checkElementCollisions(barChart, slide));
+
+        return errors;
+    }
+
+    private async lintImage(
+        image: Image,
+        slide: Slide,
+    ): Promise<LintingError[]> {
+        const errors: LintingError[] = [];
+
+        errors.push(...this.checkElementOutsideSlide(image, slide));
+        errors.push(...this.checkElementCollisions(image, slide));
 
         return errors;
     }

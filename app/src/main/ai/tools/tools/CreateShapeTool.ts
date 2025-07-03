@@ -1,6 +1,5 @@
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createShape } from '../../../../common/domain/entities/element-factory';
-import { ElementValidator } from '../../../presentation/element-validator';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 
@@ -85,8 +84,6 @@ export class CreateShapeTool extends BaseTool {
             };
         }
 
-        // Create shape element and check overlaps after DOM updates
-
         const element = createShape({
             shapeType: shapeType as 'rectangle' | 'circle' | 'triangle',
             position: { x: xPos, y: yPos },
@@ -109,42 +106,7 @@ export class CreateShapeTool extends BaseTool {
             };
         }
 
-        // Run DOM-based overlap detection on the actual rendered element
-        let overlapCheck = null;
-        try {
-            // Small delay to ensure DOM updates
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            overlapCheck = await ElementValidator.checkElementOverlap(
-                element.id,
-                0, // no padding
-            );
-        } catch (error) {
-            console.warn('Post-creation overlap detection failed:', error);
-            // Create a fallback empty result
-            overlapCheck = {
-                hasOverlap: false,
-                overlappingElements: [],
-                isOutsideSlide: false,
-            };
-        }
-
-        // Create success message
-        let message = `${shapeType} shape added successfully`;
-
-        // Add DOM-based overlap and boundary feedback
-        if (overlapCheck.isOutsideSlide) {
-            message += `\n\nWARNING: This shape is positioned outside the slide boundaries (1280x720). Consider adjusting the position to ensure visibility.`;
-        }
-
-        if (overlapCheck.hasOverlap) {
-            message += `\n\nWARNING: OVERLAP DETECTED. This shape visually overlaps with other elements: ${overlapCheck.overlappingElements.join(', ')}. `;
-
-            if (overlapCheck.suggestedPosition) {
-                message += `Closest non-overlapping position is (${overlapCheck.suggestedPosition.x}, ${overlapCheck.suggestedPosition.y}). You can also adjust z-index to control layering.`;
-            } else {
-                message += `Consider adjusting position or z-index to control element layering.`;
-            }
-        }
+        const message = `${shapeType} shape added successfully`;
 
         return {
             success: true,

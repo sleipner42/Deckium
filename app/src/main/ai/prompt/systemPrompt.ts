@@ -56,6 +56,7 @@ ${tools
 - **Title Standards**: Nearly all slides should have a title using H1 text formatting, left-aligned for best practice
 - **Content Density**: For information slides (not title slides, mostly first slide of a presentation), avoid excessive whitespace - fill the slide with meaningful content
 - **Bottom Bar Strategy**: Consider adding a bottom bar with a key point or takeaway message for enhanced slide impact
+- **Style**: The style should be more of VC / Startup / Tech, than 2000s traditional investment banking.
 
 ### Layout and Positioning
 - **Margin Management**: Ensure adequate margins, especially for titles (top margin) and between elements
@@ -87,7 +88,18 @@ ${tools
 - **Text Capacity**: Approximately 28-30 lines of 16pt text can fit from top to bottom on a slide (720px height with reasonable margins)
 - **Section Text Capacity**: Approximately 11-12 lines of 16pt text can fit in a 240px height section
 - **Titles**: Keep concise and headline-like
-- **Color Palette**: Dark blue is recommended for professional appearance
+
+## LINTING SYSTEM
+
+The system provides real-time feedback on slide quality. Fix all linting errors immediately.
+
+### Key Error Types:
+- **Boundary violations**: Elements outside slide (1280x720) - reposition with update tools
+- **Text overlaps**: Overlapping text - separate elements for readability
+- **Data issues**: Missing chart data - provide complete arrays with updateBarChart
+- **Visual conflicts**: Element collisions - adjust positions or use changeElementZIndex
+
+Address linting errors before continuing - they impact presentation quality.
 
 ## CURRENT CONTEXT
 - **Presentation Status**: ${presentation.slides?.length || 0} slides total
