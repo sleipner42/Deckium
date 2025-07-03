@@ -8,7 +8,6 @@ import type {
 } from '../../../../../common/domain/entities/types';
 import { useTextEditing } from '../../../context/TextEditingContext';
 import { ResizeHandles } from '../ResizeHandles';
-
 const SizeStyle = Quill.import('attributors/style/size') as any;
 SizeStyle.whitelist = [
     '8px',
@@ -25,6 +24,347 @@ SizeStyle.whitelist = [
     '48px',
 ];
 Quill.register(SizeStyle, true);
+
+// Simple emoji list for quick access
+const EMOJI_LIST = [
+    '😀',
+    '😃',
+    '😄',
+    '😁',
+    '😆',
+    '😅',
+    '😂',
+    '🤣',
+    '😊',
+    '😇',
+    '🙂',
+    '🙃',
+    '😉',
+    '😌',
+    '😍',
+    '🥰',
+    '😘',
+    '😗',
+    '😙',
+    '😚',
+    '😋',
+    '😛',
+    '😝',
+    '😜',
+    '🤪',
+    '🤨',
+    '🧐',
+    '🤓',
+    '😎',
+    '🤩',
+    '🥳',
+    '😏',
+    '😒',
+    '😞',
+    '😔',
+    '😟',
+    '😕',
+    '🙁',
+    '☹️',
+    '😣',
+    '😖',
+    '😫',
+    '😩',
+    '🥺',
+    '😢',
+    '😭',
+    '😤',
+    '😠',
+    '😡',
+    '🤬',
+    '🤯',
+    '😳',
+    '🥵',
+    '🥶',
+    '😱',
+    '😨',
+    '😰',
+    '😥',
+    '😓',
+    '🤗',
+    '🤔',
+    '🤭',
+    '🤫',
+    '🤥',
+    '😶',
+    '😐',
+    '😑',
+    '😬',
+    '🙄',
+    '😯',
+    '😦',
+    '😧',
+    '😮',
+    '😲',
+    '🥱',
+    '😴',
+    '🤤',
+    '😪',
+    '😵',
+    '🤐',
+    '🥴',
+    '🤢',
+    '🤮',
+    '🤧',
+    '😷',
+    '🤒',
+    '🤕',
+    '🤑',
+    '🤠',
+    '😈',
+    '👿',
+    '👹',
+    '👺',
+    '🤡',
+    '💩',
+    '👻',
+    '💀',
+    '☠️',
+    '👽',
+    '👾',
+    '🤖',
+    '🎃',
+    '😺',
+    '😸',
+    '😹',
+    '😻',
+    '😼',
+    '😽',
+    '🙀',
+    '😿',
+    '😾',
+    '❤️',
+    '🧡',
+    '💛',
+    '💚',
+    '💙',
+    '💜',
+    '🖤',
+    '🤍',
+    '🤎',
+    '💔',
+    '❣️',
+    '💕',
+    '💞',
+    '💓',
+    '💗',
+    '💖',
+    '💘',
+    '💝',
+    '💟',
+    '👍',
+    '👎',
+    '👌',
+    '🤏',
+    '✌️',
+    '🤞',
+    '🤟',
+    '🤘',
+    '🤙',
+    '👈',
+    '👉',
+    '👆',
+    '🖕',
+    '👇',
+    '☝️',
+    '👋',
+    '🤚',
+    '🖐️',
+    '✋',
+    '🖖',
+    '👏',
+    '🙌',
+    '🤝',
+    '👐',
+    '🤲',
+    '🤜',
+    '🤛',
+    '✊',
+    '👊',
+    '🤦',
+    '🤷',
+    '🙆',
+    '🙅',
+    '💁',
+    '🙋',
+    '🙇',
+    '🤰',
+    '🤱',
+    '👶',
+    '🧒',
+    '👦',
+    '👧',
+    '🧑',
+    '👨',
+    '👩',
+    '🧓',
+    '👴',
+    '👵',
+    '👮',
+    '🕵️',
+    '💂',
+    '🥷',
+    '👷',
+    '🤴',
+    '👸',
+    '👳',
+    '👲',
+    '🧕',
+    '🤵',
+    '👰',
+    '🤰',
+    '🤱',
+    '👼',
+    '🎅',
+    '🤶',
+    '🦸',
+    '🦹',
+    '🧙',
+    '🧚',
+    '🧛',
+    '🧜',
+    '🧝',
+    '🧞',
+    '🧟',
+    '💆',
+    '💇',
+    '🚶',
+    '🏃',
+    '💃',
+    '🕺',
+    '🕴️',
+    '👯',
+    '🧘',
+    '🏇',
+    '🏂',
+    '🏌️',
+    '🏄',
+    '🚣',
+    '🏊',
+    '⛷️',
+    '🏋️',
+    '🚴',
+    '🚵',
+    '🤸',
+    '🤼',
+    '🤽',
+    '🤾',
+    '🤹',
+    '🧗',
+    '🤺',
+    '🏸',
+    '🏓',
+    '🏒',
+    '🏑',
+    '🥍',
+    '🏏',
+    '🥅',
+    '⛳',
+    '🪃',
+    '🥏',
+    '🏹',
+    '🎣',
+    '🤿',
+    '🥊',
+    '🥋',
+    '🎽',
+    '🛹',
+    '🛷',
+    '⛸️',
+    '🥌',
+    '🎿',
+    '🛝',
+    '🪘',
+    '🥁',
+    '🎹',
+    '🎸',
+    '🎺',
+    '🎷',
+    '🪗',
+    '🎻',
+    '🪕',
+    '🎤',
+    '🎧',
+    '📻',
+    '🎼',
+    '🎵',
+    '🎶',
+    '🎙️',
+    '🎚️',
+    '🎛️',
+];
+
+// Emoji picker function
+const showEmojiPicker = (quill: Quill) => {
+    const range = quill.getSelection();
+    if (!range) return;
+
+    // Create emoji picker popup
+    const picker = document.createElement('div');
+    picker.style.cssText = `
+        position: fixed;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        max-width: 280px;
+        max-height: 200px;
+        overflow-y: auto;
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 4px;
+    `;
+
+    // Add emojis to picker
+    EMOJI_LIST.forEach((emoji) => {
+        const button = document.createElement('button');
+        button.textContent = emoji;
+        button.style.cssText = `
+            border: none;
+            background: none;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        `;
+        button.onmouseover = () => (button.style.backgroundColor = '#f0f0f0');
+        button.onmouseout = () =>
+            (button.style.backgroundColor = 'transparent');
+        button.onclick = (e) => {
+            e.preventDefault();
+            quill.insertText(range.index, emoji);
+            quill.setSelection(range.index + emoji.length);
+            picker.remove();
+        };
+        picker.appendChild(button);
+    });
+
+    // Position picker near the toolbar
+    const toolbar = quill.getModule('toolbar').container;
+    const toolbarRect = toolbar.getBoundingClientRect();
+    picker.style.top = `${toolbarRect.bottom + 5}px`;
+    picker.style.left = `${toolbarRect.left}px`;
+
+    // Add to document
+    document.body.appendChild(picker);
+
+    // Close on outside click
+    const closeHandler = (e: MouseEvent) => {
+        if (!picker.contains(e.target as Node)) {
+            picker.remove();
+            document.removeEventListener('click', closeHandler);
+        }
+    };
+    setTimeout(() => document.addEventListener('click', closeHandler), 100);
+};
 
 const toolbarStyles = `
   .ql-toolbar {
@@ -102,34 +442,42 @@ export const TextElement: React.FC<TextElementProps> = ({
                 const quill = new Quill(textRef.current, {
                     theme: 'snow',
                     modules: {
-                        toolbar: [
-                            [{ header: [1, 2, 3, false] }],
-                            [
-                                { font: [] },
-                                {
-                                    size: [
-                                        '8px',
-                                        '10px',
-                                        '12px',
-                                        '14px',
-                                        '16px',
-                                        '18px',
-                                        '20px',
-                                        '24px',
-                                        '28px',
-                                        '32px',
-                                        '36px',
-                                        '48px',
-                                    ],
-                                },
+                        toolbar: {
+                            container: [
+                                [{ header: [1, 2, 3, false] }],
+                                [
+                                    { font: [] },
+                                    {
+                                        size: [
+                                            '8px',
+                                            '10px',
+                                            '12px',
+                                            '14px',
+                                            '16px',
+                                            '18px',
+                                            '20px',
+                                            '24px',
+                                            '28px',
+                                            '32px',
+                                            '36px',
+                                            '48px',
+                                        ],
+                                    },
+                                ],
+                                ['bold', 'italic', 'underline', 'strike'],
+                                [{ color: [] }, { background: [] }],
+                                [{ list: 'ordered' }, { list: 'bullet' }],
+                                ['link'],
+                                [{ align: [] }],
+                                ['emoji'],
+                                ['clean'],
                             ],
-                            ['bold', 'italic', 'underline', 'strike'],
-                            [{ color: [] }, { background: [] }],
-                            [{ list: 'ordered' }, { list: 'bullet' }],
-                            ['link'],
-                            [{ align: [] }],
-                            ['clean'],
-                        ],
+                            handlers: {
+                                emoji: function () {
+                                    showEmojiPicker(quill);
+                                },
+                            },
+                        },
                     },
                     formats: [
                         'header',

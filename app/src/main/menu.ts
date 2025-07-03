@@ -189,13 +189,7 @@ export default class MenuBuilder {
             ],
         };
 
-
-        return [
-            subMenuAbout,
-            subMenuFile,
-            subMenuEdit,
-            subMenuWindow,
-        ];
+        return [subMenuAbout, subMenuFile, subMenuEdit, subMenuWindow];
     }
 
     buildDefaultTemplate() {

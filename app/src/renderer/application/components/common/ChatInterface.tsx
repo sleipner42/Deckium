@@ -131,7 +131,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     }
                 }
             }
-            
+
             // Allow normal text pasting to continue in the input field
         };
 

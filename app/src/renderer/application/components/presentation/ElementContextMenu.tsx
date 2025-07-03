@@ -75,9 +75,7 @@ export const ElementContextMenu: React.FC<ElementContextMenuProps> = ({
                 elementType === 'barchart') &&
                 onEditProperties && (
                     <MenuItem
-                        onClick={() =>
-                            handleMenuItemClick(onEditProperties)
-                        }
+                        onClick={() => handleMenuItemClick(onEditProperties)}
                     >
                         <ListItemIcon>
                             <SettingsIcon fontSize="small" />

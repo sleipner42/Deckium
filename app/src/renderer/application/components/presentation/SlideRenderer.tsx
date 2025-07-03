@@ -59,7 +59,6 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         stopEditingElement,
     } = usePresentation();
 
-
     // Define helper functions to use PresentationContext state
     const isSelected = (elementId: string): boolean => {
         return selectedElementIds.includes(elementId);
@@ -146,7 +145,9 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         try {
             const text = await navigator.clipboard.readText();
             const elementData = JSON.parse(text);
-            setCanPasteElements(elementData.type === 'kraftpo-elements' && elementData.elements);
+            setCanPasteElements(
+                elementData.type === 'kraftpo-elements' && elementData.elements,
+            );
         } catch (error) {
             setCanPasteElements(false);
         }
@@ -171,20 +172,24 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     const selectedElements = slide.elements.filter((element) =>
                         selectedElementIds.includes(element.id),
                     );
-                    
+
                     // Store only in system clipboard with marker
                     const elementData = {
                         type: 'kraftpo-elements',
                         version: '1.0',
                         elements: selectedElements,
-                        elementIds: selectedElements.map(el => el.id),
-                        timestamp: Date.now()
+                        elementIds: selectedElements.map((el) => el.id),
+                        timestamp: Date.now(),
                     };
-                    
+
                     if (navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText(JSON.stringify(elementData)).catch(() => {
-                            console.warn('Failed to copy elements to clipboard');
-                        });
+                        navigator.clipboard
+                            .writeText(JSON.stringify(elementData))
+                            .catch(() => {
+                                console.warn(
+                                    'Failed to copy elements to clipboard',
+                                );
+                            });
                     }
                 }
                 return;
@@ -252,11 +257,12 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     activeElement.contentEditable === 'true');
 
             // Check if we're in the agent input field or any chat interface
-            const isAgentInput = activeElement && (
-                activeElement.closest('[data-testid="agent-input"]') ||
-                activeElement.closest('.chat-interface') ||
-                activeElement.getAttribute('data-testid') === 'agent-input'
-            );
+            const isAgentInput =
+                activeElement &&
+                (activeElement.closest('[data-testid="agent-input"]') ||
+                    activeElement.closest('.chat-interface') ||
+                    activeElement.getAttribute('data-testid') ===
+                        'agent-input');
 
             // Don't handle paste if we're editing text or in agent input
             if (isInputFocused || editingElementId || isAgentInput) {
@@ -341,27 +347,41 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             if (textItem) {
                 textItem.getAsString(async (text) => {
                     const trimmedText = text.trim();
-                    
+
                     // First, check if it's element data from our app
                     try {
                         const elementData = JSON.parse(trimmedText);
-                        if (elementData.type === 'kraftpo-elements' && elementData.elements) {
+                        if (
+                            elementData.type === 'kraftpo-elements' &&
+                            elementData.elements
+                        ) {
                             e.preventDefault();
                             e.stopPropagation();
 
                             // Clone and paste elements
-                            const clonedElements = cloneElements(elementData.elements);
-                            const updatedElements = [...slide.elements, ...clonedElements];
-                            updateSlide(slide.id, { elements: updatedElements });
+                            const clonedElements = cloneElements(
+                                elementData.elements,
+                            );
+                            const updatedElements = [
+                                ...slide.elements,
+                                ...clonedElements,
+                            ];
+                            updateSlide(slide.id, {
+                                elements: updatedElements,
+                            });
 
                             // Select the newly pasted elements after a small delay to prevent DOM conflicts
                             setTimeout(() => {
-                                const newElementIds = clonedElements.map((el) => el.id);
+                                const newElementIds = clonedElements.map(
+                                    (el) => el.id,
+                                );
                                 if (newElementIds.length === 1) {
                                     selectElement(newElementIds[0]);
                                 } else {
                                     clearElementSelection();
-                                    newElementIds.forEach((id) => toggleElementSelection(id));
+                                    newElementIds.forEach((id) =>
+                                        toggleElementSelection(id),
+                                    );
                                 }
                             }, 10);
                             return;
@@ -371,23 +391,37 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     }
 
                     // Check if it's a file path to an image
-                    const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg'];
-                    const isImagePath = imageExtensions.some(ext => 
-                        trimmedText.toLowerCase().endsWith(ext)
+                    const imageExtensions = [
+                        '.png',
+                        '.jpg',
+                        '.jpeg',
+                        '.gif',
+                        '.bmp',
+                        '.webp',
+                        '.svg',
+                    ];
+                    const isImagePath = imageExtensions.some((ext) =>
+                        trimmedText.toLowerCase().endsWith(ext),
                     );
 
-                    if (isImagePath && (trimmedText.startsWith('/') || trimmedText.match(/^[a-zA-Z]:\\/))) {
+                    if (
+                        isImagePath &&
+                        (trimmedText.startsWith('/') ||
+                            trimmedText.match(/^[a-zA-Z]:\\/))
+                    ) {
                         e.preventDefault();
                         e.stopPropagation();
 
                         try {
                             // Use Electron's file reading capability
-                            const fileBuffer = await window.electron.fs.readFile(trimmedText);
+                            const fileBuffer =
+                                await window.electron.fs.readFile(trimmedText);
                             const blob = new Blob([fileBuffer]);
-                            
+
                             const reader = new FileReader();
                             reader.onload = (event) => {
-                                const base64Data = event.target?.result as string;
+                                const base64Data = event.target
+                                    ?.result as string;
                                 if (!base64Data) return;
 
                                 // Create image element on slide
@@ -399,10 +433,16 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                                     let { width, height } = img;
 
                                     // Scale down if too large
-                                    if (width > maxWidth || height > maxHeight) {
+                                    if (
+                                        width > maxWidth ||
+                                        height > maxHeight
+                                    ) {
                                         const widthRatio = maxWidth / width;
                                         const heightRatio = maxHeight / height;
-                                        const ratio = Math.min(widthRatio, heightRatio);
+                                        const ratio = Math.min(
+                                            widthRatio,
+                                            heightRatio,
+                                        );
                                         width *= ratio;
                                         height *= ratio;
                                     }
@@ -411,8 +451,14 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                                     const imageElement = createImage({
                                         content: base64Data,
                                         position: {
-                                            x: PRESENTATION_DIMENSIONS.WIDTH / 2 - width / 2,
-                                            y: PRESENTATION_DIMENSIONS.HEIGHT / 2 - height / 2,
+                                            x:
+                                                PRESENTATION_DIMENSIONS.WIDTH /
+                                                    2 -
+                                                width / 2,
+                                            y:
+                                                PRESENTATION_DIMENSIONS.HEIGHT /
+                                                    2 -
+                                                height / 2,
                                         },
                                         size: {
                                             width: Math.round(width),
@@ -421,8 +467,13 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                                     });
 
                                     // Add image to slide
-                                    const updatedElements = [...slide.elements, imageElement];
-                                    updateSlide(slide.id, { elements: updatedElements });
+                                    const updatedElements = [
+                                        ...slide.elements,
+                                        imageElement,
+                                    ];
+                                    updateSlide(slide.id, {
+                                        elements: updatedElements,
+                                    });
 
                                     // Select the newly created image
                                     selectElement(imageElement.id);
@@ -508,14 +559,17 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
     const handlePasteElements = async () => {
         if (!selectableElements) return;
-        
+
         try {
             const text = await navigator.clipboard.readText();
             const elementData = JSON.parse(text);
-            
-            if (elementData.type === 'kraftpo-elements' && elementData.elements) {
+
+            if (
+                elementData.type === 'kraftpo-elements' &&
+                elementData.elements
+            ) {
                 const clonedElements = cloneElements(elementData.elements);
-                
+
                 // Add all cloned elements to the current slide
                 const updatedElements = [...slide.elements, ...clonedElements];
                 updateSlide(slide.id, { elements: updatedElements });
@@ -527,7 +581,9 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                         selectElement(newElementIds[0]);
                     } else {
                         clearElementSelection();
-                        newElementIds.forEach((id) => toggleElementSelection(id));
+                        newElementIds.forEach((id) =>
+                            toggleElementSelection(id),
+                        );
                     }
                 }, 10);
             }
@@ -639,14 +695,18 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     type: 'kraftpo-elements',
                     version: '1.0',
                     elements: selectedElements,
-                    elementIds: selectedElements.map(el => el.id),
-                    timestamp: Date.now()
+                    elementIds: selectedElements.map((el) => el.id),
+                    timestamp: Date.now(),
                 };
-                
+
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(JSON.stringify(elementData)).catch(() => {
-                        console.warn('Failed to copy elements to clipboard');
-                    });
+                    navigator.clipboard
+                        .writeText(JSON.stringify(elementData))
+                        .catch(() => {
+                            console.warn(
+                                'Failed to copy elements to clipboard',
+                            );
+                        });
                 }
             }
         }
@@ -817,13 +877,19 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             {slide.elements
                 .filter((element, index, array) => {
                     // Filter out elements with duplicate IDs (keep first occurrence)
-                    return array.findIndex(el => el.id === element.id) === index;
+                    return (
+                        array.findIndex((el) => el.id === element.id) === index
+                    );
                 })
                 .map((element) => {
                     try {
                         return renderElement(element);
                     } catch (error) {
-                        console.warn('Error rendering element:', element.id, error);
+                        console.warn(
+                            'Error rendering element:',
+                            element.id,
+                            error,
+                        );
                         return null;
                     }
                 })}
