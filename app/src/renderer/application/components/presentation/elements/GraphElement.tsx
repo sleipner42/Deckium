@@ -1,7 +1,6 @@
 import React, {
     useCallback,
     useEffect,
-    useMemo,
     useRef,
     useState,
 } from 'react';
@@ -249,33 +248,41 @@ export const GraphElement: React.FC<GraphElementProps> = ({
         return lines.join('\n');
     }, []);
 
+    // Debounced update function
+    const debouncedUpdateRef = useRef<NodeJS.Timeout>();
+    
+    const updateContentFromGraph = useCallback(() => {
+        if (debouncedUpdateRef.current) {
+            clearTimeout(debouncedUpdateRef.current);
+        }
+        
+        debouncedUpdateRef.current = setTimeout(() => {
+            const updatedContent = convertToDot(nodes, edges);
+            if (onElementUpdate) {
+                onElementUpdate(element.id, { content: updatedContent });
+            }
+        }, 300);
+    }, [convertToDot, nodes, edges, onElementUpdate, element.id]);
+
     // Handle node changes and update content
     const handleNodesChange = useCallback((changes: any) => {
         onNodesChange(changes);
         
         // If we're in editing mode, update the content when nodes change
-        if (isEditing) {
-            // Use a timeout to batch rapid changes
-            setTimeout(() => {
-                const updatedContent = convertToDot(nodes, edges);
-                onUpdate({ content: updatedContent });
-            }, 100);
+        if (isEditing && onElementUpdate) {
+            updateContentFromGraph();
         }
-    }, [onNodesChange, isEditing, convertToDot, nodes, edges, onUpdate]);
+    }, [onNodesChange, isEditing, updateContentFromGraph]);
 
     // Handle edge changes and update content
     const handleEdgesChange = useCallback((changes: any) => {
         onEdgesChange(changes);
         
         // If we're in editing mode, update the content when edges change
-        if (isEditing) {
-            // Use a timeout to batch rapid changes
-            setTimeout(() => {
-                const updatedContent = convertToDot(nodes, edges);
-                onUpdate({ content: updatedContent });
-            }, 100);
+        if (isEditing && onElementUpdate) {
+            updateContentFromGraph();
         }
-    }, [onEdgesChange, isEditing, convertToDot, nodes, edges, onUpdate]);
+    }, [onEdgesChange, isEditing, updateContentFromGraph]);
 
     // Handle dragging for moving the element
     const handleMouseDownInternal = (e: React.MouseEvent) => {
