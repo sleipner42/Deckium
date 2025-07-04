@@ -13,9 +13,11 @@ interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
 
 export default class MenuBuilder {
     mainWindow: BrowserWindow;
+    presentationService: any;
 
-    constructor(mainWindow: BrowserWindow) {
+    constructor(mainWindow: BrowserWindow, presentationService?: any) {
         this.mainWindow = mainWindow;
+        this.presentationService = presentationService;
     }
 
     buildMenu(): Menu {
@@ -39,6 +41,11 @@ export default class MenuBuilder {
 
     updateMenu(): void {
         this.buildMenu();
+    }
+
+    setPresentationService(presentationService: any): void {
+        this.presentationService = presentationService;
+        this.updateMenu(); // Rebuild menu with the new service
     }
 
     setupDevelopmentEnvironment(): void {

@@ -2,7 +2,6 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ShapesIcon from '@mui/icons-material/Category';
 import TriangleIcon from '@mui/icons-material/ChangeHistory';
-import DownloadIcon from '@mui/icons-material/Download';
 import ImageIcon from '@mui/icons-material/Image';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CircleIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -10,7 +9,6 @@ import RectangleIcon from '@mui/icons-material/Rectangle';
 import PresentationIcon from '@mui/icons-material/Slideshow';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import {
-    Alert,
     alpha,
     Box,
     Button,
@@ -20,7 +18,6 @@ import {
     ListItemText,
     Menu,
     MenuItem,
-    Snackbar,
     Tooltip,
     Typography,
 } from '@mui/material';
@@ -34,7 +31,6 @@ import {
 } from '../../../../common/domain/entities/element-factory';
 import { useAuth } from '../../context/AuthContext';
 import { usePresentation } from '../../context/PresentationContext';
-import { usePowerPointExport } from '../../hooks/usePowerPointExport';
 
 interface ToolbarProps {
     style?: React.CSSProperties;
@@ -42,7 +38,6 @@ interface ToolbarProps {
 
 export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
     const { selectedSlide, addElement } = usePresentation();
-    const { status: exportStatus, exportToPowerPoint } = usePowerPointExport();
 
     const [shapeAnchorEl, setShapeAnchorEl] = useState<null | HTMLElement>(
         null,
@@ -297,31 +292,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
                     </Button>
                 </Tooltip>
 
-                <Tooltip title="Export to PowerPoint">
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<DownloadIcon />}
-                        onClick={exportToPowerPoint}
-                        disabled={exportStatus.isExporting}
-                        sx={{
-                            borderRadius: 1,
-                            textTransform: 'none',
-                            px: 2,
-                            ml: 1,
-                            borderColor: alpha('#000', 0.12),
-                            '&:hover': {
-                                bgcolor: alpha('#007AFF', 0.04),
-                                borderColor: alpha('#007AFF', 0.5),
-                            },
-                        }}
-                    >
-                        {exportStatus.isExporting
-                            ? 'Exporting...'
-                            : 'PowerPoint'}
-                    </Button>
-                </Tooltip>
-
                 <Tooltip title="Present">
                     <Button
                         variant="contained"
@@ -434,27 +404,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
                     </MenuItem>
                 </Menu>
             </Box>
-
-            {/* PowerPoint Export Status Notifications */}
-            <Snackbar
-                open={!!exportStatus.message}
-                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-                sx={{ mt: 8 }}
-            >
-                <Alert
-                    severity={
-                        exportStatus.error
-                            ? 'error'
-                            : exportStatus.isExporting
-                              ? 'info'
-                              : 'success'
-                    }
-                    variant="filled"
-                >
-                    {exportStatus.message}
-                    {exportStatus.error && `: ${exportStatus.error}`}
-                </Alert>
-            </Snackbar>
         </Box>
     );
 };
