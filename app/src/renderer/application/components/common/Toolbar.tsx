@@ -4,6 +4,7 @@ import ShapesIcon from '@mui/icons-material/Category';
 import TriangleIcon from '@mui/icons-material/ChangeHistory';
 import ImageIcon from '@mui/icons-material/Image';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ShareIcon from '@mui/icons-material/Share';
 import CircleIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RectangleIcon from '@mui/icons-material/Rectangle';
 import PresentationIcon from '@mui/icons-material/Slideshow';
@@ -25,6 +26,7 @@ import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import {
     createBarChart,
+    createGraph,
     createImage,
     createShape,
     createTextBox,
@@ -131,6 +133,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
             yAxisLabel: 'Values',
         });
         await addElement(newBarChartElement);
+    };
+
+    const addGraphElement = async () => {
+        if (!selectedSlide) return;
+        console.log('addGraphElement', selectedSlide.id);
+        const newGraphElement = createGraph({
+            position: { x: 100, y: 100 },
+            size: { width: 400, height: 300 },
+            content: 'digraph {\n  A -> B\n  B -> C\n  C -> A\n}',
+        });
+        await addElement(newGraphElement);
     };
 
     const addImageElement = async () => {
@@ -289,6 +302,27 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
                         }}
                     >
                         Chart
+                    </Button>
+                </Tooltip>
+
+                <Tooltip title="Add Graph">
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<ShareIcon />}
+                        onClick={addGraphElement}
+                        sx={{
+                            borderRadius: 1,
+                            textTransform: 'none',
+                            px: 2,
+                            borderColor: alpha('#000', 0.12),
+                            '&:hover': {
+                                bgcolor: alpha('#007AFF', 0.04),
+                                borderColor: alpha('#007AFF', 0.5),
+                            },
+                        }}
+                    >
+                        Graph
                     </Button>
                 </Tooltip>
 

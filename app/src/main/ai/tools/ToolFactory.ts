@@ -7,6 +7,7 @@ import { AlignToSlideTool } from './tools/AlignToSlideTool';
 import { CalculatorTool } from './tools/CalculatorTool';
 import { ChangeElementZIndexTool } from './tools/ChangeElementZIndexTool';
 import { CreateBarChartTool } from './tools/CreateBarChartTool';
+import { CreateGraphTool } from './tools/CreateGraphTool';
 import { CreateShapeTool } from './tools/CreateShapeTool';
 import { CreateSlideTool } from './tools/CreateSlideTool';
 import { CreateSVGImageTool } from './tools/CreateSVGImageTool';
@@ -22,6 +23,7 @@ import { GridAlignTool } from './tools/GridAlignTool';
 import { MatchSizeTool } from './tools/MatchSizeTool';
 import { SpaceElementsEvenlyTool } from './tools/SpaceElementsEvenlyTool';
 import { UpdateBarChartTool } from './tools/UpdateBarChartTool';
+import { UpdateGraphTool } from './tools/UpdateGraphTool';
 import { UpdateImageElementTool } from './tools/UpdateImageElementTool';
 import { UpdateShapeTool } from './tools/UpdateShapeTool';
 import { UpdateSlideTool } from './tools/UpdateSlideTool';
@@ -40,6 +42,8 @@ export class ToolFactory {
             new UpdateTextElementTool(),
             new CreateBarChartTool(),
             new UpdateBarChartTool(),
+            new CreateGraphTool(),
+            new UpdateGraphTool(),
             new CreateShapeTool(),
             new UpdateShapeTool(),
             new AlignElementsTool(),

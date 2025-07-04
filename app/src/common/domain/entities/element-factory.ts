@@ -84,6 +84,26 @@ export function createImage(options: {
     };
 }
 
+export function createGraph(options: {
+    content: string;
+    position: { x: number; y: number };
+    size: { width: number; height: number };
+    backgroundColor?: string;
+    borderRadius?: number;
+    zIndex?: number;
+}): ContentElement {
+    return {
+        id: uuidv4(),
+        type: 'graph',
+        position: options.position,
+        size: options.size,
+        content: options.content,
+        backgroundColor: options.backgroundColor || 'transparent',
+        borderRadius: options.borderRadius || 0,
+        zIndex: options.zIndex || 1,
+    };
+}
+
 /**
  * Creates a deep copy of an element with a new UUID
  * Useful for copy/paste and duplication operations

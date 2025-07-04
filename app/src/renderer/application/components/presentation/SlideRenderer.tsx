@@ -6,6 +6,7 @@ import {
 import {
     BarChart,
     ContentElement,
+    Graph,
     Image as ImageType,
     Plot,
     Shape,
@@ -18,6 +19,7 @@ import { useSnapSystem } from '../../hooks/useSnapSystem';
 import { BarChartPropertiesDialog } from './BarChartPropertiesDialog';
 import { ElementContextMenu } from './ElementContextMenu';
 import { BarChartElement } from './elements/BarChartElement';
+import { GraphElement } from './elements/GraphElement';
 import { ImageElement } from './elements/ImageElement';
 import { PlotElement } from './elements/PlotElement';
 import { ShapeElement } from './elements/ShapeElement';
@@ -899,6 +901,14 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                         key={element.id}
                         {...commonProps}
                         element={element as BarChart}
+                    />
+                );
+            case 'graph':
+                return (
+                    <GraphElement
+                        key={element.id}
+                        {...commonProps}
+                        element={element as Graph}
                     />
                 );
             default:
