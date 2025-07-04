@@ -178,38 +178,70 @@ export class PowerPointExportService {
         element: TextBox,
         position: any,
     ): void {
-        // Convert HTML content to plain text (basic conversion)
-        const text = this.htmlToPlainText(element.content);
+        try {
+            // Parse HTML content and convert to PptxGenJS rich text format
+            const richTextArray = this.htmlToRichText(element.content);
 
-        const textOptions: any = {
-            x: position.x,
-            y: position.y,
-            w: position.w,
-            h: position.h,
-            fontSize: 14,
-            color: '000000',
-            align: 'left',
-            valign: this.convertVerticalAlign(element.verticalAlign),
-            wrap: true,
-            autoFit: false,
-        };
-
-        // Set background color if specified
-        if (
-            element.backgroundColor &&
-            element.backgroundColor !== 'transparent'
-        ) {
-            textOptions.fill = {
-                color: element.backgroundColor.replace('#', ''),
+            const textOptions: any = {
+                x: position.x,
+                y: position.y,
+                w: position.w,
+                h: position.h,
+                valign: this.convertVerticalAlign(element.verticalAlign),
+                wrap: true,
+                autoFit: false,
             };
-        }
 
-        // Set border radius if specified
-        if (element.borderRadius && element.borderRadius > 0) {
-            textOptions.rectRadius = element.borderRadius;
-        }
+            // Set background color if specified
+            if (
+                element.backgroundColor &&
+                element.backgroundColor !== 'transparent'
+            ) {
+                textOptions.fill = {
+                    color: element.backgroundColor.replace('#', ''),
+                };
+            }
 
-        slide.addText(text, textOptions);
+            // Set border radius if specified
+            if (element.borderRadius && element.borderRadius > 0) {
+                textOptions.rectRadius = element.borderRadius;
+            }
+
+            // Add rich text to slide
+            slide.addText(richTextArray, textOptions);
+            console.log('Added rich text with formatting:', richTextArray);
+        } catch (error) {
+            console.error(
+                'Error converting rich text, falling back to plain text:',
+                error,
+            );
+
+            // Fallback to plain text if rich text parsing fails
+            const plainText = this.htmlToPlainText(element.content);
+            const fallbackOptions: any = {
+                x: position.x,
+                y: position.y,
+                w: position.w,
+                h: position.h,
+                fontSize: 14,
+                color: '000000',
+                align: 'left',
+                valign: this.convertVerticalAlign(element.verticalAlign),
+                wrap: true,
+                autoFit: false,
+            };
+
+            if (
+                element.backgroundColor &&
+                element.backgroundColor !== 'transparent'
+            ) {
+                fallbackOptions.fill = {
+                    color: element.backgroundColor.replace('#', ''),
+                };
+            }
+
+            slide.addText(plainText, fallbackOptions);
+        }
     }
 
     private convertShapeElement(
@@ -229,12 +261,8 @@ export class PowerPointExportService {
                 h: position.h,
             };
 
-            // For circles, ensure width and height are equal to make perfect circles
-            if (element.type === 'circle') {
-                const minDimension = Math.min(position.w, position.h);
-                shapeOptions.w = minDimension;
-                shapeOptions.h = minDimension;
-            }
+            // For circles/ellipses, preserve the original dimensions
+            // Don't force them to be perfect circles if the user made them oval-shaped
 
             // Set fill color
             if (element.fillColor && element.fillColor !== 'transparent') {
@@ -481,8 +509,183 @@ export class PowerPointExportService {
         return alignMap[align || 'top'] || 'top';
     }
 
+    private htmlToRichText(html: string): any[] {
+        // Convert HTML to PptxGenJS rich text format
+        // This preserves formatting like bold, italic, colors, font sizes, etc.
+
+        try {
+            // Remove outer paragraph tags if they exist
+            let content = html.replace(/^<p[^>]*>|<\/p>$/gi, '');
+
+            const richTextArray: any[] = [];
+            let currentIndex = 0;
+
+            // Regular expression to match HTML tags and their content
+            const htmlRegex =
+                /<(\/?)(b|strong|i|em|u|span|br|div|p)([^>]*)>([^<]*)/gi;
+            let match;
+
+            while ((match = htmlRegex.exec(content)) !== null) {
+                const [fullMatch, isClosing, tagName, attributes, textContent] =
+                    match;
+
+                // Add any text before this tag as plain text
+                if (match.index > currentIndex) {
+                    const plainText = content.substring(
+                        currentIndex,
+                        match.index,
+                    );
+                    if (plainText.trim()) {
+                        richTextArray.push({
+                            text: this.decodeHtmlEntities(plainText),
+                            options: { fontSize: 14, color: '000000' },
+                        });
+                    }
+                }
+
+                if (!isClosing && textContent.trim()) {
+                    // Parse formatting based on tag
+                    const textOptions: any = { fontSize: 14, color: '000000' };
+
+                    // Handle different tags
+                    switch (tagName.toLowerCase()) {
+                        case 'b':
+                        case 'strong':
+                            textOptions.bold = true;
+                            break;
+                        case 'i':
+                        case 'em':
+                            textOptions.italic = true;
+                            break;
+                        case 'u':
+                            textOptions.underline = true;
+                            break;
+                        case 'span':
+                            // Parse span attributes for color, font-size, etc.
+                            this.parseSpanAttributes(attributes, textOptions);
+                            break;
+                        case 'br':
+                            richTextArray.push({
+                                text: '\n',
+                                options: { fontSize: 14, color: '000000' },
+                            });
+                            continue;
+                    }
+
+                    richTextArray.push({
+                        text: this.decodeHtmlEntities(textContent),
+                        options: textOptions,
+                    });
+                }
+
+                currentIndex = match.index + fullMatch.length;
+            }
+
+            // Add any remaining text
+            if (currentIndex < content.length) {
+                const remainingText = content.substring(currentIndex);
+                if (remainingText.trim()) {
+                    richTextArray.push({
+                        text: this.decodeHtmlEntities(remainingText),
+                        options: { fontSize: 14, color: '000000' },
+                    });
+                }
+            }
+
+            // If no rich text was parsed, return the plain text
+            if (richTextArray.length === 0) {
+                const plainText = this.htmlToPlainText(html);
+                return [
+                    {
+                        text: plainText,
+                        options: { fontSize: 14, color: '000000' },
+                    },
+                ];
+            }
+
+            return richTextArray;
+        } catch (error) {
+            console.error('Error parsing HTML to rich text:', error);
+            // Fallback to plain text
+            const plainText = this.htmlToPlainText(html);
+            return [
+                {
+                    text: plainText,
+                    options: { fontSize: 14, color: '000000' },
+                },
+            ];
+        }
+    }
+
+    private parseSpanAttributes(attributes: string, textOptions: any): void {
+        // Parse span style attributes for color, font-size, etc.
+        const styleMatch = attributes.match(/style\s*=\s*["']([^"']+)["']/i);
+        if (styleMatch) {
+            const styleString = styleMatch[1];
+
+            // Parse color
+            const colorMatch = styleString.match(/color\s*:\s*([^;]+)/i);
+            if (colorMatch) {
+                const color = colorMatch[1].trim();
+                // Convert CSS color to hex (basic implementation)
+                if (color.startsWith('#')) {
+                    textOptions.color = color.replace('#', '');
+                } else if (color.startsWith('rgb')) {
+                    // Convert rgb(r,g,b) to hex
+                    const rgbMatch = color.match(
+                        /rgb\((\d+),\s*(\d+),\s*(\d+)\)/,
+                    );
+                    if (rgbMatch) {
+                        const r = parseInt(rgbMatch[1])
+                            .toString(16)
+                            .padStart(2, '0');
+                        const g = parseInt(rgbMatch[2])
+                            .toString(16)
+                            .padStart(2, '0');
+                        const b = parseInt(rgbMatch[3])
+                            .toString(16)
+                            .padStart(2, '0');
+                        textOptions.color = `${r}${g}${b}`;
+                    }
+                }
+            }
+
+            // Parse font-size
+            const fontSizeMatch = styleString.match(/font-size\s*:\s*(\d+)px/i);
+            if (fontSizeMatch) {
+                textOptions.fontSize = parseInt(fontSizeMatch[1]);
+            }
+
+            // Parse font-weight for bold
+            const fontWeightMatch = styleString.match(
+                /font-weight\s*:\s*(bold|[5-9]\d\d)/i,
+            );
+            if (fontWeightMatch) {
+                textOptions.bold = true;
+            }
+
+            // Parse font-style for italic
+            const fontStyleMatch = styleString.match(
+                /font-style\s*:\s*italic/i,
+            );
+            if (fontStyleMatch) {
+                textOptions.italic = true;
+            }
+        }
+    }
+
+    private decodeHtmlEntities(text: string): string {
+        return text
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'");
+    }
+
     private htmlToPlainText(html: string): string {
-        // Basic HTML to text conversion
+        // Basic HTML to text conversion (kept for fallback)
         // Remove HTML tags and decode common entities
         return html
             .replace(/<br\s*\/?>/gi, '\n')
