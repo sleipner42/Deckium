@@ -141,6 +141,19 @@ export default class MenuBuilder {
                         }
                     },
                 },
+                {
+                    label: 'Export to PowerPoint...',
+                    accelerator: 'Command+Shift+E',
+                    click: async () => {
+                        try {
+                            await this.mainWindow.webContents.executeJavaScript(`
+                                window.electron.presentation.exportToPowerPoint();
+                            `);
+                        } catch (error) {
+                            console.error('PowerPoint export error:', error);
+                        }
+                    },
+                },
             ],
         };
 
@@ -257,6 +270,22 @@ export default class MenuBuilder {
                                 `);
                             } catch (error) {
                                 console.error('PDF export error:', error);
+                            }
+                        },
+                    },
+                    {
+                        label: 'Export to &PowerPoint...',
+                        accelerator: 'Ctrl+Shift+E',
+                        click: async () => {
+                            try {
+                                await this.mainWindow.webContents.executeJavaScript(`
+                                    window.electron.presentation.exportToPowerPoint();
+                                `);
+                            } catch (error) {
+                                console.error(
+                                    'PowerPoint export error:',
+                                    error,
+                                );
                             }
                         },
                     },

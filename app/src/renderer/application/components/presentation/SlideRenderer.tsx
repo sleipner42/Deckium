@@ -233,15 +233,20 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             // Handle Select All (Ctrl+A or Cmd+A)
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
                 // Check if we're in text editing mode or an input field
-                const isAgentInput = activeElement && (
-                    activeElement.closest('[data-testid="agent-input"]') ||
-                    activeElement.closest('.chat-interface') ||
-                    activeElement.closest('.ql-editor')
-                );
+                const isAgentInput =
+                    activeElement &&
+                    (activeElement.closest('[data-testid="agent-input"]') ||
+                        activeElement.closest('.chat-interface') ||
+                        activeElement.closest('.ql-editor'));
 
-                if (!isInputFocused && !isAgentInput && !editingElementId && selectableElements) {
+                if (
+                    !isInputFocused &&
+                    !isAgentInput &&
+                    !editingElementId &&
+                    selectableElements
+                ) {
                     e.preventDefault();
-                    const allElementIds = slide.elements.map(el => el.id);
+                    const allElementIds = slide.elements.map((el) => el.id);
                     if (allElementIds.length > 0) {
                         selectMultipleElements(allElementIds);
                     }

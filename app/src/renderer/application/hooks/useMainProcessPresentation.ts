@@ -407,14 +407,16 @@ export const useMainProcessPresentation = () => {
                         activeElement.tagName === 'TEXTAREA' ||
                         activeElement.contentEditable === 'true');
 
-                const isAgentInput = activeElement && (
-                    activeElement.closest('[data-testid="agent-input"]') ||
-                    activeElement.closest('.chat-interface') ||
-                    activeElement.closest('.ql-editor')
-                );
+                const isAgentInput =
+                    activeElement &&
+                    (activeElement.closest('[data-testid="agent-input"]') ||
+                        activeElement.closest('.chat-interface') ||
+                        activeElement.closest('.ql-editor'));
 
                 if (!isInputFocused && !isAgentInput && selectedSlide) {
-                    const allElementIds = selectedSlide.elements.map(el => el.id);
+                    const allElementIds = selectedSlide.elements.map(
+                        (el) => el.id,
+                    );
                     selectMultipleElements(allElementIds);
                 }
             },

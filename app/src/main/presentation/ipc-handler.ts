@@ -1,5 +1,6 @@
 import { BrowserWindow, ipcMain } from 'electron';
 import { ContentElement, Slide } from '../../common/domain/entities/types';
+import { PowerPointExportService } from '../powerpoint-export/service';
 import { PresentationService } from './service';
 
 export function setupPresentationIPC(service: PresentationService) {
@@ -126,5 +127,44 @@ export function setupPresentationIPC(service: PresentationService) {
 
     ipcMain.handle('presentation:can-redo', () => {
         return service.canRedo();
+    });
+
+    ipcMain.handle('presentation:export-powerpoint', async (event) => {
+        try {
+            const presentation = service.getPresentation();
+            if (!presentation) {
+                throw new Error('No presentation to export');
+            }
+
+            const window = BrowserWindow.fromWebContents(event.sender);
+            if (!window) {
+                throw new Error('Could not determine source window');
+            }
+
+            // Send progress update
+            event.sender.send('powerpoint-export:progress', {
+                message: 'Starting PowerPoint export...',
+            });
+
+            const exportService = new PowerPointExportService();
+            await exportService.exportPresentation(presentation, window);
+
+            // Send completion event
+            event.sender.send('powerpoint-export:complete', {
+                message: 'PowerPoint export completed successfully!',
+            });
+
+            return { success: true };
+        } catch (error) {
+            console.error('PowerPoint export error:', error);
+
+            // Send error event
+            event.sender.send('powerpoint-export:error', {
+                message: 'PowerPoint export failed',
+                error: error.message,
+            });
+
+            throw error;
+        }
     });
 }
