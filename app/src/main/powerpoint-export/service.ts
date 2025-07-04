@@ -509,7 +509,7 @@ export class PowerPointExportService {
             // Since we can't use actual DOM in Node.js, we'll simulate it
 
             // Clean up the HTML and prepare for parsing
-            let content = html
+            const content = html
                 .replace(/^<p[^>]*>|<\/p>$/gi, '') // Remove outer p tags
                 .replace(/<br\s*\/?>/gi, '\n') // Convert br tags to newlines
                 .replace(/<\/p>/gi, '\n') // Convert p end tags to newlines

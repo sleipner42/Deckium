@@ -68,11 +68,12 @@ export const ElementContextMenu: React.FC<ElementContextMenuProps> = ({
             )}
             {onCopy && <Divider />}
 
-            {/* Show Properties option for shapes and charts */}
+            {/* Show Properties option for shapes, charts, and text */}
             {(elementType === 'rectangle' ||
                 elementType === 'circle' ||
                 elementType === 'triangle' ||
-                elementType === 'barchart') &&
+                elementType === 'barchart' ||
+                elementType === 'textbox') &&
                 onEditProperties && (
                     <MenuItem
                         onClick={() => handleMenuItemClick(onEditProperties)}
@@ -86,7 +87,8 @@ export const ElementContextMenu: React.FC<ElementContextMenuProps> = ({
             {(elementType === 'rectangle' ||
                 elementType === 'circle' ||
                 elementType === 'triangle' ||
-                elementType === 'barchart') &&
+                elementType === 'barchart' ||
+                elementType === 'textbox') &&
                 onEditProperties && <Divider />}
 
             <MenuItem onClick={() => handleMenuItemClick(onMoveToTop)}>
