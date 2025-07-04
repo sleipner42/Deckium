@@ -92,6 +92,18 @@ declare global {
                 setSelectedSlide(slideId: string): Promise<void>;
                 getSelectedSlide(): Promise<string | null>;
             };
+            powerpointImport: {
+                selectAndImport(): Promise<{
+                    success: boolean;
+                    presentation?: unknown;
+                    error?: string;
+                }>;
+                importFile(filePath: string): Promise<{
+                    success: boolean;
+                    presentation?: unknown;
+                    error?: string;
+                }>;
+            };
             fs: {
                 readFile(filePath: string): Promise<Buffer>;
             };

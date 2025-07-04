@@ -15,6 +15,7 @@ import { LintingIpcHandler, LintingService } from './linting';
 import MenuBuilder from './menu';
 import { setupPDFExportIPC } from './pdf-export/ipc-handler';
 import { PDFExportService } from './pdf-export/service';
+import { PowerPointImportIPCHandler } from './powerpoint-import/ipc-handler';
 import { setupPresentationIPC } from './presentation/ipc-handler';
 import { PresentationService } from './presentation/service';
 import { setupTextMeasurementIPC } from './text-measurement/ipc-handler';
@@ -32,6 +33,7 @@ let aiServiceFactory: IAIServiceFactory;
 let authService: AuthService;
 let lintingService: LintingService;
 let pdfExportService: PDFExportService;
+let powerpointImportHandler: PowerPointImportIPCHandler;
 let menuBuilder: MenuBuilder;
 
 export async function setSlideInHiddenWindow(slideId: string): Promise<void> {
@@ -250,6 +252,8 @@ if (!gotTheLock) {
             presentationService = new PresentationService();
             authService = new AuthService();
             pdfExportService = new PDFExportService(presentationService);
+            powerpointImportHandler = new PowerPointImportIPCHandler();
+            powerpointImportHandler.setPresentationService(presentationService);
 
             lintingService = new LintingService();
             lintingService.setPresentationService(presentationService);

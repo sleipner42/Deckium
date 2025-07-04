@@ -110,6 +110,18 @@ export default class MenuBuilder {
                         }
                     },
                 },
+                {
+                    label: 'Import PowerPoint...',
+                    click: async () => {
+                        try {
+                            await this.mainWindow.webContents.executeJavaScript(`
+                                window.electron.powerpointImport.selectAndImport();
+                            `);
+                        } catch (error) {
+                            console.error('PowerPoint import error:', error);
+                        }
+                    },
+                },
                 { type: 'separator' },
                 {
                     label: 'Save',
@@ -239,6 +251,18 @@ export default class MenuBuilder {
                                 this.presentationService.loadPresentation(
                                     this.mainWindow,
                                 );
+                            }
+                        },
+                    },
+                    {
+                        label: '&Import PowerPoint...',
+                        click: async () => {
+                            try {
+                                await this.mainWindow.webContents.executeJavaScript(`
+                                    window.electron.powerpointImport.selectAndImport();
+                                `);
+                            } catch (error) {
+                                console.error('PowerPoint import error:', error);
                             }
                         },
                     },

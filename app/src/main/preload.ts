@@ -91,13 +91,19 @@ export type PDFExportChannels =
     | 'pdf-export:complete'
     | 'pdf-export:error';
 
+export type PowerPointImportChannels =
+    | 'powerpoint-import:select-and-import'
+    | 'powerpoint-import:import-file'
+    | 'powerpoint-import:progress';
+
 type IpcChannels =
     | PresentationChannels
     | AIChannels
     | CriticChannels
     | LintingChannels
     | AuthChannels
-    | PDFExportChannels;
+    | PDFExportChannels
+    | PowerPointImportChannels;
 
 const electronHandler = {
     ipcRenderer: {
@@ -323,6 +329,15 @@ const electronHandler = {
     pdfExport: {
         exportToPDF() {
             return ipcRenderer.invoke('pdf-export:export-to-pdf');
+        },
+    },
+
+    powerpointImport: {
+        selectAndImport() {
+            return ipcRenderer.invoke('powerpoint-import:select-and-import');
+        },
+        importFile(filePath: string) {
+            return ipcRenderer.invoke('powerpoint-import:import-file', filePath);
         },
     },
 
