@@ -389,6 +389,15 @@ const toolbarStyles = `
     width: auto !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
   }
+  .ql-tooltip {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  .ql-tooltip.ql-hidden {
+    display: none !important;
+  }
 `;
 
 if (!document.querySelector('#quill-toolbar-zindex')) {
@@ -877,6 +886,15 @@ export const TextElement: React.FC<TextElementProps> = ({
                 },
                 '& .ql-disabled .ql-container': {
                     border: 'none !important',
+                },
+                '& .ql-tooltip': {
+                    display: 'none !important',
+                    visibility: 'hidden !important',
+                    opacity: '0 !important',
+                    pointerEvents: 'none !important',
+                },
+                '& .ql-tooltip.ql-hidden': {
+                    display: 'none !important',
                 },
             }}
             style={{

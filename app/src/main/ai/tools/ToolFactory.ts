@@ -14,6 +14,7 @@ import { CriticTool } from './tools/CriticTool';
 import { DeleteElementTool } from './tools/DeleteElementTool';
 import { DeleteSlideTool } from './tools/DeleteSlideTool';
 import { DuplicateSlideTool } from './tools/DuplicateSlideTool';
+import { ExportPowerPointTool } from './tools/ExportPowerPointTool';
 import { GetAllInfoAboutSlideTool } from './tools/GetAllInfoAboutSlideTool';
 import { GetDataFromUrl } from './tools/GetDataFromUrl';
 import { GetPresentationInfoTool } from './tools/GetPresentationInfoTool';
@@ -58,6 +59,7 @@ export class ToolFactory {
             new MatchSizeTool(),
             new CreateSVGImageTool(),
             new DuplicateSlideTool(),
+            new ExportPowerPointTool(),
         ];
     }
 }

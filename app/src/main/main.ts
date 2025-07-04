@@ -158,7 +158,7 @@ const createWindow = async () => {
         mainWindow = null;
     });
 
-    menuBuilder = new MenuBuilder(mainWindow);
+    menuBuilder = new MenuBuilder(mainWindow, presentationService);
     menuBuilder.buildMenu();
 
     mainWindow.webContents.setWindowOpenHandler((edata) => {
@@ -253,6 +253,11 @@ if (!gotTheLock) {
 
             lintingService = new LintingService();
             lintingService.setPresentationService(presentationService);
+
+            // Update menu with presentation service
+            if (menuBuilder) {
+                menuBuilder.setPresentationService(presentationService);
+            }
 
             aiServiceFactory = new BackendAIServiceFactory(authService);
 

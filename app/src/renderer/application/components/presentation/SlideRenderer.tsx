@@ -26,6 +26,7 @@ import { ShapePropertiesDialog } from './ShapePropertiesDialog';
 import { SlideContextMenu } from './SlideContextMenu';
 import { SlidePropertiesDialog } from './SlidePropertiesDialog';
 import { SnapGuides } from './SnapGuides';
+import { TextPropertiesDialog } from './TextPropertiesDialog';
 
 interface SlideRendererProps {
     slide: Slide;
@@ -169,6 +170,11 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         elementId: string | null;
     }>({ open: false, elementId: null });
 
+    const [textPropertiesDialog, setTextPropertiesDialog] = useState<{
+        open: boolean;
+        elementId: string | null;
+    }>({ open: false, elementId: null });
+
     const [slidePropertiesDialog, setSlidePropertiesDialog] = useState<{
         open: boolean;
     }>({ open: false });
@@ -233,15 +239,20 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             // Handle Select All (Ctrl+A or Cmd+A)
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
                 // Check if we're in text editing mode or an input field
-                const isAgentInput = activeElement && (
-                    activeElement.closest('[data-testid="agent-input"]') ||
-                    activeElement.closest('.chat-interface') ||
-                    activeElement.closest('.ql-editor')
-                );
+                const isAgentInput =
+                    activeElement &&
+                    (activeElement.closest('[data-testid="agent-input"]') ||
+                        activeElement.closest('.chat-interface') ||
+                        activeElement.closest('.ql-editor'));
 
-                if (!isInputFocused && !isAgentInput && !editingElementId && selectableElements) {
+                if (
+                    !isInputFocused &&
+                    !isAgentInput &&
+                    !editingElementId &&
+                    selectableElements
+                ) {
                     e.preventDefault();
-                    const allElementIds = slide.elements.map(el => el.id);
+                    const allElementIds = slide.elements.map((el) => el.id);
                     if (allElementIds.length > 0) {
                         selectMultipleElements(allElementIds);
                     }
@@ -714,6 +725,8 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         const element = slide.elements.find((el) => el.id === elementId);
         if (element?.type === 'barchart') {
             setChartPropertiesDialog({ open: true, elementId });
+        } else if (element?.type === 'textbox') {
+            setTextPropertiesDialog({ open: true, elementId });
         } else {
             setPropertiesDialog({ open: true, elementId });
         }
@@ -736,6 +749,16 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     const handleUpdateChartProperties = (updates: Partial<BarChart>) => {
         if (chartPropertiesDialog.elementId) {
             updateElement(chartPropertiesDialog.elementId, updates);
+        }
+    };
+
+    const handleCloseTextPropertiesDialog = () => {
+        setTextPropertiesDialog({ open: false, elementId: null });
+    };
+
+    const handleUpdateTextProperties = (updates: Partial<TextBox>) => {
+        if (textPropertiesDialog.elementId) {
+            updateElement(textPropertiesDialog.elementId, updates);
         }
     };
 
@@ -1049,6 +1072,19 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                         : null
                 }
                 onUpdate={handleUpdateChartProperties}
+            />
+
+            <TextPropertiesDialog
+                open={textPropertiesDialog.open}
+                onClose={handleCloseTextPropertiesDialog}
+                textBox={
+                    textPropertiesDialog.elementId
+                        ? (slide.elements.find(
+                              (el) => el.id === textPropertiesDialog.elementId,
+                          ) as TextBox)
+                        : null
+                }
+                onUpdate={handleUpdateTextProperties}
             />
 
             <SlidePropertiesDialog

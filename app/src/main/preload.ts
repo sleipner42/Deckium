@@ -39,7 +39,8 @@ export type PresentationChannels =
     | 'presentation:set-selected-slide'
     | 'presentation:get-selected-slide'
     | 'presentation:fullscreen-opened'
-    | 'presentation:fullscreen-closed';
+    | 'presentation:fullscreen-closed'
+    | 'presentation:export-powerpoint';
 
 export type AIChannels =
     | 'ai:create-thread'
@@ -292,6 +293,9 @@ const electronHandler = {
         },
         getSelectedSlide() {
             return ipcRenderer.invoke('presentation:get-selected-slide');
+        },
+        exportToPowerPoint() {
+            return ipcRenderer.invoke('presentation:export-powerpoint');
         },
     },
 

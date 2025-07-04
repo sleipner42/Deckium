@@ -1,7 +1,7 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { BrowserWindow, dialog, screen } from 'electron';
-import crypto from 'node:crypto';
 import {
     ContentElement,
     Presentation,
@@ -10,6 +10,7 @@ import {
 import { resolveHtmlPath } from '../util';
 import { PresentationEventBus } from './event-bus';
 import { PresentationState } from './state';
+
 const FILE_EXTENSION = '.kpres';
 
 export class PresentationService {

@@ -218,19 +218,25 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
                 );
             case 'triangle':
                 return (
-                    <div
+                    <svg
                         data-element-id={element.id}
                         data-element-type="shape"
                         style={{
                             width: '100%',
                             height: '100%',
-                            clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
-                            backgroundColor: fillColor,
                         }}
                         onClick={handleClick}
                         onMouseDown={handleMouseDown}
                         onContextMenu={onContextMenu}
-                    />
+                    >
+                        <polygon
+                            points={`${size.width / 2},${strokeWidth} ${strokeWidth},${size.height - strokeWidth} ${size.width - strokeWidth},${size.height - strokeWidth}`}
+                            fill={fillColor}
+                            stroke={strokeColor}
+                            strokeWidth={strokeWidth}
+                            strokeLinejoin="round"
+                        />
+                    </svg>
                 );
             default:
                 return null;

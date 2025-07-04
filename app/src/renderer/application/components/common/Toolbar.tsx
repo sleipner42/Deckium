@@ -302,7 +302,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
                             borderRadius: 1,
                             textTransform: 'none',
                             px: 2,
-                            ml: 2,
+                            ml: 1,
                             bgcolor: 'primary.main',
                             '&:hover': {
                                 bgcolor: 'primary.dark',

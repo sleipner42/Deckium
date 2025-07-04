@@ -13,9 +13,11 @@ interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
 
 export default class MenuBuilder {
     mainWindow: BrowserWindow;
+    presentationService: any;
 
-    constructor(mainWindow: BrowserWindow) {
+    constructor(mainWindow: BrowserWindow, presentationService?: any) {
         this.mainWindow = mainWindow;
+        this.presentationService = presentationService;
     }
 
     buildMenu(): Menu {
@@ -39,6 +41,11 @@ export default class MenuBuilder {
 
     updateMenu(): void {
         this.buildMenu();
+    }
+
+    setPresentationService(presentationService: any): void {
+        this.presentationService = presentationService;
+        this.updateMenu(); // Rebuild menu with the new service
     }
 
     setupDevelopmentEnvironment(): void {
@@ -138,6 +145,19 @@ export default class MenuBuilder {
                             `);
                         } catch (error) {
                             console.error('PDF export error:', error);
+                        }
+                    },
+                },
+                {
+                    label: 'Export to PowerPoint...',
+                    accelerator: 'Command+Shift+E',
+                    click: async () => {
+                        try {
+                            await this.mainWindow.webContents.executeJavaScript(`
+                                window.electron.presentation.exportToPowerPoint();
+                            `);
+                        } catch (error) {
+                            console.error('PowerPoint export error:', error);
                         }
                     },
                 },
@@ -257,6 +277,22 @@ export default class MenuBuilder {
                                 `);
                             } catch (error) {
                                 console.error('PDF export error:', error);
+                            }
+                        },
+                    },
+                    {
+                        label: 'Export to &PowerPoint...',
+                        accelerator: 'Ctrl+Shift+E',
+                        click: async () => {
+                            try {
+                                await this.mainWindow.webContents.executeJavaScript(`
+                                    window.electron.presentation.exportToPowerPoint();
+                                `);
+                            } catch (error) {
+                                console.error(
+                                    'PowerPoint export error:',
+                                    error,
+                                );
                             }
                         },
                     },
