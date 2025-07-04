@@ -10,7 +10,7 @@ import {
     Stack,
     Typography,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { usePresentation } from '../../context/PresentationContext';
 import { SlideView } from './SlideView';
 
@@ -41,6 +41,51 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [isMouseInNavigation, setIsMouseInNavigation] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Handle keyboard shortcuts for slide deletion
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Only handle delete key if:
+            // 1. A slide is selected
+            // 2. Mouse is in the navigation area 
+            // 3. More than one slide exists
+            // 4. Not in text editing mode
+            if (
+                (e.key === 'Delete' || e.key === 'Backspace') &&
+                selectedSlide &&
+                isMouseInNavigation &&
+                currentPresentation.slides.length > 1 // Prevent deleting the last slide
+            ) {
+                // Check if we're not focused on an input, textarea, or contenteditable element
+                const activeElement = document.activeElement;
+                const isInputFocused =
+                    activeElement &&
+                    (activeElement.tagName === 'INPUT' ||
+                        activeElement.tagName === 'TEXTAREA' ||
+                        activeElement.contentEditable === 'true');
+
+                // Check if we're not in the agent input field or any chat interface
+                const isAgentInput =
+                    activeElement &&
+                    (activeElement.closest('[data-testid="agent-input"]') ||
+                        activeElement.closest('.chat-interface') ||
+                        activeElement.closest('.ql-editor'));
+
+                if (!isInputFocused && !isAgentInput) {
+                    e.preventDefault();
+                    deleteSlide(selectedSlide.id);
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [selectedSlide, isMouseInNavigation, deleteSlide, currentPresentation.slides.length]);
 
     const handleContextMenuOpen = (
         event: React.MouseEvent<HTMLDivElement>,
@@ -169,17 +214,29 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
         if (!isDragging) {
             goToSlide(index);
         }
+        // Ensure the container is focused for keyboard events
+        if (containerRef.current) {
+            containerRef.current.focus();
+        }
     };
 
     return (
         <Box
+            ref={containerRef}
             className={className}
+            tabIndex={0}
+            onMouseEnter={() => setIsMouseInNavigation(true)}
+            onMouseLeave={() => setIsMouseInNavigation(false)}
             sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 height: '100%',
                 width: '100%',
                 overflow: 'hidden',
+                outline: 'none', // Remove focus outline
+                '&:focus': {
+                    outline: 'none',
+                },
             }}
         >
             <Stack
