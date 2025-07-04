@@ -49,7 +49,7 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
         const handleKeyDown = (e: KeyboardEvent) => {
             // Only handle delete key if:
             // 1. A slide is selected
-            // 2. Mouse is in the navigation area 
+            // 2. Mouse is in the navigation area
             // 3. More than one slide exists
             // 4. Not in text editing mode
             if (
@@ -85,7 +85,12 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [selectedSlide, isMouseInNavigation, deleteSlide, currentPresentation.slides.length]);
+    }, [
+        selectedSlide,
+        isMouseInNavigation,
+        deleteSlide,
+        currentPresentation.slides.length,
+    ]);
 
     const handleContextMenuOpen = (
         event: React.MouseEvent<HTMLDivElement>,
