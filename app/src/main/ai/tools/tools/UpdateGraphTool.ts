@@ -6,7 +6,8 @@ import { BaseTool } from '../BaseTool';
 export class UpdateGraphTool extends BaseTool {
     name = 'updateGraph';
 
-    description = 'Update an existing graph element by changing its DOT content or other properties';
+    description =
+        'Update an existing graph element by changing its DOT content or other properties';
 
     requiredParams = {
         elementId: 'The ID of the graph element to update',
@@ -38,8 +39,7 @@ export class UpdateGraphTool extends BaseTool {
         height: 'New height of the graph (optional)',
         backgroundColor:
             'New background color of the graph (optional). Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
-        borderRadius:
-            'New border radius of the graph container (optional)',
+        borderRadius: 'New border radius of the graph container (optional)',
         zIndex: 'New z-index of the graph (optional) - controls stacking order with higher values appearing on top',
     };
 
@@ -57,7 +57,7 @@ export class UpdateGraphTool extends BaseTool {
         }
 
         const presentation = presentationService.getPresentation();
-        
+
         // Find the element across all slides
         let targetSlide = null;
         let targetElement = null;
@@ -93,15 +93,27 @@ export class UpdateGraphTool extends BaseTool {
 
         if (params.x !== undefined || params.y !== undefined) {
             updates.position = {
-                x: params.x !== undefined ? Number(params.x) : targetElement.position.x,
-                y: params.y !== undefined ? Number(params.y) : targetElement.position.y,
+                x:
+                    params.x !== undefined
+                        ? Number(params.x)
+                        : targetElement.position.x,
+                y:
+                    params.y !== undefined
+                        ? Number(params.y)
+                        : targetElement.position.y,
             };
         }
 
         if (params.width !== undefined || params.height !== undefined) {
             updates.size = {
-                width: params.width !== undefined ? Number(params.width) : targetElement.size.width,
-                height: params.height !== undefined ? Number(params.height) : targetElement.size.height,
+                width:
+                    params.width !== undefined
+                        ? Number(params.width)
+                        : targetElement.size.width,
+                height:
+                    params.height !== undefined
+                        ? Number(params.height)
+                        : targetElement.size.height,
             };
         }
 
@@ -124,7 +136,10 @@ export class UpdateGraphTool extends BaseTool {
             };
         }
 
-        const updatedSlide = presentationService.updateElement(elementId, updates);
+        const updatedSlide = presentationService.updateElement(
+            elementId,
+            updates,
+        );
 
         if (!updatedSlide) {
             return {
@@ -134,16 +149,23 @@ export class UpdateGraphTool extends BaseTool {
         }
 
         // Find the updated element
-        const updatedElement = updatedSlide.elements.find((el) => el.id === elementId) as Graph;
-        
+        const updatedElement = updatedSlide.elements.find(
+            (el) => el.id === elementId,
+        ) as Graph;
+
         let changeDescription = 'Graph element updated successfully:';
         if (updates.content) changeDescription += ' content modified,';
-        if (updates.position) changeDescription += ` moved to (${updates.position.x}, ${updates.position.y}),`;
-        if (updates.size) changeDescription += ` resized to ${updates.size.width}x${updates.size.height}px,`;
-        if (updates.backgroundColor) changeDescription += ` background color changed to ${updates.backgroundColor},`;
-        if (updates.borderRadius) changeDescription += ` border radius changed to ${updates.borderRadius}px,`;
-        if (updates.zIndex) changeDescription += ` z-index changed to ${updates.zIndex},`;
-        
+        if (updates.position)
+            changeDescription += ` moved to (${updates.position.x}, ${updates.position.y}),`;
+        if (updates.size)
+            changeDescription += ` resized to ${updates.size.width}x${updates.size.height}px,`;
+        if (updates.backgroundColor)
+            changeDescription += ` background color changed to ${updates.backgroundColor},`;
+        if (updates.borderRadius)
+            changeDescription += ` border radius changed to ${updates.borderRadius}px,`;
+        if (updates.zIndex)
+            changeDescription += ` z-index changed to ${updates.zIndex},`;
+
         // Remove trailing comma
         changeDescription = changeDescription.replace(/,$/, '.');
 
