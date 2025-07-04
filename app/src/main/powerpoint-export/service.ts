@@ -514,82 +514,91 @@ export class PowerPointExportService {
         // This preserves formatting like bold, italic, colors, font sizes, etc.
 
         try {
-            // Remove outer paragraph tags if they exist
-            let content = html.replace(/^<p[^>]*>|<\/p>$/gi, '');
+            // First, let's try a simpler approach using DOM-like parsing
+            // Since we can't use actual DOM in Node.js, we'll simulate it
 
+            // Clean up the HTML and prepare for parsing
+            let content = html
+                .replace(/^<p[^>]*>|<\/p>$/gi, '') // Remove outer p tags
+                .replace(/<br\s*\/?>/gi, '\n') // Convert br tags to newlines
+                .replace(/<\/p>/gi, '\n') // Convert p end tags to newlines
+                .replace(/<p[^>]*>/gi, ''); // Remove p start tags
+
+            // For now, let's use a more robust approach
+            // Strip all unknown tags but preserve the known formatting
             const richTextArray: any[] = [];
-            let currentIndex = 0;
 
-            // Regular expression to match HTML tags and their content
-            const htmlRegex =
-                /<(\/?)(b|strong|i|em|u|span|br|div|p)([^>]*)>([^<]*)/gi;
-            let match;
+            // Parse the content character by character, tracking formatting state
+            const formatStack: any[] = [];
+            let currentText = '';
+            let i = 0;
 
-            while ((match = htmlRegex.exec(content)) !== null) {
-                const [fullMatch, isClosing, tagName, attributes, textContent] =
-                    match;
+            while (i < content.length) {
+                if (content[i] === '<') {
+                    // Found a tag, extract it
+                    const tagEnd = content.indexOf('>', i);
+                    if (tagEnd === -1) {
+                        // Malformed tag, treat as text
+                        currentText += content[i];
+                        i++;
+                        continue;
+                    }
 
-                // Add any text before this tag as plain text
-                if (match.index > currentIndex) {
-                    const plainText = content.substring(
-                        currentIndex,
-                        match.index,
-                    );
-                    if (plainText.trim()) {
+                    // Process any accumulated text with current formatting
+                    if (currentText.trim()) {
+                        const currentFormat = this.mergeFormatting(formatStack);
                         richTextArray.push({
-                            text: this.decodeHtmlEntities(plainText),
-                            options: { fontSize: 14, color: '000000' },
+                            text: this.decodeHtmlEntities(currentText),
+                            options: currentFormat,
                         });
-                    }
-                }
-
-                if (!isClosing && textContent.trim()) {
-                    // Parse formatting based on tag
-                    const textOptions: any = { fontSize: 14, color: '000000' };
-
-                    // Handle different tags
-                    switch (tagName.toLowerCase()) {
-                        case 'b':
-                        case 'strong':
-                            textOptions.bold = true;
-                            break;
-                        case 'i':
-                        case 'em':
-                            textOptions.italic = true;
-                            break;
-                        case 'u':
-                            textOptions.underline = true;
-                            break;
-                        case 'span':
-                            // Parse span attributes for color, font-size, etc.
-                            this.parseSpanAttributes(attributes, textOptions);
-                            break;
-                        case 'br':
-                            richTextArray.push({
-                                text: '\n',
-                                options: { fontSize: 14, color: '000000' },
-                            });
-                            continue;
+                        currentText = '';
                     }
 
-                    richTextArray.push({
-                        text: this.decodeHtmlEntities(textContent),
-                        options: textOptions,
-                    });
-                }
+                    const fullTag = content.substring(i, tagEnd + 1);
+                    const tagMatch = fullTag.match(/<(\/?)([\w\d]+)([^>]*)>/);
 
-                currentIndex = match.index + fullMatch.length;
+                    if (tagMatch) {
+                        const [, isClosing, tagName, attributes] = tagMatch;
+
+                        if (isClosing) {
+                            // Remove the last occurrence of this tag from the stack
+                            for (let j = formatStack.length - 1; j >= 0; j--) {
+                                if (
+                                    formatStack[j].tag === tagName.toLowerCase()
+                                ) {
+                                    formatStack.splice(j, 1);
+                                    break;
+                                }
+                            }
+                        } else {
+                            // Add formatting to the stack
+                            const formatting = this.getFormattingForTag(
+                                tagName.toLowerCase(),
+                                attributes,
+                            );
+                            if (formatting) {
+                                formatStack.push({
+                                    tag: tagName.toLowerCase(),
+                                    ...formatting,
+                                });
+                            }
+                        }
+                    }
+
+                    i = tagEnd + 1;
+                } else {
+                    currentText += content[i];
+                    i++;
+                }
             }
 
-            // Add any remaining text
-            if (currentIndex < content.length) {
-                const remainingText = content.substring(currentIndex);
-                if (remainingText.trim()) {
-                    richTextArray.push({
-                        text: this.decodeHtmlEntities(remainingText),
-                        options: { fontSize: 14, color: '000000' },
-                    });
-                }
+            // Process any remaining text
+            if (currentText.trim()) {
+                const currentFormat = this.mergeFormatting(formatStack);
+                richTextArray.push({
+                    text: this.decodeHtmlEntities(currentText),
+                    options: currentFormat,
+                });
             }
 
             // If no rich text was parsed, return the plain text
@@ -617,37 +626,101 @@ export class PowerPointExportService {
         }
     }
 
+    private getFormattingForTag(tagName: string, attributes: string): any {
+        const formatting: any = {};
+
+        switch (tagName) {
+            case 'b':
+            case 'strong':
+                formatting.bold = true;
+                break;
+            case 'i':
+            case 'em':
+                formatting.italic = true;
+                break;
+            case 'u':
+                formatting.underline = true;
+                break;
+            case 's':
+            case 'strike':
+            case 'del':
+                formatting.strike = true;
+                break;
+            case 'h1':
+                formatting.bold = true;
+                formatting.fontSize = 24;
+                break;
+            case 'h2':
+                formatting.bold = true;
+                formatting.fontSize = 20;
+                break;
+            case 'h3':
+                formatting.bold = true;
+                formatting.fontSize = 18;
+                break;
+            case 'h4':
+                formatting.bold = true;
+                formatting.fontSize = 16;
+                break;
+            case 'h5':
+                formatting.bold = true;
+                formatting.fontSize = 14;
+                break;
+            case 'h6':
+                formatting.bold = true;
+                formatting.fontSize = 12;
+                break;
+            case 'a':
+                formatting.color = '0000FF';
+                formatting.underline = true;
+                break;
+            case 'span':
+                this.parseSpanAttributes(attributes, formatting);
+                break;
+            default:
+                return null; // Unknown tag
+        }
+
+        return formatting;
+    }
+
+    private mergeFormatting(formatStack: any[]): any {
+        const merged: any = { fontSize: 14, color: '000000' };
+
+        // Apply all formatting from the stack
+        for (const format of formatStack) {
+            Object.assign(merged, format);
+        }
+
+        // Remove the tag property that we used for tracking
+        delete merged.tag;
+
+        return merged;
+    }
+
     private parseSpanAttributes(attributes: string, textOptions: any): void {
         // Parse span style attributes for color, font-size, etc.
         const styleMatch = attributes.match(/style\s*=\s*["']([^"']+)["']/i);
         if (styleMatch) {
             const styleString = styleMatch[1];
 
-            // Parse color
-            const colorMatch = styleString.match(/color\s*:\s*([^;]+)/i);
+            // Parse text color
+            const colorMatch = styleString.match(
+                /(?:^|;)\s*color\s*:\s*([^;]+)/i,
+            );
             if (colorMatch) {
                 const color = colorMatch[1].trim();
-                // Convert CSS color to hex (basic implementation)
-                if (color.startsWith('#')) {
-                    textOptions.color = color.replace('#', '');
-                } else if (color.startsWith('rgb')) {
-                    // Convert rgb(r,g,b) to hex
-                    const rgbMatch = color.match(
-                        /rgb\((\d+),\s*(\d+),\s*(\d+)\)/,
-                    );
-                    if (rgbMatch) {
-                        const r = parseInt(rgbMatch[1])
-                            .toString(16)
-                            .padStart(2, '0');
-                        const g = parseInt(rgbMatch[2])
-                            .toString(16)
-                            .padStart(2, '0');
-                        const b = parseInt(rgbMatch[3])
-                            .toString(16)
-                            .padStart(2, '0');
-                        textOptions.color = `${r}${g}${b}`;
-                    }
-                }
+                textOptions.color = this.convertCssColorToHex(color);
+            }
+
+            // Parse background color
+            const backgroundColorMatch = styleString.match(
+                /(?:^|;)\s*background-color\s*:\s*([^;]+)/i,
+            );
+            if (backgroundColorMatch) {
+                const backgroundColor = backgroundColorMatch[1].trim();
+                textOptions.highlight =
+                    this.convertCssColorToHex(backgroundColor);
             }
 
             // Parse font-size
@@ -672,6 +745,52 @@ export class PowerPointExportService {
                 textOptions.italic = true;
             }
         }
+    }
+
+    private convertCssColorToHex(color: string): string {
+        const trimmedColor = color.trim();
+
+        // Handle hex colors
+        if (trimmedColor.startsWith('#')) {
+            return trimmedColor.replace('#', '');
+        }
+
+        // Handle rgb colors
+        if (trimmedColor.startsWith('rgb')) {
+            const rgbMatch = trimmedColor.match(
+                /rgb\((\d+),\s*(\d+),\s*(\d+)\)/,
+            );
+            if (rgbMatch) {
+                const r = parseInt(rgbMatch[1]).toString(16).padStart(2, '0');
+                const g = parseInt(rgbMatch[2]).toString(16).padStart(2, '0');
+                const b = parseInt(rgbMatch[3]).toString(16).padStart(2, '0');
+                return `${r}${g}${b}`;
+            }
+        }
+
+        // Handle named colors (basic set)
+        const namedColors: { [key: string]: string } = {
+            red: 'FF0000',
+            green: '008000',
+            blue: '0000FF',
+            black: '000000',
+            white: 'FFFFFF',
+            yellow: 'FFFF00',
+            orange: 'FFA500',
+            purple: '800080',
+            pink: 'FFC0CB',
+            gray: '808080',
+            grey: '808080',
+        };
+
+        const namedColor = namedColors[trimmedColor.toLowerCase()];
+        if (namedColor) {
+            return namedColor;
+        }
+
+        // Default to black for unknown colors
+        console.warn(`Unknown color format: ${color}, defaulting to black`);
+        return '000000';
     }
 
     private decodeHtmlEntities(text: string): string {
