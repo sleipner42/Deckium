@@ -156,10 +156,11 @@ export class PowerPointExportService {
                     );
                     break;
                 case 'barchart':
-                    await this.convertChartToImage(
+                    this.convertChartElement(
                         slide,
                         element as BarChart,
                         position,
+                        pptx,
                     );
                     break;
                 case 'plot':
@@ -342,59 +343,49 @@ export class PowerPointExportService {
         }
     }
 
-    private async convertChartToImage(
+    private convertChartElement(
         slide: any,
         element: BarChart,
         position: any,
-    ): Promise<void> {
+        pptx: PptxGenJS,
+    ): void {
         try {
-            // Create a placeholder for the chart since native charts cause file corruption
-            // In the future, this could render the chart to canvas and convert to image
+            // Convert chart data to PptxGenJS format
+            const chartData = this.convertChartData(element);
 
-            const chartTitle = element.title || 'Bar Chart';
-            const placeholderText = `📊 ${chartTitle}`;
-
-            slide.addText(placeholderText, {
+            // Chart options for PptxGenJS
+            const chartOptions: any = {
                 x: position.x,
                 y: position.y,
                 w: position.w,
                 h: position.h,
-                fontSize: 16,
-                align: 'center',
-                valign: 'middle',
-                fill: { color: 'E3F2FD' }, // Light blue background
-                color: '1976D2', // Blue text
-                border: { color: '1976D2', width: 2 },
-            });
+                chartColors: [
+                    '0088CC',
+                    'FFCC00',
+                    '00AA44',
+                    'FF6600',
+                    'AA00FF',
+                    'FF0066',
+                ],
+                showLegend: true,
+                legendPos: 'r', // right
+                showValue: false,
+                barGrouping: 'clustered', // clustered bars
+                catAxisTitle: element.xAxisLabel || '',
+                valAxisTitle: element.yAxisLabel || '',
+                title: element.title || 'Bar Chart',
+                showTitle: !!element.title,
+                titleColor: '000000',
+                titleFontSize: 14,
+            };
 
-            // Add chart details if available
-            if (element.xAxisLabel || element.yAxisLabel) {
-                const details = [
-                    element.xAxisLabel && `X: ${element.xAxisLabel}`,
-                    element.yAxisLabel && `Y: ${element.yAxisLabel}`,
-                ]
-                    .filter(Boolean)
-                    .join(' | ');
-
-                if (details) {
-                    slide.addText(details, {
-                        x: position.x,
-                        y: position.y + position.h * 0.7,
-                        w: position.w,
-                        h: position.h * 0.2,
-                        fontSize: 10,
-                        align: 'center',
-                        valign: 'middle',
-                        color: '666666',
-                    });
-                }
-            }
-
-            console.log('Chart converted to placeholder:', chartTitle);
+            // Add the chart using PptxGenJS ChartType
+            slide.addChart(pptx.ChartType.bar, chartData, chartOptions);
+            console.log('Successfully added bar chart:', element.title);
         } catch (error) {
-            console.error('Error converting chart to placeholder:', error);
-            // Fallback to a simple text placeholder
-            slide.addText('Chart Element', {
+            console.error('Error converting chart to PowerPoint:', error);
+            // Fallback: add a text box indicating chart
+            slide.addText(`Chart: ${element.title || 'Untitled Chart'}`, {
                 x: position.x,
                 y: position.y,
                 w: position.w,
@@ -791,6 +782,104 @@ export class PowerPointExportService {
         // Default to black for unknown colors
         console.warn(`Unknown color format: ${color}, defaulting to black`);
         return '000000';
+    }
+
+    private convertChartData(element: BarChart): any[] {
+        try {
+            // Parse the chart data if it's stored as JSON
+            let data = element.data;
+            if (typeof data === 'string') {
+                data = JSON.parse(data);
+            }
+
+            console.log('Converting chart data:', data);
+            console.log('Data type:', typeof data);
+            console.log('Is array:', Array.isArray(data));
+            if (data && typeof data === 'object') {
+                console.log('Object keys:', Object.keys(data));
+                console.log('Has x property:', !!data.x);
+                console.log('Has y property:', !!data.y);
+                if (data.x) console.log('x is array:', Array.isArray(data.x));
+                if (data.y) console.log('y is array:', Array.isArray(data.y));
+            }
+
+            // Convert to PptxGenJS chart format
+
+            // Check if data has x and y arrays (object format: {x: [...], y: [...]})
+            if (
+                data &&
+                typeof data === 'object' &&
+                data.x &&
+                data.y &&
+                Array.isArray(data.x) &&
+                Array.isArray(data.y)
+            ) {
+                console.log('Using x/y array format');
+                return [
+                    {
+                        name: element.title || 'Data Series',
+                        labels: data.x.map((item: any) => String(item)),
+                        values: data.y.map((item: any) => Number(item) || 0),
+                    },
+                ];
+            }
+
+            if (Array.isArray(data) && data.length > 0) {
+                // Handle array of objects format: [{ category: string, value: number }, ...]
+                if (data[0] && typeof data[0] === 'object') {
+                    return [
+                        {
+                            name: element.title || 'Data Series',
+                            labels: data.map((item: any) =>
+                                String(
+                                    item.category ||
+                                        item.name ||
+                                        item.x ||
+                                        'Category',
+                                ),
+                            ),
+                            values: data.map(
+                                (item: any) =>
+                                    Number(item.value || item.y) || 0,
+                            ),
+                        },
+                    ];
+                }
+
+                // Handle simple array format: [value1, value2, ...]
+                if (typeof data[0] === 'number') {
+                    return [
+                        {
+                            name: element.title || 'Data Series',
+                            labels: data.map(
+                                (_: any, index: number) => `Item ${index + 1}`,
+                            ),
+                            values: data.map((item: any) => Number(item) || 0),
+                        },
+                    ];
+                }
+            }
+
+            // Fallback data if we can't parse the actual data
+            console.warn('Could not parse chart data, using fallback data');
+            return [
+                {
+                    name: element.title || 'Sample Data',
+                    labels: ['Category 1', 'Category 2', 'Category 3'],
+                    values: [10, 20, 15],
+                },
+            ];
+        } catch (error) {
+            console.error('Error parsing chart data:', error);
+            // Fallback data for errors
+            return [
+                {
+                    name: 'Data Error',
+                    labels: ['Error'],
+                    values: [0],
+                },
+            ];
+        }
     }
 
     private decodeHtmlEntities(text: string): string {
