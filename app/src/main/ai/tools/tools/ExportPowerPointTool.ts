@@ -1,9 +1,7 @@
-import { BaseTool } from '../BaseTool';
 import { PowerPointExportService } from '../../../powerpoint-export/service';
+import { BaseTool } from '../BaseTool';
 
-interface ExportPowerPointParams {
-    // No parameters needed for basic export
-}
+type ExportPowerPointParams = {};
 
 export class ExportPowerPointTool extends BaseTool<ExportPowerPointParams> {
     name = 'export_powerpoint';
