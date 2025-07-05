@@ -180,38 +180,47 @@ export class PowerPointExportService {
         position: any,
     ): void {
         try {
-            // Parse HTML content and convert to PptxGenJS rich text format
-            const { richTextArray, paragraphOptions } = this.htmlToRichTextWithAlignment(element.content);
+            // Check if content contains lists and handle them specially
+            const hasLists = element.content.includes('data-list=') || 
+                           element.content.includes('<ul>') || 
+                           element.content.includes('<ol>');
+            
+            if (hasLists) {
+                this.convertTextElementWithLists(slide, element, position);
+            } else {
+                // Regular text handling
+                const { richTextArray, paragraphOptions } = this.htmlToRichTextWithAlignment(element.content);
 
-            const textOptions: any = {
-                x: position.x,
-                y: position.y,
-                w: position.w,
-                h: position.h,
-                valign: this.convertVerticalAlign(element.verticalAlign),
-                wrap: true,
-                autoFit: false,
-                ...paragraphOptions, // Include paragraph-level formatting like alignment
-            };
-
-            // Set background color if specified
-            if (
-                element.backgroundColor &&
-                element.backgroundColor !== 'transparent'
-            ) {
-                textOptions.fill = {
-                    color: element.backgroundColor.replace('#', ''),
+                const textOptions: any = {
+                    x: position.x,
+                    y: position.y,
+                    w: position.w,
+                    h: position.h,
+                    valign: this.convertVerticalAlign(element.verticalAlign),
+                    wrap: true,
+                    autoFit: false,
+                    ...paragraphOptions,
                 };
-            }
 
-            // Set border radius if specified
-            if (element.borderRadius && element.borderRadius > 0) {
-                textOptions.rectRadius = element.borderRadius;
-            }
+                // Set background color if specified
+                if (
+                    element.backgroundColor &&
+                    element.backgroundColor !== 'transparent'
+                ) {
+                    textOptions.fill = {
+                        color: element.backgroundColor.replace('#', ''),
+                    };
+                }
 
-            // Add rich text to slide
-            slide.addText(richTextArray, textOptions);
-            console.log('Added rich text with formatting:', richTextArray);
+                // Set border radius if specified
+                if (element.borderRadius && element.borderRadius > 0) {
+                    textOptions.rectRadius = element.borderRadius;
+                }
+
+                // Add rich text to slide
+                slide.addText(richTextArray, textOptions);
+                console.log('Added rich text with formatting:', richTextArray);
+            }
         } catch (error) {
             console.error(
                 'Error converting rich text, falling back to plain text:',
@@ -246,6 +255,249 @@ export class PowerPointExportService {
 
             slide.addText(plainText, fallbackOptions);
         }
+    }
+
+    private convertTextElementWithLists(
+        slide: any,
+        element: TextBox,
+        position: any,
+    ): void {
+        // Extract list items and handle them using PptxGenJS paragraph-level formatting
+        const content = element.content;
+        console.log('Processing text element with lists:', content);
+        
+        // Split content into individual list items and regular paragraphs
+        const segments = this.extractListSegments(content);
+        
+        // Group consecutive list items of the same type together
+        const groupedSegments = this.groupConsecutiveListItems(segments);
+        
+        let currentY = position.y;
+        const groupSpacing = 0.3; // Space between different groups in inches
+        
+        groupedSegments.forEach((group, groupIndex) => {
+            if (group.type === 'list-group') {
+                // Create a single text box for the entire list group
+                const listOptions: any = {
+                    x: position.x,
+                    y: currentY,
+                    w: position.w,
+                    h: position.h - (currentY - position.y), // Use remaining height
+                    valign: this.convertVerticalAlign(element.verticalAlign),
+                    wrap: true,
+                    autoFit: false,
+                };
+                
+                // Set bullet type based on list type
+                if (group.listType === 'ordered') {
+                    listOptions.bullet = { type: 'number' };
+                } else {
+                    listOptions.bullet = true;
+                }
+                
+                // Set background color if specified
+                if (
+                    element.backgroundColor &&
+                    element.backgroundColor !== 'transparent'
+                ) {
+                    listOptions.fill = {
+                        color: element.backgroundColor.replace('#', ''),
+                    };
+                }
+                
+                // Combine all list items into a single rich text array
+                const combinedText = group.items.map(item => item.content).join('\n');
+                const { richTextArray } = this.htmlToRichTextWithAlignment(combinedText);
+                
+                // Add the entire list as one text box
+                slide.addText(richTextArray, listOptions);
+                console.log(`Added list group ${groupIndex + 1}:`, richTextArray, listOptions);
+                
+                currentY += groupSpacing;
+            } else if (group.type === 'paragraph') {
+                // Handle regular paragraphs
+                const { richTextArray, paragraphOptions } = this.htmlToRichTextWithAlignment(group.content);
+                
+                const textOptions: any = {
+                    x: position.x,
+                    y: currentY,
+                    w: position.w,
+                    h: 0.3, // Fixed height for paragraphs
+                    valign: 'top',
+                    wrap: true,
+                    autoFit: false,
+                    ...paragraphOptions,
+                };
+                
+                // Set background color if specified
+                if (
+                    element.backgroundColor &&
+                    element.backgroundColor !== 'transparent'
+                ) {
+                    textOptions.fill = {
+                        color: element.backgroundColor.replace('#', ''),
+                    };
+                }
+                
+                slide.addText(richTextArray, textOptions);
+                console.log(`Added paragraph ${groupIndex + 1}:`, richTextArray, textOptions);
+                
+                currentY += groupSpacing;
+            }
+        });
+    }
+    
+    private groupConsecutiveListItems(segments: Array<{type: string, content: string, listType?: string}>): Array<any> {
+        const groups: Array<any> = [];
+        let currentGroup: any = null;
+        
+        segments.forEach(segment => {
+            if (segment.type === 'list-item') {
+                // If we have a current group of the same type, add to it
+                if (currentGroup && currentGroup.type === 'list-group' && currentGroup.listType === segment.listType) {
+                    currentGroup.items.push(segment);
+                } else {
+                    // Start a new list group
+                    if (currentGroup) {
+                        groups.push(currentGroup);
+                    }
+                    currentGroup = {
+                        type: 'list-group',
+                        listType: segment.listType,
+                        items: [segment]
+                    };
+                }
+            } else {
+                // Non-list item, close current group and add paragraph
+                if (currentGroup) {
+                    groups.push(currentGroup);
+                    currentGroup = null;
+                }
+                if (segment.content.trim()) {
+                    groups.push({
+                        type: 'paragraph',
+                        content: segment.content
+                    });
+                }
+            }
+        });
+        
+        // Don't forget the last group
+        if (currentGroup) {
+            groups.push(currentGroup);
+        }
+        
+        console.log('Grouped segments:', groups);
+        return groups;
+    }
+    
+    private extractListSegments(html: string): Array<{type: string, content: string, listType?: string}> {
+        const segments: Array<{type: string, content: string, listType?: string}> = [];
+        let remainingHtml = html;
+        
+        console.log('Input HTML for list extraction:', html);
+        
+        // Process HTML sequentially to maintain order
+        const htmlParts = remainingHtml.split(/(<ol[^>]*>.*?<\/ol>|<ul[^>]*>.*?<\/ul>|<p[^>]*>.*?<\/p>)/s);
+        
+        htmlParts.forEach((part, index) => {
+            if (!part.trim()) return;
+            
+            console.log(`Processing part ${index}:`, part);
+            
+            // Handle ordered lists
+            if (part.match(/<ol[^>]*>/)) {
+                const olMatch = part.match(/<ol[^>]*>(.*?)<\/ol>/s);
+                if (olMatch) {
+                    const listContent = olMatch[1];
+                    const items = listContent.match(/<li[^>]*>(.*?)<\/li>/gs);
+                    
+                    if (items) {
+                        items.forEach(item => {
+                            // Check if this is an ordered or bullet list item
+                            const isOrdered = item.includes('data-list="ordered"');
+                            const isBullet = item.includes('data-list="bullet"');
+                            
+                            const textMatch = item.match(/<li[^>]*>(.*?)<\/li>/s);
+                            if (textMatch) {
+                                let text = textMatch[1];
+                                // Remove ql-ui spans
+                                text = text.replace(/<span class="ql-ui"[^>]*><\/span>/g, '');
+                                
+                                if (isOrdered) {
+                                    segments.push({
+                                        type: 'list-item',
+                                        content: `<p>${text.trim()}</p>`,
+                                        listType: 'ordered'
+                                    });
+                                } else if (isBullet) {
+                                    segments.push({
+                                        type: 'list-item',
+                                        content: `<p>${text.trim()}</p>`,
+                                        listType: 'bullet'
+                                    });
+                                } else {
+                                    // Default to ordered if in ol tag but no data-list
+                                    segments.push({
+                                        type: 'list-item',
+                                        content: `<p>${text.trim()}</p>`,
+                                        listType: 'ordered'
+                                    });
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+            // Handle unordered lists
+            else if (part.match(/<ul[^>]*>/)) {
+                const ulMatch = part.match(/<ul[^>]*>(.*?)<\/ul>/s);
+                if (ulMatch) {
+                    const listContent = ulMatch[1];
+                    const items = listContent.match(/<li[^>]*>(.*?)<\/li>/gs);
+                    
+                    if (items) {
+                        items.forEach(item => {
+                            const textMatch = item.match(/<li[^>]*>(.*?)<\/li>/s);
+                            if (textMatch) {
+                                let text = textMatch[1];
+                                // Remove ql-ui spans
+                                text = text.replace(/<span class="ql-ui"[^>]*><\/span>/g, '');
+                                segments.push({
+                                    type: 'list-item',
+                                    content: `<p>${text.trim()}</p>`,
+                                    listType: 'bullet'
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+            // Handle paragraphs
+            else if (part.match(/<p[^>]*>/)) {
+                const pMatch = part.match(/<p[^>]*>(.*?)<\/p>/s);
+                if (pMatch) {
+                    const content = pMatch[1].trim();
+                    // Skip empty paragraphs (just <br> tags)
+                    if (content && !content.match(/^\s*<br\s*\/?>\s*$/)) {
+                        segments.push({
+                            type: 'paragraph',
+                            content: part.trim()
+                        });
+                    }
+                }
+            }
+            // Handle any remaining text that might not be in proper tags
+            else if (part.trim() && !part.match(/^\s*<\/?[^>]+>\s*$/)) {
+                segments.push({
+                    type: 'paragraph',
+                    content: `<p>${part.trim()}</p>`
+                });
+            }
+        });
+        
+        console.log('Extracted list segments:', segments);
+        return segments;
     }
 
     private convertShapeElement(
@@ -513,16 +765,110 @@ export class PowerPointExportService {
             paragraphOptions.align = alignmentMatch[1];
         }
         
-        // Check for list formatting
-        if (html.includes('<ul>') || html.includes('<li>')) {
+        // Check for Quill list formatting using data-list attributes
+        if (html.includes('data-list="bullet"') || html.includes('<ul>')) {
             paragraphOptions.bullet = true;
-        } else if (html.includes('<ol>')) {
+        } else if (html.includes('data-list="ordered"') || html.includes('<ol>')) {
             paragraphOptions.bullet = { type: 'number' };
         }
 
-        const richTextArray = this.htmlToRichText(html);
+        // Process HTML to extract list items properly
+        const processedHtml = this.processListsForPowerPoint(html);
+        const richTextArray = this.htmlToRichText(processedHtml);
         
         return { richTextArray, paragraphOptions };
+    }
+
+    private processListsForPowerPoint(html: string): string {
+        // Convert Quill's list format to a more standard format for processing
+        // Quill uses: <ol><li data-list="ordered"><span class="ql-ui" contenteditable="false"></span>Text</li></ol>
+        // We need to extract the text and structure it properly for PptxGenJS
+        
+        let processed = html;
+        
+        // Handle ordered lists (numbered)
+        processed = processed.replace(
+            /<ol[^>]*>(.*?)<\/ol>/gs, 
+            (match, content) => {
+                // Extract list items and their text
+                const items = content.match(/<li[^>]*data-list="ordered"[^>]*>(.*?)<\/li>/gs);
+                if (items) {
+                    const listItems = items.map(item => {
+                        // Extract text content, removing ql-ui spans
+                        const textMatch = item.match(/<li[^>]*>(.*?)<\/li>/s);
+                        if (textMatch) {
+                            let text = textMatch[1];
+                            // Remove ql-ui spans
+                            text = text.replace(/<span class="ql-ui"[^>]*><\/span>/g, '');
+                            // Clean up any remaining tags while preserving formatting
+                            return `<p>${text.trim()}</p>`;
+                        }
+                        return '';
+                    }).filter(item => item);
+                    
+                    return listItems.join('\n');
+                }
+                return match;
+            }
+        );
+        
+        // Handle unordered lists (bullets)
+        processed = processed.replace(
+            /<ol[^>]*>(.*?)<\/ol>/gs, 
+            (match, content) => {
+                // Check if this is actually a bullet list (Quill sometimes uses ol for bullets)
+                if (content.includes('data-list="bullet"')) {
+                    const items = content.match(/<li[^>]*data-list="bullet"[^>]*>(.*?)<\/li>/gs);
+                    if (items) {
+                        const listItems = items.map(item => {
+                            // Extract text content, removing ql-ui spans
+                            const textMatch = item.match(/<li[^>]*>(.*?)<\/li>/s);
+                            if (textMatch) {
+                                let text = textMatch[1];
+                                // Remove ql-ui spans
+                                text = text.replace(/<span class="ql-ui"[^>]*><\/span>/g, '');
+                                // Clean up any remaining tags while preserving formatting
+                                return `<p>${text.trim()}</p>`;
+                            }
+                            return '';
+                        }).filter(item => item);
+                        
+                        return listItems.join('\n');
+                    }
+                }
+                return match;
+            }
+        );
+        
+        // Handle regular ul lists
+        processed = processed.replace(
+            /<ul[^>]*>(.*?)<\/ul>/gs, 
+            (match, content) => {
+                const items = content.match(/<li[^>]*>(.*?)<\/li>/gs);
+                if (items) {
+                    const listItems = items.map(item => {
+                        const textMatch = item.match(/<li[^>]*>(.*?)<\/li>/s);
+                        if (textMatch) {
+                            let text = textMatch[1];
+                            // Remove ql-ui spans
+                            text = text.replace(/<span class="ql-ui"[^>]*><\/span>/g, '');
+                            return `<p>${text.trim()}</p>`;
+                        }
+                        return '';
+                    }).filter(item => item);
+                    
+                    return listItems.join('\n');
+                }
+                return match;
+            }
+        );
+        
+        console.log('List processing:', {
+            original: html,
+            processed: processed
+        });
+        
+        return processed;
     }
 
     private htmlToRichText(html: string): any[] {
