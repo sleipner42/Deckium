@@ -917,17 +917,17 @@ export const TextElement: React.FC<TextElementProps> = ({
                     fontSize: 'inherit !important',
                     '& ol': { paddingLeft: '0', fontSize: 'inherit' },
                     '& h1': {
-                        fontSize: '32px !important',
+                        fontSize: '64px !important',
                         fontWeight: 'bold !important',
                         margin: '0 !important',
                     },
                     '& h2': {
-                        fontSize: '24px !important',
+                        fontSize: '36px !important',
                         fontWeight: 'bold !important',
                         margin: '0 !important',
                     },
                     '& h3': {
-                        fontSize: '20px !important',
+                        fontSize: '28px !important',
                         fontWeight: 'bold !important',
                         margin: '0 !important',
                     },
