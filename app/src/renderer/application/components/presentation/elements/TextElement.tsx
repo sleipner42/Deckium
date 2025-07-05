@@ -32,7 +32,7 @@ class CustomSizePicker {
     private init() {
         // Clear existing options
         this.select.innerHTML = '';
-        
+
         // Add placeholder option
         const defaultOption = document.createElement('option');
         defaultOption.value = '';
@@ -40,9 +40,12 @@ class CustomSizePicker {
         this.select.appendChild(defaultOption);
 
         // Add common font sizes
-        const commonSizes = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 80, 96, 120];
-        
-        commonSizes.forEach(size => {
+        const commonSizes = [
+            8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 80,
+            96, 120,
+        ];
+
+        commonSizes.forEach((size) => {
             const option = document.createElement('option');
             option.value = `${size}px`;
             option.textContent = `${size}px`;
@@ -62,7 +65,7 @@ class CustomSizePicker {
         this.select.addEventListener('change', (e) => {
             const target = e.target as HTMLSelectElement;
             const value = target.value;
-            
+
             if (value) {
                 const range = this.quill.getSelection();
                 if (range) {
@@ -71,7 +74,12 @@ class CustomSizePicker {
                         this.quill.format('size', value);
                     } else {
                         // Apply to selection
-                        this.quill.formatText(range.index, range.length, 'size', value);
+                        this.quill.formatText(
+                            range.index,
+                            range.length,
+                            'size',
+                            value,
+                        );
                     }
                 }
             }
@@ -96,20 +104,25 @@ const registerCustomSizePicker = (quill: Quill) => {
     const toolbar = quill.getModule('toolbar');
     if (toolbar && toolbar.container) {
         // Find the font group and add our custom size picker
-        const fontGroup = toolbar.container.querySelector('.ql-formats:first-child');
+        const fontGroup = toolbar.container.querySelector(
+            '.ql-formats:first-child',
+        );
         if (fontGroup) {
             // Create custom size select
             const sizeSelect = document.createElement('select');
             sizeSelect.className = 'ql-size-custom';
-            
+
             // Insert after font picker or at the end of font group
             const fontPicker = fontGroup.querySelector('.ql-font');
             if (fontPicker) {
-                fontPicker.parentNode?.insertBefore(sizeSelect, fontPicker.nextSibling);
+                fontPicker.parentNode?.insertBefore(
+                    sizeSelect,
+                    fontPicker.nextSibling,
+                );
             } else {
                 fontGroup.appendChild(sizeSelect);
             }
-            
+
             // Initialize custom picker
             new CustomSizePicker(sizeSelect, quill);
         }

@@ -72,53 +72,80 @@ export class PowerPointImportService {
                 'PPTX Data structure:',
                 JSON.stringify(pptxData, null, 2).substring(0, 1000),
             );
-            
+
             // Additional detailed logging for debugging
             console.log('='.repeat(60));
             console.log('DETAILED PPTX ANALYSIS:');
-            console.log(`- Total slides: ${pptxData.slides ? pptxData.slides.length : 'None'}`);
-            console.log(`- Theme colors: ${JSON.stringify(pptxData.themeColors)}`);
+            console.log(
+                `- Total slides: ${pptxData.slides ? pptxData.slides.length : 'None'}`,
+            );
+            console.log(
+                `- Theme colors: ${JSON.stringify(pptxData.themeColors)}`,
+            );
             console.log(`- Slide size: ${JSON.stringify(pptxData.size)}`);
-            
+
             if (pptxData.slides && pptxData.slides.length > 0) {
                 pptxData.slides.forEach((slide, slideIndex) => {
                     console.log(`\nSLIDE ${slideIndex + 1} ANALYSIS:`);
                     console.log(`  Background: ${JSON.stringify(slide.fill)}`);
-                    console.log(`  Elements count: ${slide.elements ? slide.elements.length : 0}`);
-                    
+                    console.log(
+                        `  Elements count: ${slide.elements ? slide.elements.length : 0}`,
+                    );
+
                     if (slide.elements && slide.elements.length > 0) {
                         slide.elements.forEach((element, elemIndex) => {
-                            console.log(`\n  ELEMENT ${elemIndex + 1} DETAILED INFO:`);
+                            console.log(
+                                `\n  ELEMENT ${elemIndex + 1} DETAILED INFO:`,
+                            );
                             console.log(`    Type: ${element.type}`);
-                            console.log(`    Coordinates: left=${element.left}, top=${element.top}`);
-                            console.log(`    Size: width=${element.width}, height=${element.height}`);
-                            
+                            console.log(
+                                `    Coordinates: left=${element.left}, top=${element.top}`,
+                            );
+                            console.log(
+                                `    Size: width=${element.width}, height=${element.height}`,
+                            );
+
                             // Check ALL properties
-                            console.log(`    All properties:`, Object.keys(element));
-                            
+                            console.log(
+                                `    All properties:`,
+                                Object.keys(element),
+                            );
+
                             // Shape-specific analysis
                             if (element.type === 'shape') {
                                 const shape = element as any;
-                                console.log(`    Shape type: ${shape.shapeType || shape.shapType || 'MISSING'}`);
-                                console.log(`    Fill object: ${JSON.stringify(shape.fill)}`);
-                                console.log(`    Border: ${shape.borderColor} / ${shape.borderWidth}px`);
+                                console.log(
+                                    `    Shape type: ${shape.shapeType || shape.shapType || 'MISSING'}`,
+                                );
+                                console.log(
+                                    `    Fill object: ${JSON.stringify(shape.fill)}`,
+                                );
+                                console.log(
+                                    `    Border: ${shape.borderColor} / ${shape.borderWidth}px`,
+                                );
                                 if (shape.path) {
                                     console.log(`    SVG Path: ${shape.path}`);
                                 }
                             }
-                            
+
                             // Text content analysis
                             if (element.content) {
-                                console.log(`    Content length: ${element.content.length}`);
+                                console.log(
+                                    `    Content length: ${element.content.length}`,
+                                );
                                 console.log(`    Content: ${element.content}`);
                             }
-                            
+
                             // Name and order
                             if ((element as any).name) {
-                                console.log(`    Name: ${(element as any).name}`);
+                                console.log(
+                                    `    Name: ${(element as any).name}`,
+                                );
                             }
                             if ((element as any).order) {
-                                console.log(`    Order: ${(element as any).order}`);
+                                console.log(
+                                    `    Order: ${(element as any).order}`,
+                                );
                             }
                         });
                     }
@@ -161,18 +188,22 @@ export class PowerPointImportService {
         // Extract PowerPoint slide dimensions for proper scaling
         const pptSlideWidth = pptxData.size?.width || 720; // Default PowerPoint width
         const pptSlideHeight = pptxData.size?.height || 540; // Default PowerPoint height
-        
+
         // Our application's slide dimensions from constants
         const appSlideWidth = PRESENTATION_DIMENSIONS.WIDTH;
         const appSlideHeight = PRESENTATION_DIMENSIONS.HEIGHT;
-        
+
         // Calculate scaling factors
         const scaleX = appSlideWidth / pptSlideWidth;
         const scaleY = appSlideHeight / pptSlideHeight;
-        
-        console.log(`Scaling factors: PowerPoint(${pptSlideWidth}x${pptSlideHeight}) -> App(${appSlideWidth}x${appSlideHeight})`);
-        console.log(`Scale factors: X=${scaleX.toFixed(3)}, Y=${scaleY.toFixed(3)}`);
-        
+
+        console.log(
+            `Scaling factors: PowerPoint(${pptSlideWidth}x${pptSlideHeight}) -> App(${appSlideWidth}x${appSlideHeight})`,
+        );
+        console.log(
+            `Scale factors: X=${scaleX.toFixed(3)}, Y=${scaleY.toFixed(3)}`,
+        );
+
         // Store scaling factors for use in coordinate conversion
         this.scaleX = scaleX;
         this.scaleY = scaleY;
@@ -383,7 +414,9 @@ export class PowerPointImportService {
         const x = this.parseXCoordinate(originalX);
         const y = this.parseYCoordinate(originalY);
 
-        console.log(`Position conversion: (${originalX}, ${originalY}) -> (${x}, ${y}) with scale (${this.scaleX}, ${this.scaleY})`);
+        console.log(
+            `Position conversion: (${originalX}, ${originalY}) -> (${x}, ${y}) with scale (${this.scaleX}, ${this.scaleY})`,
+        );
 
         return { x, y };
     }
@@ -429,11 +462,13 @@ export class PowerPointImportService {
             hasContent: !!elementData.content,
             contentLength: elementData.content?.length || 0,
             originalVAlign: elementData.vAlign,
-            mappedVAlign: elementData.vAlign === 'middle' || elementData.vAlign === 'mid'
-                ? 'middle'
-                : elementData.vAlign === 'bottom' || elementData.vAlign === 'down'
-                  ? 'bottom'
-                  : 'top'
+            mappedVAlign:
+                elementData.vAlign === 'middle' || elementData.vAlign === 'mid'
+                    ? 'middle'
+                    : elementData.vAlign === 'bottom' ||
+                        elementData.vAlign === 'down'
+                      ? 'bottom'
+                      : 'top',
         });
 
         // Extract text content directly from the content property (already HTML formatted)
@@ -450,12 +485,18 @@ export class PowerPointImportService {
         content = this.convertPowerPointHtmlToQuill(content);
 
         console.log('Content after font conversion:', content);
-        console.log('FINAL CONTENT BEING PASSED TO TEXTBOX:', JSON.stringify(content));
+        console.log(
+            'FINAL CONTENT BEING PASSED TO TEXTBOX:',
+            JSON.stringify(content),
+        );
 
         // Extract background color from fill object - based on actual data structure
         let backgroundColor;
         if (elementData.fill) {
-            if (typeof elementData.fill === 'string' && elementData.fill !== '') {
+            if (
+                typeof elementData.fill === 'string' &&
+                elementData.fill !== ''
+            ) {
                 backgroundColor = elementData.fill;
             } else if (elementData.fill.value) {
                 backgroundColor = elementData.fill.value;
@@ -473,7 +514,8 @@ export class PowerPointImportService {
             verticalAlign:
                 elementData.vAlign === 'middle' || elementData.vAlign === 'mid'
                     ? 'middle'
-                    : elementData.vAlign === 'bottom' || elementData.vAlign === 'down'
+                    : elementData.vAlign === 'bottom' ||
+                        elementData.vAlign === 'down'
                       ? 'bottom'
                       : 'top',
         } as TextBox;
@@ -483,7 +525,7 @@ export class PowerPointImportService {
             contentPreview: textBox.content.substring(0, 100),
             position: textBox.position,
             size: textBox.size,
-            verticalAlign: textBox.verticalAlign
+            verticalAlign: textBox.verticalAlign,
         });
 
         return textBox;
@@ -527,163 +569,174 @@ export class PowerPointImportService {
         // Convert point sizes to pixel sizes in HTML content
         // PowerPoint exports our pixel sizes as points, but the conversion should be 1:1
         // because our original sizes were already in pixels
-        const converted = htmlContent.replace(/font-size:\s*(\d+(?:\.\d+)?)pt/g, (match, size) => {
-            // Use 1:1 conversion instead of 1.333 to maintain original sizes
-            const pixelSize = Math.round(parseFloat(size));
-            console.log(`Converting font size: ${match} -> font-size: ${pixelSize}px`);
-            return `font-size: ${pixelSize}px`;
-        });
-        
+        const converted = htmlContent.replace(
+            /font-size:\s*(\d+(?:\.\d+)?)pt/g,
+            (match, size) => {
+                // Use 1:1 conversion instead of 1.333 to maintain original sizes
+                const pixelSize = Math.round(parseFloat(size));
+                console.log(
+                    `Converting font size: ${match} -> font-size: ${pixelSize}px`,
+                );
+                return `font-size: ${pixelSize}px`;
+            },
+        );
+
         // Log the conversion for debugging
         if (converted !== htmlContent) {
             console.log('Font size conversion applied:');
             console.log('Before:', htmlContent.substring(0, 200));
             console.log('After:', converted.substring(0, 200));
         }
-        
+
         return converted;
     }
 
     private convertTextAlignment(htmlContent: string): string {
         // Convert PowerPoint inline text-align styles to Quill alignment classes
         let converted = htmlContent;
-        
+
         // Convert text-align: center
         converted = converted.replace(
             /(<[^>]+)style="([^"]*?)text-align:\s*center;?([^"]*?)"/g,
-            '$1class="ql-align-center" style="$2$3"'
+            '$1class="ql-align-center" style="$2$3"',
         );
-        
+
         // Convert text-align: right
         converted = converted.replace(
             /(<[^>]+)style="([^"]*?)text-align:\s*right;?([^"]*?)"/g,
-            '$1class="ql-align-right" style="$2$3"'
+            '$1class="ql-align-right" style="$2$3"',
         );
-        
+
         // Remove text-align: left as it's default and clean up empty style attributes
         converted = converted.replace(/text-align:\s*left;?/g, '');
         converted = converted.replace(/style=""/g, '');
         converted = converted.replace(/style="\s*"/g, '');
-        
+
         console.log('Text alignment conversion:', {
             before: htmlContent.substring(0, 100),
-            after: converted.substring(0, 100)
+            after: converted.substring(0, 100),
         });
-        
+
         return converted;
     }
 
     private convertPowerPointHtmlToQuill(htmlContent: string): string {
         let converted = htmlContent;
-        
+
         // Step 1: Convert font sizes from points to pixels
         converted = this.convertFontSizesToPixels(converted);
-        
+
         // Step 2: Convert text alignment to Quill classes
         converted = this.convertTextAlignment(converted);
-        
+
         // Step 3: Handle font-family and convert to Quill format
         converted = this.convertFontFamilyToQuillFormat(converted);
-        
+
         // Step 4: Handle font-weight: bold -> <strong> tags for Quill compatibility
         converted = converted.replace(
             /<span([^>]*?)style="([^"]*?)font-weight:\s*bold;?([^"]*?)"([^>]*?)>(.*?)<\/span>/g,
-            '<span$1style="$2$3"$4><strong>$5</strong></span>'
+            '<span$1style="$2$3"$4><strong>$5</strong></span>',
         );
-        
+
         // Step 5: Handle text-decoration-line: line-through -> <s> tags
         converted = converted.replace(
             /<span([^>]*?)style="([^"]*?)text-decoration-line:\s*line-through;?([^"]*?)"([^>]*?)>(.*?)<\/span>/g,
-            '<span$1style="$2$3"$4><s>$5</s></span>'
+            '<span$1style="$2$3"$4><s>$5</s></span>',
         );
-        
+
         // Step 6: Ensure font-size is properly formatted for Quill compatibility
         // Sometimes Quill has issues with style attribute order - ensure font-size comes first
         converted = converted.replace(
             /style="([^"]*?)font-size:\s*(\d+px);?([^"]*?)"/g,
-            'style="font-size: $2; $1$3"'
+            'style="font-size: $2; $1$3"',
         );
-        
+
         // Clean up formatting issues that might prevent Quill from parsing correctly
         converted = converted.replace(/style=""/g, '');
         converted = converted.replace(/style="\s*"/g, '');
         converted = converted.replace(/style=";\s*"/g, '');
-        
+
         // Clean up class attributes - remove trailing spaces
         converted = converted.replace(/class="([^"]*?)\s+"/g, 'class="$1"');
-        
+
         // Clean up XML-style self-closing tags with spaces
         converted = converted.replace(/\s+>/g, '>');
-        
+
         // Ensure proper spacing in HTML and clean up double semicolons
         converted = converted.replace(/>\s*</g, '><');
         converted = converted.replace(/;\s*;/g, ';');
         converted = converted.replace(/;\s*"/g, '"');
-        
+
         console.log('PowerPoint to Quill conversion completed:', {
             originalLength: htmlContent.length,
             convertedLength: converted.length,
             original: htmlContent,
             converted: converted,
             hasFontSize: /font-size:\s*\d+px/.test(converted),
-            hasQuillClasses: /ql-font-/.test(converted)
+            hasQuillClasses: /ql-font-/.test(converted),
         });
-        
+
         return converted;
     }
 
     private convertFontFamilyToQuillFormat(htmlContent: string): string {
         // Convert PowerPoint font families to Quill class format
         let converted = htmlContent;
-        
+
         // Map common PowerPoint fonts to Quill classes
         const fontMappings = {
-            'Calibri': 'ql-font-sans',
-            'Arial': 'ql-font-sans', 
+            Calibri: 'ql-font-sans',
+            Arial: 'ql-font-sans',
             'Times New Roman': 'ql-font-serif',
             'EB Garamond': 'ql-font-serif',
-            'Georgia': 'ql-font-serif',
+            Georgia: 'ql-font-serif',
             'Courier New': 'ql-font-monospace',
-            'Consolas': 'ql-font-monospace'
+            Consolas: 'ql-font-monospace',
         };
-        
+
         // Convert font-family styles to Quill classes more precisely
         for (const [fontName, quillClass] of Object.entries(fontMappings)) {
             // Match spans with font-family declarations
             const fontFamilyRegex = new RegExp(
                 `(<span[^>]*?)style="([^"]*?)font-family:\\s*["']?${fontName.replace(/\s+/g, '\\s+')}["']?;?([^"]*?)"([^>]*?)>`,
-                'gi'
+                'gi',
             );
-            
-            converted = converted.replace(fontFamilyRegex, (match, spanStart, stylePrefix, styleSuffix, spanEnd) => {
-                // Check if there's already a class attribute
-                const hasClass = spanStart.includes('class=');
-                
-                if (hasClass) {
-                    // Add to existing class
-                    const classRegex = /class\s*=\s*["']([^"']*?)["']/i;
-                    const updatedSpanStart = spanStart.replace(classRegex, `class="$1 ${quillClass}"`);
-                    return `${updatedSpanStart}style="${stylePrefix}${styleSuffix}"${spanEnd}>`;
-                } else {
-                    // Add new class attribute
-                    return `${spanStart}class="${quillClass}" style="${stylePrefix}${styleSuffix}"${spanEnd}>`;
-                }
-            });
+
+            converted = converted.replace(
+                fontFamilyRegex,
+                (match, spanStart, stylePrefix, styleSuffix, spanEnd) => {
+                    // Check if there's already a class attribute
+                    const hasClass = spanStart.includes('class=');
+
+                    if (hasClass) {
+                        // Add to existing class
+                        const classRegex = /class\s*=\s*["']([^"']*?)["']/i;
+                        const updatedSpanStart = spanStart.replace(
+                            classRegex,
+                            `class="$1 ${quillClass}"`,
+                        );
+                        return `${updatedSpanStart}style="${stylePrefix}${styleSuffix}"${spanEnd}>`;
+                    } else {
+                        // Add new class attribute
+                        return `${spanStart}class="${quillClass}" style="${stylePrefix}${styleSuffix}"${spanEnd}>`;
+                    }
+                },
+            );
         }
-        
+
         // Remove any remaining font-family declarations
         converted = converted.replace(/font-family:[^;]*;?/gi, '');
-        
+
         // Clean up empty style attributes
         converted = converted.replace(/style=""/g, '');
         converted = converted.replace(/style="\s*"/g, '');
-        
+
         console.log('Font family conversion:', {
             originalHasFont: /font-family:/i.test(htmlContent),
             convertedHasFont: /font-family:/i.test(converted),
-            preview: converted.substring(0, 200)
+            preview: converted.substring(0, 200),
         });
-        
+
         return converted;
     }
 
@@ -697,8 +750,15 @@ export class PowerPointImportService {
         const shapeTypeFromData = elementData.shapeType || elementData.shapType;
         const elementType = elementData.type || '';
         const name = elementData.name || '';
-        
-        console.log('Shape type detected:', shapeTypeFromData, 'type:', elementType, 'name:', name);
+
+        console.log(
+            'Shape type detected:',
+            shapeTypeFromData,
+            'type:',
+            elementType,
+            'name:',
+            name,
+        );
 
         // Use the actual shapeType if available
         if (shapeTypeFromData) {
@@ -721,10 +781,17 @@ export class PowerPointImportService {
             }
         } else {
             // Fallback to name-based detection
-            if (name.toLowerCase().includes('triangle') || elementType.toLowerCase().includes('triangle')) {
+            if (
+                name.toLowerCase().includes('triangle') ||
+                elementType.toLowerCase().includes('triangle')
+            ) {
                 shapeType = 'triangle';
-            } else if (name.toLowerCase().includes('circle') || name.toLowerCase().includes('oval') || 
-                       elementType.toLowerCase().includes('circle') || elementType.toLowerCase().includes('oval')) {
+            } else if (
+                name.toLowerCase().includes('circle') ||
+                name.toLowerCase().includes('oval') ||
+                elementType.toLowerCase().includes('circle') ||
+                elementType.toLowerCase().includes('oval')
+            ) {
                 shapeType = 'circle';
             } else {
                 shapeType = 'rectangle';
