@@ -353,11 +353,12 @@ export class PowerPointImportService {
             JSON.stringify(elementData, null, 2).substring(0, 200),
         );
 
-        // Check if element has text content (pptxtojson puts text in 'content' property)
+        // Check if element is a text element or has text content
+        const isTextElement = elementData.type === 'text';
         const hasTextContent =
             elementData.content && elementData.content.trim() !== '';
 
-        if (hasTextContent) {
+        if (isTextElement || hasTextContent) {
             return this.convertTextElement(elementData, baseProps);
         }
 
@@ -377,8 +378,12 @@ export class PowerPointImportService {
 
     private convertPosition(elementData: any): { x: number; y: number } {
         // Based on the actual data structure from pptxtojson
-        const x = this.parseXCoordinate(elementData.left || elementData.x || 0);
-        const y = this.parseYCoordinate(elementData.top || elementData.y || 0);
+        const originalX = elementData.left || elementData.x || 0;
+        const originalY = elementData.top || elementData.y || 0;
+        const x = this.parseXCoordinate(originalX);
+        const y = this.parseYCoordinate(originalY);
+
+        console.log(`Position conversion: (${originalX}, ${originalY}) -> (${x}, ${y}) with scale (${this.scaleX}, ${this.scaleY})`);
 
         return { x, y };
     }
@@ -419,6 +424,18 @@ export class PowerPointImportService {
         elementData: any,
         baseProps: any,
     ): TextBox | null {
+        console.log('Converting text element:', {
+            type: elementData.type,
+            hasContent: !!elementData.content,
+            contentLength: elementData.content?.length || 0,
+            originalVAlign: elementData.vAlign,
+            mappedVAlign: elementData.vAlign === 'middle' || elementData.vAlign === 'mid'
+                ? 'middle'
+                : elementData.vAlign === 'bottom' || elementData.vAlign === 'down'
+                  ? 'bottom'
+                  : 'top'
+        });
+
         // Extract text content directly from the content property (already HTML formatted)
         let content = elementData.content || '<p>Text</p>';
 
@@ -427,9 +444,12 @@ export class PowerPointImportService {
             content = '<p>Text</p>';
         }
 
-        // Convert font sizes from points to pixels for better compatibility
-        // PowerPoint uses pt units, but our editor works better with px
-        content = this.convertFontSizesToPixels(content);
+        console.log('Original content:', content);
+
+        // Convert PowerPoint HTML to Quill-compatible format
+        content = this.convertPowerPointHtmlToQuill(content);
+
+        console.log('Content after font conversion:', content);
 
         // Extract background color from fill object - based on actual data structure
         let backgroundColor;
@@ -443,19 +463,29 @@ export class PowerPointImportService {
             }
         }
 
-        return {
+        const textBox = {
             ...baseProps,
             type: 'textbox',
             content,
             backgroundColor: backgroundColor,
             borderRadius: 0,
             verticalAlign:
-                elementData.vAlign === 'middle'
+                elementData.vAlign === 'middle' || elementData.vAlign === 'mid'
                     ? 'middle'
-                    : elementData.vAlign === 'bottom'
+                    : elementData.vAlign === 'bottom' || elementData.vAlign === 'down'
                       ? 'bottom'
                       : 'top',
         } as TextBox;
+
+        console.log('Created text box:', {
+            type: textBox.type,
+            contentPreview: textBox.content.substring(0, 100),
+            position: textBox.position,
+            size: textBox.size,
+            verticalAlign: textBox.verticalAlign
+        });
+
+        return textBox;
     }
 
     private convertTextContent(textData: any): string {
@@ -495,10 +525,83 @@ export class PowerPointImportService {
     private convertFontSizesToPixels(htmlContent: string): string {
         // Convert point sizes to pixel sizes in HTML content
         // 1 point = 1.333 pixels (standard conversion)
-        return htmlContent.replace(/font-size:\s*(\d+(?:\.\d+)?)pt/g, (match, size) => {
+        const converted = htmlContent.replace(/font-size:\s*(\d+(?:\.\d+)?)pt/g, (match, size) => {
             const pixelSize = Math.round(parseFloat(size) * 1.333);
+            console.log(`Converting font size: ${match} -> font-size: ${pixelSize}px`);
             return `font-size: ${pixelSize}px`;
         });
+        
+        // Log the conversion for debugging
+        if (converted !== htmlContent) {
+            console.log('Font size conversion applied:');
+            console.log('Before:', htmlContent.substring(0, 200));
+            console.log('After:', converted.substring(0, 200));
+        }
+        
+        return converted;
+    }
+
+    private convertTextAlignment(htmlContent: string): string {
+        // Convert PowerPoint inline text-align styles to Quill alignment classes
+        let converted = htmlContent;
+        
+        // Convert text-align: center
+        converted = converted.replace(
+            /(<[^>]+)style="([^"]*?)text-align:\s*center;?([^"]*?)"/g,
+            '$1class="ql-align-center" style="$2$3"'
+        );
+        
+        // Convert text-align: right
+        converted = converted.replace(
+            /(<[^>]+)style="([^"]*?)text-align:\s*right;?([^"]*?)"/g,
+            '$1class="ql-align-right" style="$2$3"'
+        );
+        
+        // Remove text-align: left as it's default and clean up empty style attributes
+        converted = converted.replace(/text-align:\s*left;?/g, '');
+        converted = converted.replace(/style=""/g, '');
+        converted = converted.replace(/style="\s*"/g, '');
+        
+        console.log('Text alignment conversion:', {
+            before: htmlContent.substring(0, 100),
+            after: converted.substring(0, 100)
+        });
+        
+        return converted;
+    }
+
+    private convertPowerPointHtmlToQuill(htmlContent: string): string {
+        let converted = htmlContent;
+        
+        // Step 1: Convert font sizes from points to pixels
+        converted = this.convertFontSizesToPixels(converted);
+        
+        // Step 2: Convert text alignment to Quill classes
+        converted = this.convertTextAlignment(converted);
+        
+        // Step 3: Handle font-weight: bold -> <strong> tags for Quill compatibility
+        converted = converted.replace(
+            /<span([^>]*?)style="([^"]*?)font-weight:\s*bold;?([^"]*?)"([^>]*?)>(.*?)<\/span>/g,
+            '<span$1style="$2$3"$4><strong>$5</strong></span>'
+        );
+        
+        // Step 4: Handle text-decoration-line: line-through -> <s> tags
+        converted = converted.replace(
+            /<span([^>]*?)style="([^"]*?)text-decoration-line:\s*line-through;?([^"]*?)"([^>]*?)>(.*?)<\/span>/g,
+            '<span$1style="$2$3"$4><s>$5</s></span>'
+        );
+        
+        // Step 5: Clean up empty style attributes
+        converted = converted.replace(/style=""/g, '');
+        converted = converted.replace(/style="\s*"/g, '');
+        
+        console.log('PowerPoint to Quill conversion completed:', {
+            originalLength: htmlContent.length,
+            convertedLength: converted.length,
+            preview: converted.substring(0, 150)
+        });
+        
+        return converted;
     }
 
     private convertShapeElement(

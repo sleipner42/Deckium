@@ -181,7 +181,7 @@ export class PowerPointExportService {
     ): void {
         try {
             // Parse HTML content and convert to PptxGenJS rich text format
-            const richTextArray = this.htmlToRichText(element.content);
+            const { richTextArray, paragraphOptions } = this.htmlToRichTextWithAlignment(element.content);
 
             const textOptions: any = {
                 x: position.x,
@@ -191,6 +191,7 @@ export class PowerPointExportService {
                 valign: this.convertVerticalAlign(element.verticalAlign),
                 wrap: true,
                 autoFit: false,
+                ...paragraphOptions, // Include paragraph-level formatting like alignment
             };
 
             // Set background color if specified
@@ -219,6 +220,7 @@ export class PowerPointExportService {
 
             // Fallback to plain text if rich text parsing fails
             const plainText = this.htmlToPlainText(element.content);
+            const { paragraphOptions } = this.htmlToRichTextWithAlignment(element.content);
             const fallbackOptions: any = {
                 x: position.x,
                 y: position.y,
@@ -226,7 +228,8 @@ export class PowerPointExportService {
                 h: position.h,
                 fontSize: 14,
                 color: '000000',
-                align: 'left',
+                align: paragraphOptions.align || 'left',
+                ...paragraphOptions,
                 valign: this.convertVerticalAlign(element.verticalAlign),
                 wrap: true,
                 autoFit: false,
@@ -500,6 +503,28 @@ export class PowerPointExportService {
         return alignMap[align || 'top'] || 'top';
     }
 
+    private htmlToRichTextWithAlignment(html: string): { richTextArray: any[], paragraphOptions: any } {
+        // Extract paragraph-level formatting (alignment, bullets) and text formatting
+        const paragraphOptions: any = {};
+        
+        // Check for alignment classes in the HTML
+        const alignmentMatch = html.match(/class\s*=\s*["'][^"']*ql-align-(center|right|justify)[^"']*["']/i);
+        if (alignmentMatch) {
+            paragraphOptions.align = alignmentMatch[1];
+        }
+        
+        // Check for list formatting
+        if (html.includes('<ul>') || html.includes('<li>')) {
+            paragraphOptions.bullet = true;
+        } else if (html.includes('<ol>')) {
+            paragraphOptions.bullet = { type: 'number' };
+        }
+
+        const richTextArray = this.htmlToRichText(html);
+        
+        return { richTextArray, paragraphOptions };
+    }
+
     private htmlToRichText(html: string): any[] {
         // Convert HTML to PptxGenJS rich text format
         // This preserves formatting like bold, italic, colors, font sizes, etc.
@@ -668,6 +693,20 @@ export class PowerPointExportService {
             case 'span':
                 this.parseSpanAttributes(attributes, formatting);
                 break;
+            case 'p':
+                // Handle paragraph alignment from class attributes
+                this.parseParagraphAttributes(attributes, formatting);
+                break;
+            case 'ul':
+            case 'ol':
+                // Handle lists - we'll set bullet formatting on the containing element
+                formatting.bullet = tagName === 'ul';
+                formatting.numbering = tagName === 'ol';
+                break;
+            case 'li':
+                // List items inherit the bullet/numbering from their parent
+                formatting.listItem = true;
+                break;
             default:
                 return null; // Unknown tag
         }
@@ -687,6 +726,24 @@ export class PowerPointExportService {
         delete merged.tag;
 
         return merged;
+    }
+
+    private parseParagraphAttributes(attributes: string, textOptions: any): void {
+        // Parse paragraph class attributes for alignment (Quill format)
+        const classMatch = attributes.match(/class\s*=\s*["']([^"']+)["']/i);
+        if (classMatch) {
+            const classString = classMatch[1];
+            
+            // Handle Quill alignment classes
+            if (classString.includes('ql-align-center')) {
+                textOptions.align = 'center';
+            } else if (classString.includes('ql-align-right')) {
+                textOptions.align = 'right';
+            } else if (classString.includes('ql-align-justify')) {
+                textOptions.align = 'justify';
+            }
+            // Default is 'left' - no need to explicitly set
+        }
     }
 
     private parseSpanAttributes(attributes: string, textOptions: any): void {
