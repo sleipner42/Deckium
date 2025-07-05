@@ -524,9 +524,11 @@ export class PowerPointImportService {
 
     private convertFontSizesToPixels(htmlContent: string): string {
         // Convert point sizes to pixel sizes in HTML content
-        // 1 point = 1.333 pixels (standard conversion)
+        // PowerPoint exports our pixel sizes as points, but the conversion should be 1:1
+        // because our original sizes were already in pixels
         const converted = htmlContent.replace(/font-size:\s*(\d+(?:\.\d+)?)pt/g, (match, size) => {
-            const pixelSize = Math.round(parseFloat(size) * 1.333);
+            // Use 1:1 conversion instead of 1.333 to maintain original sizes
+            const pixelSize = Math.round(parseFloat(size));
             console.log(`Converting font size: ${match} -> font-size: ${pixelSize}px`);
             return `font-size: ${pixelSize}px`;
         });
@@ -579,25 +581,70 @@ export class PowerPointImportService {
         // Step 2: Convert text alignment to Quill classes
         converted = this.convertTextAlignment(converted);
         
-        // Step 3: Handle font-weight: bold -> <strong> tags for Quill compatibility
+        // Step 3: Handle font-family and convert to Quill format
+        converted = this.convertFontFamilyToQuillFormat(converted);
+        
+        // Step 4: Handle font-weight: bold -> <strong> tags for Quill compatibility
         converted = converted.replace(
             /<span([^>]*?)style="([^"]*?)font-weight:\s*bold;?([^"]*?)"([^>]*?)>(.*?)<\/span>/g,
             '<span$1style="$2$3"$4><strong>$5</strong></span>'
         );
         
-        // Step 4: Handle text-decoration-line: line-through -> <s> tags
+        // Step 5: Handle text-decoration-line: line-through -> <s> tags
         converted = converted.replace(
             /<span([^>]*?)style="([^"]*?)text-decoration-line:\s*line-through;?([^"]*?)"([^>]*?)>(.*?)<\/span>/g,
             '<span$1style="$2$3"$4><s>$5</s></span>'
         );
         
-        // Step 5: Clean up empty style attributes
+        // Step 6: Clean up empty style attributes
         converted = converted.replace(/style=""/g, '');
         converted = converted.replace(/style="\s*"/g, '');
         
         console.log('PowerPoint to Quill conversion completed:', {
             originalLength: htmlContent.length,
             convertedLength: converted.length,
+            preview: converted.substring(0, 150)
+        });
+        
+        return converted;
+    }
+
+    private convertFontFamilyToQuillFormat(htmlContent: string): string {
+        // Convert PowerPoint font families to Quill class format
+        let converted = htmlContent;
+        
+        // Map common PowerPoint fonts to Quill classes
+        const fontMappings = {
+            'Calibri': 'ql-font-sans',
+            'Arial': 'ql-font-sans', 
+            'Times New Roman': 'ql-font-serif',
+            'EB Garamond': 'ql-font-serif',
+            'Georgia': 'ql-font-serif',
+            'Courier New': 'ql-font-monospace',
+            'Consolas': 'ql-font-monospace'
+        };
+        
+        // Convert font-family styles to Quill classes
+        for (const [fontName, quillClass] of Object.entries(fontMappings)) {
+            const regex = new RegExp(`font-family:\\s*["']?${fontName.replace(/\s+/g, '\\s+')}["']?;?`, 'gi');
+            converted = converted.replace(regex, '');
+            
+            // Add the Quill class if this font is found
+            if (htmlContent.toLowerCase().includes(fontName.toLowerCase())) {
+                converted = converted.replace(
+                    /<span([^>]*?)style="([^"]*?)"([^>]*?)>/g,
+                    `<span$1class="${quillClass}" style="$2"$3>`
+                );
+            }
+        }
+        
+        // Remove any remaining font-family declarations that weren't mapped
+        converted = converted.replace(/font-family:[^;]*;?/gi, '');
+        
+        console.log('Font family conversion:', {
+            hasCalibri: htmlContent.includes('Calibri'),
+            hasArial: htmlContent.includes('Arial'),
+            hasTimesNewRoman: htmlContent.includes('Times New Roman'),
             preview: converted.substring(0, 150)
         });
         
