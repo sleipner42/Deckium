@@ -421,7 +421,7 @@ export class PowerPointExportService {
             content: string;
             listType?: string;
         }> = [];
-        let remainingHtml = html;
+        const remainingHtml = html;
 
         console.log('Input HTML for list extraction:', html);
 

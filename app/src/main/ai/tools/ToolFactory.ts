@@ -6,6 +6,7 @@ import { AlignElementsTool } from './tools/AlignElementsTool';
 import { AlignToSlideTool } from './tools/AlignToSlideTool';
 import { CalculatorTool } from './tools/CalculatorTool';
 import { ChangeElementZIndexTool } from './tools/ChangeElementZIndexTool';
+import { CopyElementsTool } from './tools/CopyElementsTool';
 import { CreateBarChartTool } from './tools/CreateBarChartTool';
 import { CreateShapeTool } from './tools/CreateShapeTool';
 import { CreateSlideTool } from './tools/CreateSlideTool';
@@ -47,6 +48,7 @@ export class ToolFactory {
             new SpaceElementsEvenlyTool(),
             new GetDataFromUrl(),
             new ChangeElementZIndexTool(),
+            new CopyElementsTool(),
             new CalculatorTool(),
             authService
                 ? new AddImageFromPexelsTool(authService)
