@@ -15,21 +15,106 @@ import katex from 'katex';
 (window as any).katex = katex;
 
 const SizeStyle = Quill.import('attributors/style/size') as any;
-SizeStyle.whitelist = [
-    '8px',
-    '10px',
-    '12px',
-    '14px',
-    '16px',
-    '18px',
-    '20px',
-    '24px',
-    '28px',
-    '32px',
-    '36px',
-    '48px',
-];
+SizeStyle.whitelist = Array.from({ length: 117 }, (_, i) => `${i + 4}px`);
 Quill.register(SizeStyle, true);
+
+// Custom Size Picker for Quill Toolbar
+class CustomSizePicker {
+    constructor(select: HTMLSelectElement, quill: Quill) {
+        this.select = select;
+        this.quill = quill;
+        this.init();
+    }
+
+    private select: HTMLSelectElement;
+    private quill: Quill;
+
+    private init() {
+        // Clear existing options
+        this.select.innerHTML = '';
+        
+        // Add placeholder option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Size';
+        this.select.appendChild(defaultOption);
+
+        // Add common font sizes
+        const commonSizes = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 80, 96, 120];
+        
+        commonSizes.forEach(size => {
+            const option = document.createElement('option');
+            option.value = `${size}px`;
+            option.textContent = `${size}px`;
+            this.select.appendChild(option);
+        });
+
+        // Style the select
+        this.select.style.width = '80px';
+        this.select.style.fontSize = '13px';
+        this.select.style.border = '1px solid #ccc';
+        this.select.style.borderRadius = '3px';
+        this.select.style.padding = '3px';
+        this.select.style.margin = '2px';
+        this.select.style.background = 'white';
+
+        // Add change event listener
+        this.select.addEventListener('change', (e) => {
+            const target = e.target as HTMLSelectElement;
+            const value = target.value;
+            
+            if (value) {
+                const range = this.quill.getSelection();
+                if (range) {
+                    if (range.length === 0) {
+                        // No selection, set for next insertion
+                        this.quill.format('size', value);
+                    } else {
+                        // Apply to selection
+                        this.quill.formatText(range.index, range.length, 'size', value);
+                    }
+                }
+            }
+        });
+
+        // Update select value when selection changes
+        this.quill.on('selection-change', (range) => {
+            if (range) {
+                const format = this.quill.getFormat(range);
+                if (format.size) {
+                    this.select.value = format.size;
+                } else {
+                    this.select.value = '';
+                }
+            }
+        });
+    }
+}
+
+// Register custom size picker
+const registerCustomSizePicker = (quill: Quill) => {
+    const toolbar = quill.getModule('toolbar');
+    if (toolbar && toolbar.container) {
+        // Find the font group and add our custom size picker
+        const fontGroup = toolbar.container.querySelector('.ql-formats:first-child');
+        if (fontGroup) {
+            // Create custom size select
+            const sizeSelect = document.createElement('select');
+            sizeSelect.className = 'ql-size-custom';
+            
+            // Insert after font picker or at the end of font group
+            const fontPicker = fontGroup.querySelector('.ql-font');
+            if (fontPicker) {
+                fontPicker.parentNode?.insertBefore(sizeSelect, fontPicker.nextSibling);
+            } else {
+                fontGroup.appendChild(sizeSelect);
+            }
+            
+            // Initialize custom picker
+            new CustomSizePicker(sizeSelect, quill);
+        }
+    }
+};
 
 // Simple emoji list for quick access
 const EMOJI_LIST = [
@@ -71,7 +156,7 @@ const EMOJI_LIST = [
     '😟',
     '😕',
     '🙁',
-    '☹️',
+    '☹',
     '😣',
     '😖',
     '😫',
@@ -130,7 +215,7 @@ const EMOJI_LIST = [
     '💩',
     '👻',
     '💀',
-    '☠️',
+    '☠',
     '👽',
     '👾',
     '🤖',
@@ -144,7 +229,7 @@ const EMOJI_LIST = [
     '🙀',
     '😿',
     '😾',
-    '❤️',
+    '❤',
     '🧡',
     '💛',
     '💚',
@@ -154,7 +239,7 @@ const EMOJI_LIST = [
     '🤍',
     '🤎',
     '💔',
-    '❣️',
+    '❣',
     '💕',
     '💞',
     '💓',
@@ -167,7 +252,7 @@ const EMOJI_LIST = [
     '👎',
     '👌',
     '🤏',
-    '✌️',
+    '✌',
     '🤞',
     '🤟',
     '🤘',
@@ -177,10 +262,10 @@ const EMOJI_LIST = [
     '👆',
     '🖕',
     '👇',
-    '☝️',
+    '☝',
     '👋',
     '🤚',
-    '🖐️',
+    '🖐',
     '✋',
     '🖖',
     '👏',
@@ -212,7 +297,7 @@ const EMOJI_LIST = [
     '👴',
     '👵',
     '👮',
-    '🕵️',
+    '🕵',
     '💂',
     '🥷',
     '👷',
@@ -243,17 +328,17 @@ const EMOJI_LIST = [
     '🏃',
     '💃',
     '🕺',
-    '🕴️',
+    '🕴',
     '👯',
     '🧘',
     '🏇',
     '🏂',
-    '🏌️',
+    '🏌',
     '🏄',
     '🚣',
     '🏊',
-    '⛷️',
-    '🏋️',
+    '⛷',
+    '🏋',
     '🚴',
     '🚵',
     '🤸',
@@ -281,7 +366,7 @@ const EMOJI_LIST = [
     '🎽',
     '🛹',
     '🛷',
-    '⛸️',
+    '⛸',
     '🥌',
     '🎿',
     '🛝',
@@ -300,9 +385,9 @@ const EMOJI_LIST = [
     '🎼',
     '🎵',
     '🎶',
-    '🎙️',
-    '🎚️',
-    '🎛️',
+    '🎙',
+    '🎚',
+    '🎛',
 ];
 
 // Emoji picker function
@@ -469,25 +554,7 @@ export const TextElement: React.FC<TextElementProps> = ({
                         toolbar: {
                             container: [
                                 [{ header: [1, 2, 3, false] }],
-                                [
-                                    { font: [] },
-                                    {
-                                        size: [
-                                            '8px',
-                                            '10px',
-                                            '12px',
-                                            '14px',
-                                            '16px',
-                                            '18px',
-                                            '20px',
-                                            '24px',
-                                            '28px',
-                                            '32px',
-                                            '36px',
-                                            '48px',
-                                        ],
-                                    },
-                                ],
+                                [{ font: [] }],
                                 ['bold', 'italic', 'underline', 'strike'],
                                 [{ color: [] }, { background: [] }],
                                 [{ list: 'ordered' }, { list: 'bullet' }],
@@ -525,6 +592,9 @@ export const TextElement: React.FC<TextElementProps> = ({
                 if (content) {
                     quill.clipboard.dangerouslyPasteHTML(content);
                 }
+
+                // Register custom size picker in toolbar
+                registerCustomSizePicker(quill);
 
                 const toolbar = quill.getModule('toolbar');
                 if (toolbar?.container) {

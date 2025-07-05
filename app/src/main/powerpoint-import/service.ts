@@ -450,6 +450,7 @@ export class PowerPointImportService {
         content = this.convertPowerPointHtmlToQuill(content);
 
         console.log('Content after font conversion:', content);
+        console.log('FINAL CONTENT BEING PASSED TO TEXTBOX:', JSON.stringify(content));
 
         // Extract background color from fill object - based on actual data structure
         let backgroundColor;
@@ -596,14 +597,36 @@ export class PowerPointImportService {
             '<span$1style="$2$3"$4><s>$5</s></span>'
         );
         
-        // Step 6: Clean up empty style attributes
+        // Step 6: Ensure font-size is properly formatted for Quill compatibility
+        // Sometimes Quill has issues with style attribute order - ensure font-size comes first
+        converted = converted.replace(
+            /style="([^"]*?)font-size:\s*(\d+px);?([^"]*?)"/g,
+            'style="font-size: $2; $1$3"'
+        );
+        
+        // Clean up formatting issues that might prevent Quill from parsing correctly
         converted = converted.replace(/style=""/g, '');
         converted = converted.replace(/style="\s*"/g, '');
+        converted = converted.replace(/style=";\s*"/g, '');
+        
+        // Clean up class attributes - remove trailing spaces
+        converted = converted.replace(/class="([^"]*?)\s+"/g, 'class="$1"');
+        
+        // Clean up XML-style self-closing tags with spaces
+        converted = converted.replace(/\s+>/g, '>');
+        
+        // Ensure proper spacing in HTML and clean up double semicolons
+        converted = converted.replace(/>\s*</g, '><');
+        converted = converted.replace(/;\s*;/g, ';');
+        converted = converted.replace(/;\s*"/g, '"');
         
         console.log('PowerPoint to Quill conversion completed:', {
             originalLength: htmlContent.length,
             convertedLength: converted.length,
-            preview: converted.substring(0, 150)
+            original: htmlContent,
+            converted: converted,
+            hasFontSize: /font-size:\s*\d+px/.test(converted),
+            hasQuillClasses: /ql-font-/.test(converted)
         });
         
         return converted;
@@ -624,28 +647,41 @@ export class PowerPointImportService {
             'Consolas': 'ql-font-monospace'
         };
         
-        // Convert font-family styles to Quill classes
+        // Convert font-family styles to Quill classes more precisely
         for (const [fontName, quillClass] of Object.entries(fontMappings)) {
-            const regex = new RegExp(`font-family:\\s*["']?${fontName.replace(/\s+/g, '\\s+')}["']?;?`, 'gi');
-            converted = converted.replace(regex, '');
+            // Match spans with font-family declarations
+            const fontFamilyRegex = new RegExp(
+                `(<span[^>]*?)style="([^"]*?)font-family:\\s*["']?${fontName.replace(/\s+/g, '\\s+')}["']?;?([^"]*?)"([^>]*?)>`,
+                'gi'
+            );
             
-            // Add the Quill class if this font is found
-            if (htmlContent.toLowerCase().includes(fontName.toLowerCase())) {
-                converted = converted.replace(
-                    /<span([^>]*?)style="([^"]*?)"([^>]*?)>/g,
-                    `<span$1class="${quillClass}" style="$2"$3>`
-                );
-            }
+            converted = converted.replace(fontFamilyRegex, (match, spanStart, stylePrefix, styleSuffix, spanEnd) => {
+                // Check if there's already a class attribute
+                const hasClass = spanStart.includes('class=');
+                
+                if (hasClass) {
+                    // Add to existing class
+                    const classRegex = /class\s*=\s*["']([^"']*?)["']/i;
+                    const updatedSpanStart = spanStart.replace(classRegex, `class="$1 ${quillClass}"`);
+                    return `${updatedSpanStart}style="${stylePrefix}${styleSuffix}"${spanEnd}>`;
+                } else {
+                    // Add new class attribute
+                    return `${spanStart}class="${quillClass}" style="${stylePrefix}${styleSuffix}"${spanEnd}>`;
+                }
+            });
         }
         
-        // Remove any remaining font-family declarations that weren't mapped
+        // Remove any remaining font-family declarations
         converted = converted.replace(/font-family:[^;]*;?/gi, '');
         
+        // Clean up empty style attributes
+        converted = converted.replace(/style=""/g, '');
+        converted = converted.replace(/style="\s*"/g, '');
+        
         console.log('Font family conversion:', {
-            hasCalibri: htmlContent.includes('Calibri'),
-            hasArial: htmlContent.includes('Arial'),
-            hasTimesNewRoman: htmlContent.includes('Times New Roman'),
-            preview: converted.substring(0, 150)
+            originalHasFont: /font-family:/i.test(htmlContent),
+            convertedHasFont: /font-family:/i.test(converted),
+            preview: converted.substring(0, 200)
         });
         
         return converted;
