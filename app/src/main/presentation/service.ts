@@ -398,7 +398,7 @@ export class PresentationService {
     /**
      * Sets the selected slide ID for the presentation viewer
      */
-    setSelectedSlideInViewer(slideId: string): void {
+    setSelectedSlideInViewer(slideId: string | null): void {
         this.selectedSlideId = slideId;
         this.eventBus.broadcastToWindows(
             'presentation:set-selected-slide',

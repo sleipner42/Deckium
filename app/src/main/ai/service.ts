@@ -57,10 +57,7 @@ export class AIService {
 
     createThread(title: string, presentationId: UUID): Thread {
         const presentation = this.presentationService.getPresentation();
-        const developerPrompt = getDeveloperPrompt(
-            presentation,
-            this.presentationService,
-        );
+        const developerPrompt = getDeveloperPrompt(presentation);
 
         const thread = this.state.createThread(
             title,
@@ -155,9 +152,22 @@ export class AIService {
             let endTime: number;
 
             try {
-                if (userContent) {
+                // Add current slide context before user message
+                const currentSlideContext =
+                    this.getCurrentSlideContextMessage();
+                if (currentSlideContext) {
                     updatedThread = this.state.addMessage(
                         thread,
+                        currentSlideContext,
+                        'system',
+                    );
+                } else {
+                    updatedThread = thread;
+                }
+
+                if (userContent) {
+                    updatedThread = this.state.addMessage(
+                        updatedThread,
                         userContent,
                         'user',
                     );
@@ -168,7 +178,7 @@ export class AIService {
                     });
                 } else {
                     updatedThread = this.state.addMessage(
-                        thread,
+                        updatedThread,
                         userMessage,
                         'user',
                     );
@@ -441,10 +451,7 @@ export class AIService {
 
     private initializeThreadForLoop(thread: Thread): Thread {
         const presentation = this.presentationService.getPresentation();
-        const developerPrompt = getDeveloperPrompt(
-            presentation,
-            this.presentationService,
-        );
+        const developerPrompt = getDeveloperPrompt(presentation);
         return this.state.updateSystemMessage(thread, developerPrompt);
     }
 
@@ -1062,5 +1069,53 @@ export class AIService {
 
     offEvent(eventName: string, listener: (...args: any[]) => void): void {
         this.eventBus.off(eventName, listener);
+    }
+
+    private getCurrentSlideContextMessage(): string | null {
+        const presentation = this.presentationService.getPresentation();
+        const currentSlideId = this.presentationService.getSelectedSlideId();
+
+        if (!currentSlideId) {
+            console.log('No current slide ID found');
+            return null;
+        }
+
+        const currentSlide = presentation.slides?.find(
+            (slide) => slide.id === currentSlideId,
+        );
+
+        if (!currentSlide) {
+            console.error('Current slide not found:', currentSlideId);
+            return null;
+        }
+
+        const slideIndex = presentation.slides?.indexOf(currentSlide) + 1 || 0;
+        const elementCount = currentSlide.elements?.length || 0;
+
+        let slideContext = `## CURRENT SLIDE CONTEXT\n`;
+        slideContext += `**Currently Viewing**: Slide ${slideIndex} (ID: ${currentSlideId}) out of ${presentation.slides.length} slides\n`;
+        slideContext += `**Elements on this slide**: ${elementCount} element${elementCount !== 1 ? 's' : ''}`;
+        console.log('Adding: ', slideContext);
+
+        if (elementCount > 0) {
+            const elementTypes = currentSlide.elements.map((el) => el.type);
+            const typeCount: Record<string, number> = {};
+            elementTypes.forEach((type) => {
+                typeCount[type] = (typeCount[type] || 0) + 1;
+            });
+
+            const typeSummary = Object.entries(typeCount)
+                .map(
+                    ([type, count]) =>
+                        `${count} ${type}${count !== 1 ? 's' : ''}`,
+                )
+                .join(', ');
+
+            slideContext += ` (${typeSummary})`;
+        }
+
+        slideContext += `\n**Note**: When the user refers to "this slide" or "current slide", they mean slide ${slideIndex}`;
+
+        return slideContext;
     }
 }

@@ -1,14 +1,7 @@
-import type {
-    Presentation,
-    Slide,
-} from '../../../common/domain/entities/types';
-import type { PresentationService } from '../../presentation/service';
+import type { Presentation } from '../../../common/domain/entities/types';
 import { ToolsService } from '../tools/builtInTools';
 
-export function getDeveloperPrompt(
-    presentation: Presentation,
-    presentationService?: PresentationService,
-): string {
+export function getDeveloperPrompt(presentation: Presentation): string {
     const tools = ToolsService.getBuiltInTools();
 
     return `
@@ -103,7 +96,7 @@ Address linting errors before continuing - they impact presentation quality.
 
 ## CURRENT CONTEXT
 - **Presentation Status**: ${presentation.slides?.length || 0} slides total
-- **Slide IDs**: ${presentation.slides?.map((slide: Slide) => slide.id).join(', ')}${getCurrentSlideContext(presentation, presentationService)}
+- **Slide IDs**: ${presentation.slides?.map((slide: Slide) => slide.id).join(', ')}
 
 ## RESPONSE FORMAT
 
@@ -123,49 +116,4 @@ Provide direct text responses without tool calls.
 
 Focus on creating presentations that combine visual impact with clear communication. Every element should serve the presentation's purpose while maintaining professional design standards.
 `;
-}
-
-function getCurrentSlideContext(
-    presentation: Presentation,
-    presentationService?: PresentationService,
-): string {
-    if (!presentationService) {
-        return '';
-    }
-
-    const currentSlideId = presentationService.getSelectedSlideId();
-    if (!currentSlideId) {
-        return '\n- No slide is currently selected';
-    }
-
-    const currentSlide = presentation.slides?.find(
-        (slide) => slide.id === currentSlideId,
-    );
-    if (!currentSlide) {
-        return `\n- Selected slide ID: ${currentSlideId} (slide not found)`;
-    }
-
-    const slideIndex = presentation.slides?.indexOf(currentSlide) + 1 || 0;
-    const elementCount = currentSlide.elements?.length || 0;
-
-    let slideDescription = `\n- CURRENTLY VIEWING: Slide ${slideIndex} (ID: ${currentSlideId.substring(0, 8)}...)`;
-    slideDescription += `\n- This slide has ${elementCount} element${elementCount !== 1 ? 's' : ''}`;
-
-    if (elementCount > 0) {
-        const elementTypes = currentSlide.elements.map((el) => el.type);
-        const typeCount: Record<string, number> = {};
-        elementTypes.forEach((type) => {
-            typeCount[type] = (typeCount[type] || 0) + 1;
-        });
-
-        const typeSummary = Object.entries(typeCount)
-            .map(([type, count]) => `${count} ${type}${count !== 1 ? 's' : ''}`)
-            .join(', ');
-
-        slideDescription += ` (${typeSummary})`;
-    }
-
-    slideDescription += `\n- When the user refers to "this slide" or "current slide", they mean slide ${slideIndex}`;
-
-    return slideDescription;
 }

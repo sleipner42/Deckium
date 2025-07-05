@@ -64,6 +64,8 @@ interface ElectronWindow {
             openFullscreen: () => Promise<void>;
             closeFullscreen: () => Promise<void>;
             isFullscreenOpen: () => Promise<boolean>;
+            setSelectedSlide: (slideId: string | null) => Promise<void>;
+            getSelectedSlide: () => Promise<string | null>;
         };
     };
 }
@@ -120,15 +122,27 @@ export const useMainProcessPresentation = () => {
 
     useEffect(() => {
         if (slides.length > 0 && !selectedSlide) {
-            setSelectedSlide(slides[0]);
+            const firstSlide = slides[0];
+            setSelectedSlide(firstSlide);
+            // Notify main process about the initially selected slide
+            electronAPI.presentation.setSelectedSlide(firstSlide.id);
         } else if (slides.length === 0) {
             setSelectedSlide(null);
+            // Notify main process that no slide is selected
+            electronAPI.presentation.setSelectedSlide(null);
         } else if (selectedSlide) {
             const slideExists = slides.some(
                 (slide) => slide.id === selectedSlide.id,
             );
             if (!slideExists) {
-                setSelectedSlide(slides.length > 0 ? slides[0] : null);
+                const fallbackSlide = slides.length > 0 ? slides[0] : null;
+                setSelectedSlide(fallbackSlide);
+                // Notify main process about the fallback slide selection
+                if (fallbackSlide) {
+                    electronAPI.presentation.setSelectedSlide(fallbackSlide.id);
+                } else {
+                    electronAPI.presentation.setSelectedSlide(null);
+                }
             }
         }
     }, [slides, selectedSlide]);
@@ -512,6 +526,8 @@ export const useMainProcessPresentation = () => {
             if (slideExists) {
                 setSelectedSlide(slide);
                 setSelectedElementId(null);
+                // Notify main process about slide selection
+                electronAPI.presentation.setSelectedSlide(slide.id);
             }
         },
         [slides],

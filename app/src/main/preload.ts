@@ -291,7 +291,7 @@ const electronHandler = {
         isFullscreenOpen() {
             return ipcRenderer.invoke('presentation:is-fullscreen-open');
         },
-        setSelectedSlide(slideId: string) {
+        setSelectedSlide(slideId: string | null) {
             return ipcRenderer.invoke(
                 'presentation:set-selected-slide',
                 slideId,
