@@ -12,6 +12,7 @@ import {
     Slide,
     TextBox,
 } from '../../common/domain/entities/types';
+import { PRESENTATION_DIMENSIONS } from '../../common/utils/constants';
 
 export interface ImportResult {
     success: boolean;
@@ -27,6 +28,8 @@ export interface ImportProgress {
 
 export class PowerPointImportService {
     private progressCallback?: (progress: ImportProgress) => void;
+    private scaleX: number = 1;
+    private scaleY: number = 1;
 
     setProgressCallback(callback: (progress: ImportProgress) => void) {
         this.progressCallback = callback;
@@ -155,6 +158,24 @@ export class PowerPointImportService {
         pptxData: any,
         filePath: string,
     ): Promise<Presentation> {
+        // Extract PowerPoint slide dimensions for proper scaling
+        const pptSlideWidth = pptxData.size?.width || 720; // Default PowerPoint width
+        const pptSlideHeight = pptxData.size?.height || 540; // Default PowerPoint height
+        
+        // Our application's slide dimensions from constants
+        const appSlideWidth = PRESENTATION_DIMENSIONS.WIDTH;
+        const appSlideHeight = PRESENTATION_DIMENSIONS.HEIGHT;
+        
+        // Calculate scaling factors
+        const scaleX = appSlideWidth / pptSlideWidth;
+        const scaleY = appSlideHeight / pptSlideHeight;
+        
+        console.log(`Scaling factors: PowerPoint(${pptSlideWidth}x${pptSlideHeight}) -> App(${appSlideWidth}x${appSlideHeight})`);
+        console.log(`Scale factors: X=${scaleX.toFixed(3)}, Y=${scaleY.toFixed(3)}`);
+        
+        // Store scaling factors for use in coordinate conversion
+        this.scaleX = scaleX;
+        this.scaleY = scaleY;
         const presentation: Presentation = {
             id: uuidv4(),
             title: this.extractPresentationTitle(pptxData, filePath),
@@ -356,33 +377,40 @@ export class PowerPointImportService {
 
     private convertPosition(elementData: any): { x: number; y: number } {
         // Based on the actual data structure from pptxtojson
-        const x = this.parseCoordinate(elementData.left || elementData.x || 0);
-        const y = this.parseCoordinate(elementData.top || elementData.y || 0);
+        const x = this.parseXCoordinate(elementData.left || elementData.x || 0);
+        const y = this.parseYCoordinate(elementData.top || elementData.y || 0);
 
         return { x, y };
     }
 
     private convertSize(elementData: any): { width: number; height: number } {
         // Based on the actual data structure from pptxtojson
-        const width = this.parseCoordinate(elementData.width || 100);
-        const height = this.parseCoordinate(elementData.height || 50);
+        const width = this.parseXCoordinate(elementData.width || 100);
+        const height = this.parseYCoordinate(elementData.height || 50);
 
         return { width, height };
     }
 
-    private parseCoordinate(value: any): number {
+    private parseXCoordinate(value: any): number {
         if (typeof value === 'number') {
-            // PowerPoint coordinate system analysis:
-            // Standard PowerPoint slide is 720x540 points (10" x 7.5" at 72 DPI)
-            // Our app likely expects pixel coordinates for a smaller canvas
-            // Let's try 1.5x which is between 1x (too small) and 2x (too big)
-            return value * 1.5;
+            // Scale X coordinate based on PowerPoint to app width ratio
+            return value * this.scaleX;
         }
         if (typeof value === 'string') {
-            // Handle various units and convert to pixels
-            // Remove non-numeric characters except decimal point and minus
             const numValue = parseFloat(value.replace(/[^0-9.-]/g, ''));
-            return isNaN(numValue) ? 0 : Math.abs(numValue) * 1.5;
+            return isNaN(numValue) ? 0 : Math.abs(numValue) * this.scaleX;
+        }
+        return 0;
+    }
+
+    private parseYCoordinate(value: any): number {
+        if (typeof value === 'number') {
+            // Scale Y coordinate based on PowerPoint to app height ratio
+            return value * this.scaleY;
+        }
+        if (typeof value === 'string') {
+            const numValue = parseFloat(value.replace(/[^0-9.-]/g, ''));
+            return isNaN(numValue) ? 0 : Math.abs(numValue) * this.scaleY;
         }
         return 0;
     }
