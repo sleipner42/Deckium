@@ -35,15 +35,17 @@ export const usePowerPointImport = () => {
             setError(null);
             setProgress(null);
 
-            const result = await window.electron.powerpointImport.selectAndImport();
-            
+            const result =
+                await window.electron.powerpointImport.selectAndImport();
+
             if (!result.success) {
                 setError(result.error || 'Import failed');
             }
 
             return result;
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+            const errorMessage =
+                err instanceof Error ? err.message : 'Unknown error occurred';
             setError(errorMessage);
             return { success: false, error: errorMessage };
         } finally {
@@ -52,28 +54,35 @@ export const usePowerPointImport = () => {
         }
     }, []);
 
-    const importFile = useCallback(async (filePath: string): Promise<ImportResult> => {
-        try {
-            setIsImporting(true);
-            setError(null);
-            setProgress(null);
+    const importFile = useCallback(
+        async (filePath: string): Promise<ImportResult> => {
+            try {
+                setIsImporting(true);
+                setError(null);
+                setProgress(null);
 
-            const result = await window.electron.powerpointImport.importFile(filePath);
-            
-            if (!result.success) {
-                setError(result.error || 'Import failed');
+                const result =
+                    await window.electron.powerpointImport.importFile(filePath);
+
+                if (!result.success) {
+                    setError(result.error || 'Import failed');
+                }
+
+                return result;
+            } catch (err) {
+                const errorMessage =
+                    err instanceof Error
+                        ? err.message
+                        : 'Unknown error occurred';
+                setError(errorMessage);
+                return { success: false, error: errorMessage };
+            } finally {
+                setIsImporting(false);
+                setProgress(null);
             }
-
-            return result;
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-            setError(errorMessage);
-            return { success: false, error: errorMessage };
-        } finally {
-            setIsImporting(false);
-            setProgress(null);
-        }
-    }, []);
+        },
+        [],
+    );
 
     const clearError = useCallback(() => {
         setError(null);
@@ -84,7 +93,7 @@ export const usePowerPointImport = () => {
         isImporting,
         progress,
         error,
-        
+
         // Actions
         selectAndImport,
         importFile,

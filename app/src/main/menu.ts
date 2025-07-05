@@ -262,7 +262,10 @@ export default class MenuBuilder {
                                     window.electron.powerpointImport.selectAndImport();
                                 `);
                             } catch (error) {
-                                console.error('PowerPoint import error:', error);
+                                console.error(
+                                    'PowerPoint import error:',
+                                    error,
+                                );
                             }
                         },
                     },

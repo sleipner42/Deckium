@@ -64,8 +64,9 @@ export const PowerPointImportDialog: React.FC<PowerPointImportDialogProps> = ({
                 <Box sx={{ mt: 2, mb: 2 }}>
                     {!isImporting && !error && !progress && (
                         <Typography variant="body1" sx={{ mb: 2 }}>
-                            Select a PowerPoint (.pptx) file to import into your presentation.
-                            This will convert slides, text, shapes, and images from the PowerPoint file.
+                            Select a PowerPoint (.pptx) file to import into your
+                            presentation. This will convert slides, text,
+                            shapes, and images from the PowerPoint file.
                         </Typography>
                     )}
 

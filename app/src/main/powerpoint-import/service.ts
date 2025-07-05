@@ -1,16 +1,16 @@
 import * as fs from 'fs';
+import JSZip from 'jszip';
 import * as path from 'path';
 import { parse } from 'pptxtojson';
 import { v4 as uuidv4 } from 'uuid';
-import JSZip from 'jszip';
 import {
+    BarChart,
     ContentElement,
+    Image as ImageElement,
     Presentation,
     Shape,
     Slide,
     TextBox,
-    Image as ImageElement,
-    BarChart,
 } from '../../common/domain/entities/types';
 
 export interface ImportResult {
@@ -58,14 +58,70 @@ export class PowerPointImportService {
             const fileBuffer = fs.readFileSync(filePath);
             const arrayBuffer = fileBuffer.buffer.slice(
                 fileBuffer.byteOffset,
-                fileBuffer.byteOffset + fileBuffer.byteLength
+                fileBuffer.byteOffset + fileBuffer.byteLength,
             );
-            
+
             // Parse the PPTX file using ArrayBuffer
             const pptxData = await parse(arrayBuffer);
-            
+
             // Debug: Log the structure to understand the data format
-            console.log('PPTX Data structure:', JSON.stringify(pptxData, null, 2).substring(0, 1000));
+            console.log(
+                'PPTX Data structure:',
+                JSON.stringify(pptxData, null, 2).substring(0, 1000),
+            );
+            
+            // Additional detailed logging for debugging
+            console.log('='.repeat(60));
+            console.log('DETAILED PPTX ANALYSIS:');
+            console.log(`- Total slides: ${pptxData.slides ? pptxData.slides.length : 'None'}`);
+            console.log(`- Theme colors: ${JSON.stringify(pptxData.themeColors)}`);
+            console.log(`- Slide size: ${JSON.stringify(pptxData.size)}`);
+            
+            if (pptxData.slides && pptxData.slides.length > 0) {
+                pptxData.slides.forEach((slide, slideIndex) => {
+                    console.log(`\nSLIDE ${slideIndex + 1} ANALYSIS:`);
+                    console.log(`  Background: ${JSON.stringify(slide.fill)}`);
+                    console.log(`  Elements count: ${slide.elements ? slide.elements.length : 0}`);
+                    
+                    if (slide.elements && slide.elements.length > 0) {
+                        slide.elements.forEach((element, elemIndex) => {
+                            console.log(`\n  ELEMENT ${elemIndex + 1} DETAILED INFO:`);
+                            console.log(`    Type: ${element.type}`);
+                            console.log(`    Coordinates: left=${element.left}, top=${element.top}`);
+                            console.log(`    Size: width=${element.width}, height=${element.height}`);
+                            
+                            // Check ALL properties
+                            console.log(`    All properties:`, Object.keys(element));
+                            
+                            // Shape-specific analysis
+                            if (element.type === 'shape') {
+                                const shape = element as any;
+                                console.log(`    Shape type: ${shape.shapeType || shape.shapType || 'MISSING'}`);
+                                console.log(`    Fill object: ${JSON.stringify(shape.fill)}`);
+                                console.log(`    Border: ${shape.borderColor} / ${shape.borderWidth}px`);
+                                if (shape.path) {
+                                    console.log(`    SVG Path: ${shape.path}`);
+                                }
+                            }
+                            
+                            // Text content analysis
+                            if (element.content) {
+                                console.log(`    Content length: ${element.content.length}`);
+                                console.log(`    Content: ${element.content}`);
+                            }
+                            
+                            // Name and order
+                            if ((element as any).name) {
+                                console.log(`    Name: ${(element as any).name}`);
+                            }
+                            if ((element as any).order) {
+                                console.log(`    Order: ${(element as any).order}`);
+                            }
+                        });
+                    }
+                });
+            }
+            console.log('='.repeat(60));
 
             this.reportProgress('conversion', 30, 'Converting slides...');
 
@@ -76,7 +132,11 @@ export class PowerPointImportService {
                 fileBuffer,
             );
 
-            this.reportProgress('complete', 100, 'Import completed successfully');
+            this.reportProgress(
+                'complete',
+                100,
+                'Import completed successfully',
+            );
 
             return { success: true, presentation };
         } catch (error) {
@@ -136,7 +196,10 @@ export class PowerPointImportService {
                 slideIndex++;
             }
         } else {
-            console.warn('No slides found in PPTX data. Available keys:', Object.keys(pptxData));
+            console.warn(
+                'No slides found in PPTX data. Available keys:',
+                Object.keys(pptxData),
+            );
         }
 
         return presentation;
@@ -153,7 +216,9 @@ export class PowerPointImportService {
         return fileName || 'Imported Presentation';
     }
 
-    private async extractImages(fileBuffer: Buffer): Promise<Map<string, string>> {
+    private async extractImages(
+        fileBuffer: Buffer,
+    ): Promise<Map<string, string>> {
         const imageMap = new Map<string, string>();
 
         try {
@@ -203,12 +268,16 @@ export class PowerPointImportService {
         slideIndex: number,
         imageMap: Map<string, string>,
     ): Promise<Slide> {
-        console.log(`Slide ${slideIndex} data:`, JSON.stringify(slideData, null, 2).substring(0, 500));
+        console.log(
+            `Slide ${slideIndex} data:`,
+            JSON.stringify(slideData, null, 2).substring(0, 500),
+        );
 
         const slide: Slide = {
             id: uuidv4(),
             elements: [],
-            background: slideData.background || slideData.backgroundFill || '#ffffff',
+            background:
+                slideData.background || slideData.backgroundFill || '#ffffff',
         };
 
         // Check different possible element array properties
@@ -223,14 +292,20 @@ export class PowerPointImportService {
 
         if (elementsArray) {
             for (const elementData of elementsArray) {
-                console.log('Processing element:', JSON.stringify(elementData, null, 2).substring(0, 300));
+                console.log(
+                    'Processing element:',
+                    JSON.stringify(elementData, null, 2).substring(0, 300),
+                );
                 const element = this.convertElement(elementData, imageMap);
                 if (element) {
                     slide.elements.push(element);
                 }
             }
         } else {
-            console.warn(`No elements found in slide ${slideIndex}. Available keys:`, Object.keys(slideData));
+            console.warn(
+                `No elements found in slide ${slideIndex}. Available keys:`,
+                Object.keys(slideData),
+            );
         }
 
         return slide;
@@ -251,104 +326,63 @@ export class PowerPointImportService {
             zIndex: elementData.zIndex || 1,
         };
 
-        // Determine element type from various possible properties
-        const elementType = (
-            elementData.type ||
-            elementData.elementType ||
-            elementData.kind ||
-            elementData.objectType ||
-            'shape' // Default fallback
-        ).toLowerCase();
+        // Based on the actual pptxtojson data structure
+        console.log(
+            'Element data:',
+            JSON.stringify(elementData, null, 2).substring(0, 200),
+        );
 
-        console.log('Element type detected:', elementType, 'from element:', Object.keys(elementData));
+        // Check if element has text content (pptxtojson puts text in 'content' property)
+        const hasTextContent =
+            elementData.content && elementData.content.trim() !== '';
 
-        // Check for text content to determine if it's a text element
-        const hasText = elementData.text || 
-                       elementData.content || 
-                       elementData.textContent || 
-                       elementData.value || 
-                       elementData.innerText || 
-                       elementData.paragraphs;
-
-        if (hasText || elementType.includes('text')) {
+        if (hasTextContent) {
             return this.convertTextElement(elementData, baseProps);
         }
 
-        // Check for image content
-        const hasImage = elementData.src || 
-                        elementData.image || 
-                        elementData.imageSrc ||
-                        elementType.includes('image') ||
-                        elementType.includes('picture');
-
-        if (hasImage) {
+        // Check for image content (would have image source)
+        if (elementData.src || elementData.imageSrc) {
             return this.convertImageElement(elementData, baseProps, imageMap);
         }
 
-        // Check for chart
-        if (elementType.includes('chart') || elementData.chartType) {
+        // Check for chart (would have chart-specific properties)
+        if (elementData.chartType || elementData.chart) {
             return this.convertChartElement(elementData, baseProps);
         }
 
-        // Default to shape element
+        // Default to shape element (pptxtojson elements are primarily shapes)
         return this.convertShapeElement(elementData, baseProps);
     }
 
     private convertPosition(elementData: any): { x: number; y: number } {
-        // Try different possible position properties
-        let x = 0, y = 0;
-        
-        if (elementData.x !== undefined) {
-            x = this.parseCoordinate(elementData.x);
-        } else if (elementData.left !== undefined) {
-            x = this.parseCoordinate(elementData.left);
-        } else if (elementData.position && elementData.position.x !== undefined) {
-            x = this.parseCoordinate(elementData.position.x);
-        }
-        
-        if (elementData.y !== undefined) {
-            y = this.parseCoordinate(elementData.y);
-        } else if (elementData.top !== undefined) {
-            y = this.parseCoordinate(elementData.top);
-        } else if (elementData.position && elementData.position.y !== undefined) {
-            y = this.parseCoordinate(elementData.position.y);
-        }
-        
+        // Based on the actual data structure from pptxtojson
+        const x = this.parseCoordinate(elementData.left || elementData.x || 0);
+        const y = this.parseCoordinate(elementData.top || elementData.y || 0);
+
         return { x, y };
     }
 
     private convertSize(elementData: any): { width: number; height: number } {
-        // Try different possible size properties
-        let width = 100, height = 50;
-        
-        if (elementData.width !== undefined) {
-            width = this.parseCoordinate(elementData.width);
-        } else if (elementData.w !== undefined) {
-            width = this.parseCoordinate(elementData.w);
-        } else if (elementData.size && elementData.size.width !== undefined) {
-            width = this.parseCoordinate(elementData.size.width);
-        }
-        
-        if (elementData.height !== undefined) {
-            height = this.parseCoordinate(elementData.height);
-        } else if (elementData.h !== undefined) {
-            height = this.parseCoordinate(elementData.h);
-        } else if (elementData.size && elementData.size.height !== undefined) {
-            height = this.parseCoordinate(elementData.size.height);
-        }
-        
+        // Based on the actual data structure from pptxtojson
+        const width = this.parseCoordinate(elementData.width || 100);
+        const height = this.parseCoordinate(elementData.height || 50);
+
         return { width, height };
     }
 
     private parseCoordinate(value: any): number {
         if (typeof value === 'number') {
-            return value;
+            // PowerPoint coordinate system analysis:
+            // Standard PowerPoint slide is 720x540 points (10" x 7.5" at 72 DPI)
+            // Our app likely expects pixel coordinates for a smaller canvas
+            // Let's try 1.5x which is between 1x (too small) and 2x (too big)
+            return value * 1.5;
         }
         if (typeof value === 'string') {
             // Handle various units and convert to pixels
             // Remove non-numeric characters except decimal point and minus
             const numValue = parseFloat(value.replace(/[^0-9.-]/g, ''));
-            return isNaN(numValue) ? 0 : Math.abs(numValue); // Convert to positive pixels
+            return isNaN(numValue) ? 0 : Math.abs(numValue) * 1.5;
         }
         return 0;
     }
@@ -357,34 +391,42 @@ export class PowerPointImportService {
         elementData: any,
         baseProps: any,
     ): TextBox | null {
-        let content = '';
+        // Extract text content directly from the content property (already HTML formatted)
+        let content = elementData.content || '<p>Text</p>';
 
-        // Extract text content from various possible properties
-        if (elementData.text) {
-            content = this.convertTextContent(elementData.text);
-        } else if (elementData.content) {
-            content = this.convertTextContent(elementData.content);
-        } else if (elementData.textContent) {
-            content = this.convertTextContent(elementData.textContent);
-        } else if (elementData.value) {
-            content = this.convertTextContent(elementData.value);
-        } else if (elementData.innerText) {
-            content = this.convertTextContent(elementData.innerText);
-        } else if (elementData.paragraphs) {
-            content = this.convertTextContent(elementData.paragraphs);
+        // If content is empty or just whitespace, use fallback
+        if (!content || content.trim() === '') {
+            content = '<p>Text</p>';
         }
 
-        if (!content) {
-            content = '<p>Text</p>'; // Fallback for empty text
+        // Convert font sizes from points to pixels for better compatibility
+        // PowerPoint uses pt units, but our editor works better with px
+        content = this.convertFontSizesToPixels(content);
+
+        // Extract background color from fill object - based on actual data structure
+        let backgroundColor;
+        if (elementData.fill) {
+            if (typeof elementData.fill === 'string' && elementData.fill !== '') {
+                backgroundColor = elementData.fill;
+            } else if (elementData.fill.value) {
+                backgroundColor = elementData.fill.value;
+            } else if (elementData.fill.color) {
+                backgroundColor = elementData.fill.color;
+            }
         }
 
         return {
             ...baseProps,
             type: 'textbox',
             content,
-            backgroundColor: elementData.fill || elementData.backgroundColor || undefined,
+            backgroundColor: backgroundColor,
             borderRadius: 0,
-            verticalAlign: 'top',
+            verticalAlign:
+                elementData.vAlign === 'middle'
+                    ? 'middle'
+                    : elementData.vAlign === 'bottom'
+                      ? 'bottom'
+                      : 'top',
         } as TextBox;
     }
 
@@ -404,8 +446,10 @@ export class PowerPointImportService {
                         if (item.bold) html = `<strong>${html}</strong>`;
                         if (item.italic) html = `<em>${html}</em>`;
                         if (item.underline) html = `<u>${html}</u>`;
-                        if (item.color) html = `<span style="color: ${item.color}">${html}</span>`;
-                        if (item.fontSize) html = `<span style="font-size: ${item.fontSize}px">${html}</span>`;
+                        if (item.color)
+                            html = `<span style="color: ${item.color}">${html}</span>`;
+                        if (item.fontSize)
+                            html = `<span style="font-size: ${item.fontSize}px">${html}</span>`;
                         return `<p>${html}</p>`;
                     }
                     return '';
@@ -420,54 +464,78 @@ export class PowerPointImportService {
         return '<p></p>';
     }
 
+    private convertFontSizesToPixels(htmlContent: string): string {
+        // Convert point sizes to pixel sizes in HTML content
+        // 1 point = 1.333 pixels (standard conversion)
+        return htmlContent.replace(/font-size:\s*(\d+(?:\.\d+)?)pt/g, (match, size) => {
+            const pixelSize = Math.round(parseFloat(size) * 1.333);
+            return `font-size: ${pixelSize}px`;
+        });
+    }
+
     private convertShapeElement(
         elementData: any,
         baseProps: any,
     ): Shape | null {
         let shapeType: 'rectangle' | 'circle' | 'triangle';
 
-        // Check various possible shape type properties
-        const typeToCheck = (
-            elementData.type ||
-            elementData.shape ||
-            elementData.shapeType ||
-            elementData.geom ||
-            elementData.geometry ||
-            'rectangle'
-        ).toLowerCase();
+        // Check for shapeType property first (API has typo: "shapType" instead of "shapeType")
+        const shapeTypeFromData = elementData.shapeType || elementData.shapType;
+        const elementType = elementData.type || '';
+        const name = elementData.name || '';
+        
+        console.log('Shape type detected:', shapeTypeFromData, 'type:', elementType, 'name:', name);
 
-        console.log('Shape type detected:', typeToCheck);
-
-        // Map PPTX shape types to our shape types
-        switch (typeToCheck) {
-            case 'rectangle':
-            case 'rect':
-            case 'roundrect':
-            case 'rectangle2':
-                shapeType = 'rectangle';
-                break;
-            case 'circle':
-            case 'oval':
-            case 'ellipse':
-            case 'ellipse2':
-                shapeType = 'circle';
-                break;
-            case 'triangle':
-            case 'rightTriangle':
-            case 'triangle2':
+        // Use the actual shapeType if available
+        if (shapeTypeFromData) {
+            switch (shapeTypeFromData.toLowerCase()) {
+                case 'ellipse':
+                case 'circle':
+                case 'oval':
+                    shapeType = 'circle';
+                    break;
+                case 'triangle':
+                case 'righttriangle':
+                    shapeType = 'triangle';
+                    break;
+                case 'rect':
+                case 'rectangle':
+                case 'roundrect':
+                default:
+                    shapeType = 'rectangle';
+                    break;
+            }
+        } else {
+            // Fallback to name-based detection
+            if (name.toLowerCase().includes('triangle') || elementType.toLowerCase().includes('triangle')) {
                 shapeType = 'triangle';
-                break;
-            default:
-                console.warn(`Unknown shape type: ${typeToCheck}, defaulting to rectangle`);
-                shapeType = 'rectangle'; // Default fallback
+            } else if (name.toLowerCase().includes('circle') || name.toLowerCase().includes('oval') || 
+                       elementType.toLowerCase().includes('circle') || elementType.toLowerCase().includes('oval')) {
+                shapeType = 'circle';
+            } else {
+                shapeType = 'rectangle';
+            }
+        }
+
+        // Extract fill color - based on the actual data structure from logs
+        let fillColor = '#ffffff';
+        if (elementData.fill) {
+            if (typeof elementData.fill === 'string') {
+                fillColor = elementData.fill;
+            } else if (elementData.fill.value) {
+                // From logs: "fill": { "type": "color", "value": "#FF0000" }
+                fillColor = elementData.fill.value;
+            } else if (elementData.fill.color) {
+                fillColor = elementData.fill.color;
+            }
         }
 
         return {
             ...baseProps,
             type: shapeType,
-            fillColor: elementData.fill || elementData.fillColor || elementData.backgroundColor || '#ffffff',
-            strokeColor: elementData.stroke || elementData.strokeColor || elementData.border || elementData.borderColor || '#000000',
-            strokeWidth: elementData.strokeWidth || elementData.borderWidth || 1,
+            fillColor: fillColor,
+            strokeColor: elementData.borderColor || '#000000',
+            strokeWidth: elementData.borderWidth || 0,
         } as Shape;
     }
 

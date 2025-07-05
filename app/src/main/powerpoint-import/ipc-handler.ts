@@ -1,6 +1,10 @@
-import { ipcMain, dialog } from 'electron';
-import { PowerPointImportService, ImportResult, ImportProgress } from './service';
+import { dialog, ipcMain } from 'electron';
 import { PresentationService } from '../presentation/service';
+import {
+    ImportProgress,
+    ImportResult,
+    PowerPointImportService,
+} from './service';
 
 export class PowerPointImportIPCHandler {
     private importService: PowerPointImportService;
@@ -42,19 +46,32 @@ export class PowerPointImportIPCHandler {
                 const filePath = result.filePaths[0];
 
                 // Set up progress callback
-                this.importService.setProgressCallback((progress: ImportProgress) => {
-                    event.sender.send('powerpoint-import:progress', progress);
-                });
+                this.importService.setProgressCallback(
+                    (progress: ImportProgress) => {
+                        event.sender.send(
+                            'powerpoint-import:progress',
+                            progress,
+                        );
+                    },
+                );
 
                 // Import the file
-                const importResult = await this.importService.importPowerPointFile(filePath);
-                
+                const importResult =
+                    await this.importService.importPowerPointFile(filePath);
+
                 // If import was successful and we have a presentation service, load the presentation
-                if (importResult.success && importResult.presentation && this.presentationService) {
-                    const loadedPresentation = this.presentationService.loadImportedPresentation(importResult.presentation);
-                    return { 
-                        success: true, 
-                        presentation: loadedPresentation 
+                if (
+                    importResult.success &&
+                    importResult.presentation &&
+                    this.presentationService
+                ) {
+                    const loadedPresentation =
+                        this.presentationService.loadImportedPresentation(
+                            importResult.presentation,
+                        );
+                    return {
+                        success: true,
+                        presentation: loadedPresentation,
                     };
                 }
 
@@ -63,40 +80,62 @@ export class PowerPointImportIPCHandler {
                 console.error('PowerPoint import error:', error);
                 return {
                     success: false,
-                    error: error instanceof Error ? error.message : 'Unknown error occurred',
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : 'Unknown error occurred',
                 };
             }
         });
 
         // Handler for importing from a specific file path
-        ipcMain.handle('powerpoint-import:import-file', async (event, filePath: string) => {
-            try {
-                // Set up progress callback
-                this.importService.setProgressCallback((progress: ImportProgress) => {
-                    event.sender.send('powerpoint-import:progress', progress);
-                });
+        ipcMain.handle(
+            'powerpoint-import:import-file',
+            async (event, filePath: string) => {
+                try {
+                    // Set up progress callback
+                    this.importService.setProgressCallback(
+                        (progress: ImportProgress) => {
+                            event.sender.send(
+                                'powerpoint-import:progress',
+                                progress,
+                            );
+                        },
+                    );
 
-                // Import the file
-                const importResult = await this.importService.importPowerPointFile(filePath);
-                
-                // If import was successful and we have a presentation service, load the presentation
-                if (importResult.success && importResult.presentation && this.presentationService) {
-                    const loadedPresentation = this.presentationService.loadImportedPresentation(importResult.presentation);
-                    return { 
-                        success: true, 
-                        presentation: loadedPresentation 
+                    // Import the file
+                    const importResult =
+                        await this.importService.importPowerPointFile(filePath);
+
+                    // If import was successful and we have a presentation service, load the presentation
+                    if (
+                        importResult.success &&
+                        importResult.presentation &&
+                        this.presentationService
+                    ) {
+                        const loadedPresentation =
+                            this.presentationService.loadImportedPresentation(
+                                importResult.presentation,
+                            );
+                        return {
+                            success: true,
+                            presentation: loadedPresentation,
+                        };
+                    }
+
+                    return importResult;
+                } catch (error) {
+                    console.error('PowerPoint import error:', error);
+                    return {
+                        success: false,
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : 'Unknown error occurred',
                     };
                 }
-
-                return importResult;
-            } catch (error) {
-                console.error('PowerPoint import error:', error);
-                return {
-                    success: false,
-                    error: error instanceof Error ? error.message : 'Unknown error occurred',
-                };
-            }
-        });
+            },
+        );
     }
 
     // Method to cleanup handlers when needed

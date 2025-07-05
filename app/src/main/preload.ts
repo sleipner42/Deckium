@@ -337,7 +337,10 @@ const electronHandler = {
             return ipcRenderer.invoke('powerpoint-import:select-and-import');
         },
         importFile(filePath: string) {
-            return ipcRenderer.invoke('powerpoint-import:import-file', filePath);
+            return ipcRenderer.invoke(
+                'powerpoint-import:import-file',
+                filePath,
+            );
         },
     },
 
