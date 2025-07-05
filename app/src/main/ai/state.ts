@@ -65,7 +65,7 @@ export class AIState {
 
         const threadWithWelcome = this.addMessage(
             threadWithPrompt,
-            'Welcome to KeynoteAI Assistant. I can help you create and manage your presentation. Ask me to create slides, suggest content, or help with design.',
+            'Welcome to Deckium Assistant. I can help you create and manage your presentation. Ask me to create slides, suggest content, or help with design.',
             'assistant',
         );
 
