@@ -137,4 +137,5 @@ dist-ssr
 *.sw?
 db.sql
 
+untrackes/
 __pycache__/

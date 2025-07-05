@@ -256,6 +256,24 @@ export class PresentationService {
     }
 
     /**
+     * Load an imported presentation from PowerPoint or other formats
+     */
+    loadImportedPresentation(importedPresentation: Presentation): Presentation {
+        // Load the imported presentation into the state
+        const loadedPresentation =
+            this.state.loadPresentation(importedPresentation);
+        this.currentFilePath = null; // Imported presentations don't have a file path initially
+
+        // Notify the renderer process
+        this.eventBus.broadcastToWindows(
+            PresentationEventBus.events.LOADED,
+            loadedPresentation,
+        );
+
+        return loadedPresentation;
+    }
+
+    /**
      * Returns the current file path (if saved)
      */
     getCurrentFilePath(): string | null {
