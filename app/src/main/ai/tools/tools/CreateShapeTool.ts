@@ -25,6 +25,7 @@ export class CreateShapeTool extends BaseTool {
         strokeWidth:
             'The stroke/border width of the shape (optional, defaults to 2)',
         zIndex: 'The z-index of the element for stacking order (optional, defaults to 1)',
+        rotation: 'The rotation angle in degrees (optional, defaults to 0)',
     };
 
     protected async executeImpl(
@@ -43,6 +44,7 @@ export class CreateShapeTool extends BaseTool {
             strokeColor,
             strokeWidth,
             zIndex,
+            rotation,
         } = params;
 
         if (!slideId) {
@@ -95,6 +97,7 @@ export class CreateShapeTool extends BaseTool {
             strokeColor: strokeColor || '#000000',
             strokeWidth: Number(strokeWidth) || 2,
             zIndex: zIndex !== undefined ? Number(zIndex) : 1,
+            rotation: rotation !== undefined ? Number(rotation) : 0,
         });
 
         const updatedSlide = presentationService.addElement(slideId, element);

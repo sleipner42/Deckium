@@ -21,6 +21,7 @@ export class UpdateBarChartTool extends BaseTool {
         height: 'New height (optional)',
         barColor: 'New color for the bars (optional)',
         zIndex: 'The new z-index value (optional) - controls stacking order with higher values appearing on top',
+        rotation: 'The rotation angle in degrees (optional, defaults to 0)',
     };
 
     protected async executeImpl(
@@ -40,6 +41,7 @@ export class UpdateBarChartTool extends BaseTool {
             height,
             barColor,
             zIndex,
+            rotation,
         } = params;
 
         if (!elementId) {
@@ -107,6 +109,10 @@ export class UpdateBarChartTool extends BaseTool {
 
         if (zIndex !== undefined) {
             updates.zIndex = Number(zIndex);
+        }
+
+        if (rotation !== undefined) {
+            updates.rotation = Number(rotation);
         }
 
         // Process data updates

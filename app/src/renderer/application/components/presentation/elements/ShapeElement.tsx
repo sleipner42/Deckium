@@ -46,6 +46,7 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
         strokeWidth,
         style,
         zIndex,
+        rotation,
     } = element;
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -71,6 +72,8 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
         border: `${strokeWidth}px solid ${strokeColor}`,
         cursor: readOnly ? 'default' : isSelected ? 'move' : 'pointer',
         zIndex: zIndex || 1,
+        transform: rotation ? `rotate(${rotation}deg)` : undefined,
+        transformOrigin: 'center center',
         ...style,
         outline: isSelected ? '2px solid #0066ff' : 'none',
         outlineOffset: '2px',
@@ -265,10 +268,17 @@ export const ShapeElement: React.FC<ShapeElementProps> = ({
                 elementId={element.id}
                 position={position}
                 size={size}
+                rotation={rotation}
                 onResize={
                     onElementUpdate
                         ? (id, updates) => onElementUpdate(id, updates)
                         : () => {}
+                }
+                onRotate={
+                    onElementUpdate
+                        ? (id, newRotation) =>
+                              onElementUpdate(id, { rotation: newRotation })
+                        : undefined
                 }
                 minWidth={20}
                 minHeight={20}

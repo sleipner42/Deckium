@@ -549,6 +549,7 @@ export const TextElement: React.FC<TextElementProps> = ({
         borderRadius,
         verticalAlign,
         zIndex,
+        rotation,
     } = element;
     const textRef = useRef<HTMLDivElement>(null);
     const quillRef = useRef<Quill | null>(null);
@@ -1009,6 +1010,8 @@ export const TextElement: React.FC<TextElementProps> = ({
                 zIndex: zIndex || 1,
                 color: 'black',
                 fontSize: '16px',
+                transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                transformOrigin: 'center center',
             }}
             onDoubleClick={handleDoubleClick}
             onBlur={handleBlur}
@@ -1024,10 +1027,17 @@ export const TextElement: React.FC<TextElementProps> = ({
                 elementId={element.id}
                 position={position}
                 size={size}
+                rotation={rotation}
                 onResize={
                     onElementUpdate
                         ? (id, updates) => onElementUpdate(id, updates)
                         : () => {}
+                }
+                onRotate={
+                    onElementUpdate
+                        ? (id, newRotation) =>
+                              onElementUpdate(id, { rotation: newRotation })
+                        : undefined
                 }
                 minWidth={50}
                 minHeight={30}

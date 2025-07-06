@@ -19,6 +19,7 @@ export class CreateSVGImageTool extends BaseTool {
         width: 'The width of the element (optional, defaults to 200)',
         height: 'The height of the element (optional, defaults to 200)',
         zIndex: 'The z-index of the element for stacking order (optional, defaults to 1)',
+        rotation: 'The rotation angle in degrees (optional, defaults to 0)',
     };
 
     protected async executeImpl(
@@ -34,6 +35,7 @@ export class CreateSVGImageTool extends BaseTool {
             width,
             height,
             zIndex,
+            rotation,
         } = params;
 
         if (!slideId) {
@@ -103,6 +105,7 @@ export class CreateSVGImageTool extends BaseTool {
                 height: heightValue,
             },
             zIndex: zIndex !== undefined ? Number(zIndex) : 1,
+            rotation: Number(rotation) || 0,
         });
 
         const updatedSlide = presentationService.addElement(slideId, element);

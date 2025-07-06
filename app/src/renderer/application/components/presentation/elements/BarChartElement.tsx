@@ -36,6 +36,7 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
         yAxisLabel,
         style,
         barColor,
+        rotation,
     } = element;
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -128,6 +129,8 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
                     borderRadius: '4px',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                     overflow: 'hidden',
+                    transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                    transformOrigin: 'center center',
                     ...style,
                 }}
                 onClick={handleClick}
@@ -189,10 +192,17 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
                     elementId={element.id}
                     position={position}
                     size={size}
+                    rotation={rotation}
                     onResize={
                         onElementUpdate
                             ? (id, updates) => onElementUpdate(id, updates)
                             : () => {}
+                    }
+                    onRotate={
+                        onElementUpdate
+                            ? (id, newRotation) =>
+                                  onElementUpdate(id, { rotation: newRotation })
+                            : undefined
                     }
                     minWidth={200}
                     minHeight={150}

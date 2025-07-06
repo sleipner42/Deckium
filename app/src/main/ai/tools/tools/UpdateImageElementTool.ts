@@ -17,6 +17,7 @@ export class UpdateImageElementTool extends BaseTool {
         width: 'New width (optional)',
         height: 'New height (optional)',
         zIndex: 'The new z-index value (optional) - controls stacking order with higher values appearing on top',
+        rotation: 'The rotation angle in degrees (optional, defaults to 0)',
     };
 
     optionalParams = {
@@ -59,7 +60,8 @@ export class UpdateImageElementTool extends BaseTool {
                 y === undefined &&
                 width === undefined &&
                 height === undefined &&
-                zIndex === undefined
+                zIndex === undefined &&
+                params.rotation === undefined
             ) {
                 return {
                     success: false,
@@ -201,6 +203,11 @@ export class UpdateImageElementTool extends BaseTool {
             // Update z-index if provided
             if (zIndex !== undefined) {
                 updates.zIndex = Number(zIndex);
+            }
+
+            // Update rotation if provided
+            if (params.rotation !== undefined) {
+                updates.rotation = Number(params.rotation);
             }
 
             // Update the element first

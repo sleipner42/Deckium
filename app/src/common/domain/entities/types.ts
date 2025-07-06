@@ -35,6 +35,7 @@ export interface Shape {
     strokeColor: string;
     strokeWidth: number;
     zIndex?: number;
+    rotation?: number; // Rotation in degrees (0-360)
     style?: ElementStyle;
 }
 
@@ -53,6 +54,7 @@ export interface BarChart {
     xAxisLabel: string;
     yAxisLabel: string;
     zIndex?: number;
+    rotation?: number; // Rotation in degrees (0-360)
     style?: ElementStyle;
     barColor?: string;
 }
@@ -64,6 +66,7 @@ export interface TextBox {
     size: Size;
     content: string; // HTML content
     zIndex?: number;
+    rotation?: number; // Rotation in degrees (0-360)
     backgroundColor?: string;
     borderRadius?: number;
     verticalAlign?: 'top' | 'middle' | 'bottom';
@@ -77,6 +80,7 @@ export interface Plot {
     data: any; // This will be more specific based on plot type
     plotType: 'line' | 'bar' | 'pie';
     zIndex?: number;
+    rotation?: number; // Rotation in degrees (0-360)
     style?: ElementStyle;
 }
 
@@ -87,6 +91,7 @@ export interface Image {
     size: Size;
     content: string; // URL or base64
     zIndex?: number;
+    rotation?: number; // Rotation in degrees (0-360)
     style?: ElementStyle;
 }
 

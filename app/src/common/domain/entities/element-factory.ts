@@ -9,6 +9,7 @@ export function createTextBox(options: {
     backgroundColor?: string;
     verticalAlign?: 'top' | 'middle' | 'bottom';
     zIndex?: number;
+    rotation?: number;
 }): ContentElement {
     return {
         id: uuidv4(),
@@ -20,6 +21,7 @@ export function createTextBox(options: {
         backgroundColor: options.backgroundColor || 'transparent',
         verticalAlign: options.verticalAlign || 'top',
         zIndex: options.zIndex || 1,
+        rotation: options.rotation || 0,
     };
 }
 
@@ -31,6 +33,7 @@ export function createShape(options: {
     strokeColor: string;
     strokeWidth: number;
     zIndex?: number;
+    rotation?: number;
 }): ContentElement {
     return {
         id: uuidv4(),
@@ -41,6 +44,7 @@ export function createShape(options: {
         strokeColor: options.strokeColor,
         strokeWidth: options.strokeWidth,
         zIndex: options.zIndex || 1,
+        rotation: options.rotation || 0,
     };
 }
 
@@ -53,6 +57,7 @@ export function createBarChart(options: {
     yAxisLabel: string;
     barColor?: string;
     zIndex?: number;
+    rotation?: number;
 }): ContentElement {
     return {
         id: uuidv4(),
@@ -65,6 +70,7 @@ export function createBarChart(options: {
         yAxisLabel: options.yAxisLabel,
         barColor: options.barColor || '#000000',
         zIndex: options.zIndex || 1,
+        rotation: options.rotation || 0,
     };
 }
 
@@ -73,6 +79,7 @@ export function createImage(options: {
     position: { x: number; y: number };
     size: { width: number; height: number };
     zIndex?: number;
+    rotation?: number;
 }): ContentElement {
     return {
         id: uuidv4(),
@@ -81,6 +88,7 @@ export function createImage(options: {
         size: options.size,
         content: options.content,
         zIndex: options.zIndex || 1,
+        rotation: options.rotation || 0,
     };
 }
 

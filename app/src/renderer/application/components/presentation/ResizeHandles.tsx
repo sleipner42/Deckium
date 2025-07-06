@@ -6,6 +6,7 @@ interface ResizeHandlesProps {
     elementId: string;
     position: { x: number; y: number };
     size: { width: number; height: number };
+    rotation?: number;
     onResize: (
         elementId: string,
         updates: {
@@ -13,6 +14,7 @@ interface ResizeHandlesProps {
             size?: { width: number; height: number };
         },
     ) => void;
+    onRotate?: (elementId: string, rotation: number) => void;
     minWidth?: number;
     minHeight?: number;
     maxWidth?: number;
@@ -27,7 +29,9 @@ export const ResizeHandles: React.FC<ResizeHandlesProps> = ({
     elementId,
     position,
     size,
+    rotation = 0,
     onResize,
+    onRotate,
     minWidth = 20,
     minHeight = 20,
     maxWidth = 2000,
@@ -42,6 +46,9 @@ export const ResizeHandles: React.FC<ResizeHandlesProps> = ({
         x: 0,
         y: 0,
     });
+    const [isRotating, setIsRotating] = useState(false);
+    const [startRotation, setStartRotation] = useState(0);
+    const [rotationCenter, setRotationCenter] = useState({ x: 0, y: 0 });
 
     const handleMouseDown =
         (direction: ResizeDirection) => (e: React.MouseEvent) => {
@@ -55,10 +62,50 @@ export const ResizeHandles: React.FC<ResizeHandlesProps> = ({
             setStartElementPosition({ x: position.x, y: position.y });
         };
 
+    const handleRotationMouseDown = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        setIsRotating(true);
+        setStartRotation(rotation);
+
+        // Calculate center of element
+        const centerX = position.x + size.width / 2;
+        const centerY = position.y + size.height / 2;
+        setRotationCenter({ x: centerX, y: centerY });
+    };
+
     useEffect(() => {
-        if (!isResizing || !resizeDirection) return;
+        if (!isResizing && !isRotating) return;
+        if (isResizing && !resizeDirection) return;
 
         const handleMouseMove = (e: MouseEvent) => {
+            if (isRotating && onRotate) {
+                // Calculate rotation based on mouse position relative to element center
+                const mouseX = e.clientX;
+                const mouseY = e.clientY;
+
+                // Calculate angle from center to mouse position
+                const angle =
+                    Math.atan2(
+                        mouseY - rotationCenter.y,
+                        mouseX - rotationCenter.x,
+                    ) *
+                    (180 / Math.PI);
+
+                // Normalize angle to 0-360 degrees
+                let newRotation = (angle + 90) % 360;
+                if (newRotation < 0) newRotation += 360;
+
+                // Snap to 15-degree increments when Shift is held
+                if (e.shiftKey) {
+                    newRotation = Math.round(newRotation / 15) * 15;
+                }
+
+                onRotate(elementId, newRotation);
+                return;
+            }
+
             const deltaX = e.clientX - startPosition.x;
             const deltaY = e.clientY - startPosition.y;
 
@@ -156,6 +203,7 @@ export const ResizeHandles: React.FC<ResizeHandlesProps> = ({
 
         const handleMouseUp = () => {
             setIsResizing(false);
+            setIsRotating(false);
             setResizeDirection(null);
         };
 
@@ -168,12 +216,16 @@ export const ResizeHandles: React.FC<ResizeHandlesProps> = ({
         };
     }, [
         isResizing,
+        isRotating,
         resizeDirection,
         startPosition,
         startSize,
         startElementPosition,
         elementId,
         onResize,
+        onRotate,
+        rotation,
+        rotationCenter,
         minWidth,
         minHeight,
         maxWidth,
@@ -309,6 +361,34 @@ export const ResizeHandles: React.FC<ResizeHandlesProps> = ({
                 }}
                 onMouseDown={handleMouseDown('e')}
             />
+
+            {/* Rotation handle */}
+            {onRotate && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: '-25px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: '16px',
+                        height: '16px',
+                        backgroundColor: '#00aa00',
+                        border: '1px solid #ffffff',
+                        borderRadius: '50%',
+                        cursor: 'grab',
+                        zIndex: 1001,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '10px',
+                        color: 'white',
+                    }}
+                    onMouseDown={handleRotationMouseDown}
+                    title="Drag to rotate (hold Shift to snap to 15° increments)"
+                >
+                    ↻
+                </div>
+            )}
         </>
     );
 };

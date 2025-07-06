@@ -37,7 +37,7 @@ export const ImageElement: React.FC<ImageElementProps> = ({
     slideElements = [],
     readOnly = false,
 }) => {
-    const { position, size, content, style, zIndex } = element;
+    const { position, size, content, style, zIndex, rotation } = element;
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [hasDragged, setHasDragged] = useState(false);
@@ -168,6 +168,8 @@ export const ImageElement: React.FC<ImageElementProps> = ({
                 outline: isSelected ? '2px solid #0066ff' : 'none',
                 outlineOffset: '2px',
                 zIndex: zIndex || 1,
+                transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                transformOrigin: 'center center',
             }}
             onClick={handleClick}
             onMouseDown={handleMouseDown}
@@ -190,10 +192,17 @@ export const ImageElement: React.FC<ImageElementProps> = ({
                 elementId={element.id}
                 position={position}
                 size={size}
+                rotation={rotation}
                 onResize={
                     onElementUpdate
                         ? (id, updates) => onElementUpdate(id, updates)
                         : () => {}
+                }
+                onRotate={
+                    onElementUpdate
+                        ? (id, newRotation) =>
+                              onElementUpdate(id, { rotation: newRotation })
+                        : undefined
                 }
                 minWidth={20}
                 minHeight={20}

@@ -49,6 +49,7 @@ export class UpdateTextElementTool extends BaseTool {
             'The new background color (optional). Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
         verticalAlign: 'The new vertical alignment of the element (optional)',
         zIndex: 'The new z-index value (optional) - controls stacking order with higher values appearing on top',
+        rotation: 'The rotation angle in degrees (optional, defaults to 0)',
     };
 
     protected async executeImpl(
@@ -84,7 +85,8 @@ export class UpdateTextElementTool extends BaseTool {
             borderRadius === undefined &&
             backgroundColor === undefined &&
             verticalAlign === undefined &&
-            params.zIndex === undefined
+            params.zIndex === undefined &&
+            params.rotation === undefined
         ) {
             return {
                 success: false,
@@ -124,6 +126,8 @@ export class UpdateTextElementTool extends BaseTool {
             updates.backgroundColor = backgroundColor;
         if (verticalAlign !== undefined) updates.verticalAlign = verticalAlign;
         if (params.zIndex !== undefined) updates.zIndex = Number(params.zIndex);
+        if (params.rotation !== undefined)
+            updates.rotation = Number(params.rotation);
 
         if (x !== undefined || y !== undefined) {
             let xPos = x !== undefined ? Number(x) : targetElement.position.x;

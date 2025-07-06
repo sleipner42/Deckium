@@ -51,6 +51,7 @@ export class AddTextElementTool extends BaseTool {
         verticalAlign:
             'The vertical alignment of the element (optional, defaults to top), choose from top, middle, bottom',
         zIndex: 'The z-index of the element (optional, defaults to 1) - controls stacking order with higher values appearing on top',
+        rotation: 'The rotation angle in degrees (optional, defaults to 0)',
     };
 
     protected async executeImpl(
@@ -66,6 +67,7 @@ export class AddTextElementTool extends BaseTool {
             borderRadius,
             backgroundColor,
             verticalAlign,
+            rotation,
         } = params;
 
         if (!slideId) {
@@ -113,6 +115,7 @@ export class AddTextElementTool extends BaseTool {
             backgroundColor: backgroundColor || 'transparent',
             verticalAlign: verticalAlign || 'top',
             zIndex,
+            rotation: Number(rotation) || 0,
         });
 
         const updatedSlide = presentationService.addElement(slideId, element);
