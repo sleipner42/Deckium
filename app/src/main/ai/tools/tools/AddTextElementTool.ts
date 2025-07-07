@@ -2,6 +2,7 @@ import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createTextBox } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { DEFAULT_TEXT_FONT_SIZE } from '../../../../common/config/typography';
 
 export class AddTextElementTool extends BaseTool {
     name = 'addTextElement';
@@ -30,7 +31,7 @@ export class AddTextElementTool extends BaseTool {
             "- Right: Add class='ql-align-right' to any element\n" +
             "- Example: <p class='ql-align-center'>Centered paragraph</p>\n\n" +
             'INLINE STYLING:\n' +
-            "- Font size: <span style='font-size: 24px'>Large text</span> (default is 16px)\n" +
+            `- Font size: <span style='font-size: 24px'>Large text</span> (default is ${DEFAULT_TEXT_FONT_SIZE})\n` +
             "- Font family: <span style='font-family: Arial'>Arial text</span>\n" +
             "- Text color: <span style='color: #ff0000'>Red text</span>\n" +
             "- Combined: <span style='font-size: 18px; color: blue; font-family: Georgia'>Styled text</span>\n\n" +

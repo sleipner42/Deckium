@@ -1,11 +1,16 @@
 /**
- * Typography configuration for consistent header font sizes across the application
+ * Typography configuration for consistent font sizes across the application
  */
 export const HEADER_FONT_SIZES = {
     h1: '64px', // For slide titles
     h2: '36px', // For section headers
     h3: '28px', // For subsection headers
 } as const;
+
+/**
+ * Default font size for text elements
+ */
+export const DEFAULT_TEXT_FONT_SIZE = '20px';
 
 /**
  * Get font size for a specific header level

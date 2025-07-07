@@ -6,7 +6,7 @@ import type {
     ContentElement,
     TextBox,
 } from '../../../../../common/domain/entities/types';
-import { HEADER_FONT_SIZES } from '../../../../../common/config/typography';
+import { HEADER_FONT_SIZES, DEFAULT_TEXT_FONT_SIZE } from '../../../../../common/config/typography';
 import { useTextEditing } from '../../../context/TextEditingContext';
 import { ResizeHandles } from '../ResizeHandles';
 import 'katex/dist/katex.min.css';
@@ -1009,7 +1009,7 @@ export const TextElement: React.FC<TextElementProps> = ({
                         : undefined,
                 zIndex: zIndex || 1,
                 color: 'black',
-                fontSize: '16px',
+                fontSize: DEFAULT_TEXT_FONT_SIZE,
             }}
             onDoubleClick={handleDoubleClick}
             onBlur={handleBlur}
