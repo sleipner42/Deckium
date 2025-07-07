@@ -6,6 +6,7 @@ import type {
     ContentElement,
     TextBox,
 } from '../../../../../common/domain/entities/types';
+import { HEADER_FONT_SIZES } from '../../../../../common/config/typography';
 import { useTextEditing } from '../../../context/TextEditingContext';
 import { ResizeHandles } from '../ResizeHandles';
 import 'katex/dist/katex.min.css';
@@ -917,17 +918,17 @@ export const TextElement: React.FC<TextElementProps> = ({
                     fontSize: 'inherit !important',
                     '& ol': { paddingLeft: '0', fontSize: 'inherit' },
                     '& h1': {
-                        fontSize: '64px !important',
+                        fontSize: `${HEADER_FONT_SIZES.h1} !important`,
                         fontWeight: 'bold !important',
                         margin: '0 !important',
                     },
                     '& h2': {
-                        fontSize: '36px !important',
+                        fontSize: `${HEADER_FONT_SIZES.h2} !important`,
                         fontWeight: 'bold !important',
                         margin: '0 !important',
                     },
                     '& h3': {
-                        fontSize: '28px !important',
+                        fontSize: `${HEADER_FONT_SIZES.h3} !important`,
                         fontWeight: 'bold !important',
                         margin: '0 !important',
                     },

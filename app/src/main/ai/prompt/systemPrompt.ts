@@ -1,5 +1,9 @@
 import type { Presentation } from '../../../common/domain/entities/types';
 import { ToolsService } from '../tools/builtInTools';
+import {
+    HEADER_FONT_SIZES,
+    HEADER_DESCRIPTIONS,
+} from '../../../common/config/typography';
 
 export function getDeveloperPrompt(presentation: Presentation): string {
     const tools = ToolsService.getBuiltInTools();
@@ -46,10 +50,14 @@ ${tools
 - **Content Structure**: Place text/bullets on left side, graphics/charts on right side
 - **Alignment Priority**: Proper alignment is critical - use alignment tools frequently
 - **Visual Hierarchy**: Use titles, proper spacing, and z-index for clear information flow
-- **Title Standards**: Nearly all slides should have a title using H1 text formatting, left-aligned for best practice
+- **Title Standards**: Nearly all slides should have a title using H2 text formatting, left-aligned for best practice
 - **Content Density**: For information slides (not title slides, mostly first slide of a presentation), avoid excessive whitespace - fill the slide with meaningful content
 - **Bottom Bar Strategy**: Consider adding a bottom bar with a key point or takeaway message for enhanced slide impact
 - **Style**: The style should be more of VC / Startup / Tech, than 2000s traditional investment banking.
+- **HEADING SIZE RULES**: Header definitions and use cases:
+  - H1 headings: ${HEADER_FONT_SIZES.h1} (${HEADER_DESCRIPTIONS.h1})
+  - H2 headings: ${HEADER_FONT_SIZES.h2} (${HEADER_DESCRIPTIONS.h2})
+  - H3 headings: ${HEADER_FONT_SIZES.h3} (${HEADER_DESCRIPTIONS.h3})
 
 ### Layout and Positioning
 - **Margin Management**: Ensure adequate margins, especially for titles (top margin) and between elements
