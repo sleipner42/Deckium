@@ -13,6 +13,15 @@ export const HEADER_FONT_SIZES = {
 export const DEFAULT_TEXT_FONT_SIZE = '20px';
 
 /**
+ * Line spacing configuration for headers
+ */
+export const HEADER_LINE_SPACING = {
+    h1: '0.5em', // Space after H1 headers
+    h2: '0.5em', // Space after H2 headers
+    h3: '0.5em', // Space after H3 headers
+} as const;
+
+/**
  * Get font size for a specific header level
  */
 export function getHeaderFontSize(level: 'h1' | 'h2' | 'h3'): string {
