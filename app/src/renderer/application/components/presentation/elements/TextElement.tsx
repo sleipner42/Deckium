@@ -870,6 +870,13 @@ export const TextElement: React.FC<TextElementProps> = ({
             setPreventBlur(false);
             onStopEditing(quillRef.current.root.innerHTML);
         }
+        
+        // When editing text, allow normal copy/paste operations and prevent element-level copying
+        if (isEditing && ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.key === 'x'))) {
+            // Stop propagation to prevent the global keyboard handler from interfering
+            e.stopPropagation();
+            // Allow default behavior for text operations within the editor
+        }
     };
 
     const handleClick = (e: React.MouseEvent) => {
