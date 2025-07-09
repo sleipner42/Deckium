@@ -56,9 +56,9 @@ ${tools
 - **Bottom Bar Strategy**: Consider adding a bottom bar with a key point or takeaway message for enhanced slide impact
 - **Style**: The style should be more of VC / Startup / Tech, than 2000s traditional investment banking.
 - **HEADING SIZE RULES**: Header definitions and use cases:
-  - H1 headings: bold, font size: ${HEADER_FONT_SIZES.h1}, line spacing: ${HEADER_LINE_SPACING.h1}, (${HEADER_DESCRIPTIONS.h1})
-  - H2 headings: bold, font size: ${HEADER_FONT_SIZES.h2}, line spacing: ${HEADER_LINE_SPACING.h2}, (${HEADER_DESCRIPTIONS.h2})
-  - H3 headings: bold, font size: ${HEADER_FONT_SIZES.h3}, line spacing: ${HEADER_LINE_SPACING.h3}, (${HEADER_DESCRIPTIONS.h3})
+  - H1 headings: bold, font size: ${HEADER_FONT_SIZES.h1}, line spacing: ${HEADER_LINE_SPACING.h1}, - ${HEADER_DESCRIPTIONS.h1}
+  - H2 headings: bold, font size: ${HEADER_FONT_SIZES.h2}, line spacing: ${HEADER_LINE_SPACING.h2}, - ${HEADER_DESCRIPTIONS.h2}
+  - H3 headings: bold, font size: ${HEADER_FONT_SIZES.h3}, line spacing: ${HEADER_LINE_SPACING.h3}, - ${HEADER_DESCRIPTIONS.h3}
 
 ### Layout and Positioning
 - **Margin Management**: Ensure adequate margins, especially for titles (top margin) and between elements

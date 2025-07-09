@@ -1,4 +1,7 @@
-import { DEFAULT_TEXT_FONT_SIZE } from '../../../../common/config/typography';
+import {
+    DEFAULT_TEXT_FONT_SIZE,
+    HEADER_FONT_SIZES,
+} from '../../../../common/config/typography';
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createTextBox } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
@@ -15,7 +18,7 @@ export class AddTextElementTool extends BaseTool {
             'The text content to display as HTML. Supported formatting options:\n\n' +
             'STRUCTURE:\n' +
             '- <p>Regular paragraph text</p>\n' +
-            '- <h1>Large heading (32px)</h1>, <h2>Medium heading (24px)</h2>, <h3>Small heading (20px)</h3>\n' +
+            `- <h1>Large heading ${HEADER_FONT_SIZES.h1}</h1>, <h2>Medium heading ${HEADER_FONT_SIZES.h2}</h2>, <h3>Small heading ${HEADER_FONT_SIZES.h3}</h3>\n` +
             '- <br> for line breaks\n\n' +
             'TEXT STYLING:\n' +
             '- <strong>Bold text</strong> or <b>Bold text</b>\n' +
