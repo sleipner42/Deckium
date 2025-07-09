@@ -658,10 +658,22 @@ export class PowerPointExportService {
         );
 
         // Protect empty paragraphs between lists - these should become proper spacing
-        processed = processed.replace(/<\/ol>\s*<p[^>]*>\s*<br\s*\/?>\s*<\/p>\s*<ol/g, '</ol>|||INTENTIONAL_EMPTY_LINE|||<ol');
-        processed = processed.replace(/<\/ul>\s*<p[^>]*>\s*<br\s*\/?>\s*<\/p>\s*<ul/g, '</ul>|||INTENTIONAL_EMPTY_LINE|||<ul');
-        processed = processed.replace(/<\/ol>\s*<p[^>]*>\s*<br\s*\/?>\s*<\/p>\s*<ul/g, '</ol>|||INTENTIONAL_EMPTY_LINE|||<ul');
-        processed = processed.replace(/<\/ul>\s*<p[^>]*>\s*<br\s*\/?>\s*<\/p>\s*<ol/g, '</ul>|||INTENTIONAL_EMPTY_LINE|||<ol');
+        processed = processed.replace(
+            /<\/ol>\s*<p[^>]*>\s*<br\s*\/?>\s*<\/p>\s*<ol/g,
+            '</ol>|||INTENTIONAL_EMPTY_LINE|||<ol',
+        );
+        processed = processed.replace(
+            /<\/ul>\s*<p[^>]*>\s*<br\s*\/?>\s*<\/p>\s*<ul/g,
+            '</ul>|||INTENTIONAL_EMPTY_LINE|||<ul',
+        );
+        processed = processed.replace(
+            /<\/ol>\s*<p[^>]*>\s*<br\s*\/?>\s*<\/p>\s*<ul/g,
+            '</ol>|||INTENTIONAL_EMPTY_LINE|||<ul',
+        );
+        processed = processed.replace(
+            /<\/ul>\s*<p[^>]*>\s*<br\s*\/?>\s*<\/p>\s*<ol/g,
+            '</ul>|||INTENTIONAL_EMPTY_LINE|||<ol',
+        );
 
         // Convert Quill's data-list attributes to plain text with manual bullets/numbers
         // html2pptxgenjs seems to have issues with lists, so we'll format them manually
@@ -699,7 +711,7 @@ export class PowerPointExportService {
                                 /<span class="ql-ui"[^>]*><\/span>/g,
                                 '',
                             );
-                            
+
                             // Add manual bullet or number
                             if (hasBulletItems && !hasOrderedItems) {
                                 return `<p>• ${text.trim()}</p>`;
@@ -707,7 +719,9 @@ export class PowerPointExportService {
                                 return `<p>${index + 1}. ${text.trim()}</p>`;
                             } else {
                                 // Mixed or default case - use index to determine
-                                const isOrdered = item.includes('data-list="ordered"');
+                                const isOrdered = item.includes(
+                                    'data-list="ordered"',
+                                );
                                 if (isOrdered) {
                                     return `<p>${index + 1}. ${text.trim()}</p>`;
                                 } else {
@@ -720,7 +734,7 @@ export class PowerPointExportService {
                     .filter((item) => item);
 
                 // Return as a single paragraph with line breaks instead of multiple paragraphs
-                return `<p>${listItems.map(item => item.replace(/<\/?p>/g, '')).join('<br>')}</p>`;
+                return `<p>${listItems.map((item) => item.replace(/<\/?p>/g, '')).join('<br>')}</p>`;
             },
         );
 
@@ -733,48 +747,57 @@ export class PowerPointExportService {
         );
 
         // First, protect intentional empty lines (p with just br) by replacing with placeholder
-        processed = processed.replace(/<p[^>]*>\s*<br\s*\/?>\s*<\/p>/g, '|||INTENTIONAL_EMPTY_LINE|||');
-        
+        processed = processed.replace(
+            /<p[^>]*>\s*<br\s*\/?>\s*<\/p>/g,
+            '|||INTENTIONAL_EMPTY_LINE|||',
+        );
+
         // Clean up any remaining truly empty paragraphs (no content at all)
         processed = processed.replace(/<p[^>]*>\s*<\/p>/g, '');
-        
+
         // Clean up multiple consecutive line breaks
         processed = processed.replace(/(<br\s*\/?>){2,}/g, '<br>');
-        
+
         // Remove leading/trailing breaks from paragraphs
         processed = processed.replace(/<p([^>]*)>\s*<br\s*\/?>/g, '<p$1>');
         processed = processed.replace(/<br\s*\/?>\s*<\/p>/g, '</p>');
-        
+
         // Remove leading and trailing empty content
         processed = processed.replace(/^(\s*<p[^>]*>\s*<\/p>\s*)+/, '');
         processed = processed.replace(/(\s*<p[^>]*>\s*<\/p>\s*)+$/, '');
         processed = processed.replace(/^(\s*<br\s*\/?>)+/, '');
         processed = processed.replace(/(\s*<br\s*\/?>)+$/, '');
-        
+
         // Remove any leading/trailing whitespace between tags
         processed = processed.trim();
-        
+
         // Final step: Convert all content to a single paragraph to eliminate spacing issues
         // First, let's add debug logging to see what we're working with
         console.log('Before empty line processing:', processed);
-        
+
         // The intentional empty lines are already protected as |||INTENTIONAL_EMPTY_LINE|||
         // No need to search for <p><br></p> patterns here since they're already handled
         console.log('After empty line replacement:', processed);
-        
+
         // Replace paragraph boundaries with line breaks, but handle placeholders properly
-        processed = processed.replace(/<\/p>\s*\|\|\|INTENTIONAL_EMPTY_LINE\|\|\|\s*<p[^>]*>/g, '<br>&nbsp;<br>');
+        processed = processed.replace(
+            /<\/p>\s*\|\|\|INTENTIONAL_EMPTY_LINE\|\|\|\s*<p[^>]*>/g,
+            '<br>&nbsp;<br>',
+        );
         processed = processed.replace(/<\/p>\s*<p[^>]*>/g, '<br>');
         console.log('After paragraph boundary replacement:', processed);
-        
+
         // Handle remaining placeholders that weren't between paragraphs
-        processed = processed.replace(/\|\|\|INTENTIONAL_EMPTY_LINE\|\|\|/g, '<br>&nbsp;<br>');
+        processed = processed.replace(
+            /\|\|\|INTENTIONAL_EMPTY_LINE\|\|\|/g,
+            '<br>&nbsp;<br>',
+        );
         console.log('After standalone placeholder conversion:', processed);
-        
+
         // Remove any remaining opening/closing paragraph tags and wrap everything in one paragraph
         processed = processed.replace(/^<p[^>]*>/, '').replace(/<\/p>$/, '');
         console.log('After tag removal:', processed);
-        
+
         processed = `<p>${processed}</p>`;
 
         console.log('Preprocessed Quill HTML:', {
@@ -782,12 +805,14 @@ export class PowerPointExportService {
             processed: processed,
             hadFontSizeConversion:
                 html !== processed && html.includes('font-size'),
-            originalListCount: (html.match(/<ol[^>]*>/g) || []).length + (html.match(/<ul[^>]*>/g) || []).length,
+            originalListCount:
+                (html.match(/<ol[^>]*>/g) || []).length +
+                (html.match(/<ul[^>]*>/g) || []).length,
             processedParagraphs: (processed.match(/<p[^>]*>/g) || []).length,
             startsWithParagraph: processed.startsWith('<p'),
             endsWithParagraph: processed.endsWith('</p>'),
             originalLength: html.length,
-            processedLength: processed.length
+            processedLength: processed.length,
         });
         return processed;
     }
