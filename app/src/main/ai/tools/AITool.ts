@@ -12,6 +12,7 @@ export abstract class AITool {
     abstract description: string;
 
     requiredParams: Record<string, string> = {};
+    optionalParams: Record<string, string> = {};
 
     constructor() {
         this.id = uuidv4();

@@ -24,6 +24,13 @@ ${tools
                       .join('')
                 : 'None'
         }
+- Optional Parameters: ${
+            tool.optionalParams
+                ? Object.entries(tool.optionalParams)
+                      .map(([param, desc]) => `\n  • ${param}: ${desc}`)
+                      .join('')
+                : 'None'
+        }
 - Usage: { "tool": "${tool.name}", "params": { /* required parameters */ } }`;
     })
     .join('\n')}
