@@ -657,96 +657,64 @@ export class PowerPointExportService {
             },
         );
 
-        // Convert Quill's data-list attributes to standard HTML lists
-        // Handle ordered lists
+        // Convert Quill's data-list attributes to plain text with manual bullets/numbers
+        // html2pptxgenjs seems to have issues with lists, so we'll format them manually
         processed = processed.replace(
-            /<ol[^>]*>(.*?)<\/ol>/gs,
-            (match, content) => {
-                // Check if items have data-list="ordered" or if it's in an ol tag
+            /<(ol|ul)[^>]*>(.*?)<\/\1>/gs,
+            (match, tagName, content) => {
                 const items = content.match(/<li[^>]*>(.*?)<\/li>/gs);
-                if (items) {
-                    const listItems = items
-                        .map((item) => {
-                            const textMatch =
-                                item.match(/<li[^>]*>(.*?)<\/li>/s);
-                            if (textMatch) {
-                                let text = textMatch[1];
-                                // Remove ql-ui spans
-                                text = text.replace(
-                                    /<span class="ql-ui"[^>]*><\/span>/g,
-                                    '',
-                                );
-                                return `<li>${text.trim()}</li>`;
-                            }
-                            return '';
-                        })
-                        .filter((item) => item);
+                if (!items) return match;
 
-                    return `<ol>${listItems.join('')}</ol>`;
-                }
-                return match;
-            },
-        );
+                // Check what type of list this should be based on data-list attributes
+                const hasOrderedItems = items.some((item) =>
+                    item.includes('data-list="ordered"'),
+                );
+                const hasBulletItems = items.some((item) =>
+                    item.includes('data-list="bullet"'),
+                );
 
-        // Handle unordered lists (bullets)
-        processed = processed.replace(
-            /<ul[^>]*>(.*?)<\/ul>/gs,
-            (match, content) => {
-                const items = content.match(/<li[^>]*>(.*?)<\/li>/gs);
-                if (items) {
-                    const listItems = items
-                        .map((item) => {
-                            const textMatch =
-                                item.match(/<li[^>]*>(.*?)<\/li>/s);
-                            if (textMatch) {
-                                let text = textMatch[1];
-                                // Remove ql-ui spans
-                                text = text.replace(
-                                    /<span class="ql-ui"[^>]*><\/span>/g,
-                                    '',
-                                );
-                                return `<li>${text.trim()}</li>`;
-                            }
-                            return '';
-                        })
-                        .filter((item) => item);
+                console.log(
+                    `Processing ${tagName} with ${items.length} items:`,
+                    {
+                        hasOrderedItems,
+                        hasBulletItems,
+                        firstItem: items[0],
+                    },
+                );
 
-                    return `<ul>${listItems.join('')}</ul>`;
-                }
-                return match;
-            },
-        );
-
-        // Handle cases where Quill puts bullet lists in ol tags with data-list="bullet"
-        processed = processed.replace(
-            /<ol[^>]*>(.*?)<\/ol>/gs,
-            (match, content) => {
-                if (content.includes('data-list="bullet"')) {
-                    // Convert to ul
-                    const items = content.match(
-                        /<li[^>]*data-list="bullet"[^>]*>(.*?)<\/li>/gs,
-                    );
-                    if (items) {
-                        const listItems = items
-                            .map((item) => {
-                                const textMatch =
-                                    item.match(/<li[^>]*>(.*?)<\/li>/s);
-                                if (textMatch) {
-                                    let text = textMatch[1];
-                                    text = text.replace(
-                                        /<span class="ql-ui"[^>]*><\/span>/g,
-                                        '',
-                                    );
-                                    return `<li>${text.trim()}</li>`;
+                // Process the list items and add manual numbering/bullets
+                const listItems = items
+                    .map((item, index) => {
+                        const textMatch = item.match(/<li[^>]*>(.*?)<\/li>/s);
+                        if (textMatch) {
+                            let text = textMatch[1];
+                            // Remove ql-ui spans
+                            text = text.replace(
+                                /<span class="ql-ui"[^>]*><\/span>/g,
+                                '',
+                            );
+                            
+                            // Add manual bullet or number
+                            if (hasBulletItems && !hasOrderedItems) {
+                                return `<p>• ${text.trim()}</p>`;
+                            } else if (hasOrderedItems && !hasBulletItems) {
+                                return `<p>${index + 1}. ${text.trim()}</p>`;
+                            } else {
+                                // Mixed or default case - use index to determine
+                                const isOrdered = item.includes('data-list="ordered"');
+                                if (isOrdered) {
+                                    return `<p>${index + 1}. ${text.trim()}</p>`;
+                                } else {
+                                    return `<p>• ${text.trim()}</p>`;
                                 }
-                                return '';
-                            })
-                            .filter((item) => item);
+                            }
+                        }
+                        return '';
+                    })
+                    .filter((item) => item);
 
-                        return `<ul>${listItems.join('')}</ul>`;
-                    }
-                }
-                return match;
+                // Return as a single paragraph with line breaks instead of multiple paragraphs
+                return `<p>${listItems.map(item => item.replace(/<\/?p>/g, '')).join('<br>')}</p>`;
             },
         );
 
