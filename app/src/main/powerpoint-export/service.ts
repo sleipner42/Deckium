@@ -647,6 +647,16 @@ export class PowerPointExportService {
         // Remove Quill UI elements that interfere with conversion
         processed = processed.replace(/<span class="ql-ui"[^>]*><\/span>/g, '');
 
+        // Convert pixel font sizes to points (1px ≈ 0.75pt)
+        processed = processed.replace(
+            /font-size:\s*(\d+)px/g,
+            (match, pixels) => {
+                const points = Math.round(parseInt(pixels) * 0.75);
+                console.log(`Converting font-size: ${pixels}px -> ${points}pt`);
+                return `font-size: ${points}pt`;
+            },
+        );
+
         // Convert Quill's data-list attributes to standard HTML lists
         // Handle ordered lists
         processed = processed.replace(
@@ -751,7 +761,12 @@ export class PowerPointExportService {
         // Clean up any remaining empty paragraphs
         processed = processed.replace(/<p[^>]*>\s*<\/p>/g, '');
 
-        console.log('Preprocessed Quill HTML:', { original: html, processed });
+        console.log('Preprocessed Quill HTML:', {
+            original: html,
+            processed: processed,
+            hadFontSizeConversion:
+                html !== processed && html.includes('font-size'),
+        });
         return processed;
     }
 
