@@ -1,8 +1,8 @@
+import { DEFAULT_TEXT_FONT_SIZE } from '../../../../common/config/typography';
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createTextBox } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
-import { DEFAULT_TEXT_FONT_SIZE } from '../../../../common/config/typography';
 
 export class AddTextElementTool extends BaseTool {
     name = 'addTextElement';

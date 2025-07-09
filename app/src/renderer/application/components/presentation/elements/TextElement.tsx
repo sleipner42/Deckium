@@ -2,11 +2,15 @@ import { Box } from '@mui/material';
 import Quill from 'quill';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
+import {
+    DEFAULT_TEXT_FONT_SIZE,
+    HEADER_FONT_SIZES,
+    HEADER_LINE_SPACING,
+} from '../../../../../common/config/typography';
 import type {
     ContentElement,
     TextBox,
 } from '../../../../../common/domain/entities/types';
-import { HEADER_FONT_SIZES, DEFAULT_TEXT_FONT_SIZE, HEADER_LINE_SPACING } from '../../../../../common/config/typography';
 import { useTextEditing } from '../../../context/TextEditingContext';
 import { ResizeHandles } from '../ResizeHandles';
 import 'katex/dist/katex.min.css';

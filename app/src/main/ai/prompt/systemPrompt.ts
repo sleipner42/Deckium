@@ -1,10 +1,10 @@
-import type { Presentation } from '../../../common/domain/entities/types';
-import { ToolsService } from '../tools/builtInTools';
 import {
-    HEADER_FONT_SIZES,
     HEADER_DESCRIPTIONS,
+    HEADER_FONT_SIZES,
     HEADER_LINE_SPACING,
 } from '../../../common/config/typography';
+import type { Presentation } from '../../../common/domain/entities/types';
+import { ToolsService } from '../tools/builtInTools';
 
 export function getDeveloperPrompt(presentation: Presentation): string {
     const tools = ToolsService.getBuiltInTools();
