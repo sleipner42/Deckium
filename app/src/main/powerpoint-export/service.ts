@@ -742,6 +742,23 @@ export class PowerPointExportService {
         // Remove leading/trailing breaks from paragraphs
         processed = processed.replace(/<p([^>]*)>\s*<br\s*\/?>/g, '<p$1>');
         processed = processed.replace(/<br\s*\/?>\s*<\/p>/g, '</p>');
+        
+        // Remove leading and trailing empty content
+        processed = processed.replace(/^(\s*<p[^>]*>\s*<\/p>\s*)+/, '');
+        processed = processed.replace(/(\s*<p[^>]*>\s*<\/p>\s*)+$/, '');
+        processed = processed.replace(/^(\s*<br\s*\/?>)+/, '');
+        processed = processed.replace(/(\s*<br\s*\/?>)+$/, '');
+        
+        // Remove any leading/trailing whitespace between tags
+        processed = processed.trim();
+        
+        // Final step: Convert all content to a single paragraph to eliminate spacing issues
+        // Replace paragraph boundaries with line breaks
+        processed = processed.replace(/<\/p>\s*<p[^>]*>/g, '<br>');
+        
+        // Remove any remaining opening/closing paragraph tags and wrap everything in one paragraph
+        processed = processed.replace(/^<p[^>]*>/, '').replace(/<\/p>$/, '');
+        processed = `<p>${processed}</p>`;
 
         console.log('Preprocessed Quill HTML:', {
             original: html,
@@ -749,7 +766,11 @@ export class PowerPointExportService {
             hadFontSizeConversion:
                 html !== processed && html.includes('font-size'),
             originalListCount: (html.match(/<ol[^>]*>/g) || []).length + (html.match(/<ul[^>]*>/g) || []).length,
-            processedParagraphs: (processed.match(/<p[^>]*>/g) || []).length
+            processedParagraphs: (processed.match(/<p[^>]*>/g) || []).length,
+            startsWithParagraph: processed.startsWith('<p'),
+            endsWithParagraph: processed.endsWith('</p>'),
+            originalLength: html.length,
+            processedLength: processed.length
         });
         return processed;
     }
