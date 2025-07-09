@@ -12,7 +12,7 @@ export class AddImageFromPexelsTool extends BaseTool {
     name = 'searchAndAddImage';
 
     description =
-        'Search for high-quality stock images using Pexels API and add the best matching image directly to a presentation slide. This tool handles the entire process from search to placement, automatically positioning the image and providing detailed feedback about placement and potential overlaps.';
+        'Search for high-quality stock images using Pexels API and add the best matching image directly to a presentation slide.';
 
     requiredParams = {
         slideId:
