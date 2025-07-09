@@ -657,6 +657,12 @@ export class PowerPointExportService {
             },
         );
 
+        // First, clean up empty paragraphs between lists to avoid extra spacing
+        processed = processed.replace(/<\/ol>\s*<p[^>]*>\s*<br\s*\/?>\s*<\/p>\s*<ol/g, '</ol><ol');
+        processed = processed.replace(/<\/ul>\s*<p[^>]*>\s*<br\s*\/?>\s*<\/p>\s*<ul/g, '</ul><ul');
+        processed = processed.replace(/<\/ol>\s*<p[^>]*>\s*<br\s*\/?>\s*<\/p>\s*<ul/g, '</ol><ul');
+        processed = processed.replace(/<\/ul>\s*<p[^>]*>\s*<br\s*\/?>\s*<\/p>\s*<ol/g, '</ul><ol');
+
         // Convert Quill's data-list attributes to plain text with manual bullets/numbers
         // html2pptxgenjs seems to have issues with lists, so we'll format them manually
         processed = processed.replace(
@@ -726,14 +732,24 @@ export class PowerPointExportService {
             },
         );
 
-        // Clean up any remaining empty paragraphs
+        // Clean up any remaining empty paragraphs and break tags
+        processed = processed.replace(/<p[^>]*>\s*<br\s*\/?>\s*<\/p>/g, '');
         processed = processed.replace(/<p[^>]*>\s*<\/p>/g, '');
+        
+        // Clean up multiple consecutive line breaks
+        processed = processed.replace(/(<br\s*\/?>){2,}/g, '<br>');
+        
+        // Remove leading/trailing breaks from paragraphs
+        processed = processed.replace(/<p([^>]*)>\s*<br\s*\/?>/g, '<p$1>');
+        processed = processed.replace(/<br\s*\/?>\s*<\/p>/g, '</p>');
 
         console.log('Preprocessed Quill HTML:', {
             original: html,
             processed: processed,
             hadFontSizeConversion:
                 html !== processed && html.includes('font-size'),
+            originalListCount: (html.match(/<ol[^>]*>/g) || []).length + (html.match(/<ul[^>]*>/g) || []).length,
+            processedParagraphs: (processed.match(/<p[^>]*>/g) || []).length
         });
         return processed;
     }
