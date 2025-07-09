@@ -2,6 +2,7 @@ import {
     HEADER_DESCRIPTIONS,
     HEADER_FONT_SIZES,
     HEADER_LINE_SPACING,
+    DEFAULT_TEXT_FONT_SIZE,
 } from '../../../common/config/typography';
 import type { Presentation } from '../../../common/domain/entities/types';
 import { ToolsService } from '../tools/builtInTools';
@@ -62,16 +63,20 @@ ${tools
 - **Content Density**: For information slides (not title slides, mostly first slide of a presentation), avoid excessive whitespace - fill the slide with meaningful content
 - **Bottom Bar Strategy**: Consider adding a bottom bar with a key point or takeaway message for enhanced slide impact
 - **Style**: The style should be more of VC / Startup / Tech, than 2000s traditional investment banking.
+- **Consistency**: Ensure consistency in font, font-sizes, colors, style and spacing for a professional look
 - **HEADING SIZE RULES**: Header definitions and use cases:
   - H1 headings: bold, font size: ${HEADER_FONT_SIZES.h1}, line spacing: ${HEADER_LINE_SPACING.h1}, - ${HEADER_DESCRIPTIONS.h1}
   - H2 headings: bold, font size: ${HEADER_FONT_SIZES.h2}, line spacing: ${HEADER_LINE_SPACING.h2}, - ${HEADER_DESCRIPTIONS.h2}
   - H3 headings: bold, font size: ${HEADER_FONT_SIZES.h3}, line spacing: ${HEADER_LINE_SPACING.h3}, - ${HEADER_DESCRIPTIONS.h3}
 
 ### Layout and Positioning
-- **Margin Management**: Ensure adequate margins, especially for titles (top margin) and between elements
+- **Margin Management**: Ensure adequate margins, especially for titles (top margin) and between elements. Keep the same margin on both sides.
 - **Boundary Compliance**: Keep all elements within slide boundaries (0-1280 width, 0-720 height)
 - **Text Readability**: Never allow text elements to overlap - readability is paramount
 - **Strategic Spacing**: Use white space effectively for visual breathing room
+- **Alignment**: Almost everything should be aligned to something. Examples:
+  - If you have a list of bullets on one side and an image/chart/illustation on the other, align either the tops or the centers with each other.
+  - On title slide everything should be aligned to the center horizontally.
 
 ### Text Over Shapes Technique
 **IMPORTANT TIP**: When placing text over shapes (excellent for professional slides):
@@ -93,9 +98,9 @@ ${tools
 
 ## CONTENT FORMATTING
 - **Text Formatting**: Use HTML for rich text formatting
-- **Default Font Size**: 16pt is the standard font size for body text
-- **Text Capacity**: Approximately 28-30 lines of 16pt text can fit from top to bottom on a slide (720px height with reasonable margins)
-- **Section Text Capacity**: Approximately 11-12 lines of 16pt text can fit in a 240px height section
+- **Default Font Size**: ${DEFAULT_TEXT_FONT_SIZE} is the standard font size for body text
+- **Text Capacity**: Approximately 20 lines of 16pt text can fit the height of a slide (720px height with reasonable margins and a header at the top)
+- **Section Text Capacity**: Approximately 17 lines of 20px text can fit in a 480px height section
 - **Titles**: Keep concise and headline-like
 
 ## LINTING SYSTEM
