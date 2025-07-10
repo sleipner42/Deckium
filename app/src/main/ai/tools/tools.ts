@@ -9,9 +9,24 @@ import { ToolFactory } from './ToolFactory';
 
 export class AIToolsService {
     private tools: AITool[];
+    private lastParsingError: {
+        error: string;
+        rawMatch: string;
+        fullResponse: string;
+    } | null = null;
 
     constructor(authService?: AuthService) {
         this.tools = ToolFactory.getBuiltInTools(authService);
+    }
+
+    getLastParsingError(): {
+        error: string;
+        rawMatch: string;
+        fullResponse: string;
+    } | null {
+        const error = this.lastParsingError;
+        this.lastParsingError = null; // Clear after retrieving
+        return error;
     }
 
     getTools(): AITool[] {
@@ -33,11 +48,49 @@ export class AIToolsService {
     }
 
     extractToolCall(response: string): AIToolCall | null {
-        const actionMatch = response.match(
+        // Try multiple regex patterns to handle different JSON formatting styles
+        const patterns = [
+            // Standard format: {"tool": "name", "params": {...}}
             /\{\s*"tool":\s*"[^"]+",\s*"params":\s*\{[^}]*\}\s*\}/i,
-        );
+            // Handle nested braces in params (more robust)
+            /\{\s*"tool":\s*"[^"]+",\s*"params":\s*\{(?:[^{}]|{[^}]*})*\}\s*\}/i,
+            // Handle potential whitespace variations
+            /\{\s*"tool"\s*:\s*"[^"]+"\s*,\s*"params"\s*:\s*\{(?:[^{}]|{[^}]*})*\}\s*\}/i,
+        ];
+
+        let actionMatch: RegExpMatchArray | null = null;
+
+        for (const pattern of patterns) {
+            actionMatch = response.match(pattern);
+            if (actionMatch) {
+                break;
+            }
+        }
 
         if (!actionMatch) {
+            // Check if there's a partial match that we can help diagnose
+            const partialPatterns = [
+                /\{\s*"tool":\s*"[^"]+"/i, // Has tool but incomplete
+                /\{\s*"tool":\s*"[^"]+",\s*"params":/i, // Has tool and params start
+                /\{\s*"tool"[^}]*\}/i, // Has tool field in braces
+            ];
+
+            for (const pattern of partialPatterns) {
+                const partialMatch = response.match(pattern);
+                if (partialMatch) {
+                    console.log(
+                        'Partial tool call pattern found:',
+                        partialMatch[0],
+                    );
+                    (this as any).lastParsingError = {
+                        error: 'Incomplete tool call format detected',
+                        rawMatch: partialMatch[0],
+                        fullResponse: response,
+                    };
+                    return null;
+                }
+            }
+
             console.log('No action match found');
             return null;
         }
@@ -67,8 +120,30 @@ export class AIToolsService {
             };
         } catch (error) {
             console.error('Error parsing tool call data:', error);
+            console.error('Raw matched text:', actionMatch[0]);
+            console.error('Full response context:', response);
+            // Store the parsing error for the AI loop to handle
+            (this as any).lastParsingError = {
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : 'Unknown parsing error',
+                rawMatch: actionMatch[0],
+                fullResponse: response,
+            };
             return null;
         }
+    }
+
+    getLastParsingError(): {
+        error: string;
+        rawMatch: string;
+        fullResponse: string;
+    } | null {
+        const error = (this as any).lastParsingError || null;
+        // Clear the error after retrieving it
+        (this as any).lastParsingError = null;
+        return error;
     }
 
     async executeToolCalls(
@@ -150,7 +225,7 @@ export class AIToolsService {
                 text: textContent,
             });
 
-            results.forEach(({ toolName, result }) => {
+            results.forEach(({ result }) => {
                 if (result.success && result.screenshot) {
                     contentArray.push({
                         type: 'image_url',

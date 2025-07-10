@@ -398,6 +398,37 @@ export class AIService {
                 const toolCall = this.toolsService.extractToolCall(aiResponse);
 
                 if (!toolCall) {
+                    // Check if there was a parsing error that we should report
+                    const parsingError =
+                        this.toolsService.getLastParsingError();
+
+                    if (parsingError) {
+                        // Provide detailed feedback about the JSON parsing error
+                        const errorMessage = `JSON parsing error detected in your tool call. Here's what went wrong:
+
+**Error**: ${parsingError.error}
+
+**What was extracted**: ${parsingError.rawMatch}
+
+**Common issues and solutions**:
+1. **Missing closing braces**: Ensure all { and } are properly matched
+2. **Missing quotes**: All strings must be wrapped in double quotes
+3. **Invalid JSON syntax**: Check for trailing commas, missing commas, or invalid characters
+4. **Nested objects**: Make sure nested braces are properly closed
+
+**Expected format**: {"tool": "toolName", "params": {"param1": "value1", "param2": "value2"}}
+
+Please try again with valid JSON formatting.`;
+
+                        updatedThread = this.state.addMessage(
+                            updatedThread,
+                            errorMessage,
+                            'system',
+                        );
+                        iterationCount++;
+                        continue;
+                    }
+
                     if (shouldBreakOnEmpty) {
                         break;
                     }
