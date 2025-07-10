@@ -23,19 +23,33 @@ ${tools
             ? Object.entries(tool.optionalParams)
             : [];
 
-        let toolDoc = `**${tool.name}**: ${tool.description}`;
+        let toolDoc = `\n**${tool.name}**: ${tool.description}`;
+
+        // Helper function to normalize descriptions (collapse multi-line to single line)
+        const normalizeDescription = (desc: string): string => {
+            return desc
+                .replace(/\n\s*/g, ' ') // Replace newlines and following whitespace with single space
+                .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+                .trim(); // Remove leading/trailing whitespace
+        };
 
         // Only show Required Parameters section if there are required parameters
         if (requiredParamsEntries.length > 0) {
             toolDoc += `\n- Required Parameters: ${requiredParamsEntries
-                .map(([param, desc]) => `\n  • ${param}: ${desc}`)
+                .map(
+                    ([param, desc]) =>
+                        `\n  • ${param}: ${normalizeDescription(desc)}`,
+                )
                 .join('')}`;
         }
 
         // Only show Optional Parameters section if there are optional parameters
         if (optionalParamsEntries.length > 0) {
             toolDoc += `\n- Optional Parameters: ${optionalParamsEntries
-                .map(([param, desc]) => `\n  • ${param}: ${desc}`)
+                .map(
+                    ([param, desc]) =>
+                        `\n  • ${param}: ${normalizeDescription(desc)}`,
+                )
                 .join('')}`;
         }
 
