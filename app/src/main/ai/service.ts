@@ -890,9 +890,11 @@ Please try again with valid JSON formatting.`;
     }
 
     private addMaxIterationsWarning(thread: Thread): Thread {
-        const warningMessage =
-            'Maximum number of tool call iterations reached. Some actions may not have been completed.';
-        return this.state.addMessage(thread, warningMessage, 'system');
+        const warningMessage = `I've reached the maximum number of processing iterations for this request.
+
+Type **"continue"** and I'll resume processing where I left off. `;
+
+        return this.state.addMessage(thread, warningMessage, 'assistant');
     }
 
     private handleIterationError(thread: Thread, error: unknown): Thread {
