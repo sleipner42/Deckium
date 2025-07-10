@@ -13,10 +13,13 @@ export class MatchSizeTool extends BaseTool {
         elementIds: 'Comma-separated list of element IDs to resize',
         sizeMode:
             'What to match: "width", "height", "both", "largest-width", "largest-height", "largest-both", "smallest-width", "smallest-height", "smallest-both"',
+    };
+
+    optionalParams = {
         referenceElementId:
-            'Optional ID of the element to use as size reference. If not provided, behavior depends on sizeMode (e.g., largest/smallest modes use automatic selection)',
+            'ID of the element to use as size reference. If not provided, behavior depends on sizeMode (e.g., largest/smallest modes use automatic selection)',
         maintainAspectRatio:
-            'Optional boolean (true/false) to maintain aspect ratio when resizing. Defaults to false for individual width/height, true for "both" modes',
+            'boolean (true/false) to maintain aspect ratio when resizing. Defaults to false for individual width/height, true for "both" modes',
     };
 
     protected async executeImpl(

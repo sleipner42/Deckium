@@ -10,17 +10,20 @@ export class UpdateBarChartTool extends BaseTool {
 
     requiredParams = {
         elementId: 'The ID of the bar chart element to update',
-        title: 'The new title of the chart (optional)',
-        xAxisLabel: 'The new label for the X axis (optional)',
-        yAxisLabel: 'The new label for the Y axis (optional)',
-        xData: 'New array of x-axis values as comma-separated string (optional)',
-        yData: 'New array of y-axis values as comma-separated string (optional)',
-        x: 'New X position (optional)',
-        y: 'New Y position (optional)',
-        width: 'New width (optional)',
-        height: 'New height (optional)',
-        barColor: 'New color for the bars (optional)',
-        zIndex: 'The new z-index value (optional) - controls stacking order with higher values appearing on top',
+    };
+
+    optionalParams = {
+        title: 'The new title of the chart',
+        xAxisLabel: 'The new label for the X axis',
+        yAxisLabel: 'The new label for the Y axis',
+        xData: 'New array of x-axis values as comma-separated string',
+        yData: 'New array of y-axis values as comma-separated string',
+        x: 'New X position',
+        y: 'New Y position',
+        width: 'New width',
+        height: 'New height',
+        barColor: 'New color for the bars',
+        zIndex: 'The new z-index value - controls stacking order with higher values appearing on top',
     };
 
     protected async executeImpl(

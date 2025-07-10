@@ -13,10 +13,13 @@ export class AlignElementsTool extends BaseTool {
         elementIds: 'Comma-separated list of element IDs to align',
         alignType:
             'Type of alignment: "top", "bottom", "left", "right", "center-horizontal", "center-vertical", "distribute-horizontal", "distribute-vertical"',
+    };
+
+    optionalParams = {
         referenceElementId:
-            'Optional ID of the element to use as reference for alignment. If not provided, the tool will determine a reference automatically based on the alignment type.',
+            'ID of the element to use as reference for alignment. If not provided, the tool will determine a reference automatically based on the alignment type.',
         spacing:
-            'Optional spacing between elements in pixels (only used for distribute alignment types)',
+            'Spacing between elements in pixels (only used for distribute alignment types)',
     };
 
     protected async executeImpl(

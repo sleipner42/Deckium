@@ -15,12 +15,15 @@ export class CreateBarChartTool extends BaseTool {
         yAxisLabel: 'The label for the Y axis',
         xData: 'Array of x-axis values (labels) as comma-separated string, e.g. "Jan,Feb,Mar"',
         yData: 'Array of y-axis values (numbers) as comma-separated string, e.g. "10,24,30"',
-        x: 'X position of the element (optional, defaults to 100)',
-        y: 'Y position of the element (optional, defaults to 100)',
-        width: 'The width of the element (optional, defaults to 400)',
-        height: 'The height of the element (optional, defaults to 300)',
-        barColor: 'The color of the bars (optional, defaults to #000000)',
-        zIndex: 'The z-index of the element (optional, defaults to 1) - controls stacking order with higher values appearing on top',
+    };
+
+    optionalParams = {
+        x: 'X position of the element (defaults to 100)',
+        y: 'Y position of the element (defaults to 100)',
+        width: 'The width of the element (defaults to 400)',
+        height: 'The height of the element (defaults to 300)',
+        barColor: 'The color of the bars (defaults to #000000)',
+        zIndex: 'The z-index of the element (defaults to 1) - controls stacking order with higher values appearing on top',
     };
 
     protected async executeImpl(

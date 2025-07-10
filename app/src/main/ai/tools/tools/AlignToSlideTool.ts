@@ -6,14 +6,17 @@ export class AlignToSlideTool extends BaseTool {
     name = 'alignToSlide';
 
     description =
-        'Align elements to the slide boundaries (center of slide, slide edges, etc.)';
+        'Align elements to the slide (center of slide, slide edges, etc.)';
 
     requiredParams = {
         slideId: 'The ID of the slide containing the elements',
         elementIds: 'Comma-separated list of element IDs to align to slide',
         alignType:
             'Type of alignment: "center", "center-horizontal", "center-vertical", "top", "bottom", "left", "right"',
-        margin: 'Optional margin from slide edges in pixels (defaults to 0)',
+    };
+
+    optionalParams = {
+        margin: 'Margin from slide edges in pixels (defaults to 0)',
     };
 
     protected async executeImpl(

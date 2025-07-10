@@ -42,19 +42,21 @@ export class AddTextElementTool extends BaseTool {
             '- Simple: <p>Hello world</p>\n' +
             "- Centered title: <h1 class='ql-align-center'>My Presentation Title</h1>\n" +
             "- Mixed formatting: <p><strong>Bold</strong> and <em>italic</em> text with <span style='color: red'>red highlight</span></p>",
-        x: 'X position of the element (optional, defaults to center)',
-        y: 'Y position of the element (optional, defaults to center)',
+    };
+
+    optionalParams = {
+        x: 'X position of the element (defaults to center)',
+        y: 'Y position of the element (defaults to center)',
         positionReference:
-            'The reference position of the element (optional, defaults to top left), choose from top left or center',
-        width: 'The width of the element (optional, defaults to 400)',
-        height: 'The height of the element (optional, defaults to 200)',
-        borderRadius:
-            'The border radius of the element (optional, defaults to 0)',
+            'The reference position of the element (defaults to top left), choose from top left or center',
+        width: 'The width of the element (defaults to 400)',
+        height: 'The height of the element (defaults to 200)',
+        borderRadius: 'The border radius of the element (defaults to 0)',
         backgroundColor:
-            'The background color of the element (optional, defaults to transparent). Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
+            'The background color of the element (defaults to transparent). Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
         verticalAlign:
-            'The vertical alignment of the element (optional, defaults to top), choose from top, middle, bottom',
-        zIndex: 'The z-index of the element (optional, defaults to 1) - controls stacking order with higher values appearing on top',
+            'The vertical alignment of the element (defaults to top), choose from top, middle, bottom',
+        zIndex: 'The z-index of the element (defaults to 1) - controls stacking order with higher values appearing on top',
     };
 
     protected async executeImpl(

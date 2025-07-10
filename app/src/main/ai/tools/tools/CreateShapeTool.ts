@@ -13,18 +13,19 @@ export class CreateShapeTool extends BaseTool {
         slideId: 'The ID of the slide to add the shape to',
         shapeType:
             'The type of shape to create (rectangle, circle, or triangle)',
-        x: 'X position of the element (optional, defaults to 100)',
-        y: 'Y position of the element (optional, defaults to 100)',
+    };
+
+    optionalParams = {
+        x: 'X position of the element (defaults to 100)',
+        y: 'Y position of the element (defaults to 100)',
         positionReference:
-            'The reference position of the element (optional, defaults to top left), choose from top left or center',
-        width: 'The width of the element (optional, defaults to 150)',
-        height: 'The height of the element (optional, defaults to 150)',
-        fillColor: 'The fill color of the shape (optional, defaults to white)',
-        strokeColor:
-            'The stroke/border color of the shape (optional, defaults to black)',
-        strokeWidth:
-            'The stroke/border width of the shape (optional, defaults to 2)',
-        zIndex: 'The z-index of the element for stacking order (optional, defaults to 1)',
+            'The reference position of the element (defaults to top left), choose from top left or center',
+        width: 'The width of the element (defaults to 150)',
+        height: 'The height of the element (defaults to 150)',
+        fillColor: 'The fill color of the shape (defaults to white)',
+        strokeColor: 'The stroke/border color of the shape (defaults to black)',
+        strokeWidth: 'The stroke/border width of the shape (defaults to 2)',
+        zIndex: 'The z-index of the element for stacking order (defaults to 1)',
     };
 
     protected async executeImpl(

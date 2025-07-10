@@ -12,13 +12,16 @@ export class CreateSVGImageTool extends BaseTool {
     requiredParams = {
         slideId: 'The ID of the slide to add the SVG image to',
         svgContent: 'The SVG markup content to render as an image',
-        x: 'X position of the element (optional, defaults to 100)',
-        y: 'Y position of the element (optional, defaults to 100)',
+    };
+
+    optionalParams = {
+        x: 'X position of the element (defaults to 100)',
+        y: 'Y position of the element (defaults to 100)',
         positionReference:
-            'The reference position of the element (optional, defaults to top left), choose from top left or center',
-        width: 'The width of the element (optional, defaults to 200)',
-        height: 'The height of the element (optional, defaults to 200)',
-        zIndex: 'The z-index of the element for stacking order (optional, defaults to 1)',
+            'The reference position of the element (defaults to top left), choose from top left or center',
+        width: 'The width of the element (defaults to 200)',
+        height: 'The height of the element (defaults to 200)',
+        zIndex: 'The z-index of the element for stacking order (defaults to 1)',
     };
 
     protected async executeImpl(

@@ -10,14 +10,17 @@ export class UpdateShapeTool extends BaseTool {
 
     requiredParams = {
         elementId: 'The ID of the shape element to update',
-        x: 'New X position (optional)',
-        y: 'New Y position (optional)',
-        width: 'New width (optional)',
-        height: 'New height (optional)',
-        fillColor: 'New fill color (optional)',
-        strokeColor: 'New stroke/border color (optional)',
-        strokeWidth: 'New stroke/border width (optional)',
-        zIndex: 'The new z-index value (optional) - controls stacking order with higher values appearing on top',
+    };
+
+    optionalParams = {
+        x: 'New X position',
+        y: 'New Y position',
+        width: 'New width',
+        height: 'New height',
+        fillColor: 'New fill color',
+        strokeColor: 'New stroke/border color',
+        strokeWidth: 'New stroke/border width',
+        zIndex: 'The new z-index value - controls stacking order with higher values appearing on top',
     };
 
     protected async executeImpl(

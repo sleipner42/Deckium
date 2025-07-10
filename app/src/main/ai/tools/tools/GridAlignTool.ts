@@ -15,8 +15,11 @@ export class GridAlignTool extends BaseTool {
             'Grid cell size in pixels (e.g., 20 for 20px grid cells). Common values: 10, 20, 25, 40, 50',
         snapMode:
             'How to snap elements: "top-left" (snap top-left corner), "center" (snap center point), "nearest-corner" (snap to nearest grid intersection)',
+    };
+
+    optionalParams = {
         gridOrigin:
-            'Optional grid origin point as "x,y" (defaults to "0,0"). Use this to offset the entire grid.',
+            'Grid origin point as "x,y" (defaults to "0,0"). Use this to offset the entire grid.',
     };
 
     protected async executeImpl(

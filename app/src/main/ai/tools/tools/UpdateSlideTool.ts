@@ -9,7 +9,10 @@ export class UpdateSlideTool extends BaseTool {
 
     requiredParams = {
         slideId: 'The ID of the slide to update',
-        background: 'The new background color for the slide (optional)',
+    };
+
+    optionalParams = {
+        background: 'The new background color for the slide',
     };
 
     protected async executeImpl(

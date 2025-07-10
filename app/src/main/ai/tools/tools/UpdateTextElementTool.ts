@@ -14,6 +14,9 @@ export class UpdateTextElementTool extends BaseTool {
 
     requiredParams = {
         elementId: 'The ID of the text element to update',
+    };
+
+    optionalParams = {
         content:
             'The text content to display as HTML. Supported formatting options:\n\n' +
             'STRUCTURE:\n' +
@@ -42,17 +45,17 @@ export class UpdateTextElementTool extends BaseTool {
             '- Simple: <p>Hello world</p>\n' +
             "- Centered title: <h1 class='ql-align-center'>My Presentation Title</h1>\n" +
             "- Mixed formatting: <p><strong>Bold</strong> and <em>italic</em> text with <span style='color: red'>red highlight</span></p>",
-        x: 'New X position (optional)',
-        y: 'New Y position (optional)',
+        x: 'New X position',
+        y: 'New Y position',
         positionReference:
-            'The reference position of the element (optional, defaults to top left), choose from top left or center',
-        width: 'New width (optional)',
-        height: 'New height (optional)',
-        borderRadius: 'The new border radius (optional)',
+            'The reference position of the element (defaults to top left), choose from top left or center',
+        width: 'New width',
+        height: 'New height',
+        borderRadius: 'The new border radius',
         backgroundColor:
-            'The new background color (optional). Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
-        verticalAlign: 'The new vertical alignment of the element (optional)',
-        zIndex: 'The new z-index value (optional) - controls stacking order with higher values appearing on top',
+            'The new background color. Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
+        verticalAlign: 'The new vertical alignment of the element',
+        zIndex: 'The new z-index value - controls stacking order with higher values appearing on top',
     };
 
     protected async executeImpl(

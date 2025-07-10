@@ -12,9 +12,9 @@ export class CriticTool extends BaseTool {
     description =
         "Automatically review and provide feedback on a slide's visual design, content organization, and effectiveness";
 
-    requiredParams = {
+    optionalParams = {
         slideId:
-            'The ID of the slide to review (optional - if not provided, reviews the current/latest slide)',
+            'The ID of the slide to review (if not provided, reviews the current/latest slide)',
     };
 
     protected async executeImpl(

@@ -12,8 +12,11 @@ export class ChangeElementZIndexTool extends BaseTool {
         slideId: 'The ID of the slide containing the element',
         elementId: 'The ID of the element to change the z-index of',
         zIndex: 'The new z-index value (higher values appear on top, default is 1). Good values: 0 for background, 1-4 for regular content, 5+ for headers/important elements',
+    };
+
+    optionalParams = {
         relative:
-            'Optional: set to true to make the change relative to current z-index (e.g., +1, -2). This is useful for bringing an element forward or backward in the stack',
+            'Set to true to make the change relative to current z-index (e.g., +1, -2). This is useful for bringing an element forward or backward in the stack',
     };
 
     protected async executeImpl(

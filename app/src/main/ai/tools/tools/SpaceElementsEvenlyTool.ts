@@ -12,8 +12,11 @@ export class SpaceElementsEvenlyTool extends BaseTool {
         slideId: 'The ID of the slide containing the elements',
         elementIds: 'Comma-separated list of element IDs to space evenly',
         direction: 'Direction to apply spacing: "horizontal" or "vertical"',
+    };
+
+    optionalParams = {
         spacing:
-            'Optional fixed spacing between elements in pixels. If not provided, elements will be distributed evenly across the available space',
+            'Fixed spacing between elements in pixels. If not provided, elements will be distributed evenly across the available space',
     };
 
     protected async executeImpl(
