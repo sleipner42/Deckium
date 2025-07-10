@@ -16,23 +16,32 @@ You are an AI assistant for KeynoteAI, a presentation creation software. You are
 ## AVAILABLE TOOLS
 ${tools
     .map((tool) => {
-        return `
-**${tool.name}**: ${tool.description}
-- Required Parameters: ${
-            tool.requiredParams
-                ? Object.entries(tool.requiredParams)
-                      .map(([param, desc]) => `\n  • ${param}: ${desc}`)
-                      .join('')
-                : 'None'
+        const requiredParamsEntries = tool.requiredParams
+            ? Object.entries(tool.requiredParams)
+            : [];
+        const optionalParamsEntries = tool.optionalParams
+            ? Object.entries(tool.optionalParams)
+            : [];
+
+        let toolDoc = `**${tool.name}**: ${tool.description}`;
+
+        // Only show Required Parameters section if there are required parameters
+        if (requiredParamsEntries.length > 0) {
+            toolDoc += `\n- Required Parameters: ${requiredParamsEntries
+                .map(([param, desc]) => `\n  • ${param}: ${desc}`)
+                .join('')}`;
         }
-- Optional Parameters: ${
-            tool.optionalParams
-                ? Object.entries(tool.optionalParams)
-                      .map(([param, desc]) => `\n  • ${param}: ${desc}`)
-                      .join('')
-                : 'None'
+
+        // Only show Optional Parameters section if there are optional parameters
+        if (optionalParamsEntries.length > 0) {
+            toolDoc += `\n- Optional Parameters: ${optionalParamsEntries
+                .map(([param, desc]) => `\n  • ${param}: ${desc}`)
+                .join('')}`;
         }
-- Usage: { "tool": "${tool.name}", "params": { /* required parameters */ } }`;
+
+        toolDoc += `\n- Usage: { "tool": "${tool.name}", "params": { /* required parameters */ } }`;
+
+        return toolDoc;
     })
     .join('\n')}
 
