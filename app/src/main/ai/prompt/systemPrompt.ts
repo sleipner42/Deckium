@@ -1,8 +1,8 @@
 import {
+    DEFAULT_TEXT_FONT_SIZE,
     HEADER_DESCRIPTIONS,
     HEADER_FONT_SIZES,
     HEADER_LINE_SPACING,
-    DEFAULT_TEXT_FONT_SIZE,
 } from '../../../common/config/typography';
 import type { Presentation } from '../../../common/domain/entities/types';
 import { ToolsService } from '../tools/builtInTools';
