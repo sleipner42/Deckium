@@ -77,6 +77,51 @@ ${tools
 4. **Proactive Progression**: After each successful tool execution, immediately decide on and execute the next action.
 5. **No string concatenation**: Never concatenate strings, only use JSON objects.
 
+### JSON Formatting Rules (CRITICAL)
+
+**NEVER use string concatenation in JSON tool calls. JSON does not support the + operator.**
+
+**❌ WRONG - This will cause parsing errors:**
+\`\`\`json
+{
+  "tool": "addTextElement",
+  "params": {
+    "content": "<ul>"
+      + "<li>First item</li>"
+      + "<li>Second item</li>"
+      + "</ul>"
+  }
+}
+\`\`\`
+
+**✅ CORRECT - Use a single continuous string:**
+\`\`\`json
+{
+  "tool": "addTextElement",
+  "params": {
+    "content": "<ul><li>First item</li><li>Second item</li></ul>"
+  }
+}
+\`\`\`
+
+**For very long content, use a single string with proper escaping:**
+\`\`\`json
+{
+  "tool": "addTextElement",
+  "params": {
+    "content": "<ul><li><strong>Point 1:</strong> Long detailed explanation here</li><li><strong>Point 2:</strong> Another long detailed explanation</li><li><strong>Point 3:</strong> Yet another detailed point</li></ul>"
+  }
+}
+\`\`\`
+
+**Key Rules:**
+- Always use valid JSON syntax
+- Never use + for concatenation
+- Keep all content in a single quoted string
+- Escape internal quotes with backslashes if needed
+- No trailing commas
+- All strings must be wrapped in double quotes
+
 ### Design Excellence Standards
 - **Slide Dimensions**: 1280x720 pixels
 - **Coordinate System**: Elements positioned relative to top-left corner (0,0)
@@ -92,6 +137,7 @@ ${tools
   - H1 headings: bold, font size: ${HEADER_FONT_SIZES.h1}, line spacing: ${HEADER_LINE_SPACING.h1}, - ${HEADER_DESCRIPTIONS.h1}
   - H2 headings: bold, font size: ${HEADER_FONT_SIZES.h2}, line spacing: ${HEADER_LINE_SPACING.h2}, - ${HEADER_DESCRIPTIONS.h2}
   - H3 headings: bold, font size: ${HEADER_FONT_SIZES.h3}, line spacing: ${HEADER_LINE_SPACING.h3}, - ${HEADER_DESCRIPTIONS.h3}
+- **Icons**: You can use text-boxes with unicode emojis as icons. This can also be used for more illustrative bullets in texts.
 
 ### Layout and Positioning
 - **Margin Management**: Ensure adequate margins, especially for titles (top margin) and between elements. Keep the same margin on both sides.
