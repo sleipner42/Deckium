@@ -20,12 +20,12 @@ export class AddImageFromPexelsTool extends BaseTool {
         query: 'The search terms to find relevant images (e.g., "sunset beach", "business meeting", "mountain landscape")',
         x: 'The horizontal position (in pixels) where the image should be placed on the slide',
         y: 'The vertical position (in pixels) where the image should be placed on the slide',
-        width: 'The desired width of the image in pixels',
-        height: 'The desired height of the image in pixels',
         zIndex: 'The stacking order of the image relative to other elements (higher numbers appear on top)',
     };
 
     optionalParams = {
+        width: 'The desired width of the image in pixels. If specified, height will be calculated automatically based on the image aspect ratio. Do not specify both width and height. Defaults to 400 if nether is applied, but this is never a good idea.',
+        height: 'The desired height of the image in pixels. If specified, width will be calculated automatically based on the image aspect ratio. Do not specify both width and height.',
         orientation:
             'Filter images by aspect ratio - "landscape" for wide images, "portrait" for tall images, "square" for equal dimensions. Leave empty to allow any orientation.',
         size: 'The resolution quality from Pexels API. Options: "small" (130px), "medium" (350px), "large" (940px), "original" (full resolution). Defaults to "large" for good quality without excessive file size.',
@@ -55,6 +55,20 @@ export class AddImageFromPexelsTool extends BaseTool {
                 height: providedHeight,
                 zIndex,
             } = params;
+
+            // Validate dimension parameters
+            const hasWidth =
+                providedWidth !== undefined &&
+                !Number.isNaN(Number(providedWidth));
+            const hasHeight =
+                providedHeight !== undefined &&
+                !Number.isNaN(Number(providedHeight));
+
+            let dimensionWarning = '';
+            if (hasWidth && hasHeight) {
+                dimensionWarning =
+                    'Warning: Both width and height were specified. Using width and calculating height based on image aspect ratio.';
+            }
 
             if (!slideId) {
                 return {
@@ -127,8 +141,24 @@ export class AddImageFromPexelsTool extends BaseTool {
                 };
             }
 
-            const width = Number(providedWidth) || 400;
-            const height = Number(providedHeight) || 300;
+            // Calculate dimensions based on image aspect ratio
+            let width: number;
+            let height: number;
+
+            if (hasWidth) {
+                // Use provided width, calculate height from aspect ratio
+                width = Number(providedWidth);
+                height = Math.round(width / data.aspect_ratio);
+            } else if (hasHeight) {
+                // Use provided height, calculate width from aspect ratio
+                height = Number(providedHeight);
+                width = Math.round(height * data.aspect_ratio);
+            } else {
+                // No dimensions provided, use default size maintaining aspect ratio
+                const defaultWidth = 400;
+                width = defaultWidth;
+                height = Math.round(defaultWidth / data.aspect_ratio);
+            }
 
             const xPos = x !== undefined ? Number(x) : 1280 / 2 - width / 2;
             const yPos = y !== undefined ? Number(y) : 720 / 2 - height / 2;
@@ -155,13 +185,14 @@ export class AddImageFromPexelsTool extends BaseTool {
                 };
             }
 
-            const message = `Image added successfully from Pexels.\n
+            const message = `Image added successfully from Pexels.${dimensionWarning ? `\n${dimensionWarning}` : ''}\n
 Image details:
 - Title: ${data.description || query}
 - Photographer: ${data.photographer}
 - Source URL: ${data.source_url}
+- Original image size: ${data.width} x ${data.height} (aspect ratio: ${data.aspect_ratio.toFixed(2)})
 - Position: (${xPos}, ${yPos})
-- Size: ${width} x ${height}`;
+- Rendered size: ${width} x ${height}`;
 
             return {
                 success: true,

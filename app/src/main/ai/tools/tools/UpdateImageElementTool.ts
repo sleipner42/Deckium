@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { Image } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
@@ -7,23 +6,20 @@ import { BaseTool } from '../BaseTool';
 export class UpdateImageElementTool extends BaseTool {
     name = 'updateImageElement';
 
-    description = 'Update an existing image element on a slide';
+    description =
+        'Update an existing image element position, size, or z-index on a slide. When updating size, specify either width OR height and the other dimension will be calculated to maintain the current aspect ratio.';
 
     requiredParams = {
         elementId: 'The ID of the image element to update',
-        query: 'The new search query for a Pexels image (optional)',
-        x: 'New X position (optional)',
-        y: 'New Y position (optional)',
-        width: 'New width (optional)',
-        height: 'New height (optional)',
-        zIndex: 'The new z-index value (optional) - controls stacking order with higher values appearing on top',
     };
 
     optionalParams = {
-        orientation:
-            'The orientation of the image (landscape, portrait, square)',
-        size: 'The size of the image from Pexels (small, medium, large, original, defaults to large)',
-        imageUrl: 'Direct URL to an image (alternative to query)',
+        x: 'New X position in pixels',
+        y: 'New Y position in pixels',
+        width: 'New width in pixels. If specified, height will be calculated automatically to maintain current aspect ratio. If neither width nor height is specified, dimensions remain unchanged. Do not specify both width and height.',
+        height: 'New height in pixels. If specified, width will be calculated automatically to maintain current aspect ratio. If neither width nor height is specified, dimensions remain unchanged. Do not specify both width and height.',
+        zIndex: 'The new z-index value - controls stacking order with higher values appearing on top',
+        imageUrl: 'Direct URL to replace the current image',
     };
 
     protected async executeImpl(
@@ -33,16 +29,27 @@ export class UpdateImageElementTool extends BaseTool {
         try {
             const {
                 elementId,
-                query,
                 imageUrl,
-                orientation,
-                size = 'large',
                 x,
                 y,
-                width,
-                height,
+                width: providedWidth,
+                height: providedHeight,
                 zIndex,
             } = params;
+
+            // Validate dimension parameters
+            const hasWidth =
+                providedWidth !== undefined &&
+                !Number.isNaN(Number(providedWidth));
+            const hasHeight =
+                providedHeight !== undefined &&
+                !Number.isNaN(Number(providedHeight));
+
+            let dimensionWarning = '';
+            if (hasWidth && hasHeight) {
+                dimensionWarning =
+                    'Warning: Both width and height were specified. Using width and calculating height based on current aspect ratio.';
+            }
 
             if (!elementId) {
                 return {
@@ -53,12 +60,11 @@ export class UpdateImageElementTool extends BaseTool {
 
             // Ensure at least one property is provided to update
             if (
-                !query &&
                 !imageUrl &&
                 x === undefined &&
                 y === undefined &&
-                width === undefined &&
-                height === undefined &&
+                !hasWidth &&
+                !hasHeight &&
                 zIndex === undefined
             ) {
                 return {
@@ -94,85 +100,8 @@ export class UpdateImageElementTool extends BaseTool {
             // Prepare updates
             const updates: Partial<Image> = {};
 
-            // Update content (image URL) if query or imageUrl is provided
-            if (query) {
-                // Validate size parameter if we're using Pexels
-                const validSizes = ['small', 'medium', 'large', 'original'];
-                if (!validSizes.includes(size)) {
-                    return {
-                        success: false,
-                        error: `Invalid size parameter. Must be one of: ${validSizes.join(', ')}`,
-                    };
-                }
-
-                // Validate orientation if provided
-                if (orientation) {
-                    const validOrientations = [
-                        'landscape',
-                        'portrait',
-                        'square',
-                    ];
-                    if (!validOrientations.includes(orientation)) {
-                        return {
-                            success: false,
-                            error: `Invalid orientation parameter. Must be one of: ${validOrientations.join(
-                                ', ',
-                            )}`,
-                        };
-                    }
-                }
-
-                // Get the API key from environment variables
-                const apiKey = process.env.PEXELS_API_KEY;
-                if (!apiKey) {
-                    return {
-                        success: false,
-                        error: 'Pexels API key not found in environment variables',
-                    };
-                }
-
-                // Make the API request to Pexels
-                const response = await axios.get(
-                    'https://api.pexels.com/v1/search',
-                    {
-                        headers: {
-                            Authorization: apiKey,
-                        },
-                        params: {
-                            query,
-                            orientation,
-                            per_page: 1, // We only need one image
-                            page: 1,
-                        },
-                    },
-                );
-
-                // Check if we got any results
-                if (
-                    !response.data ||
-                    !response.data.photos ||
-                    !response.data.photos.length
-                ) {
-                    return {
-                        success: true,
-                        data: {
-                            message:
-                                'No images found for the given query. The image was not updated.',
-                        },
-                    };
-                }
-
-                // Get the first photo from the results
-                const photo = response.data.photos[0];
-                const sizeMap: Record<string, string> = {
-                    small: 'small',
-                    medium: 'medium',
-                    large: 'large',
-                    original: 'original',
-                };
-                updates.content = photo.src[sizeMap[size]];
-            } else if (imageUrl) {
-                // Use the provided URL directly
+            // Update content (image URL) if imageUrl is provided
+            if (imageUrl) {
                 updates.content = imageUrl;
             }
 
@@ -184,19 +113,30 @@ export class UpdateImageElementTool extends BaseTool {
                 };
             }
 
-            // Update size if provided
-            if (width !== undefined || height !== undefined) {
+            // Update size if width or height is provided, maintaining aspect ratio
+            if (hasWidth || hasHeight) {
+                const currentAspectRatio =
+                    targetElement.size.width / targetElement.size.height;
+
+                let newWidth: number;
+                let newHeight: number;
+
+                if (hasWidth) {
+                    // Use provided width, calculate height from current aspect ratio
+                    newWidth = Number(providedWidth);
+                    newHeight = Math.round(newWidth / currentAspectRatio);
+                } else {
+                    // Use provided height, calculate width from current aspect ratio
+                    newHeight = Number(providedHeight);
+                    newWidth = Math.round(newHeight * currentAspectRatio);
+                }
+
                 updates.size = {
-                    width:
-                        width !== undefined
-                            ? Number(width)
-                            : targetElement.size.width,
-                    height:
-                        height !== undefined
-                            ? Number(height)
-                            : targetElement.size.height,
+                    width: newWidth,
+                    height: newHeight,
                 };
             }
+            // If neither width nor height is provided, dimensions remain unchanged
 
             // Update z-index if provided
             if (zIndex !== undefined) {
@@ -216,28 +156,20 @@ export class UpdateImageElementTool extends BaseTool {
                 };
             }
 
-            const message = 'Image element updated successfully';
-            let photoCredit = '';
+            const message = `Image element updated successfully.${dimensionWarning ? ` ${dimensionWarning}` : ''}`;
 
-            if (query && updates.content) {
-                const response = await axios.get(
-                    'https://api.pexels.com/v1/search',
-                    {
-                        headers: {
-                            Authorization: process.env.PEXELS_API_KEY as string,
-                        },
-                        params: {
-                            query,
-                            orientation,
-                            per_page: 1,
-                        },
-                    },
-                );
-
-                if (response.data?.photos?.length > 0) {
-                    const photo = response.data.photos[0];
-                    photoCredit = `\nImage details:\n- Title: ${photo.alt || query}\n- Photographer: ${photo.photographer}\n- Source URL: ${photo.url}`;
-                }
+            let updateDetails = '\nUpdated properties:';
+            if (updates.position) {
+                updateDetails += `\n- Position: (${updates.position.x}, ${updates.position.y})`;
+            }
+            if (updates.size) {
+                updateDetails += `\n- Size: ${updates.size.width} x ${updates.size.height} (aspect ratio: ${(updates.size.width / updates.size.height).toFixed(2)})`;
+            }
+            if (updates.zIndex !== undefined) {
+                updateDetails += `\n- Z-index: ${updates.zIndex}`;
+            }
+            if (updates.content) {
+                updateDetails += `\n- Image URL updated`;
             }
 
             return {
@@ -245,7 +177,7 @@ export class UpdateImageElementTool extends BaseTool {
                 data: {
                     elementId,
                     slideId: updatedSlide.id,
-                    message: message + photoCredit,
+                    message: message + updateDetails,
                     updates: Object.keys(updates),
                 },
                 editedSlidesIds: [slideId],
