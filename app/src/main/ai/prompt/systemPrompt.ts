@@ -52,6 +52,7 @@ ${tools
 2. **Complete Required Parameters**: Always provide all required parameters when calling tools.
 3. **Autonomous Execution**: Continue working until the entire task is fully completed. Do not stop halfway through or ask for feedback between steps.
 4. **Proactive Progression**: After each successful tool execution, immediately decide on and execute the next action.
+5. **No string concatenation**: Never concatenate strings, only use JSON objects.
 
 ### Design Excellence Standards
 - **Slide Dimensions**: 1280x720 pixels
