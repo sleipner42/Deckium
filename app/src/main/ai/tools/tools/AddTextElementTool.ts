@@ -34,7 +34,7 @@ export class AddTextElementTool extends BaseTool {
             "- Right: Add class='ql-align-right' to any element\n" +
             "- Example: <p class='ql-align-center'>Centered paragraph</p>\n\n" +
             'INLINE STYLING:\n' +
-            `- Font size: <span style='font-size: 24px'>Large text</span> (default is ${DEFAULT_TEXT_FONT_SIZE})\n` +
+            `- Font size: <span style='font-size: 50px'>Large text</span> (default is ${DEFAULT_TEXT_FONT_SIZE})\n` +
             "- Font family: <span style='font-family: Arial'>Arial text</span>\n" +
             "- Text color: <span style='color: #ff0000'>Red text</span>\n" +
             "- Combined: <span style='font-size: 18px; color: blue; font-family: Georgia'>Styled text</span>\n\n" +
