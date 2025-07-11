@@ -7,7 +7,8 @@ import { BaseTool } from '../BaseTool';
 export class GetDataFromUrl extends BaseTool {
     name = 'getDataFromUrl';
 
-    description = 'Get data from a URL and convert HTML to Markdown';
+    description =
+        'Get data from a URL and convert HTML to Markdown. Always use this tool when you get a link with relevant information.';
 
     requiredParams = {
         url: 'The URL to get data from',
@@ -40,6 +41,7 @@ export class GetDataFromUrl extends BaseTool {
             try {
                 const turndownService = new TurndownService();
                 markdown = turndownService.turndown(data);
+                console.log('HTML to markdown:', markdown);
             } catch (error) {
                 console.error('Error converting HTML to Markdown:', error);
             }

@@ -130,7 +130,10 @@ ${tools
 - **Visual Hierarchy**: Use titles, proper spacing, and z-index for clear information flow
 - **Title Standards**: Nearly all slides should have a title using H2 text formatting, left-aligned for best practice
 - **Content Density**: For information slides (not title slides, mostly first slide of a presentation), avoid excessive whitespace - fill the slide with meaningful content
-- **Bottom Bar Strategy**: Consider adding a bottom bar with a key point or takeaway message for enhanced slide impact
+- **Style elements**: When creating slides for an existing presentation, always continue in the same style. When creating a new presentation, always use some style elements. Some good options:
+  - A bottom bar with a key point or takeaway message for enhanced slide impact
+  - Image covering the right third of a slide and fading out towards the middle.
+  - Highlighting lines under the header and between the main content and the footer.
 - **Style**: The style should be more of VC / Startup / Tech, than 2000s traditional investment banking.
 - **Consistency**: Ensure consistency in font, font-sizes, colors, style and spacing for a professional look
 - **HEADING SIZE RULES**: Header definitions and use cases:
