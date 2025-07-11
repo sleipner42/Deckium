@@ -104,8 +104,213 @@ class CustomSizePicker {
     }
 }
 
-// Register custom size picker
-const registerCustomSizePicker = (quill: Quill) => {
+// Custom Vertical Alignment Picker for Quill Toolbar
+class CustomVerticalAlignPicker {
+    constructor(
+        container: HTMLElement,
+        quill: Quill,
+        onVerticalAlignChange: (align: string) => void,
+    ) {
+        this.container = container;
+        this.quill = quill;
+        this.onVerticalAlignChange = onVerticalAlignChange;
+        this.currentValue = 'top';
+        this.isOpen = false;
+        this.init();
+    }
+
+    private container: HTMLElement;
+    private quill: Quill;
+    private onVerticalAlignChange: (align: string) => void;
+    private currentValue: string;
+    private isOpen: boolean;
+    private dropdown: HTMLElement | null = null;
+
+    private getSvgIcon(type: string): string {
+        const svgIcons = {
+            top: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 6.5C6 6.22386 6.22386 6 6.5 6H13.5C13.7761 6 14 6.22386 14 6.5C14 6.77614 13.7761 7 13.5 7H6.5C6.22386 7 6 6.77614 6 6.5Z" fill="#212121"/>
+                <path d="M6.5 9C6.22386 9 6 9.22386 6 9.5C6 9.77614 6.22386 10 6.5 10H13.5C13.7761 10 14 9.77614 14 9.5C14 9.22386 13.7761 9 13.5 9H6.5Z" fill="#212121"/>
+                <path d="M14.5 3C15.8807 3 17 4.11929 17 5.5V14.5C17 15.8807 15.8807 17 14.5 17H5.5C4.11929 17 3 15.8807 3 14.5V5.5C3 4.11929 4.11929 3 5.5 3H14.5ZM14.5 4H5.5C4.67157 4 4 4.67157 4 5.5V14.5C4 15.3284 4.67157 16 5.5 16H14.5C15.3284 16 16 15.3284 16 14.5V5.5C16 4.67157 15.3284 4 14.5 4Z" fill="#212121"/>
+            </svg>`,
+            middle: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 8.5C6 8.22386 6.22386 8 6.5 8H13.5C13.7761 8 14 8.22386 14 8.5C14 8.77614 13.7761 9 13.5 9H6.5C6.22386 9 6 8.77614 6 8.5Z" fill="#212121"/>
+                <path d="M6.5 11C6.22386 11 6 11.2239 6 11.5C6 11.7761 6.22386 12 6.5 12H13.5C13.7761 12 14 11.7761 14 11.5C14 11.2239 13.7761 11 13.5 11H6.5Z" fill="#212121"/>
+                <path d="M14.5 3C15.8807 3 17 4.11929 17 5.5V14.5C17 15.8807 15.8807 17 14.5 17H5.5C4.11929 17 3 15.8807 3 14.5V5.5C3 4.11929 4.11929 3 5.5 3H14.5ZM14.5 4H5.5C4.67157 4 4 4.67157 4 5.5V14.5C4 15.3284 4.67157 16 5.5 16H14.5C15.3284 16 16 15.3284 16 14.5V5.5C16 4.67157 15.3284 4 14.5 4Z" fill="#212121"/>
+            </svg>`,
+            bottom: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13.5 10C13.7761 10 14 10.2239 14 10.5C14 10.7761 13.7761 11 13.5 11H6.5C6.22386 11 6 10.7761 6 10.5C6 10.2239 6.22386 10 6.5 10H13.5Z" fill="#212121"/>
+                <path d="M13.5 13H6.5C6.22386 13 6 13.2239 6 13.5C6 13.7761 6.22386 14 6.5 14H13.5C13.7761 14 14 13.7761 14 13.5C14 13.2239 13.7761 13 13.5 13Z" fill="#212121"/>
+                <path d="M17 14.5C17 15.8807 15.8807 17 14.5 17H5.5C4.11929 17 3 15.8807 3 14.5L3 5.5C3 4.11929 4.11929 3 5.5 3L14.5 3C15.8807 3 17 4.11929 17 5.5V14.5ZM5.5 16H14.5C15.3284 16 16 15.3284 16 14.5V5.5C16 4.67157 15.3284 4 14.5 4H5.5C4.67157 4 4 4.67157 4 5.5L4 14.5C4 15.3284 4.67157 16 5.5 16Z" fill="#212121"/>
+            </svg>`,
+        };
+        return svgIcons[type as keyof typeof svgIcons] || svgIcons.top;
+    }
+
+    private init() {
+        // Create button container
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'ql-valign-custom';
+        button.innerHTML = this.getSvgIcon(this.currentValue);
+        button.title = 'Vertical Alignment';
+
+        // Style the button
+        button.style.cssText = `
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            padding: 4px 6px;
+            margin: 2px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 28px;
+            position: relative;
+        `;
+
+        // Add hover effect
+        button.addEventListener('mouseenter', () => {
+            button.style.backgroundColor = '#f0f0f0';
+        });
+        button.addEventListener('mouseleave', () => {
+            if (!this.isOpen) {
+                button.style.backgroundColor = 'white';
+            }
+        });
+
+        // Handle click to toggle dropdown
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggleDropdown();
+        });
+
+        this.container.appendChild(button);
+        this.createDropdown();
+    }
+
+    private createDropdown() {
+        const dropdown = document.createElement('div');
+        dropdown.className = 'ql-valign-dropdown';
+        dropdown.style.cssText = `
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 10001;
+            display: none;
+            min-width: 32px;
+        `;
+
+        const options = [
+            { value: 'top', title: 'Align Top' },
+            { value: 'middle', title: 'Align Middle' },
+            { value: 'bottom', title: 'Align Bottom' },
+        ];
+
+        options.forEach((option) => {
+            const optionElement = document.createElement('div');
+            optionElement.className = 'ql-valign-option';
+            optionElement.innerHTML = this.getSvgIcon(option.value);
+            optionElement.title = option.title;
+            optionElement.style.cssText = `
+                padding: 4px 6px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background-color 0.2s;
+            `;
+
+            optionElement.addEventListener('mouseenter', () => {
+                optionElement.style.backgroundColor = '#f0f0f0';
+            });
+            optionElement.addEventListener('mouseleave', () => {
+                optionElement.style.backgroundColor = 'transparent';
+            });
+
+            optionElement.addEventListener('click', () => {
+                this.selectValue(option.value);
+                this.closeDropdown();
+            });
+
+            dropdown.appendChild(optionElement);
+        });
+
+        this.container.style.position = 'relative';
+        this.container.appendChild(dropdown);
+        this.dropdown = dropdown;
+    }
+
+    private toggleDropdown() {
+        if (this.isOpen) {
+            this.closeDropdown();
+        } else {
+            this.openDropdown();
+        }
+    }
+
+    private openDropdown() {
+        if (this.dropdown) {
+            this.dropdown.style.display = 'block';
+            this.isOpen = true;
+
+            // Close dropdown when clicking outside
+            setTimeout(() => {
+                document.addEventListener('click', this.closeDropdownHandler);
+            }, 100);
+        }
+    }
+
+    private closeDropdown() {
+        if (this.dropdown) {
+            this.dropdown.style.display = 'none';
+            this.isOpen = false;
+            document.removeEventListener('click', this.closeDropdownHandler);
+        }
+    }
+
+    private closeDropdownHandler = (e: Event) => {
+        const target = e.target as HTMLElement;
+        if (!this.container.contains(target)) {
+            this.closeDropdown();
+        }
+    };
+
+    private selectValue(value: string) {
+        this.currentValue = value;
+        const button = this.container.querySelector(
+            '.ql-valign-custom',
+        ) as HTMLElement;
+        if (button) {
+            button.innerHTML = this.getSvgIcon(value);
+        }
+        this.onVerticalAlignChange(value);
+    }
+
+    public updateValue(verticalAlign: string) {
+        this.currentValue = verticalAlign || 'top';
+        const button = this.container.querySelector(
+            '.ql-valign-custom',
+        ) as HTMLElement;
+        if (button) {
+            button.innerHTML = this.getSvgIcon(this.currentValue);
+        }
+    }
+}
+
+// Register custom pickers
+const registerCustomPickers = (
+    quill: Quill,
+    onVerticalAlignChange: (align: string) => void,
+    currentVerticalAlign: string,
+) => {
     const toolbar = quill.getModule('toolbar');
     if (toolbar && toolbar.container) {
         // Find the font group and add our custom size picker
@@ -131,7 +336,51 @@ const registerCustomSizePicker = (quill: Quill) => {
             // Initialize custom picker
             new CustomSizePicker(sizeSelect, quill);
         }
+
+        // Find the alignment group and add our custom vertical alignment picker
+        const allFormatGroups =
+            toolbar.container.querySelectorAll('.ql-formats');
+        let alignGroup = null;
+        for (const group of allFormatGroups) {
+            if (group.querySelector('.ql-align')) {
+                alignGroup = group;
+                break;
+            }
+        }
+        if (alignGroup) {
+            // Create custom vertical alignment container
+            const vAlignContainer = document.createElement('span');
+            vAlignContainer.className = 'ql-valign-container';
+            vAlignContainer.style.cssText = `
+                display: inline-block;
+                position: relative;
+                vertical-align: top;
+            `;
+
+            // Insert after horizontal alignment picker
+            const alignPicker = alignGroup.querySelector('.ql-align');
+            if (alignPicker) {
+                alignPicker.parentNode?.insertBefore(
+                    vAlignContainer,
+                    alignPicker.nextSibling,
+                );
+            } else {
+                alignGroup.appendChild(vAlignContainer);
+            }
+
+            // Initialize custom vertical alignment picker
+            const vAlignPicker = new CustomVerticalAlignPicker(
+                vAlignContainer,
+                quill,
+                onVerticalAlignChange,
+            );
+            vAlignPicker.updateValue(currentVerticalAlign);
+
+            return vAlignPicker;
+        }
     }
+
+    return null;
 };
 
 // Simple emoji list for quick access
@@ -562,6 +811,7 @@ export const TextElement: React.FC<TextElementProps> = ({
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [hasDragged, setHasDragged] = useState(false);
     const { setActiveEditor } = useTextEditing();
+    const vAlignPickerRef = useRef<CustomVerticalAlignPicker | null>(null);
 
     useEffect(() => {
         if (textRef.current && !quillRef.current) {
@@ -611,8 +861,21 @@ export const TextElement: React.FC<TextElementProps> = ({
                     quill.clipboard.dangerouslyPasteHTML(content);
                 }
 
-                // Register custom size picker in toolbar
-                registerCustomSizePicker(quill);
+                // Handle vertical alignment changes
+                const handleVerticalAlignChange = (align: string) => {
+                    if (onElementUpdate) {
+                        onElementUpdate(element.id, {
+                            verticalAlign: align as 'top' | 'middle' | 'bottom',
+                        });
+                    }
+                };
+
+                // Register custom pickers in toolbar
+                vAlignPickerRef.current = registerCustomPickers(
+                    quill,
+                    handleVerticalAlignChange,
+                    verticalAlign || 'top',
+                );
 
                 const toolbar = quill.getModule('toolbar');
                 if (toolbar?.container) {
@@ -680,6 +943,13 @@ export const TextElement: React.FC<TextElementProps> = ({
             }
         }
     }, [content]);
+
+    // Update vertical alignment picker when element's vertical alignment changes
+    useEffect(() => {
+        if (vAlignPickerRef.current) {
+            vAlignPickerRef.current.updateValue(verticalAlign || 'top');
+        }
+    }, [verticalAlign]);
 
     useEffect(() => {
         if (!isEditing) return;
