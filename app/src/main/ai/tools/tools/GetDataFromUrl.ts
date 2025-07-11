@@ -14,6 +14,122 @@ export class GetDataFromUrl extends BaseTool {
         url: 'The URL to get data from',
     };
 
+    private extractMainContent(html: string): string {
+        const contentSelectors = [
+            'article',
+            'main',
+            '.content',
+            '.article-content',
+            '.post-content',
+            '.entry-content',
+            '.story-content',
+            '.article-body',
+            '.post-body',
+            '.content-body',
+            'div[data-testid="article-body"]',
+            'div[data-testid="story-body"]',
+            '.story-body',
+            '.article-text',
+            '.text-content',
+            '.paywall-B064F03B',
+            'div[class*="article"]',
+            'div[class*="story"]',
+            'div[class*="content"]',
+        ];
+
+        for (const selector of contentSelectors) {
+            const regex = new RegExp(
+                `<${selector}[^>]*>([\\s\\S]*?)<\\/${selector}>`,
+                'gi',
+            );
+            const match = regex.exec(html);
+            if (match) {
+                return match[1];
+            }
+        }
+
+        return html;
+    }
+
+    private cleanHtml(html: string): string {
+        const elementsToRemove = [
+            /<script[^>]*>[\s\S]*?<\/script>/gi,
+            /<style[^>]*>[\s\S]*?<\/style>/gi,
+            /<noscript[^>]*>[\s\S]*?<\/noscript>/gi,
+            /<iframe[^>]*>[\s\S]*?<\/iframe>/gi,
+            /<nav[^>]*>[\s\S]*?<\/nav>/gi,
+            /<aside[^>]*>[\s\S]*?<\/aside>/gi,
+            /<footer[^>]*>[\s\S]*?<\/footer>/gi,
+            /<header[^>]*>[\s\S]*?<\/header>/gi,
+            /<form[^>]*>[\s\S]*?<\/form>/gi,
+            /<div[^>]*class="[^"]*ad[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+            /<div[^>]*class="[^"]*banner[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+            /<div[^>]*class="[^"]*cookie[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+            /<div[^>]*class="[^"]*social[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+            /<div[^>]*class="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+            /<div[^>]*class="[^"]*related[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+            /<div[^>]*class="[^"]*sidebar[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+            /<div[^>]*id="[^"]*ad[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
+            /<div[^>]*data-[^=]*ad[^=]*[^>]*>[\s\S]*?<\/div>/gi,
+            /<!--[\s\S]*?-->/g,
+        ];
+
+        let cleanedHtml = html;
+        for (const regex of elementsToRemove) {
+            cleanedHtml = cleanedHtml.replace(regex, '');
+        }
+
+        return cleanedHtml;
+    }
+
+    private extractMetadata(html: string): {
+        title?: string;
+        description?: string;
+        author?: string;
+        publishDate?: string;
+    } {
+        const metadata: any = {};
+
+        const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+        if (titleMatch) {
+            metadata.title = titleMatch[1].trim();
+        }
+
+        const metaTags = html.match(/<meta[^>]*>/gi) || [];
+        for (const tag of metaTags) {
+            const propertyMatch = tag.match(
+                /property="([^"]*)"[^>]*content="([^"]*)"/i,
+            );
+            const nameMatch = tag.match(
+                /name="([^"]*)"[^>]*content="([^"]*)"/i,
+            );
+
+            if (propertyMatch) {
+                const [, property, content] = propertyMatch;
+                if (property === 'og:title' && !metadata.title) {
+                    metadata.title = content;
+                } else if (property === 'og:description') {
+                    metadata.description = content;
+                } else if (property === 'article:author') {
+                    metadata.author = content;
+                } else if (property === 'article:published_time') {
+                    metadata.publishDate = content;
+                }
+            }
+
+            if (nameMatch) {
+                const [, name, content] = nameMatch;
+                if (name === 'description' && !metadata.description) {
+                    metadata.description = content;
+                } else if (name === 'author' && !metadata.author) {
+                    metadata.author = content;
+                }
+            }
+        }
+
+        return metadata;
+    }
+
     protected async executeImpl(
         params: Record<string, any>,
         _presentationService: PresentationService,
@@ -39,19 +155,72 @@ export class GetDataFromUrl extends BaseTool {
 
         if (typeof data === 'string' && data.trim().startsWith('<')) {
             try {
-                const turndownService = new TurndownService();
-                markdown = turndownService.turndown(data);
-                console.log('HTML to markdown:', markdown);
+                const metadata = this.extractMetadata(data);
+                const mainContent = this.extractMainContent(data);
+                const cleanedHtml = this.cleanHtml(mainContent);
+
+                const turndownService = new TurndownService({
+                    headingStyle: 'atx',
+                    hr: '---',
+                    bulletListMarker: '-',
+                    codeBlockStyle: 'fenced',
+                    fence: '```',
+                    emDelimiter: '*',
+                    strongDelimiter: '**',
+                    linkStyle: 'inlined',
+                    linkReferenceStyle: 'full',
+                });
+
+                turndownService.remove([
+                    'script',
+                    'style',
+                    'noscript',
+                    'iframe',
+                    'nav',
+                    'aside',
+                    'footer',
+                    'header',
+                    'form',
+                ]);
+
+                let contentMarkdown = turndownService.turndown(cleanedHtml);
+
+                contentMarkdown = contentMarkdown.replace(/\n{3,}/g, '\n\n');
+                contentMarkdown = contentMarkdown.replace(/^\s*\n/gm, '');
+                contentMarkdown = contentMarkdown.trim();
+
+                if (
+                    metadata.title ||
+                    metadata.description ||
+                    metadata.author ||
+                    metadata.publishDate
+                ) {
+                    let metadataText = '';
+                    if (metadata.title)
+                        metadataText += `# ${metadata.title}\n\n`;
+                    if (metadata.author)
+                        metadataText += `**Author:** ${metadata.author}\n\n`;
+                    if (metadata.publishDate)
+                        metadataText += `**Published:** ${metadata.publishDate}\n\n`;
+                    if (metadata.description)
+                        metadataText += `**Description:** ${metadata.description}\n\n`;
+                    metadataText += '---\n\n';
+
+                    markdown = metadataText + contentMarkdown;
+                } else {
+                    markdown = contentMarkdown;
+                }
             } catch (error) {
                 console.error('Error converting HTML to Markdown:', error);
+                markdown = 'Error processing content from URL';
             }
         }
 
         return {
             success: true,
             data: {
-                data,
-                markdown: markdown || '',
+                markdown: markdown || 'No content extracted',
+                url,
             },
             editedSlidesIds: [],
         };
