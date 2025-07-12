@@ -8,6 +8,8 @@ export interface PexelsSearchRequest {
     min_width?: number;
     min_height?: number;
     color?: string;
+    per_page?: number;
+    page?: number;
 }
 
 export interface PexelsImageUrls {
@@ -39,6 +41,7 @@ export interface PexelsImage {
 
 export interface IPexelsService {
     searchImages(request: PexelsSearchRequest): Promise<PexelsImage>;
+    searchMultipleImages(request: PexelsSearchRequest): Promise<PexelsImage[]>;
 }
 
 export class PexelsBackendService implements IPexelsService {
@@ -69,6 +72,12 @@ export class PexelsBackendService implements IPexelsService {
             }
             if (request.color) {
                 params.append('color', request.color);
+            }
+            if (request.per_page) {
+                params.append('per_page', request.per_page.toString());
+            }
+            if (request.page) {
+                params.append('page', request.page.toString());
             }
 
             console.log(
@@ -104,6 +113,76 @@ export class PexelsBackendService implements IPexelsService {
             const endTime = performance.now();
             console.error(
                 `[PexelsService] Error searching images (after ${endTime - startTime}ms):`,
+                error,
+            );
+            throw error;
+        }
+    }
+
+    async searchMultipleImages(
+        request: PexelsSearchRequest,
+    ): Promise<PexelsImage[]> {
+        const startTime = performance.now();
+
+        try {
+            const accessToken = await this.getAuthToken();
+
+            const params = new URLSearchParams({
+                query: request.query,
+            });
+
+            if (request.orientation) {
+                params.append('orientation', request.orientation);
+            }
+            if (request.min_width) {
+                params.append('min_width', request.min_width.toString());
+            }
+            if (request.min_height) {
+                params.append('min_height', request.min_height.toString());
+            }
+            if (request.color) {
+                params.append('color', request.color);
+            }
+            if (request.per_page) {
+                params.append('per_page', request.per_page.toString());
+            }
+            if (request.page) {
+                params.append('page', request.page.toString());
+            }
+
+            console.log(
+                `[PexelsService] Searching multiple images with params: ${params.toString()}, url: ${API_URL}/pexels/search-multiple?${params.toString()}`,
+            );
+
+            const response = await fetch(
+                `${API_URL}/pexels/search-multiple?${params.toString()}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Cookie: `access_token=Bearer ${accessToken}`,
+                    },
+                    credentials: 'include',
+                },
+            );
+
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(`Error from backend: ${error}`);
+            }
+
+            const data = await response.json();
+
+            const endTime = performance.now();
+            console.log(
+                `[PexelsService] Multiple image search completed in ${endTime - startTime}ms`,
+            );
+
+            return data;
+        } catch (error) {
+            const endTime = performance.now();
+            console.error(
+                `[PexelsService] Error searching multiple images (after ${endTime - startTime}ms):`,
                 error,
             );
             throw error;
