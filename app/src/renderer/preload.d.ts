@@ -106,6 +106,37 @@ declare global {
             };
             fs: {
                 readFile(filePath: string): Promise<Buffer>;
+                writeTempFile(
+                    filename: string,
+                    buffer: Uint8Array,
+                ): Promise<string>;
+            };
+            pdf: {
+                processPDF(filePath: string): Promise<{
+                    success: boolean;
+                    data?: unknown;
+                    error?: string;
+                }>;
+                uploadAndProcess(): Promise<{
+                    success: boolean;
+                    data?: unknown;
+                    error?: string;
+                }>;
+                getContent(pdfId?: string): Promise<{
+                    success: boolean;
+                    data?: unknown;
+                    error?: string;
+                }>;
+                getAll(): Promise<{
+                    success: boolean;
+                    data?: unknown;
+                    error?: string;
+                }>;
+                deletePDF(pdfId: string): Promise<{
+                    success: boolean;
+                    data?: unknown;
+                    error?: string;
+                }>;
             };
         };
     }

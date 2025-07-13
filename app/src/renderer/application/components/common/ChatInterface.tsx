@@ -75,9 +75,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             if (!e.clipboardData || !currentThread) return;
 
             const { items } = e.clipboardData;
+            let hasHandledSpecialContent = false;
 
-            // Check for images first (prioritize images over text)
+            // Check for PDFs first, then images
             for (let i = 0; i < items.length; i++) {
+                // Check for PDF files
+                if (items[i].type === 'application/pdf') {
+                    const file = items[i].getAsFile();
+                    if (file) {
+                        handlePDFPaste(file);
+                        hasHandledSpecialContent = true;
+                        break;
+                    }
+                }
+
+                // Check for images
                 if (items[i].type.indexOf('image') !== -1) {
                     const blob = items[i].getAsFile();
                     if (blob) {
@@ -125,14 +137,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             }
                         };
                         reader.readAsDataURL(blob);
-
-                        e.preventDefault();
-                        return; // Exit early if image was processed
+                        hasHandledSpecialContent = true;
+                        break;
                     }
                 }
             }
 
-            // Allow normal text pasting to continue in the input field
+            // Only prevent default if we handled special content (PDF/image)
+            if (hasHandledSpecialContent) {
+                e.preventDefault();
+            }
+
+            // If no special content, allow normal text pasting to continue
         };
 
         document.addEventListener('paste', handlePaste);
@@ -143,6 +159,61 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const handlePDFPaste = async (file: File) => {
+        try {
+            const filename = file.name || 'pasted-document.pdf';
+
+            // Show processing indicator in input
+            setInputValue((prev) =>
+                prev
+                    ? `${prev}\n\nProcessing PDF: ${filename}...`
+                    : `Processing PDF: ${filename}...`,
+            );
+
+            // Send PDF to main process for processing
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = new Uint8Array(arrayBuffer);
+
+            // Write temporary file and process it
+            const tempPath = await window.electron.fs.writeTempFile(
+                filename,
+                buffer,
+            );
+            const result = await window.electron.pdf.processPDF(tempPath);
+
+            if (result.success) {
+                // Create a comprehensive message for the agent
+                const pdfMessage = `I've pasted a PDF document: "${filename}"
+
+TEXT CONTENT:
+${result.data.text}
+
+This PDF has ${result.data.numPages} pages and ${result.data.images.length} images. You can use getPDFContent("${result.data.id}") to access this content again, or addImageFromPDF to add any images to slides.
+
+Please analyze this content and let me know how you can help with creating slides from it.`;
+
+                // Replace the processing message with the actual content
+                setInputValue((prev) =>
+                    prev.replace(`Processing PDF: ${filename}...`, pdfMessage),
+                );
+            } else {
+                console.error('PDF processing failed:', result.error);
+                setInputValue((prev) =>
+                    prev.replace(
+                        `Processing PDF: ${filename}...`,
+                        `Failed to process PDF: ${result.error}`,
+                    ),
+                );
+            }
+        } catch (error) {
+            console.error('Error handling PDF paste:', error);
+            const errorMsg = `Failed to process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            setInputValue((prev) =>
+                prev.replace(/Processing PDF:.*/, errorMsg),
+            );
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -1017,7 +1088,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     size="small"
                     placeholder={
                         currentThread
-                            ? 'Type your message or paste an image...'
+                            ? 'Type your message or paste an image/PDF...'
                             : 'Create a thread first'
                     }
                     value={inputValue}

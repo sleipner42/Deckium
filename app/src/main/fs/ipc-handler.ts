@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
-import { extname } from 'node:path';
-import { ipcMain } from 'electron';
+import { extname, join } from 'node:path';
+import { createHash } from 'crypto';
+import { app, ipcMain } from 'electron';
 
 export class FileSystemIpcHandler {
     constructor() {
@@ -34,5 +35,37 @@ export class FileSystemIpcHandler {
                 throw error;
             }
         });
+
+        ipcMain.handle(
+            'fs:write-temp-file',
+            async (_event, filename: string, buffer: Uint8Array) => {
+                try {
+                    // Create temp directory if it doesn't exist
+                    const tempDir = join(
+                        app.getPath('temp'),
+                        'deckium-pdf-paste',
+                    );
+                    await fs.mkdir(tempDir, { recursive: true });
+
+                    // Generate unique filename using hash
+                    const hash = createHash('md5')
+                        .update(buffer)
+                        .digest('hex')
+                        .substring(0, 8);
+                    const ext = extname(filename);
+                    const baseName = filename.replace(ext, '');
+                    const uniqueFilename = `${baseName}_${hash}${ext}`;
+                    const tempPath = join(tempDir, uniqueFilename);
+
+                    // Write the file
+                    await fs.writeFile(tempPath, buffer);
+
+                    return tempPath;
+                } catch (error) {
+                    console.error('Failed to write temp file:', error);
+                    throw error;
+                }
+            },
+        );
     }
 }

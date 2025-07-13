@@ -1,6 +1,7 @@
 import type AuthService from '../../auth/service';
 import type { AITool } from './AITool';
 // import { AddImageFromPexelsTool } from './tools/AddImageFromPexelsTool';
+import { AddImageFromPDFTool } from './tools/AddImageFromPDFTool';
 import { AddImageFromUrlTool } from './tools/AddImageFromUrlTool';
 import { AddTextElementTool } from './tools/AddTextElementTool';
 import { AlignElementsTool } from './tools/AlignElementsTool';
@@ -20,6 +21,7 @@ import { DuplicateSlideTool } from './tools/DuplicateSlideTool';
 import { ExportPowerPointTool } from './tools/ExportPowerPointTool';
 import { GetAllInfoAboutSlideTool } from './tools/GetAllInfoAboutSlideTool';
 import { GetDataFromUrl } from './tools/GetDataFromUrl';
+import { GetPDFContentTool } from './tools/GetPDFContentTool';
 import { GetPresentationInfoTool } from './tools/GetPresentationInfoTool';
 import { GetScreenshotOfSlideTool } from './tools/GetScreenshotOfSlideTool';
 import { GridAlignTool } from './tools/GridAlignTool';
@@ -60,6 +62,8 @@ export class ToolFactory {
                 ? new SearchPexelsImagesTool(authService)
                 : new SearchPexelsImagesTool(),
             new AddImageFromUrlTool(),
+            new AddImageFromPDFTool(),
+            new GetPDFContentTool(),
             new UpdateImageElementTool(),
             new DeleteElementTool(),
             new CriticTool(),

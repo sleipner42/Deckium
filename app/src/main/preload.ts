@@ -96,6 +96,12 @@ export type PowerPointImportChannels =
     | 'powerpoint-import:import-file'
     | 'powerpoint-import:progress';
 
+export type PDFProcessorChannels =
+    | 'pdf:upload-and-process'
+    | 'pdf:get-content'
+    | 'pdf:get-all'
+    | 'pdf:delete';
+
 type IpcChannels =
     | PresentationChannels
     | AIChannels
@@ -103,7 +109,8 @@ type IpcChannels =
     | LintingChannels
     | AuthChannels
     | PDFExportChannels
-    | PowerPointImportChannels;
+    | PowerPointImportChannels
+    | PDFProcessorChannels;
 
 const electronHandler = {
     ipcRenderer: {
@@ -347,6 +354,27 @@ const electronHandler = {
     fs: {
         readFile(filePath: string) {
             return ipcRenderer.invoke('fs:read-file', filePath);
+        },
+        writeTempFile(filename: string, buffer: Uint8Array) {
+            return ipcRenderer.invoke('fs:write-temp-file', filename, buffer);
+        },
+    },
+
+    pdf: {
+        processPDF(filePath: string) {
+            return ipcRenderer.invoke('pdf:process-file', filePath);
+        },
+        uploadAndProcess() {
+            return ipcRenderer.invoke('pdf:upload-and-process');
+        },
+        getContent(pdfId?: string) {
+            return ipcRenderer.invoke('pdf:get-content', pdfId);
+        },
+        getAll() {
+            return ipcRenderer.invoke('pdf:get-all');
+        },
+        deletePDF(pdfId: string) {
+            return ipcRenderer.invoke('pdf:delete', pdfId);
         },
     },
 };

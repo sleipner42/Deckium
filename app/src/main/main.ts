@@ -15,6 +15,7 @@ import { LintingIpcHandler, LintingService } from './linting';
 import MenuBuilder from './menu';
 import { setupPDFExportIPC } from './pdf-export/ipc-handler';
 import { PDFExportService } from './pdf-export/service';
+import { PDFProcessorIPCHandler } from './pdf-processor/ipc-handler';
 import { PowerPointImportIPCHandler } from './powerpoint-import/ipc-handler';
 import { setupPresentationIPC } from './presentation/ipc-handler';
 import { PresentationService } from './presentation/service';
@@ -33,6 +34,7 @@ let aiServiceFactory: IAIServiceFactory;
 let authService: AuthService;
 let lintingService: LintingService;
 let pdfExportService: PDFExportService;
+let pdfProcessorHandler: PDFProcessorIPCHandler;
 let powerpointImportHandler: PowerPointImportIPCHandler;
 let menuBuilder: MenuBuilder;
 
@@ -283,6 +285,7 @@ if (!gotTheLock) {
             new LintingIpcHandler(lintingService);
             new FileSystemIpcHandler();
             setupPDFExportIPC(pdfExportService);
+            pdfProcessorHandler = new PDFProcessorIPCHandler();
 
             // Set secondary window for PDF export service if it exists
             if (secondWindow) {
