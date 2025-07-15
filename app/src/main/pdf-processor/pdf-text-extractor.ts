@@ -7,38 +7,93 @@ export async function extractPDFText(
         // Read the PDF file
         const dataBuffer = await fs.readFile(filePath);
 
-        // Try to parse with pdf-parse
+        // Try pdf2json first as it's more reliable
         try {
-            const pdfParse = require('pdf-parse');
-            const pdfData = await pdfParse(dataBuffer);
+            const PDFParser = require('pdf2json');
 
-            return {
-                text: pdfData.text || '',
-                numPages: pdfData.numpages || 0,
-            };
-        } catch (parseError) {
-            console.warn('pdf-parse failed, attempting fallback:', parseError);
+            return new Promise((resolve, reject) => {
+                const pdfParser = new PDFParser();
 
-            // If pdf-parse fails due to test file issue, provide basic extraction
-            if (
-                parseError instanceof Error &&
-                parseError.message.includes('test/data')
-            ) {
-                console.log(
-                    'Detected pdf-parse test file issue, using fallback approach',
+                pdfParser.on('pdfParser_dataError', (errData: any) => {
+                    console.warn('pdf2json failed:', errData);
+                    reject(errData);
+                });
+
+                pdfParser.on('pdfParser_dataReady', (pdfData: any) => {
+                    try {
+                        // Extract text from pdf2json data
+                        let text = '';
+                        let pageCount = 0;
+
+                        if (pdfData.Pages) {
+                            pageCount = pdfData.Pages.length;
+
+                            for (const page of pdfData.Pages) {
+                                if (page.Texts) {
+                                    for (const textItem of page.Texts) {
+                                        if (textItem.R) {
+                                            for (const run of textItem.R) {
+                                                if (run.T) {
+                                                    // Decode URI component (pdf2json encodes text)
+                                                    text +=
+                                                        decodeURIComponent(
+                                                            run.T,
+                                                        ) + ' ';
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                text += '\n\n'; // Add page breaks
+                            }
+                        }
+
+                        resolve({
+                            text: text.trim(),
+                            numPages: pageCount,
+                        });
+                    } catch (parseError) {
+                        reject(parseError);
+                    }
+                });
+
+                pdfParser.parseBuffer(dataBuffer);
+            });
+        } catch (pdf2jsonError) {
+            console.warn('pdf2json failed, trying pdf-parse:', pdf2jsonError);
+
+            // Fallback to pdf-parse with workaround
+            try {
+                const pdfParse = require('pdf-parse');
+
+                // Try to prevent the test file access by providing options
+                const options = {
+                    // Disable internal test file loading
+                    max: 0,
+                    version: 'default',
+                };
+
+                const pdfData = await pdfParse(dataBuffer, options);
+
+                return {
+                    text: pdfData.text || '',
+                    numPages: pdfData.numpages || 0,
+                };
+            } catch (parseError) {
+                console.warn(
+                    'pdf-parse also failed, using fallback:',
+                    parseError,
                 );
 
-                // Simple text extraction fallback
+                // Final fallback to manual extraction
                 const text = extractTextFromPDFBuffer(dataBuffer);
                 return {
                     text:
                         text ||
                         'PDF content could not be extracted due to parsing limitations.',
-                    numPages: 1, // We can't determine page count without proper parsing
+                    numPages: 1,
                 };
             }
-
-            throw parseError;
         }
     } catch (error) {
         console.error('Error extracting PDF text:', error);
