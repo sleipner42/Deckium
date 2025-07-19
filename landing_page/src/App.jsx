@@ -5,6 +5,7 @@ import BlogPost from './BlogPost';
 import BlogListing from './BlogListing';
 import DownloadPage from './DownloadPage';
 import GoogleAnalytics from './components/GoogleAnalytics';
+import DeckiumMail from './DeckiumMail';
 
 const App = () => {
   return (
@@ -16,6 +17,7 @@ const App = () => {
           <Route path="/blog" element={<BlogListing />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/download" element={<DownloadPage />} />
+          <Route path="/mail" element={<DeckiumMail />} />
         </Routes>
       </div>
     </Router>

@@ -23,11 +23,18 @@ const VimeoPlayer = () => (
   <div className="w-full md:w-1/2">
     <div className="relative w-full h-0 pb-[56.25%]">
       <video
-        src="/deckiumdemo.mp4"
+        src="/deckium-demo-hd.mp4"
         className="absolute top-0 left-0 w-full h-full rounded-lg shadow-lg"
         controls
         playsInline
-      />
+        preload="metadata"
+        onError={(e) => {
+          console.error('Video failed to load:', e);
+        }}
+      >
+        <source src="/deckium-demo-hd.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
     </div>
   </div>
 );
