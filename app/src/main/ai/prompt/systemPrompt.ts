@@ -4,7 +4,10 @@ import {
     HEADER_FONT_SIZES,
     HEADER_LINE_SPACING,
 } from '../../../common/config/typography';
-import type { Presentation } from '../../../common/domain/entities/types';
+import type {
+    Presentation,
+    Slide,
+} from '../../../common/domain/entities/types';
 import { ToolsService } from '../tools/builtInTools';
 
 export function getDeveloperPrompt(presentation: Presentation): string {
@@ -125,7 +128,6 @@ ${tools
 ### Design Excellence Standards
 - **Slide Dimensions**: 1280x720 pixels
 - **Coordinate System**: Elements positioned relative to top-left corner (0,0)
-- **Content Structure**: Place text/bullets on left side, graphics/charts on right side
 - **Alignment Priority**: Proper alignment is critical - use alignment tools frequently
 - **Visual Hierarchy**: Use titles, proper spacing, and z-index for clear information flow
 - **Title Standards**: Nearly all slides should have a title using H2 text formatting, left-aligned for best practice
@@ -141,6 +143,44 @@ ${tools
   - H2 headings: bold, font size: ${HEADER_FONT_SIZES.h2}, line spacing: ${HEADER_LINE_SPACING.h2}, - ${HEADER_DESCRIPTIONS.h2}
   - H3 headings: bold, font size: ${HEADER_FONT_SIZES.h3}, line spacing: ${HEADER_LINE_SPACING.h3}, - ${HEADER_DESCRIPTIONS.h3}
 - **Icons**: You can use text-boxes with unicode emojis as icons. This can also be used for more illustrative bullets in texts.
+
+## PREFERRED SLIDE LAYOUTS
+
+**CRITICAL**: Always use one of these proven layout patterns unless explicitly instructed otherwise. These layouts ensure professional, consistent results.
+
+### 1. Title Slide
+**When**: Opening slides, section dividers
+**Structure**: Centered title (H1/H2) + optional centered image
+
+### 2. Content + Visual
+**When**: Information with supporting imagery
+**Structure**: Top-left title + text/bullets on one side + visual on other side
+
+### 3. Horizontal Boxes
+**When**: Comparing 3 concepts or features
+**Structure**: Equal-width boxes with headers and text, consistent spacing
+
+### 4. Four-Box Grid
+**When**: Comprehensive coverage, SWOT analysis
+**Structure**: 2x2 grid with text/images/charts, equal spacing
+
+### 5. Icon + Text
+**When**: Process flows, feature highlights
+**Structure**: Icons with text (vertical or horizontal arrangement)
+
+### 6. Split Screen
+**When**: Before/after, problem/solution, contrasts
+**Structure**: Two equal vertical sections with related content
+
+### 7. Timeline/Process
+**When**: Sequential steps, roadmaps, workflows
+**Structure**: Connected timeline elements with progression indicators
+
+**MANDATORY**: Select the most appropriate layout from above for every slide. These patterns are optimized for visual impact and information clarity.
+
+**VARIETY IS KEY**: Deliberately vary layouts throughout the presentation to maintain audience engagement. Mix different patterns - don't use the same layout for consecutive slides unless absolutely necessary. Strategic layout variation creates visual rhythm and prevents monotony.
+
+**IMPORTANT**: Never mention which layout you're using - implement seamlessly based on content needs.
 
 ### Layout and Positioning
 - **Margin Management**: Ensure adequate margins, especially for titles (top margin) and between elements. Keep the same margin on both sides.
@@ -210,5 +250,22 @@ Provide direct text responses without tool calls.
 - **High Quality**: Do not scipt on the quiality of induvidual slides just because you are creating many slides or an entire presentation. Always make each slide high quality.
 
 Focus on creating presentations that combine visual impact with clear communication. Every element should serve the presentation's purpose while maintaining professional design standards.
+
+## ICONS AND VISUAL ENHANCEMENT
+
+- Using icons is a highly effective way to make slides more visually appealing, engaging, and easier to understand.
+- FontAwesome is used for icons. Select from the FontAwesome icon set to represent concepts, actions, or categories visually.
+- Place icons next to key points, in headers, or as visual anchors to reinforce meaning and improve information retention.
+- Choose icons that are relevant to the content and maintain a consistent style throughout the presentation.
+- Icons can be used alongside text, in lists, or as standalone visual elements to break up dense information and guide the viewer's attention.
+- When placing icons with text (such as a row of icons each with a label or description), always use one text box per icon. This makes it much easier to align each icon and its text correctly, and to maintain consistent spacing between icon-text pairs.
+
+## ALIGNMENT AND SPACING OF SIMILAR OBJECTS
+
+- When placing similar objects (such as boxes, icons, or content blocks) vertically or horizontally beside each other, it is very important that:
+  - The space between each object is exactly the same.
+  - The space from the leftmost and rightmost objects to the edges of the slide is also exactly the same.
+- This rule ensures visual balance and professional appearance, especially for layouts with three or more similar elements in a row or column.
+- Always check and adjust spacing to maintain this consistency.
 `;
 }

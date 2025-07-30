@@ -338,28 +338,29 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <Box
                 sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}
             >
-                {imageContents.map((item, index) => (
-                    <Box
-                        key={index}
-                        component="img"
-                        src={
-                            (
-                                item as {
-                                    type: 'image_url';
-                                    image_url: { url: string };
-                                }
-                            ).image_url.url
+                {imageContents.map((item) => {
+                    const imageUrl = (
+                        item as {
+                            type: 'image_url';
+                            image_url: { url: string };
                         }
-                        alt="Uploaded image"
-                        sx={{
-                            maxWidth: '100%',
-                            maxHeight: '200px',
-                            borderRadius: 1,
-                            border: '1px solid',
-                            borderColor: 'divider',
-                        }}
-                    />
-                ))}
+                    ).image_url.url;
+                    return (
+                        <Box
+                            key={imageUrl}
+                            component="img"
+                            src={imageUrl}
+                            alt="Uploaded image"
+                            sx={{
+                                maxWidth: '100%',
+                                maxHeight: '200px',
+                                borderRadius: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                            }}
+                        />
+                    );
+                })}
             </Box>
         );
     };
@@ -494,6 +495,31 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                             message.content.startsWith(
                                                 '[CRITIC]',
                                             )),
+                                )
+                                // Filter out assistant messages with empty or whitespace-only content, except for the latest one
+                                .filter(
+                                    (
+                                        message: Message,
+                                        index,
+                                        filteredMessages,
+                                    ) => {
+                                        if (message.role === 'assistant') {
+                                            const { content } =
+                                                processMessageContent(message);
+                                            const isLastAssistantMessage =
+                                                index ===
+                                                    filteredMessages.length -
+                                                        1 &&
+                                                filteredMessages[
+                                                    filteredMessages.length - 1
+                                                ].role === 'assistant';
+                                            return (
+                                                content.trim().length > 0 ||
+                                                isLastAssistantMessage
+                                            );
+                                        }
+                                        return true;
+                                    },
                                 )
                                 .map(
                                     (
@@ -977,7 +1003,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         }}
                     >
                         {pastedImages.map((img, index) => (
-                            <Box key={index} sx={{ position: 'relative' }}>
+                            <Box key={img} sx={{ position: 'relative' }}>
                                 <Box
                                     component="img"
                                     src={img}

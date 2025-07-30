@@ -10,6 +10,7 @@ import { CalculatorTool } from './tools/CalculatorTool';
 import { ChangeElementZIndexTool } from './tools/ChangeElementZIndexTool';
 import { CopyElementsTool } from './tools/CopyElementsTool';
 import { CreateBarChartTool } from './tools/CreateBarChartTool';
+import { CreateIconTool } from './tools/CreateIconTool';
 import { CreateShapeTool } from './tools/CreateShapeTool';
 import { CreateSlideTool } from './tools/CreateSlideTool';
 import { CreateSVGImageTool } from './tools/CreateSVGImageTool';
@@ -17,16 +18,15 @@ import { CriticTool } from './tools/CriticTool';
 import { DeleteElementTool } from './tools/DeleteElementTool';
 import { DeleteSlideTool } from './tools/DeleteSlideTool';
 import { DuplicateSlideTool } from './tools/DuplicateSlideTool';
-import { ExportPowerPointTool } from './tools/ExportPowerPointTool';
 import { GetAllInfoAboutSlideTool } from './tools/GetAllInfoAboutSlideTool';
 import { GetDataFromUrl } from './tools/GetDataFromUrl';
 import { GetPresentationInfoTool } from './tools/GetPresentationInfoTool';
 import { GetScreenshotOfSlideTool } from './tools/GetScreenshotOfSlideTool';
-import { GridAlignTool } from './tools/GridAlignTool';
 import { MatchSizeTool } from './tools/MatchSizeTool';
 import { SearchPexelsImagesTool } from './tools/SearchPexelsImagesTool';
 import { SpaceElementsEvenlyTool } from './tools/SpaceElementsEvenlyTool';
 import { UpdateBarChartTool } from './tools/UpdateBarChartTool';
+import { UpdateIconTool } from './tools/UpdateIconTool';
 import { UpdateImageElementTool } from './tools/UpdateImageElementTool';
 import { UpdateShapeTool } from './tools/UpdateShapeTool';
 import { UpdateSlideTool } from './tools/UpdateSlideTool';
@@ -47,6 +47,8 @@ export class ToolFactory {
             new UpdateBarChartTool(),
             new CreateShapeTool(),
             new UpdateShapeTool(),
+            new CreateIconTool(),
+            new UpdateIconTool(),
             new AlignElementsTool(),
             new SpaceElementsEvenlyTool(),
             new GetDataFromUrl(),

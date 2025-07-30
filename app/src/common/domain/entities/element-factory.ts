@@ -84,6 +84,22 @@ export function createImage(options: {
     };
 }
 
+export function createIcon(options: {
+    iconName: string;
+    position: { x: number; y: number };
+    size: number;
+    color: string;
+}): ContentElement {
+    return {
+        id: uuidv4(),
+        type: 'icon',
+        iconName: options.iconName,
+        position: options.position,
+        size: options.size,
+        color: options.color,
+    };
+}
+
 /**
  * Creates a deep copy of an element with a new UUID
  * Useful for copy/paste and duplication operations
