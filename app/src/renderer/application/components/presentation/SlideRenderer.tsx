@@ -6,6 +6,7 @@ import {
 import {
     BarChart,
     ContentElement,
+    Icon,
     Image as ImageType,
     Plot,
     Shape,
@@ -18,6 +19,7 @@ import { useSnapSystem } from '../../hooks/useSnapSystem';
 import { BarChartPropertiesDialog } from './BarChartPropertiesDialog';
 import { ElementContextMenu } from './ElementContextMenu';
 import { BarChartElement } from './elements/BarChartElement';
+import { IconElement } from './elements/IconElement';
 import { ImageElement } from './elements/ImageElement';
 import { PlotElement } from './elements/PlotElement';
 import { ShapeElement } from './elements/ShapeElement';
@@ -189,7 +191,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             setCanPasteElements(
                 elementData.type === 'kraftpo-elements' && elementData.elements,
             );
-        } catch (error) {
+        } catch (_error) {
             setCanPasteElements(false);
         }
     };
@@ -223,7 +225,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                         timestamp: Date.now(),
                     };
 
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                    if (navigator.clipboard?.writeText) {
                         navigator.clipboard
                             .writeText(JSON.stringify(elementData))
                             .catch(() => {
@@ -320,7 +322,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                 activeElement &&
                 (activeElement.tagName === 'INPUT' ||
                     activeElement.tagName === 'TEXTAREA' ||
-                    activeElement.contentEditable === 'true');
+                    (activeElement as HTMLElement).isContentEditable);
 
             // Check if we're in the agent input field or any chat interface
             const isAgentInput =
@@ -452,7 +454,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                             }, 10);
                             return;
                         }
-                    } catch (parseError) {
+                    } catch (_parseError) {
                         // Not JSON or not our element data, continue to check for file paths
                     }
 
@@ -482,7 +484,11 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                             // Use Electron's file reading capability
                             const fileBuffer =
                                 await window.electron.fs.readFile(trimmedText);
-                            const blob = new Blob([fileBuffer]);
+                            const arrayBuffer = fileBuffer.buffer.slice(
+                                fileBuffer.byteOffset,
+                                fileBuffer.byteOffset + fileBuffer.byteLength,
+                            );
+                            const blob = new Blob([arrayBuffer]);
 
                             const reader = new FileReader();
                             reader.onload = (event) => {
@@ -653,7 +659,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     }
                 }, 10);
             }
-        } catch (error) {
+        } catch (_error) {
             console.warn('No valid elements to paste');
         }
     };
@@ -777,7 +783,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     timestamp: Date.now(),
                 };
 
-                if (navigator.clipboard && navigator.clipboard.writeText) {
+                if (navigator.clipboard?.writeText) {
                     navigator.clipboard
                         .writeText(JSON.stringify(elementData))
                         .catch(() => {
@@ -924,6 +930,33 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                         element={element as BarChart}
                     />
                 );
+            case 'icon':
+                return (
+                    <IconElement
+                        key={element.id}
+                        element={element as Icon}
+                        onClick={(event?: React.MouseEvent) =>
+                            handleElementClick(element.id, event)
+                        }
+                        onContextMenu={(event: React.MouseEvent) =>
+                            handleContextMenu(event, element.id)
+                        }
+                        onElementUpdate={
+                            readOnly ? undefined : updateElementWithSnap
+                        }
+                        isSelected={
+                            !readOnly &&
+                            selectableElements &&
+                            isSelected(element.id)
+                        }
+                        isEditing={
+                            !readOnly &&
+                            selectableElements &&
+                            isEditing(element.id)
+                        }
+                        readOnly={readOnly}
+                    />
+                );
             default:
                 return null;
         }
@@ -933,7 +966,6 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         <div
             ref={slideRef}
             data-slide-container
-            tabIndex={0}
             style={{
                 width: PRESENTATION_DIMENSIONS.WIDTH,
                 height: PRESENTATION_DIMENSIONS.HEIGHT,

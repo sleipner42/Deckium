@@ -90,7 +90,16 @@ export interface Image {
     style?: ElementStyle;
 }
 
-export type ContentElement = Shape | TextBox | Plot | Image | BarChart;
+export interface Icon {
+    id: UUID;
+    type: 'icon';
+    iconName: string;
+    position: Position;
+    size: number;
+    color: string;
+}
+
+export type ContentElement = Shape | TextBox | Plot | Image | BarChart | Icon;
 
 export interface Slide {
     id: UUID;
