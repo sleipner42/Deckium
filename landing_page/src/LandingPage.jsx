@@ -215,8 +215,8 @@ const LandingPage = () => {
           <div className="hidden md:block">
             <button
               onClick={() => {
-                setIsModalOpen(true);
                 trackEvent('Navigation', 'Click', 'Join Waitlist');
+                window.open('https://discord.gg/wYtsfu9J', '_blank');
               }}
               className="bg-indigo-500 text-white px-4 py-2 rounded font-semibold hover:bg-indigo-600 transition-colors"
             >
@@ -267,9 +267,9 @@ const LandingPage = () => {
                   <li className="pt-4 pb-2">
                     <button
                       onClick={() => {
-                        setIsModalOpen(true);
                         setIsMobileMenuOpen(false);
                         trackEvent('Navigation', 'Click', 'Join Waitlist Mobile');
+                        window.open('https://discord.gg/wYtsfu9J', '_blank');
                       }}
                       className="bg-indigo-500 text-white px-6 py-3 rounded font-semibold hover:bg-indigo-600 transition-colors"
                     >
@@ -297,7 +297,10 @@ const LandingPage = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 sm:space-x-4 items-center justify-center md:justify-start">
                 <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => {
+                    trackEvent('Navigation', 'Click', 'Join Waitlist Hero');
+                    window.open('https://discord.gg/wYtsfu9J', '_blank');
+                  }}
                   className="w-full sm:w-auto bg-indigo-500 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-600 transition-colors"
                 >
                   Join waitlist
