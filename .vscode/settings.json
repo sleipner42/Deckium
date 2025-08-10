@@ -60,5 +60,12 @@
         "onSave": "test-src-file"
     },
     "typescript.preferences.includePackageJsonAutoImports": "auto",
-    "black-formatter.cwd": "${workspaceFolder}/backend"
+    "black-formatter.cwd": "${workspaceFolder}/backend",
+    "python.testing.pytestArgs": [
+        "backend",
+        "-s",
+        "-v"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

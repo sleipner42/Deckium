@@ -1,4 +1,7 @@
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
+
+load_dotenv(override=True)
 
 
 class Settings(BaseSettings):
@@ -21,8 +24,8 @@ class Settings(BaseSettings):
     # Azure OpenAI settings
     AZURE_OPENAI_API_KEY: str = ""
     AZURE_OPENAI_ENDPOINT: str = ""
-    AZURE_OPENAI_DEPLOYMENT: str = "gpt-4.1-mini"
-    AZURE_OPENAI_API_VERSION: str = "2024-10-21"
+    AZURE_OPENAI_DEPLOYMENT: str = ""
+    AZURE_OPENAI_API_VERSION: str = "preview"
 
     # Pexels API settings
     PEXELS_API_KEY: str = ""

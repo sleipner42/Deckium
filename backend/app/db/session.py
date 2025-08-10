@@ -85,6 +85,7 @@ async def init_db():
             logger.info("Seeding initial authorized emails...")
             initial_emails = [
                 "kristoffer.nordstrom42@gmail.com",
+                "kristoffer.nordstrom@mynt.se",
                 "elias.aronson@gmail.com",
                 "victor@lagerfors.com",
                 "deckium36@gmail.com",
@@ -107,7 +108,9 @@ async def init_db():
                 "SELECT name FROM sqlite_master WHERE type='table'"
             )
             tables = await cursor.fetchall()
-            logger.info(f"Tables in database: {[table[0] for table in tables]}")
+            logger.info(
+                f"Tables in database: {[table[0] for table in tables]}"
+            )
 
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
