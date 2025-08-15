@@ -221,6 +221,14 @@ export default class MenuBuilder {
             label: 'Window',
             submenu: [
                 {
+                    label: 'Task Manager',
+                    accelerator: 'Command+T',
+                    click: () => {
+                        this.mainWindow.webContents.send('menu:task-manager');
+                    },
+                },
+                { type: 'separator' },
+                {
                     label: 'Minimize',
                     accelerator: 'Command+M',
                     selector: 'performMiniaturize:',
@@ -370,6 +378,20 @@ export default class MenuBuilder {
                         click: () => {
                             console.log('Windows menu Select All clicked');
                             this.mainWindow.webContents.send('menu:select-all');
+                        },
+                    },
+                ],
+            },
+            {
+                label: '&Window',
+                submenu: [
+                    {
+                        label: '&Task Manager',
+                        accelerator: 'Ctrl+T',
+                        click: () => {
+                            this.mainWindow.webContents.send(
+                                'menu:task-manager',
+                            );
                         },
                     },
                 ],

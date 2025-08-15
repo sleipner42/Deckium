@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events';
 import { BrowserWindow } from 'electron';
 import { Thread } from '../../common/domain/entities/ai-types';
 import { UUID } from '../../common/domain/entities/types';
+import { TaskEvent } from './tasks/types';
 
 export class AIEventBus extends EventEmitter {
     static events = {
@@ -12,6 +13,7 @@ export class AIEventBus extends EventEmitter {
         PROCESSING_STARTED: 'ai:processing-started',
         PROCESSING_COMPLETED: 'ai:processing-completed',
         PROCESSING_ERROR: 'ai:processing-error',
+        TASK_EVENT: 'ai:task-event',
     };
 
     broadcastToWindows(eventName: string, data: any): void {
@@ -64,5 +66,9 @@ export class AIEventBus extends EventEmitter {
             threadId,
             error,
         });
+    }
+
+    broadcastTaskEvent(taskEvent: TaskEvent): void {
+        this.broadcastToWindows(AIEventBus.events.TASK_EVENT, taskEvent);
     }
 }

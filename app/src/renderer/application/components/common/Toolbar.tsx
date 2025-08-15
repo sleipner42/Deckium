@@ -1,4 +1,5 @@
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ShapesIcon from '@mui/icons-material/Category';
 import TriangleIcon from '@mui/icons-material/ChangeHistory';
@@ -31,6 +32,8 @@ import {
 } from '../../../../common/domain/entities/element-factory';
 import { useAuth } from '../../context/AuthContext';
 import { usePresentation } from '../../context/PresentationContext';
+import { useTaskManager } from '../../hooks/useTaskManager';
+import { TaskProgressPanel } from '../task-manager/TaskProgressPanel';
 
 interface ToolbarProps {
     style?: React.CSSProperties;
@@ -45,7 +48,26 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
     const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
     const [balance, setBalance] = useState<number>(0);
     const [balanceError, setBalanceError] = useState<boolean>(false);
+    const [taskManagerOpen, setTaskManagerOpen] = useState<boolean>(false);
     const { authState, logout, getBalance } = useAuth();
+    const { activeTasks, isTaskManagerAvailable } = useTaskManager();
+
+    // Listen for menu task manager event
+    useEffect(() => {
+        const electronAPI = (window as any).electron;
+        if (electronAPI && electronAPI.ipcRenderer) {
+            const menuTaskManagerUnsubscribe = electronAPI.ipcRenderer.on(
+                'menu:task-manager',
+                () => {
+                    setTaskManagerOpen(true);
+                },
+            );
+
+            return () => {
+                menuTaskManagerUnsubscribe();
+            };
+        }
+    }, []);
 
     const fetchUserBalance = useCallback(async () => {
         if (authState.isAuthenticated) {
@@ -292,6 +314,54 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
                     </Button>
                 </Tooltip>
 
+                {isTaskManagerAvailable && (
+                    <Tooltip title="Task Manager">
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<AssignmentIcon />}
+                            onClick={() => setTaskManagerOpen(true)}
+                            sx={{
+                                borderRadius: 1,
+                                textTransform: 'none',
+                                px: 2,
+                                ml: 1,
+                                borderColor: alpha('#000', 0.12),
+                                '&:hover': {
+                                    bgcolor: alpha('#007AFF', 0.04),
+                                    borderColor: alpha('#007AFF', 0.5),
+                                },
+                                position: 'relative',
+                            }}
+                        >
+                            Tasks
+                            {activeTasks.length > 0 && (
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        top: -6,
+                                        right: -6,
+                                        bgcolor: 'error.main',
+                                        color: 'white',
+                                        borderRadius: '50%',
+                                        width: 18,
+                                        height: 18,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 'bold',
+                                    }}
+                                >
+                                    {activeTasks.length > 9
+                                        ? '9+'
+                                        : activeTasks.length}
+                                </Box>
+                            )}
+                        </Button>
+                    </Tooltip>
+                )}
+
                 <Tooltip title="Present">
                     <Button
                         variant="contained"
@@ -404,6 +474,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
                     </MenuItem>
                 </Menu>
             </Box>
+
+            <TaskProgressPanel
+                isOpen={taskManagerOpen}
+                onClose={() => setTaskManagerOpen(false)}
+            />
         </Box>
     );
 };

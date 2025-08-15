@@ -19,6 +19,8 @@ import { logger } from '../utils/logger';
 import { AIEventBus } from './event-bus';
 import { getDeveloperPrompt } from './prompt/systemPrompt';
 import { AIState } from './state';
+import { AdaptiveTaskSystem } from './tasks/adaptive-task-system';
+import { SimpleTaskManager } from './tasks/simple-task-manager';
 import { AIToolsService } from './tools/tools';
 
 const USE_CRITIC = false;
@@ -36,6 +38,10 @@ export class AIService {
 
     private lintingService: LintingService;
 
+    private taskManager: SimpleTaskManager;
+
+    private adaptiveTaskSystem: AdaptiveTaskSystem;
+
     private activeRequests: Map<UUID, AbortController> = new Map();
 
     private processingThreads: Set<UUID> = new Set();
@@ -45,6 +51,7 @@ export class AIService {
         presentationService: PresentationService,
         lintingService: LintingService,
         authService?: AuthService,
+        taskManager?: SimpleTaskManager,
     ) {
         this.state = new AIState();
         this.eventBus = new AIEventBus();
@@ -52,6 +59,12 @@ export class AIService {
         this.aiClient = aiClient;
         this.presentationService = presentationService;
         this.lintingService = lintingService;
+        this.taskManager =
+            taskManager || new SimpleTaskManager(presentationService);
+        this.adaptiveTaskSystem = new AdaptiveTaskSystem(
+            this.taskManager.getTaskManager(),
+        );
+        this.setupAdaptiveTaskListeners();
         this.createThread('Thread 1', presentationService.getPresentation().id);
     }
 
@@ -191,6 +204,12 @@ export class AIService {
 
                 this.saveThread(updatedThread);
                 this.eventBus.broadcastThreadUpdated(updatedThread);
+
+                // Use adaptive task system for planning
+                const userRequest =
+                    userMessage ||
+                    (userContent ? JSON.stringify(userContent) : '');
+                await this.handleAdaptiveTaskPlanning(userRequest, thread.id);
 
                 startTime = performance.now();
                 updatedThread = await this.processAILoopWithStreaming(
@@ -662,37 +681,180 @@ Please try again with valid JSON formatting.`;
 
         this.logToolExecutionStart(toolCall, iterationCount);
 
-        const toolResults = await this.toolsService.executeToolCalls(
-            [toolCall],
-            this.presentationService,
+        // Find the corresponding task using adaptive task system
+        const correspondingTask =
+            await this.adaptiveTaskSystem.findCorrespondingTask(toolCall);
+        if (correspondingTask) {
+            console.log(`Found corresponding task: ${correspondingTask.name}`);
+        }
+
+        try {
+            const toolResults = await this.toolsService.executeToolCalls(
+                [toolCall],
+                this.presentationService,
+            );
+
+            this.logToolExecutionCompletion(
+                toolCall.toolName,
+                toolResults,
+                iterationCount,
+            );
+
+            // Mark the task as completed using adaptive task system
+            if (correspondingTask) {
+                await this.adaptiveTaskSystem.completeTask(
+                    correspondingTask.id,
+                    {
+                        success: true,
+                        result: toolResults,
+                    },
+                );
+                console.log(`Task completed: ${correspondingTask.name}`);
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, 300));
+
+            this.checkAborted(abortSignal, 'after tool execution delay');
+
+            const toolResultsFormatted =
+                this.toolsService.formatToolResults(toolResults);
+            let updatedThread = this.addToolResultsToThread(
+                thread,
+                toolResultsFormatted,
+                iterationCount,
+            );
+
+            updatedThread = this.addSlideGridsIfNeeded(
+                updatedThread,
+                toolResults,
+            );
+
+            updatedThread = await this.runLintingOnEditedSlides(
+                updatedThread,
+                toolResults,
+            );
+
+            return updatedThread;
+        } catch (error) {
+            // Mark task as failed using adaptive task system
+            if (correspondingTask) {
+                await this.adaptiveTaskSystem.completeTask(
+                    correspondingTask.id,
+                    {
+                        success: false,
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : 'Unknown error',
+                    },
+                );
+            }
+            throw error;
+        }
+    }
+
+    private async handleAdaptiveTaskPlanning(
+        userRequest: string,
+        threadId: string,
+    ): Promise<void> {
+        console.log(
+            '🎯 Using adaptive task planning for request:',
+            userRequest,
         );
 
-        this.logToolExecutionCompletion(
-            toolCall.toolName,
-            toolResults,
-            iterationCount,
-        );
+        try {
+            // Process the request with adaptive task system
+            const result =
+                await this.adaptiveTaskSystem.processRequest(userRequest);
 
-        await new Promise((resolve) => setTimeout(resolve, 300));
+            console.log(`📊 Execution type: ${result.executionType}`);
 
-        this.checkAborted(abortSignal, 'after tool execution delay');
+            switch (result.executionType) {
+                case 'DIRECT':
+                    console.log('⚡ Direct execution - no task UI needed');
+                    break;
 
-        const toolResultsFormatted =
-            this.toolsService.formatToolResults(toolResults);
-        let updatedThread = this.addToolResultsToThread(
-            thread,
-            toolResultsFormatted,
-            iterationCount,
-        );
+                case 'PROGRESSIVE':
+                    console.log(
+                        `📈 Progressive execution - ${result.tasks?.length || 0} tasks`,
+                    );
+                    if (result.progressMessage) {
+                        console.log(`Progress: ${result.progressMessage}`);
+                    }
+                    break;
 
-        updatedThread = this.addSlideGridsIfNeeded(updatedThread, toolResults);
+                case 'TASK_BASED':
+                    console.log(
+                        `🎯 Task-based execution - ${result.tasks?.length || 0} tasks created`,
+                    );
+                    if (result.tasks) {
+                        result.tasks.forEach((task, index) => {
+                            console.log(
+                                `  ${index + 1}. ${task.name} (${task.toolName})`,
+                            );
+                        });
+                    }
+                    break;
+            }
 
-        updatedThread = await this.runLintingOnEditedSlides(
-            updatedThread,
-            toolResults,
-        );
+            // Store execution context for later use
+            this.eventBus.emit('adaptive-task-planning-complete', {
+                threadId,
+                executionType: result.executionType,
+                tasks: result.tasks,
+                progressMessage: result.progressMessage,
+            });
+        } catch (error) {
+            console.error('Error in adaptive task planning:', error);
+            // Fallback to direct execution
+            console.log('Falling back to direct execution');
+        }
+    }
 
-        return updatedThread;
+    private setupAdaptiveTaskListeners(): void {
+        this.adaptiveTaskSystem.on('taskStarted', (event) => {
+            console.log(`🚀 Task started: ${event.task.name}`);
+        });
+
+        this.adaptiveTaskSystem.on('taskCompleted', (event) => {
+            console.log(`✅ Task completed: ${event.task.name}`);
+        });
+
+        this.adaptiveTaskSystem.on('progress', (event) => {
+            console.log(`📊 Progress: ${event.progress.toFixed(1)}%`);
+        });
+
+        this.adaptiveTaskSystem.on('allTasksCompleted', (event) => {
+            console.log('🎉 All tasks completed successfully!');
+            console.log(`Final stats: ${event.tasks.length} tasks processed`);
+        });
+    }
+
+    private generateTaskName(toolName: string, params: any): string {
+        switch (toolName) {
+            case 'createSlide':
+                return `Create new slide${params.title ? `: ${params.title}` : ''}`;
+            case 'updateSlide':
+                return `Update slide${params.title ? `: ${params.title}` : ''}`;
+            case 'deleteSlide':
+                return 'Delete slide';
+            case 'addTextElement':
+                return `Add text element${params.content ? `: ${params.content.substring(0, 30)}...` : ''}`;
+            case 'updateTextElement':
+                return `Update text element`;
+            case 'createShape':
+                return `Create ${params.type || 'shape'}`;
+            case 'createBarChart':
+                return `Create bar chart${params.title ? `: ${params.title}` : ''}`;
+            case 'addImageFromUrl':
+                return 'Add image from URL';
+            case 'alignElements':
+                return `Align elements ${params.alignment || ''}`;
+            case 'spaceElementsEvenly':
+                return 'Space elements evenly';
+            default:
+                return `Execute ${toolName}`;
+        }
     }
 
     private async runLintingOnEditedSlides(

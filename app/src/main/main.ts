@@ -7,6 +7,7 @@ import { CriticService } from './ai/critic/service';
 import { BackendAIServiceFactory } from './ai/external/backend-ai-service';
 import { setupAIIPC } from './ai/ipc-handler';
 import { AIService } from './ai/service';
+import { SimpleTaskManager } from './ai/tasks/simple-task-manager';
 import { AppImageIntegration } from './appimage-integration';
 import { setupAuthIPC } from './auth/ipc-handler';
 import AuthService from './auth/service';
@@ -35,6 +36,7 @@ let lintingService: LintingService;
 let pdfExportService: PDFExportService;
 let powerpointImportHandler: PowerPointImportIPCHandler;
 let menuBuilder: MenuBuilder;
+let taskManager: SimpleTaskManager;
 
 export async function setSlideInHiddenWindow(slideId: string): Promise<void> {
     if (!secondWindow) {
@@ -258,6 +260,9 @@ if (!gotTheLock) {
             lintingService = new LintingService();
             lintingService.setPresentationService(presentationService);
 
+            // Initialize task manager
+            taskManager = new SimpleTaskManager(presentationService);
+
             // Update menu with presentation service
             if (menuBuilder) {
                 menuBuilder.setPresentationService(presentationService);
@@ -272,6 +277,7 @@ if (!gotTheLock) {
                 presentationService,
                 lintingService,
                 authService,
+                taskManager,
             );
             criticService = new CriticService(aiModel, presentationService);
 

@@ -96,6 +96,17 @@ export type PowerPointImportChannels =
     | 'powerpoint-import:import-file'
     | 'powerpoint-import:progress';
 
+export type TaskManagerChannels =
+    | 'task-manager:available'
+    | 'task-manager:create'
+    | 'task-manager:execute'
+    | 'task-manager:cancel'
+    | 'task-manager:get'
+    | 'task-manager:query'
+    | 'task-manager:update-progress'
+    | 'task-manager:create-workflow'
+    | 'task-manager:event';
+
 type IpcChannels =
     | PresentationChannels
     | AIChannels
@@ -103,7 +114,8 @@ type IpcChannels =
     | LintingChannels
     | AuthChannels
     | PDFExportChannels
-    | PowerPointImportChannels;
+    | PowerPointImportChannels
+    | TaskManagerChannels;
 
 const electronHandler = {
     ipcRenderer: {
@@ -347,6 +359,33 @@ const electronHandler = {
     fs: {
         readFile(filePath: string) {
             return ipcRenderer.invoke('fs:read-file', filePath);
+        },
+    },
+
+    taskManager: {
+        available() {
+            return ipcRenderer.invoke('task-manager:available');
+        },
+        create(data: unknown) {
+            return ipcRenderer.invoke('task-manager:create', data);
+        },
+        execute(taskId: string) {
+            return ipcRenderer.invoke('task-manager:execute', taskId);
+        },
+        cancel(taskId: string) {
+            return ipcRenderer.invoke('task-manager:cancel', taskId);
+        },
+        get(taskId: string) {
+            return ipcRenderer.invoke('task-manager:get', taskId);
+        },
+        query(query: unknown) {
+            return ipcRenderer.invoke('task-manager:query', query);
+        },
+        updateProgress(data: unknown) {
+            return ipcRenderer.invoke('task-manager:update-progress', data);
+        },
+        createWorkflow(data: unknown) {
+            return ipcRenderer.invoke('task-manager:create-workflow', data);
         },
     },
 };
