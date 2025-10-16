@@ -5,6 +5,7 @@ import { IAIServiceFactory } from '../common/domain/interfaces/ai-service.interf
 import { setupCriticIPC } from './ai/critic/ipc-handler';
 import { CriticService } from './ai/critic/service';
 import { BackendAIServiceFactory } from './ai/external/backend-ai-service';
+import { MultiProviderAIServiceFactory } from './ai/external/multi-provider-ai-service';
 import { setupAIIPC } from './ai/ipc-handler';
 import { AIService } from './ai/service';
 import { AppImageIntegration } from './appimage-integration';
@@ -18,11 +19,16 @@ import { PDFExportService } from './pdf-export/service';
 import { PowerPointImportIPCHandler } from './powerpoint-import/ipc-handler';
 import { setupPresentationIPC } from './presentation/ipc-handler';
 import { PresentationService } from './presentation/service';
+import { setupLLMSettingsIPC } from './settings/ipc-handler';
+import { LLMSettingsService } from './settings/llm-settings-service';
 import { setupTextMeasurementIPC } from './text-measurement/ipc-handler';
 import { textMeasurementService } from './text-measurement/service';
 import { getProtocolArgs, resolveHtmlPath } from './util';
 
 dotenv.config();
+
+// Check if running in standalone mode (no backend required)
+const STANDALONE_MODE = process.env.STANDALONE_MODE === 'true';
 
 let mainWindow: BrowserWindow | null = null;
 let secondWindow: BrowserWindow | null = null;
@@ -30,7 +36,8 @@ let presentationService: PresentationService;
 let aiService: AIService;
 let criticService: CriticService;
 let aiServiceFactory: IAIServiceFactory;
-let authService: AuthService;
+let authService: AuthService | null = null;
+let llmSettingsService: LLMSettingsService | null = null;
 let lintingService: LintingService;
 let pdfExportService: PDFExportService;
 let powerpointImportHandler: PowerPointImportIPCHandler;
@@ -250,7 +257,6 @@ if (!gotTheLock) {
             });
 
             presentationService = new PresentationService();
-            authService = new AuthService();
             pdfExportService = new PDFExportService(presentationService);
             powerpointImportHandler = new PowerPointImportIPCHandler();
             powerpointImportHandler.setPresentationService(presentationService);
@@ -263,7 +269,33 @@ if (!gotTheLock) {
                 menuBuilder.setPresentationService(presentationService);
             }
 
-            aiServiceFactory = new BackendAIServiceFactory(authService);
+            // Initialize services based on mode
+            if (STANDALONE_MODE) {
+                console.log('[Main] Running in STANDALONE MODE');
+
+                // Initialize LLM settings service
+                llmSettingsService = new LLMSettingsService();
+                const providerConfig = llmSettingsService.getCurrentProvider();
+
+                // Create AI service with multi-provider support
+                aiServiceFactory = new MultiProviderAIServiceFactory(
+                    providerConfig,
+                );
+
+                // Setup LLM settings IPC
+                setupLLMSettingsIPC(llmSettingsService);
+            } else {
+                console.log('[Main] Running in BACKEND MODE');
+
+                // Initialize auth service for backend mode
+                authService = new AuthService();
+
+                // Create AI service factory with backend
+                aiServiceFactory = new BackendAIServiceFactory(authService);
+
+                // Setup auth IPC
+                setupAuthIPC(authService);
+            }
 
             const aiModel = aiServiceFactory.createService();
 
@@ -275,7 +307,6 @@ if (!gotTheLock) {
             );
             criticService = new CriticService(aiModel, presentationService);
 
-            setupAuthIPC(authService);
             setupAIIPC(aiService);
             setupCriticIPC(criticService);
             setupPresentationIPC(presentationService);

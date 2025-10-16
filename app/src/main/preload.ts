@@ -96,6 +96,15 @@ export type PowerPointImportChannels =
     | 'powerpoint-import:import-file'
     | 'powerpoint-import:progress';
 
+export type LLMSettingsChannels =
+    | 'llm-settings:get-settings'
+    | 'llm-settings:get-current-provider'
+    | 'llm-settings:get-provider-settings'
+    | 'llm-settings:update-provider'
+    | 'llm-settings:set-current-provider'
+    | 'llm-settings:validate-current-provider'
+    | 'llm-settings:clear';
+
 type IpcChannels =
     | PresentationChannels
     | AIChannels
@@ -103,7 +112,8 @@ type IpcChannels =
     | LintingChannels
     | AuthChannels
     | PDFExportChannels
-    | PowerPointImportChannels;
+    | PowerPointImportChannels
+    | LLMSettingsChannels;
 
 const electronHandler = {
     ipcRenderer: {
@@ -349,6 +359,43 @@ const electronHandler = {
             return ipcRenderer.invoke('fs:read-file', filePath);
         },
     },
+
+    llmSettings: {
+        getSettings() {
+            return ipcRenderer.invoke('llm-settings:get-settings');
+        },
+        getCurrentProvider() {
+            return ipcRenderer.invoke('llm-settings:get-current-provider');
+        },
+        getProviderSettings(provider: string) {
+            return ipcRenderer.invoke(
+                'llm-settings:get-provider-settings',
+                provider,
+            );
+        },
+        updateProvider(provider: string, config: unknown) {
+            return ipcRenderer.invoke(
+                'llm-settings:update-provider',
+                provider,
+                config,
+            );
+        },
+        setCurrentProvider(config: unknown) {
+            return ipcRenderer.invoke(
+                'llm-settings:set-current-provider',
+                config,
+            );
+        },
+        validateCurrentProvider() {
+            return ipcRenderer.invoke('llm-settings:validate-current-provider');
+        },
+        clear() {
+            return ipcRenderer.invoke('llm-settings:clear');
+        },
+    },
+
+    // Expose standalone mode flag
+    isStandaloneMode: process.env.STANDALONE_MODE === 'true',
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);

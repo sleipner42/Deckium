@@ -36,6 +36,21 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
 
     useEffect(() => {
         const checkAuthStatus = async () => {
+            // In standalone mode, skip authentication
+            if (window.electron.isStandaloneMode) {
+                setAuthState({
+                    isAuthenticated: true,
+                    user: {
+                        id: 'standalone-user',
+                        username: 'Standalone User',
+                        email: 'standalone@local',
+                    } as IUser,
+                    loading: false,
+                    error: null,
+                });
+                return;
+            }
+
             try {
                 const response = await window.electron.auth.getUser();
                 if (response.success && response.user) {

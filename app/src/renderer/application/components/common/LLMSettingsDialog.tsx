@@ -1,0 +1,286 @@
+import {
+    Alert,
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    Tab,
+    Tabs,
+    TextField,
+    Typography,
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import type {
+    LLMProviderConfig,
+    LLMProviderType,
+} from '../../../../common/domain/interfaces/llm-provider';
+import {
+    DEFAULT_MODELS,
+    PROVIDER_DISPLAY_NAMES,
+} from '../../../../common/domain/interfaces/llm-provider';
+
+interface Props {
+    open: boolean;
+    onClose: () => void;
+}
+
+const LLMSettingsDialog: React.FC<Props> = ({ open, onClose }) => {
+    const [currentProvider, setCurrentProvider] =
+        useState<LLMProviderType>('openai');
+    const [config, setConfig] = useState<Partial<LLMProviderConfig>>({});
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState(false);
+
+    useEffect(() => {
+        if (open) {
+            loadSettings();
+        }
+    }, [open]);
+
+    const loadSettings = async () => {
+        try {
+            const current =
+                await window.electron.llmSettings.getCurrentProvider();
+            setCurrentProvider(current.provider);
+            setConfig(current);
+        } catch (err) {
+            setError('Failed to load settings');
+            console.error(err);
+        }
+    };
+
+    const handleProviderChange = async (provider: LLMProviderType) => {
+        setCurrentProvider(provider);
+        try {
+            const providerConfig =
+                await window.electron.llmSettings.getProviderSettings(provider);
+            setConfig({ ...providerConfig, provider });
+        } catch (err) {
+            console.error('Failed to load provider settings:', err);
+        }
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        setError(null);
+        setSuccess(false);
+
+        try {
+            const fullConfig: LLMProviderConfig = {
+                provider: currentProvider,
+                model: config.model || DEFAULT_MODELS[currentProvider][0],
+                apiKey: config.apiKey,
+                endpoint: config.endpoint,
+                deployment: config.deployment,
+                apiVersion: config.apiVersion,
+            };
+
+            await window.electron.llmSettings.setCurrentProvider(fullConfig);
+            setSuccess(true);
+            setTimeout(() => {
+                onClose();
+            }, 1500);
+        } catch (err) {
+            setError(
+                err instanceof Error ? err.message : 'Failed to save settings',
+            );
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const renderProviderFields = () => {
+        switch (currentProvider) {
+            case 'openai':
+            case 'anthropic':
+            case 'google':
+                return (
+                    <>
+                        <TextField
+                            fullWidth
+                            label="API Key"
+                            type="password"
+                            value={config.apiKey || ''}
+                            onChange={(e) =>
+                                setConfig({ ...config, apiKey: e.target.value })
+                            }
+                            margin="normal"
+                            required
+                        />
+                        <FormControl fullWidth margin="normal">
+                            <InputLabel>Model</InputLabel>
+                            <Select
+                                value={
+                                    config.model ||
+                                    DEFAULT_MODELS[currentProvider][0]
+                                }
+                                onChange={(e) =>
+                                    setConfig({
+                                        ...config,
+                                        model: e.target.value,
+                                    })
+                                }
+                            >
+                                {DEFAULT_MODELS[currentProvider].map(
+                                    (model) => (
+                                        <MenuItem key={model} value={model}>
+                                            {model}
+                                        </MenuItem>
+                                    ),
+                                )}
+                            </Select>
+                        </FormControl>
+                    </>
+                );
+
+            case 'azure-openai':
+                return (
+                    <>
+                        <TextField
+                            fullWidth
+                            label="API Key"
+                            type="password"
+                            value={config.apiKey || ''}
+                            onChange={(e) =>
+                                setConfig({ ...config, apiKey: e.target.value })
+                            }
+                            margin="normal"
+                            required
+                        />
+                        <TextField
+                            fullWidth
+                            label="Endpoint"
+                            value={config.endpoint || ''}
+                            onChange={(e) =>
+                                setConfig({
+                                    ...config,
+                                    endpoint: e.target.value,
+                                })
+                            }
+                            margin="normal"
+                            required
+                            placeholder="https://your-resource.openai.azure.com/"
+                        />
+                        <TextField
+                            fullWidth
+                            label="Deployment Name"
+                            value={config.deployment || ''}
+                            onChange={(e) =>
+                                setConfig({
+                                    ...config,
+                                    deployment: e.target.value,
+                                })
+                            }
+                            margin="normal"
+                            required
+                        />
+                    </>
+                );
+
+            case 'ollama':
+                return (
+                    <>
+                        <TextField
+                            fullWidth
+                            label="Endpoint"
+                            value={config.endpoint || 'http://localhost:11434'}
+                            onChange={(e) =>
+                                setConfig({
+                                    ...config,
+                                    endpoint: e.target.value,
+                                })
+                            }
+                            margin="normal"
+                            required
+                        />
+                        <TextField
+                            fullWidth
+                            label="Model Name"
+                            value={config.model || 'llama3.2'}
+                            onChange={(e) =>
+                                setConfig({ ...config, model: e.target.value })
+                            }
+                            margin="normal"
+                            required
+                        />
+                    </>
+                );
+
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+            <DialogTitle>LLM Provider Settings</DialogTitle>
+            <DialogContent>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                    <Tabs
+                        value={currentProvider}
+                        onChange={(_, value) => handleProviderChange(value)}
+                        variant="scrollable"
+                        scrollButtons="auto"
+                    >
+                        {(
+                            Object.keys(
+                                PROVIDER_DISPLAY_NAMES,
+                            ) as LLMProviderType[]
+                        ).map((provider) => (
+                            <Tab
+                                key={provider}
+                                label={PROVIDER_DISPLAY_NAMES[provider]}
+                                value={provider}
+                            />
+                        ))}
+                    </Tabs>
+                </Box>
+
+                {error && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {error}
+                    </Alert>
+                )}
+
+                {success && (
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                        Settings saved successfully!
+                    </Alert>
+                )}
+
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                >
+                    Configure your {PROVIDER_DISPLAY_NAMES[currentProvider]}{' '}
+                    settings below. These settings are stored locally and never
+                    sent to a backend server.
+                </Typography>
+
+                {renderProviderFields()}
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose} disabled={saving}>
+                    Cancel
+                </Button>
+                <Button
+                    onClick={handleSave}
+                    variant="contained"
+                    disabled={saving}
+                >
+                    {saving ? 'Saving...' : 'Save'}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+};
+
+export default LLMSettingsDialog;

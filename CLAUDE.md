@@ -106,19 +106,127 @@ The FastAPI backend provides:
    - Repository pattern for data access
    - SQLite used for storage
 
+## Running Modes
+
+The application supports two modes of operation:
+
+### 1. Backend Mode (Default)
+- Requires authentication via Google OAuth
+- Uses hosted backend for AI requests
+- Backend manages API keys and billing
+- Set `STANDALONE_MODE=false` in `.env` (or omit the variable)
+
+### 2. Standalone Mode (Open Source)
+- No backend or authentication required
+- Users provide their own LLM API keys
+- All data stays local
+- Set `STANDALONE_MODE=true` in `.env`
+
+## Standalone Mode Configuration
+
+### Environment Setup
+
+Create a `.env` file in `/app` with:
+
+```bash
+# Enable standalone mode (no backend required)
+STANDALONE_MODE=true
+
+# Optional: Logging configuration
+LOG_ENABLED=false
+AI_LOGGING_ENABLED=false
+LOG_LEVEL=info
+```
+
+### Supported LLM Providers
+
+When running in standalone mode, users can configure any of these providers:
+
+1. **OpenAI**
+   - Requires: API Key
+   - Models: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-3.5-turbo
+   - Get API key: https://platform.openai.com/api-keys
+
+2. **Anthropic**
+   - Requires: API Key
+   - Models: claude-3-5-sonnet, claude-3-5-haiku, claude-3-opus
+   - Get API key: https://console.anthropic.com/
+
+3. **Azure OpenAI**
+   - Requires: API Key, Endpoint, Deployment Name
+   - Models: Configured in your Azure deployment
+   - Setup: https://portal.azure.com/
+
+4. **Google AI**
+   - Requires: API Key
+   - Models: gemini-2.0-flash-exp, gemini-1.5-pro, gemini-1.5-flash
+   - Get API key: https://makersuite.google.com/app/apikey
+
+5. **Ollama (Local)**
+   - Requires: Local Ollama installation and endpoint
+   - Models: llama3.2, llama3.1, mistral, phi3, codellama
+   - Default endpoint: http://localhost:11434
+   - Setup: https://ollama.ai/
+
+### User Configuration
+
+In standalone mode, users configure their LLM provider through:
+
+1. **Settings Dialog** (recommended for end-users):
+   - Access via application menu or keyboard shortcut
+   - Visual interface for selecting provider and entering credentials
+   - Component: `/app/src/renderer/application/components/common/LLMSettingsDialog.tsx`
+
+2. **Settings File** (stored automatically):
+   - Located at: `{userData}/llm-settings.json`
+   - Contains provider configurations and API keys
+   - Managed by: `/app/src/main/settings/llm-settings-service.ts`
+
+### Architecture Changes for Standalone Mode
+
+**Main Process** (`/app/src/main/main.ts`):
+```typescript
+// Detects STANDALONE_MODE from environment
+// If true: initializes MultiProviderAIServiceFactory with user's LLM settings
+// If false: initializes BackendAIServiceFactory with authentication
+```
+
+**Multi-Provider Service** (`/app/src/main/ai/external/multi-provider-ai-service.ts`):
+- Implements `IAIService` interface for all supported providers
+- Handles provider-specific message formatting and streaming
+- Services: OpenAIService, AnthropicService, GoogleAIService, OllamaService, StandaloneAzureOpenAIService
+
+**Settings Management**:
+- Service: `/app/src/main/settings/llm-settings-service.ts`
+- IPC Handler: `/app/src/main/settings/ipc-handler.ts`
+- Type Definitions: `/app/src/common/domain/interfaces/llm-provider.ts`
+
+**IPC Channels** (preload.ts):
+```typescript
+// Available channels for renderer process:
+- llm-settings:get-settings
+- llm-settings:get-current-provider
+- llm-settings:update-provider
+- llm-settings:set-current-provider
+- llm-settings:validate-current-provider
+```
+
 ## Development Notes
 
-1. For AI features, you need to set up OpenAI/Azure OpenAI credentials:
-   - Create a `.env` file in the `/app` directory with appropriate API keys
-   - See Azure OpenAI Service integration in `app/src/main/ai/external/azure-openai-service.ts`
+1. For AI features in **Backend Mode**:
+   - Backend handles all LLM communication
+   - Requires authentication to hosted service
+   - See backend setup in `/backend` directory
 
-2. The project uses a tool-based approach for AI:
+2. For AI features in **Standalone Mode**:
+   - Users provide their own API keys via settings dialog
+   - All LLM communication happens directly from the app
+   - No authentication or backend required
+
+3. The project uses a tool-based approach for AI:
    - AI responses can trigger tools that modify the presentation
+   - Tool system works identically in both modes
    - See `app/src/main/ai/tools/tools.ts` for tool execution
-
-3. The frontend and backend are separate applications:
-   - They can be developed and run independently
-   - The backend is not strictly required for basic app functionality
 
 ## Code Quality and Formatting
 

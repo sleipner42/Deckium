@@ -89,11 +89,13 @@
     }
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.66.0",
     "@azure/identity": "^4.8.0",
     "@azure/openai": "^2.0.0",
     "@electron/notarize": "^3.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@google/generative-ai": "^0.24.1",
     "@mui/icons-material": "^7.0.2",
     "@mui/material": "^7.0.2",
     "axios": "^1.9.0",
