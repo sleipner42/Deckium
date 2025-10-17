@@ -47,6 +47,17 @@ export class AIToolsService {
         );
     }
 
+    /**
+     * Counts how many tool call patterns exist in the response
+     */
+    countToolCalls(response: string): number {
+        // Use the most robust pattern to find all tool calls
+        const pattern =
+            /\{\s*"tool"\s*:\s*"[^"]+"\s*,\s*"params"\s*:\s*\{(?:[^{}]|{[^}]*})*\}\s*\}/gi;
+        const matches = response.match(pattern);
+        return matches ? matches.length : 0;
+    }
+
     extractToolCall(response: string): AIToolCall | null {
         // Try multiple regex patterns to handle different JSON formatting styles
         const patterns = [

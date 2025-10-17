@@ -397,6 +397,18 @@ export class AIService {
 
                 const toolCall = this.toolsService.extractToolCall(aiResponse);
 
+                // Check for multiple tool calls AFTER extracting the first one
+                const toolCallCount =
+                    this.toolsService.countToolCalls(aiResponse);
+                if (toolCallCount > 1) {
+                    console.warn(
+                        `WARNING: Detected ${toolCallCount} tool calls in a single response. Only the first one will be executed.`,
+                    );
+
+                    // We'll execute the first tool, but add a warning message
+                    // that will be shown AFTER the tool execution completes
+                }
+
                 if (!toolCall) {
                     // Check if there was a parsing error that we should report
                     const parsingError =
@@ -454,6 +466,7 @@ Please try again with valid JSON formatting.`;
                     toolCall,
                     iterationCount,
                     abortSignal,
+                    toolCallCount,
                 );
 
                 iterationCount++;
@@ -655,6 +668,7 @@ Please try again with valid JSON formatting.`;
         toolCall: AIToolCall,
         iterationCount: number,
         abortSignal?: AbortSignal,
+        toolCallCount: number = 1,
     ): Promise<Thread> {
         console.log(`Executing tool call: ${toolCall.toolName}`);
 
@@ -691,6 +705,49 @@ Please try again with valid JSON formatting.`;
             updatedThread,
             toolResults,
         );
+
+        // Add warning if multiple tool calls were detected
+        if (toolCallCount > 1) {
+            const warningMessage = `**⚠️ CRITICAL VIOLATION DETECTED ⚠️**
+
+You attempted to call **${toolCallCount} tools in a single response**. This is a CRITICAL VIOLATION of the tool calling protocol.
+
+**What happened:**
+- You called ${toolCallCount} tools in one response
+- Only the FIRST tool was executed (the one above)
+- The remaining ${toolCallCount - 1} tool call(s) were IGNORED
+- Any IDs you fabricated or made up DO NOT EXIST
+
+**Why this is a problem:**
+- Tool calls must be executed sequentially, one at a time
+- Each tool returns real data (like IDs) that you MUST wait for
+- Fabricating IDs before waiting for tool results causes failures
+- The system CANNOT execute multiple tools in one response
+
+**What you MUST do NOW:**
+1. Look at the tool result above - it contains the REAL data (like slide IDs)
+2. In your NEXT response, call EXACTLY ONE more tool using that REAL data
+3. NEVER fabricate IDs - always wait for tool results
+4. Repeat: ONE tool per response, WAIT for result, use REAL data
+
+**Example of WRONG behavior (what you just did):**
+\`\`\`
+Creating slide... { "tool": "createSlide", "params": {} }
+Now adding text... { "tool": "addTextElement", "params": { "slideId": "fake-id-123", ... } }
+\`\`\`
+
+**Example of CORRECT behavior (what you should do next):**
+[You see the result above shows slideId = "real-uuid-abc"]
+Response: { "tool": "addTextElement", "params": { "slideId": "real-uuid-abc", ... } }
+
+Please proceed with your NEXT tool call now, using the real data from the result above.`;
+
+            updatedThread = this.state.addMessage(
+                updatedThread,
+                warningMessage,
+                'system',
+            );
+        }
 
         return updatedThread;
     }
