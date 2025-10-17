@@ -83,12 +83,7 @@ async def init_db():
             logger.info("Authorized emails table created successfully")
 
             logger.info("Seeding initial authorized emails...")
-            initial_emails = [
-                "kristoffer.nordstrom42@gmail.com",
-                "elias.aronson@gmail.com",
-                "victor@lagerfors.com",
-                "deckium36@gmail.com",
-            ]
+            initial_emails = ["admin@deckium.com"]
 
             for email in initial_emails:
                 await db.execute(
