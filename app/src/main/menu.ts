@@ -215,6 +215,16 @@ export default class MenuBuilder {
                         this.mainWindow.webContents.send('menu:select-all');
                     },
                 },
+                { type: 'separator' },
+                {
+                    label: 'LLM Settings...',
+                    accelerator: 'Command+,',
+                    click: () => {
+                        this.mainWindow.webContents.send(
+                            'menu:open-llm-settings',
+                        );
+                    },
+                },
             ],
         };
         const subMenuWindow: DarwinMenuItemConstructorOptions = {
@@ -370,6 +380,16 @@ export default class MenuBuilder {
                         click: () => {
                             console.log('Windows menu Select All clicked');
                             this.mainWindow.webContents.send('menu:select-all');
+                        },
+                    },
+                    { type: 'separator' as const },
+                    {
+                        label: 'LLM &Settings...',
+                        accelerator: 'Ctrl+,',
+                        click: () => {
+                            this.mainWindow.webContents.send(
+                                'menu:open-llm-settings',
+                            );
                         },
                     },
                 ],

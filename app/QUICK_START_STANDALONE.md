@@ -1,12 +1,16 @@
 # Quick Start: Standalone Mode
 
-## Step 1: Enable Standalone Mode
+**Note:** Standalone mode is now the **default mode**. The app runs without requiring a backend or authentication.
 
-Create a `.env` file in the `/app` directory:
+## Step 1: Verify Standalone Mode (Optional)
+
+Standalone mode is enabled by default. If you have a `.env` file in the `/app` directory, verify it contains:
 
 ```bash
 STANDALONE_MODE=true
 ```
+
+If you don't have a `.env` file, the app will use standalone mode by default.
 
 ## Step 2: Start the Application
 
@@ -20,10 +24,11 @@ The app will start without requiring login. You now need to configure your LLM p
 
 ### Option A: Via Settings Dialog (Recommended)
 
-1. The app will load, but AI features won't work until you configure an LLM provider
-2. Access the settings dialog (we need to add a menu item or button for this - see below)
-3. Select your provider and enter your API key
-4. Click Save
+1. Open the app
+2. Go to **Edit > LLM Settings...** (or press **Cmd+,** on Mac / **Ctrl+,** on Windows/Linux)
+3. Select your provider (OpenAI, Anthropic, Google AI, Azure OpenAI, or Ollama)
+4. Enter your API key and choose a model
+5. Click **Save**
 
 ### Option B: Manually Edit Settings File
 
@@ -83,9 +88,11 @@ The app will start without requiring login. You now need to configure your LLM p
 
 ## Accessing Settings
 
-**TODO**: We need to add a menu item or settings button to open the LLM Settings Dialog.
-
-Temporary workaround - you can manually edit the settings file as described in Option B above.
+You can access LLM settings at any time:
+- **Menu**: Edit > LLM Settings...
+- **Keyboard shortcut**:
+  - Mac: **Cmd+,**
+  - Windows/Linux: **Ctrl+,**
 
 ## Troubleshooting
 

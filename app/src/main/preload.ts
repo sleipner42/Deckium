@@ -395,7 +395,8 @@ const electronHandler = {
     },
 
     // Expose standalone mode flag
-    isStandaloneMode: process.env.STANDALONE_MODE === 'true',
+    // Default to true if not specified (standalone is now the default)
+    isStandaloneMode: process.env.STANDALONE_MODE !== 'false',
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);

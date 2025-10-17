@@ -28,7 +28,8 @@ import { getProtocolArgs, resolveHtmlPath } from './util';
 dotenv.config();
 
 // Check if running in standalone mode (no backend required)
-const STANDALONE_MODE = process.env.STANDALONE_MODE === 'true';
+// Default to true if not specified (standalone is now the default)
+const STANDALONE_MODE = process.env.STANDALONE_MODE !== 'false';
 
 let mainWindow: BrowserWindow | null = null;
 let secondWindow: BrowserWindow | null = null;
