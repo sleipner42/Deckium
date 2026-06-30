@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
@@ -14,6 +15,14 @@ export class UpdateSlideTool extends BaseTool {
     optionalParams = {
         background: 'The new background color for the slide',
     };
+
+    inputSchema = z.object({
+        slideId: z.string().describe('The ID of the slide to update'),
+        background: z
+            .string()
+            .optional()
+            .describe('The new background color for the slide'),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

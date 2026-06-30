@@ -1,11 +1,10 @@
 import { AIToolCall, Thread } from '../../../common/domain/entities/ai-types';
 import { UUID } from '../../../common/domain/entities/types';
-import {
-    IAIService,
-    MessageContent,
-} from '../../../common/domain/interfaces/ai-service.interface';
+import { MessageContent } from '../../../common/domain/interfaces/ai-service.interface';
 import { PresentationService } from '../../presentation/service';
+import { LLMSettingsService } from '../../settings/llm-settings-service';
 import { AIEventBus } from '../event-bus';
+import { streamChat } from '../external/model-provider';
 import { AIState } from '../state';
 import { AIToolsService } from '../tools/tools';
 import { CriticPrompt } from './systemPrompt';
@@ -17,18 +16,18 @@ export class CriticService {
 
     private toolsService: AIToolsService;
 
-    private aiClient: IAIService;
+    private settings: LLMSettingsService;
 
     private presentationService: PresentationService;
 
     constructor(
-        aiClient: IAIService,
+        settings: LLMSettingsService,
         presentationService: PresentationService,
     ) {
         this.state = new AIState();
         this.eventBus = new AIEventBus();
         this.toolsService = new AIToolsService();
-        this.aiClient = aiClient;
+        this.settings = settings;
         this.presentationService = presentationService;
     }
 
@@ -187,10 +186,10 @@ export class CriticService {
                 this.eventBus.broadcastThreadUpdated(updatedThread);
             };
 
-            const aiResponse = await this.aiClient.chatStream(
+            const aiResponse = await streamChat(
+                this.settings.getCurrentProvider(),
                 updatedThread.messages,
                 onChunk,
-                process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini',
             );
 
             updatedThread = this.state.setMessageStreamingState(
@@ -200,12 +199,6 @@ export class CriticService {
             );
 
             this.eventBus.broadcastThreadUpdated(updatedThread);
-            this.eventBus.broadcastMessageReceived(
-                updatedThread.id,
-                aiResponse,
-                updatedThread,
-            );
-
             this.eventBus.broadcastProcessingCompleted(updatedThread.id);
 
             return aiResponse;

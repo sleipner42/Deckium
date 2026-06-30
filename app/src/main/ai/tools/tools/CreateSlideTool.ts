@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
@@ -6,6 +7,8 @@ export class CreateSlideTool extends BaseTool {
     name = 'createSlide';
 
     description = 'Create a new slide in the current presentation';
+
+    inputSchema = z.object({});
 
     protected async executeImpl(
         _params: Record<string, any>,

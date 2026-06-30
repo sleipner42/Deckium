@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { Image } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
@@ -21,6 +22,34 @@ export class UpdateImageElementTool extends BaseTool {
         zIndex: 'The new z-index value - controls stacking order with higher values appearing on top',
         imageUrl: 'Direct URL to replace the current image',
     };
+
+    inputSchema = z.object({
+        elementId: z.string().describe('The ID of the image element to update'),
+        x: z.number().describe('New X position in pixels').optional(),
+        y: z.number().describe('New Y position in pixels').optional(),
+        width: z
+            .number()
+            .describe(
+                'New width in pixels. If specified, height will be calculated automatically to maintain current aspect ratio. If neither width nor height is specified, dimensions remain unchanged. Do not specify both width and height.',
+            )
+            .optional(),
+        height: z
+            .number()
+            .describe(
+                'New height in pixels. If specified, width will be calculated automatically to maintain current aspect ratio. If neither width nor height is specified, dimensions remain unchanged. Do not specify both width and height.',
+            )
+            .optional(),
+        zIndex: z
+            .number()
+            .describe(
+                'The new z-index value - controls stacking order with higher values appearing on top',
+            )
+            .optional(),
+        imageUrl: z
+            .string()
+            .describe('Direct URL to replace the current image')
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

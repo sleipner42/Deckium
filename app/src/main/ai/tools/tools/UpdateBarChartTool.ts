@@ -1,6 +1,7 @@
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { BarChart } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
+import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class UpdateBarChartTool extends BaseTool {
@@ -25,6 +26,40 @@ export class UpdateBarChartTool extends BaseTool {
         barColor: 'New color for the bars',
         zIndex: 'The new z-index value - controls stacking order with higher values appearing on top',
     };
+
+    inputSchema = z.object({
+        elementId: z
+            .string()
+            .describe('The ID of the bar chart element to update'),
+        title: z.string().describe('The new title of the chart').optional(),
+        xAxisLabel: z
+            .string()
+            .describe('The new label for the X axis')
+            .optional(),
+        yAxisLabel: z
+            .string()
+            .describe('The new label for the Y axis')
+            .optional(),
+        xData: z
+            .string()
+            .describe('New array of x-axis values as comma-separated string')
+            .optional(),
+        yData: z
+            .string()
+            .describe('New array of y-axis values as comma-separated string')
+            .optional(),
+        x: z.number().describe('New X position').optional(),
+        y: z.number().describe('New Y position').optional(),
+        width: z.number().describe('New width').optional(),
+        height: z.number().describe('New height').optional(),
+        barColor: z.string().describe('New color for the bars').optional(),
+        zIndex: z
+            .number()
+            .describe(
+                'The new z-index value - controls stacking order with higher values appearing on top',
+            )
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

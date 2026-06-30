@@ -1,5 +1,6 @@
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
+import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class SpaceElementsEvenlyTool extends BaseTool {
@@ -18,6 +19,24 @@ export class SpaceElementsEvenlyTool extends BaseTool {
         spacing:
             'Fixed spacing between elements in pixels. If not provided, elements will be distributed evenly across the available space',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe('The ID of the slide containing the elements'),
+        elementIds: z
+            .string()
+            .describe('Comma-separated list of element IDs to space evenly'),
+        direction: z
+            .enum(['horizontal', 'vertical'])
+            .describe('Direction to apply spacing: "horizontal" or "vertical"'),
+        spacing: z
+            .number()
+            .describe(
+                'Fixed spacing between elements in pixels. If not provided, elements will be distributed evenly across the available space',
+            )
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

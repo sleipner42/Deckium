@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
@@ -11,6 +12,10 @@ export class DuplicateSlideTool extends BaseTool {
     requiredParams = {
         slideId: 'The ID of the slide to duplicate',
     };
+
+    inputSchema = z.object({
+        slideId: z.string().describe('The ID of the slide to duplicate'),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

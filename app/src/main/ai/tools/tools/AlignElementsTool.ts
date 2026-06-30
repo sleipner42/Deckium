@@ -1,5 +1,6 @@
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
+import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class AlignElementsTool extends BaseTool {
@@ -21,6 +22,41 @@ export class AlignElementsTool extends BaseTool {
         spacing:
             'Spacing between elements in pixels (only used for distribute alignment types)',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe('The ID of the slide containing the elements'),
+        elementIds: z
+            .string()
+            .describe('Comma-separated list of element IDs to align'),
+        alignType: z
+            .enum([
+                'top',
+                'bottom',
+                'left',
+                'right',
+                'center-horizontal',
+                'center-vertical',
+                'distribute-horizontal',
+                'distribute-vertical',
+            ])
+            .describe(
+                'Type of alignment: "top", "bottom", "left", "right", "center-horizontal", "center-vertical", "distribute-horizontal", "distribute-vertical"',
+            ),
+        referenceElementId: z
+            .string()
+            .describe(
+                'ID of the element to use as reference for alignment. If not provided, the tool will determine a reference automatically based on the alignment type.',
+            )
+            .optional(),
+        spacing: z
+            .number()
+            .describe(
+                'Spacing between elements in pixels (only used for distribute alignment types)',
+            )
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

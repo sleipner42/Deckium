@@ -89,6 +89,10 @@
     }
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.84",
+    "@ai-sdk/azure": "^2.0.114",
+    "@ai-sdk/google": "^2.0.77",
+    "@ai-sdk/openai": "^2.0.110",
     "@anthropic-ai/sdk": "^0.66.0",
     "@azure/identity": "^4.8.0",
     "@azure/openai": "^2.0.0",
@@ -98,6 +102,7 @@
     "@google/generative-ai": "^0.24.1",
     "@mui/icons-material": "^7.0.2",
     "@mui/material": "^7.0.2",
+    "ai": "^5.0.208",
     "axios": "^1.9.0",
     "dotenv": "^16.4.7",
     "electron-debug": "^4.1.0",
@@ -108,6 +113,7 @@
     "jspdf": "^3.0.1",
     "jszip": "^3.10.1",
     "katex": "^0.16.22",
+    "ollama-ai-provider-v2": "^3.6.0",
     "openai": "^4.93.0",
     "pdf-lib": "^1.17.1",
     "plotly.js": "^3.0.1",
@@ -124,7 +130,8 @@
     "remark-gfm": "^4.0.1",
     "turndown": "^7.2.0",
     "uuid": "^11.1.0",
-    "yauzl": "^3.2.0"
+    "yauzl": "^3.2.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.6",

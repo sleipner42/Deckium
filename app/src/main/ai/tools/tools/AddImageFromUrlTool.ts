@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createImage } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
@@ -7,7 +8,7 @@ export class AddImageFromUrlTool extends BaseTool {
     name = 'addImageFromUrl';
 
     description =
-        'Add an image from a URL to a presentation slide. Use this after finding suitable image URLs from the searchPexelsImages tool or any other source.';
+        'Add an image from an existing URL to a presentation slide. To create a new custom image from a text description, use the generateImage tool instead.';
 
     requiredParams = {
         slideId:
@@ -23,6 +24,49 @@ export class AddImageFromUrlTool extends BaseTool {
         zIndex: 'The stacking order of the image relative to other elements (higher numbers appear on top). Defaults to 1.',
         title: 'Optional title/description for the image element',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe(
+                'The unique identifier of the slide where the image should be added',
+            ),
+        imageUrl: z
+            .string()
+            .describe('The URL of the image to add to the slide'),
+        x: z
+            .number()
+            .describe(
+                'The horizontal position (in pixels) where the image should be placed on the slide',
+            ),
+        y: z
+            .number()
+            .describe(
+                'The vertical position (in pixels) where the image should be placed on the slide',
+            ),
+        width: z
+            .number()
+            .describe(
+                'The desired width of the image in pixels. If specified, height will be calculated automatically based on the image aspect ratio. Do not specify both width and height. Defaults to 400 if neither is specified.',
+            )
+            .optional(),
+        height: z
+            .number()
+            .describe(
+                'The desired height of the image in pixels. If specified, width will be calculated automatically based on the image aspect ratio. Do not specify both width and height.',
+            )
+            .optional(),
+        zIndex: z
+            .number()
+            .describe(
+                'The stacking order of the image relative to other elements (higher numbers appear on top). Defaults to 1.',
+            )
+            .optional(),
+        title: z
+            .string()
+            .describe('Optional title/description for the image element')
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

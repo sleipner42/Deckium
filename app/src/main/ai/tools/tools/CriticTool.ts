@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import {
     AIToolCall,
     AIToolResult,
@@ -16,6 +17,15 @@ export class CriticTool extends BaseTool {
         slideId:
             'The ID of the slide to review (if not provided, reviews the current/latest slide)',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe(
+                'The ID of the slide to review (if not provided, reviews the current/latest slide)',
+            )
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

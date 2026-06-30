@@ -28,16 +28,16 @@ export class LLMSettingsService {
         return {
             currentProvider: {
                 provider: 'openai',
-                model: 'gpt-4o-mini',
+                model: 'gpt-5.5',
             },
             providers: {
                 openai: {
                     provider: 'openai',
-                    model: 'gpt-4o-mini',
+                    model: 'gpt-5.5',
                 },
                 anthropic: {
                     provider: 'anthropic',
-                    model: 'claude-3-5-sonnet-20241022',
+                    model: 'claude-sonnet-4-6',
                 },
                 'azure-openai': {
                     provider: 'azure-openai',

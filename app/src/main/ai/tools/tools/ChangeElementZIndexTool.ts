@@ -1,5 +1,6 @@
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
+import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class ChangeElementZIndexTool extends BaseTool {
@@ -18,6 +19,26 @@ export class ChangeElementZIndexTool extends BaseTool {
         relative:
             'Set to true to make the change relative to current z-index (e.g., +1, -2). This is useful for bringing an element forward or backward in the stack',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe('The ID of the slide containing the element'),
+        elementId: z
+            .string()
+            .describe('The ID of the element to change the z-index of'),
+        zIndex: z
+            .number()
+            .describe(
+                'The new z-index value (higher values appear on top, default is 1). Good values: 0 for background, 1-4 for regular content, 5+ for headers/important elements',
+            ),
+        relative: z
+            .boolean()
+            .describe(
+                'Set to true to make the change relative to current z-index (e.g., +1, -2). This is useful for bringing an element forward or backward in the stack',
+            )
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

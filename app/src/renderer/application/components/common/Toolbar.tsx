@@ -1,9 +1,7 @@
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ShapesIcon from '@mui/icons-material/Category';
 import TriangleIcon from '@mui/icons-material/ChangeHistory';
 import ImageIcon from '@mui/icons-material/Image';
-import LogoutIcon from '@mui/icons-material/Logout';
 import CircleIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RectangleIcon from '@mui/icons-material/Rectangle';
 import PresentationIcon from '@mui/icons-material/Slideshow';
@@ -12,8 +10,6 @@ import {
     alpha,
     Box,
     Button,
-    Divider,
-    IconButton,
     ListItemIcon,
     ListItemText,
     Menu,
@@ -22,14 +18,13 @@ import {
     Typography,
 } from '@mui/material';
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
     createBarChart,
     createImage,
     createShape,
     createTextBox,
 } from '../../../../common/domain/entities/element-factory';
-import { useAuth } from '../../context/AuthContext';
 import { usePresentation } from '../../context/PresentationContext';
 
 interface ToolbarProps {
@@ -42,29 +37,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
     const [shapeAnchorEl, setShapeAnchorEl] = useState<null | HTMLElement>(
         null,
     );
-    const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
-    const [balance, setBalance] = useState<number>(0);
-    const [balanceError, setBalanceError] = useState<boolean>(false);
-    const { authState, logout, getBalance } = useAuth();
-
-    const fetchUserBalance = useCallback(async () => {
-        if (authState.isAuthenticated) {
-            try {
-                setBalanceError(false);
-                const userBalance = await getBalance();
-                setBalance(userBalance);
-            } catch (error) {
-                console.error('Failed to fetch balance:', error);
-                setBalanceError(true);
-            }
-        }
-    }, [authState.isAuthenticated, getBalance]);
-
-    useEffect(() => {
-        if (authState.isAuthenticated) {
-            fetchUserBalance();
-        }
-    }, [authState.isAuthenticated, fetchUserBalance]);
 
     const handleShapeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
         setShapeAnchorEl(event.currentTarget);
@@ -72,24 +44,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
 
     const handleShapeMenuClose = () => {
         setShapeAnchorEl(null);
-    };
-
-    const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-        setUserAnchorEl(event.currentTarget);
-        fetchUserBalance();
-    };
-
-    const handleUserMenuClose = () => {
-        setUserAnchorEl(null);
-    };
-
-    const handleLogout = async () => {
-        try {
-            await logout();
-            handleUserMenuClose();
-        } catch (error) {
-            console.error('Logout failed:', error);
-        }
     };
 
     const addTextElement = async () => {
@@ -343,64 +297,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ style }) => {
                             <TriangleIcon fontSize="small" />
                         </ListItemIcon>
                         <ListItemText>Triangle</ListItemText>
-                    </MenuItem>
-                </Menu>
-            </Box>
-
-            <Box
-                sx={{
-                    position: 'absolute',
-                    right: 16,
-                    display: 'flex',
-                    alignItems: 'center',
-                    WebkitAppRegion: 'no-drag',
-                }}
-            >
-                <Tooltip title="User Account">
-                    <IconButton
-                        size="small"
-                        onClick={handleUserMenuOpen}
-                        sx={{ color: 'text.secondary' }}
-                    >
-                        <AccountCircleIcon />
-                    </IconButton>
-                </Tooltip>
-
-                <Menu
-                    anchorEl={userAnchorEl}
-                    open={Boolean(userAnchorEl)}
-                    onClose={handleUserMenuClose}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'right',
-                    }}
-                    transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'right',
-                    }}
-                >
-                    {authState.user && (
-                        <Box sx={{ px: 2, py: 1 }}>
-                            <Typography variant="subtitle1">
-                                {authState.user.username}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {authState.user.email}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Balance:{' '}
-                                {balanceError
-                                    ? 'Not available'
-                                    : balance.toFixed(2)}
-                            </Typography>
-                        </Box>
-                    )}
-                    <Divider />
-                    <MenuItem onClick={handleLogout}>
-                        <ListItemIcon>
-                            <LogoutIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText>Logout</ListItemText>
                     </MenuItem>
                 </Menu>
             </Box>

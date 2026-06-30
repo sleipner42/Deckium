@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
@@ -26,6 +27,51 @@ export class ArrangeInMatrixTool extends BaseTool {
         fillDirection:
             'How to fill the matrix: "row-first" (left-to-right, top-to-bottom) or "column-first" (top-to-bottom, left-to-right). Defaults to "row-first"',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe('The ID of the slide containing the elements'),
+        elementIds: z
+            .string()
+            .describe(
+                'Comma-separated list of element IDs to arrange in matrix order',
+            ),
+        rows: z.number().describe('Number of rows in the matrix (e.g., 2)'),
+        columns: z
+            .number()
+            .describe('Number of columns in the matrix (e.g., 2)'),
+        startX: z
+            .number()
+            .describe(
+                'X coordinate for top-left position of the matrix (defaults to 100)',
+            )
+            .optional(),
+        startY: z
+            .number()
+            .describe(
+                'Y coordinate for top-left position of the matrix (defaults to 100)',
+            )
+            .optional(),
+        spacingX: z
+            .number()
+            .describe(
+                'Horizontal spacing between elements in pixels (defaults to 50)',
+            )
+            .optional(),
+        spacingY: z
+            .number()
+            .describe(
+                'Vertical spacing between elements in pixels (defaults to 50)',
+            )
+            .optional(),
+        fillDirection: z
+            .enum(['row-first', 'column-first'])
+            .describe(
+                'How to fill the matrix: "row-first" (left-to-right, top-to-bottom) or "column-first" (top-to-bottom, left-to-right). Defaults to "row-first"',
+            )
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

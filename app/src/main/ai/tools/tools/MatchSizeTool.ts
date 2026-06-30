@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
@@ -21,6 +22,42 @@ export class MatchSizeTool extends BaseTool {
         maintainAspectRatio:
             'boolean (true/false) to maintain aspect ratio when resizing. Defaults to false for individual width/height, true for "both" modes',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe('The ID of the slide containing the elements'),
+        elementIds: z
+            .string()
+            .describe('Comma-separated list of element IDs to resize'),
+        sizeMode: z
+            .enum([
+                'width',
+                'height',
+                'both',
+                'largest-width',
+                'largest-height',
+                'largest-both',
+                'smallest-width',
+                'smallest-height',
+                'smallest-both',
+            ])
+            .describe(
+                'What to match: "width", "height", "both", "largest-width", "largest-height", "largest-both", "smallest-width", "smallest-height", "smallest-both"',
+            ),
+        referenceElementId: z
+            .string()
+            .describe(
+                'ID of the element to use as size reference. If not provided, behavior depends on sizeMode (e.g., largest/smallest modes use automatic selection)',
+            )
+            .optional(),
+        maintainAspectRatio: z
+            .boolean()
+            .describe(
+                'boolean (true/false) to maintain aspect ratio when resizing. Defaults to false for individual width/height, true for "both" modes',
+            )
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

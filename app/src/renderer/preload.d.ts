@@ -3,7 +3,6 @@ import {
     AIChannels,
     CriticChannels,
 } from '../main/preload';
-import { AuthChannels } from '../common/domain/interfaces/auth.interface';
 
 declare global {
     // eslint-disable-next-line no-unused-vars
@@ -15,26 +14,10 @@ declare global {
                     channel:
                         | PresentationChannels
                         | AIChannels
-                        | CriticChannels
-                        | AuthChannels,
+                        | CriticChannels,
                     func: (...args: unknown[]) => void,
                 ): () => void;
                 once(channel: string, func: (...args: unknown[]) => void): void;
-            };
-            auth: {
-                login(): Promise<{ success: boolean; error?: string }>;
-                logout(): Promise<{ success: boolean; error?: string }>;
-                getUser(): Promise<{
-                    success: boolean;
-                    user?: unknown;
-                    error?: string;
-                }>;
-                refreshTokens(): Promise<{ success: boolean; error?: string }>;
-                getBalance(): Promise<{
-                    success: boolean;
-                    balance?: number;
-                    error?: string;
-                }>;
             };
             ai: {
                 createThread(

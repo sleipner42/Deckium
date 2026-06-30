@@ -1,6 +1,7 @@
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createShape } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
+import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class CreateShapeTool extends BaseTool {
@@ -27,6 +28,57 @@ export class CreateShapeTool extends BaseTool {
         strokeWidth: 'The stroke/border width of the shape (defaults to 2)',
         zIndex: 'The z-index of the element for stacking order (defaults to 1)',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe('The ID of the slide to add the shape to'),
+        shapeType: z
+            .enum(['rectangle', 'circle', 'triangle'])
+            .describe(
+                'The type of shape to create (rectangle, circle, or triangle)',
+            ),
+        x: z
+            .number()
+            .describe('X position of the element (defaults to 100)')
+            .optional(),
+        y: z
+            .number()
+            .describe('Y position of the element (defaults to 100)')
+            .optional(),
+        positionReference: z
+            .string()
+            .describe(
+                'The reference position of the element (defaults to top left), choose from top left or center',
+            )
+            .optional(),
+        width: z
+            .number()
+            .describe('The width of the element (defaults to 150)')
+            .optional(),
+        height: z
+            .number()
+            .describe('The height of the element (defaults to 150)')
+            .optional(),
+        fillColor: z
+            .string()
+            .describe('The fill color of the shape (defaults to white)')
+            .optional(),
+        strokeColor: z
+            .string()
+            .describe('The stroke/border color of the shape (defaults to black)')
+            .optional(),
+        strokeWidth: z
+            .number()
+            .describe('The stroke/border width of the shape (defaults to 2)')
+            .optional(),
+        zIndex: z
+            .number()
+            .describe(
+                'The z-index of the element for stacking order (defaults to 1)',
+            )
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

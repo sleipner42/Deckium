@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import {
     DEFAULT_TEXT_FONT_SIZE,
     HEADER_FONT_SIZES,
@@ -57,6 +58,43 @@ export class UpdateTextElementTool extends BaseTool {
         verticalAlign: 'The new vertical alignment of the element',
         zIndex: 'The new z-index value - controls stacking order with higher values appearing on top',
     };
+
+    inputSchema = z.object({
+        elementId: z
+            .string()
+            .describe('The ID of the text element to update'),
+        content: z.string().optional().describe(this.optionalParams.content),
+        x: z.number().optional().describe('New X position'),
+        y: z.number().optional().describe('New Y position'),
+        positionReference: z
+            .enum(['top left', 'center'])
+            .optional()
+            .describe(
+                'The reference position of the element (defaults to top left), choose from top left or center',
+            ),
+        width: z.number().optional().describe('New width'),
+        height: z.number().optional().describe('New height'),
+        borderRadius: z
+            .number()
+            .optional()
+            .describe('The new border radius'),
+        backgroundColor: z
+            .string()
+            .optional()
+            .describe(
+                'The new background color. Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
+            ),
+        verticalAlign: z
+            .enum(['top', 'middle', 'bottom'])
+            .optional()
+            .describe('The new vertical alignment of the element'),
+        zIndex: z
+            .number()
+            .optional()
+            .describe(
+                'The new z-index value - controls stacking order with higher values appearing on top',
+            ),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

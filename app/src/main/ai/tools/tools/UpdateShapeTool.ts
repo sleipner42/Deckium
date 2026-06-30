@@ -1,6 +1,7 @@
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { Shape } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
+import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class UpdateShapeTool extends BaseTool {
@@ -22,6 +23,25 @@ export class UpdateShapeTool extends BaseTool {
         strokeWidth: 'New stroke/border width',
         zIndex: 'The new z-index value - controls stacking order with higher values appearing on top',
     };
+
+    inputSchema = z.object({
+        elementId: z
+            .string()
+            .describe('The ID of the shape element to update'),
+        x: z.number().describe('New X position').optional(),
+        y: z.number().describe('New Y position').optional(),
+        width: z.number().describe('New width').optional(),
+        height: z.number().describe('New height').optional(),
+        fillColor: z.string().describe('New fill color').optional(),
+        strokeColor: z.string().describe('New stroke/border color').optional(),
+        strokeWidth: z.number().describe('New stroke/border width').optional(),
+        zIndex: z
+            .number()
+            .describe(
+                'The new z-index value - controls stacking order with higher values appearing on top',
+            )
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

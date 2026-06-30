@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
@@ -12,6 +13,14 @@ export class CalculatorTool extends BaseTool {
         expression:
             "Mathematical expression to evaluate (e.g., '(500+500)/2', '1280/3', '720-100', 'sqrt(64)', 'pow(2,3)'). Supports basic arithmetic (+, -, *, /), parentheses, and common functions like sqrt, pow, abs, round, floor, ceil, min, max.",
     };
+
+    inputSchema = z.object({
+        expression: z
+            .string()
+            .describe(
+                "Mathematical expression to evaluate (e.g., '(500+500)/2', '1280/3', '720-100', 'sqrt(64)', 'pow(2,3)'). Supports basic arithmetic (+, -, *, /), parentheses, and common functions like sqrt, pow, abs, round, floor, ceil, min, max.",
+            ),
+    });
 
     private safeEvaluate(expression: string): number {
         const cleanExpression = expression.replace(

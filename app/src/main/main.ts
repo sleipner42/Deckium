@@ -1,16 +1,11 @@
 import path from 'node:path';
 import * as dotenv from 'dotenv';
 import { app, BrowserWindow, shell } from 'electron';
-import { IAIServiceFactory } from '../common/domain/interfaces/ai-service.interface';
 import { setupCriticIPC } from './ai/critic/ipc-handler';
 import { CriticService } from './ai/critic/service';
-import { BackendAIServiceFactory } from './ai/external/backend-ai-service';
-import { MultiProviderAIServiceFactory } from './ai/external/multi-provider-ai-service';
 import { setupAIIPC } from './ai/ipc-handler';
 import { AIService } from './ai/service';
 import { AppImageIntegration } from './appimage-integration';
-import { setupAuthIPC } from './auth/ipc-handler';
-import AuthService from './auth/service';
 import { FileSystemIpcHandler } from './fs/ipc-handler';
 import { LintingIpcHandler, LintingService } from './linting';
 import MenuBuilder from './menu';
@@ -23,22 +18,16 @@ import { setupLLMSettingsIPC } from './settings/ipc-handler';
 import { LLMSettingsService } from './settings/llm-settings-service';
 import { setupTextMeasurementIPC } from './text-measurement/ipc-handler';
 import { textMeasurementService } from './text-measurement/service';
-import { getProtocolArgs, resolveHtmlPath } from './util';
+import { resolveHtmlPath } from './util';
 
 dotenv.config();
-
-// Check if running in standalone mode (no backend required)
-// Default to true if not specified (standalone is now the default)
-const STANDALONE_MODE = process.env.STANDALONE_MODE !== 'false';
 
 let mainWindow: BrowserWindow | null = null;
 let secondWindow: BrowserWindow | null = null;
 let presentationService: PresentationService;
 let aiService: AIService;
 let criticService: CriticService;
-let aiServiceFactory: IAIServiceFactory;
-let authService: AuthService | null = null;
-let llmSettingsService: LLMSettingsService | null = null;
+let llmSettingsService: LLMSettingsService;
 let lintingService: LintingService;
 let pdfExportService: PDFExportService;
 let powerpointImportHandler: PowerPointImportIPCHandler;
@@ -157,11 +146,6 @@ const createWindow = async () => {
         }
 
         textMeasurementService.setMainWindow(mainWindow);
-
-        const protocolUrl = getProtocolArgs();
-        if (protocolUrl && authService) {
-            authService.handleDeepLink(protocolUrl);
-        }
     });
 
     mainWindow.on('closed', () => {
@@ -215,23 +199,10 @@ app.on('window-all-closed', () => {
     }
 });
 
-app.on('open-url', (event, url) => {
-    event.preventDefault();
-    if (authService) {
-        authService.handleDeepLink(url);
-    }
-});
-
-app.on('second-instance', (_event, commandLine) => {
+app.on('second-instance', () => {
     if (mainWindow) {
-        _event;
         if (mainWindow.isMinimized()) mainWindow.restore();
         mainWindow.focus();
-    }
-
-    const protocolUrl = commandLine.find((arg) => arg.startsWith('deckium://'));
-    if (protocolUrl && authService) {
-        authService.handleDeepLink(protocolUrl);
     }
 });
 
@@ -243,10 +214,6 @@ if (!gotTheLock) {
 } else {
     app.whenReady()
         .then(async () => {
-            if (!app.isDefaultProtocolClient('deckium')) {
-                app.setAsDefaultProtocolClient('deckium');
-            }
-
             // Handle AppImage desktop integration
             await AppImageIntegration.integrateIfNeeded();
 
@@ -270,43 +237,18 @@ if (!gotTheLock) {
                 menuBuilder.setPresentationService(presentationService);
             }
 
-            // Initialize services based on mode
-            if (STANDALONE_MODE) {
-                console.log('[Main] Running in STANDALONE MODE');
-
-                // Initialize LLM settings service
-                llmSettingsService = new LLMSettingsService();
-                const providerConfig = llmSettingsService.getCurrentProvider();
-
-                // Create AI service with multi-provider support
-                aiServiceFactory = new MultiProviderAIServiceFactory(
-                    providerConfig,
-                );
-
-                // Setup LLM settings IPC
-                setupLLMSettingsIPC(llmSettingsService);
-            } else {
-                console.log('[Main] Running in BACKEND MODE');
-
-                // Initialize auth service for backend mode
-                authService = new AuthService();
-
-                // Create AI service factory with backend
-                aiServiceFactory = new BackendAIServiceFactory(authService);
-
-                // Setup auth IPC
-                setupAuthIPC(authService);
-            }
-
-            const aiModel = aiServiceFactory.createService();
+            llmSettingsService = new LLMSettingsService();
+            setupLLMSettingsIPC(llmSettingsService);
 
             aiService = new AIService(
-                aiModel,
+                llmSettingsService,
                 presentationService,
                 lintingService,
-                authService,
             );
-            criticService = new CriticService(aiModel, presentationService);
+            criticService = new CriticService(
+                llmSettingsService,
+                presentationService,
+            );
 
             setupAIIPC(aiService);
             setupCriticIPC(criticService);

@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createImage } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
@@ -23,6 +24,43 @@ export class CreateSVGImageTool extends BaseTool {
         height: 'The height of the element (defaults to 200)',
         zIndex: 'The z-index of the element for stacking order (defaults to 1)',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe('The ID of the slide to add the SVG image to'),
+        svgContent: z
+            .string()
+            .describe('The SVG markup content to render as an image'),
+        x: z
+            .number()
+            .describe('X position of the element (defaults to 100)')
+            .optional(),
+        y: z
+            .number()
+            .describe('Y position of the element (defaults to 100)')
+            .optional(),
+        positionReference: z
+            .enum(['top left', 'center'])
+            .describe(
+                'The reference position of the element (defaults to top left), choose from top left or center',
+            )
+            .optional(),
+        width: z
+            .number()
+            .describe('The width of the element (defaults to 200)')
+            .optional(),
+        height: z
+            .number()
+            .describe('The height of the element (defaults to 200)')
+            .optional(),
+        zIndex: z
+            .number()
+            .describe(
+                'The z-index of the element for stacking order (defaults to 1)',
+            )
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

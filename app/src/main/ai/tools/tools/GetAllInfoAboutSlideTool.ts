@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import {
     Image,
@@ -18,6 +19,12 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
     requiredParams = {
         slideId: 'The ID of the slide to get information about',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe('The ID of the slide to get information about'),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

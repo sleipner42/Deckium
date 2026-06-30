@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import {
     DEFAULT_TEXT_FONT_SIZE,
     HEADER_FONT_SIZES,
@@ -58,6 +59,57 @@ export class AddTextElementTool extends BaseTool {
             'The vertical alignment of the element (defaults to top), choose from top, middle, bottom',
         zIndex: 'The z-index of the element (defaults to 1) - controls stacking order with higher values appearing on top',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe('The ID of the slide to add the element to'),
+        content: z.string().describe(this.requiredParams.content),
+        x: z
+            .number()
+            .optional()
+            .describe('X position of the element (defaults to center)'),
+        y: z
+            .number()
+            .optional()
+            .describe('Y position of the element (defaults to center)'),
+        positionReference: z
+            .enum(['top left', 'center'])
+            .optional()
+            .describe(
+                'The reference position of the element (defaults to top left), choose from top left or center',
+            ),
+        width: z
+            .number()
+            .optional()
+            .describe('The width of the element (defaults to 400)'),
+        height: z
+            .number()
+            .optional()
+            .describe('The height of the element (defaults to 200)'),
+        borderRadius: z
+            .number()
+            .optional()
+            .describe('The border radius of the element (defaults to 0)'),
+        backgroundColor: z
+            .string()
+            .optional()
+            .describe(
+                'The background color of the element (defaults to transparent). Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
+            ),
+        verticalAlign: z
+            .enum(['top', 'middle', 'bottom'])
+            .optional()
+            .describe(
+                'The vertical alignment of the element (defaults to top), choose from top, middle, bottom',
+            ),
+        zIndex: z
+            .number()
+            .optional()
+            .describe(
+                'The z-index of the element (defaults to 1) - controls stacking order with higher values appearing on top',
+            ),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

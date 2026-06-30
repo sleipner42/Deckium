@@ -1,6 +1,7 @@
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createBarChart } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
+import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class CreateBarChartTool extends BaseTool {
@@ -25,6 +26,51 @@ export class CreateBarChartTool extends BaseTool {
         barColor: 'The color of the bars (defaults to #000000)',
         zIndex: 'The z-index of the element (defaults to 1) - controls stacking order with higher values appearing on top',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe('The ID of the slide to add the bar chart to'),
+        title: z.string().describe('The title of the chart'),
+        xAxisLabel: z.string().describe('The label for the X axis'),
+        yAxisLabel: z.string().describe('The label for the Y axis'),
+        xData: z
+            .string()
+            .describe(
+                'Array of x-axis values (labels) as comma-separated string, e.g. "Jan,Feb,Mar"',
+            ),
+        yData: z
+            .string()
+            .describe(
+                'Array of y-axis values (numbers) as comma-separated string, e.g. "10,24,30"',
+            ),
+        x: z
+            .number()
+            .describe('X position of the element (defaults to 100)')
+            .optional(),
+        y: z
+            .number()
+            .describe('Y position of the element (defaults to 100)')
+            .optional(),
+        width: z
+            .number()
+            .describe('The width of the element (defaults to 400)')
+            .optional(),
+        height: z
+            .number()
+            .describe('The height of the element (defaults to 300)')
+            .optional(),
+        barColor: z
+            .string()
+            .describe('The color of the bars (defaults to #000000)')
+            .optional(),
+        zIndex: z
+            .number()
+            .describe(
+                'The z-index of the element (defaults to 1) - controls stacking order with higher values appearing on top',
+            )
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
@@ -10,6 +11,10 @@ export class DeleteElementTool extends BaseTool {
     requiredParams = {
         elementId: 'The ID of the element to delete',
     };
+
+    inputSchema = z.object({
+        elementId: z.string().describe('The ID of the element to delete'),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

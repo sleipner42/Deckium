@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
@@ -8,6 +9,8 @@ export class GetPresentationInfoTool extends BaseTool {
     description = 'Get information about the current presentation';
 
     requiredParams = {};
+
+    inputSchema = z.object({});
 
     protected async executeImpl(
         _params: Record<string, any>,

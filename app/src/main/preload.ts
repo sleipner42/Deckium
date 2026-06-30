@@ -1,5 +1,4 @@
 import { contextBridge, IpcRendererEvent, ipcRenderer } from 'electron';
-import { AuthChannels } from '../common/domain/interfaces/auth.interface';
 
 export type PresentationChannels =
     | 'presentation:initialize'
@@ -110,7 +109,6 @@ type IpcChannels =
     | AIChannels
     | CriticChannels
     | LintingChannels
-    | AuthChannels
     | PDFExportChannels
     | PowerPointImportChannels
     | LLMSettingsChannels;
@@ -133,24 +131,6 @@ const electronHandler = {
         },
         once(channel: IpcChannels, func: (...args: unknown[]) => void) {
             ipcRenderer.once(channel, (_event, ...args) => func(...args));
-        },
-    },
-
-    auth: {
-        login() {
-            return ipcRenderer.invoke('auth:login');
-        },
-        logout() {
-            return ipcRenderer.invoke('auth:logout');
-        },
-        getUser() {
-            return ipcRenderer.invoke('auth:get-user');
-        },
-        refreshTokens() {
-            return ipcRenderer.invoke('auth:refresh-tokens');
-        },
-        getBalance() {
-            return ipcRenderer.invoke('auth:get-balance');
         },
     },
 
@@ -394,9 +374,7 @@ const electronHandler = {
         },
     },
 
-    // Expose standalone mode flag
-    // Default to true if not specified (standalone is now the default)
-    isStandaloneMode: process.env.STANDALONE_MODE !== 'false',
+    isStandaloneMode: true,
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);

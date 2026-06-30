@@ -2,6 +2,7 @@ import axios from 'axios';
 import TurndownService from 'turndown';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
+import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class GetDataFromUrl extends BaseTool {
@@ -13,6 +14,10 @@ export class GetDataFromUrl extends BaseTool {
     requiredParams = {
         url: 'The URL to get data from',
     };
+
+    inputSchema = z.object({
+        url: z.string().describe('The URL to get data from'),
+    });
 
     private extractMainContent(html: string): string {
         const contentSelectors = [

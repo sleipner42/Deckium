@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import {
     getScreenshotFromSecondaryWindow,
@@ -14,6 +15,12 @@ export class GetScreenshotOfSlideTool extends BaseTool {
     requiredParams = {
         slideId: 'The ID of the slide to get a screenshot of',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe('The ID of the slide to get a screenshot of'),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

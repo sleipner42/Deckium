@@ -2,6 +2,7 @@ import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { cloneElements } from '../../../../common/domain/entities/element-factory';
 import { ContentElement } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
+import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class CopyElementsTool extends BaseTool {
@@ -19,6 +20,24 @@ export class CopyElementsTool extends BaseTool {
         positionOffset:
             'Offset to apply to copied elements position. Default is {x: 0, y: 0}',
     };
+
+    inputSchema = z.object({
+        targetSlideId: z
+            .string()
+            .describe('The ID of the slide where elements should be copied to'),
+        elementIds: z
+            .array(z.string())
+            .describe('Array of element IDs to copy (must not be empty)'),
+        positionOffset: z
+            .object({
+                x: z.number(),
+                y: z.number(),
+            })
+            .describe(
+                'Offset to apply to copied elements position. Default is {x: 0, y: 0}',
+            )
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

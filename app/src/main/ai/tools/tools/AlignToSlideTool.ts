@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
@@ -18,6 +19,32 @@ export class AlignToSlideTool extends BaseTool {
     optionalParams = {
         margin: 'Margin from slide edges in pixels (defaults to 0)',
     };
+
+    inputSchema = z.object({
+        slideId: z
+            .string()
+            .describe('The ID of the slide containing the elements'),
+        elementIds: z
+            .string()
+            .describe('Comma-separated list of element IDs to align to slide'),
+        alignType: z
+            .enum([
+                'center',
+                'center-horizontal',
+                'center-vertical',
+                'top',
+                'bottom',
+                'left',
+                'right',
+            ])
+            .describe(
+                'Type of alignment: "center", "center-horizontal", "center-vertical", "top", "bottom", "left", "right"',
+            ),
+        margin: z
+            .number()
+            .describe('Margin from slide edges in pixels (defaults to 0)')
+            .optional(),
+    });
 
     protected async executeImpl(
         params: Record<string, any>,

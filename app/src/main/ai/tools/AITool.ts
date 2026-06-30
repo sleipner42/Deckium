@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
 import { AIToolResult } from '../../../common/domain/entities/ai-types';
 import { UUID } from '../../../common/domain/entities/types';
 import { PresentationService } from '../../presentation/service';
@@ -13,6 +14,8 @@ export abstract class AITool {
 
     requiredParams: Record<string, string> = {};
     optionalParams: Record<string, string> = {};
+
+    inputSchema: z.ZodType = z.object({});
 
     constructor() {
         this.id = uuidv4();
