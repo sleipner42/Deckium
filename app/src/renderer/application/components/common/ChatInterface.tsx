@@ -1,9 +1,7 @@
 import AddIcon from '@mui/icons-material/Add';
-import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import ImageIcon from '@mui/icons-material/Image';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
-import RateReviewIcon from '@mui/icons-material/RateReview';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import StopIcon from '@mui/icons-material/Stop';
@@ -18,7 +16,6 @@ import {
     InputAdornment,
     Paper,
     TextField,
-    Tooltip,
     Typography,
 } from '@mui/material';
 import { keyframes } from '@mui/system';
@@ -39,6 +36,44 @@ const blinkKeyframes = keyframes`
   from, to { opacity: 1; }
   50% { opacity: 0; }
 `;
+
+const TOOL_PREFIX = '[TOOL]';
+
+interface ToolStep {
+    name: string;
+    label: string;
+    detail: string;
+    status: 'running' | 'done' | 'error';
+}
+
+const parseToolStep = (message: Message): ToolStep | null => {
+    if (
+        message.role !== 'system' ||
+        typeof message.content !== 'string' ||
+        !message.content.startsWith(TOOL_PREFIX)
+    ) {
+        return null;
+    }
+    try {
+        return JSON.parse(message.content.slice(TOOL_PREFIX.length)) as ToolStep;
+    } catch {
+        return null;
+    }
+};
+
+const isVisibleMessage = (message: Message): boolean => {
+    return message.role === 'user' || message.role === 'assistant';
+};
+
+const lastToolStep = (messages: Message[]): ToolStep | null => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+        const step = parseToolStep(messages[i]);
+        if (step) {
+            return step;
+        }
+    }
+    return null;
+};
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     className = '',
@@ -227,95 +262,108 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         });
     };
 
+    const renderLiveActivity = () => {
+        const step = currentThread
+            ? lastToolStep(currentThread.messages)
+            : null;
+        const label = step ? step.label : 'Thinking';
+
+        return (
+            <Box sx={{ alignSelf: 'flex-start', maxWidth: '90%', mb: 1.5 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        gap: 1,
+                        alignItems: 'center',
+                    }}
+                >
+                    <Avatar
+                        sx={{
+                            width: 28,
+                            height: 28,
+                            bgcolor: '#F5F5F7',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                        }}
+                    >
+                        <SmartToyOutlinedIcon
+                            sx={{
+                                color: 'text.secondary',
+                                fontSize: '0.9rem',
+                            }}
+                        />
+                    </Avatar>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            px: 1.5,
+                            py: 0.75,
+                            borderRadius: 1.5,
+                            bgcolor: alpha('#007AFF', 0.08),
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            minWidth: 0,
+                        }}
+                    >
+                        <CircularProgress size={13} thickness={6} />
+                        <Typography
+                            sx={{
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                color: 'text.primary',
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            {label}
+                            <Box
+                                component="span"
+                                sx={{
+                                    animation: `${blinkKeyframes} 1.2s step-end infinite`,
+                                }}
+                            >
+                                …
+                            </Box>
+                        </Typography>
+                        {step?.detail && (
+                            <Typography
+                                sx={{
+                                    fontSize: '0.76rem',
+                                    color: 'text.secondary',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                {step.detail}
+                            </Typography>
+                        )}
+                    </Box>
+                </Box>
+            </Box>
+        );
+    };
+
     const processMessageContent = (
         message: Message,
-    ): { content: string; isUsingTool: boolean; hasImages: boolean } => {
-        if (message.role !== 'assistant') {
-            if (typeof message.content === 'string') {
-                // Remove [CRITIC] prefix if it exists
-                let { content } = message;
-                if (content.startsWith('[CRITIC]')) {
-                    content = content.substring('[CRITIC]'.length).trim();
-                }
-
-                return {
-                    content,
-                    isUsingTool: false,
-                    hasImages: false,
-                };
-            }
-            if (Array.isArray(message.content)) {
-                const textContents = message.content
-                    .filter((item) => item.type === 'text' && item.text)
-                    .map((item) => {
-                        let { text } = item as { type: 'text'; text: string };
-                        // Remove [CRITIC] prefix if it exists
-                        if (text.startsWith('[CRITIC]')) {
-                            text = text.substring('[CRITIC]'.length).trim();
-                        }
-                        return text;
-                    })
-                    .join('\n');
-
-                const hasImages = message.content.some(
-                    (item) => item.type === 'image_url',
-                );
-
-                return {
-                    content: textContents,
-                    isUsingTool: false,
-                    hasImages,
-                };
-            }
-
-            return {
-                content: 'Unsupported message format',
-                isUsingTool: false,
-                hasImages: false,
-            };
-        }
-
+    ): { content: string; hasImages: boolean } => {
         if (typeof message.content === 'string') {
-            const { content } = message;
-            const actionMatch = content.match(
-                /###\s*Action\s*###\s*(\{[\s\S]*\})/i,
-            );
-
-            if (actionMatch) {
-                const descriptionText = content
-                    .split(/###\s*Action\s*###/i)[0]
-                    .trim();
-                return {
-                    content: descriptionText,
-                    isUsingTool: true,
-                    hasImages: false,
-                };
-            }
-
-            return { content, isUsingTool: false, hasImages: false };
+            return { content: message.content, hasImages: false };
         }
+
         if (Array.isArray(message.content)) {
-            const textContents = message.content
+            const content = message.content
                 .filter((item) => item.type === 'text' && item.text)
                 .map((item) => (item as { type: 'text'; text: string }).text)
                 .join('\n');
-
             const hasImages = message.content.some(
                 (item) => item.type === 'image_url',
             );
-
-            return {
-                content: textContents,
-                isUsingTool: false,
-                hasImages,
-            };
+            return { content, hasImages };
         }
 
-        return {
-            content: 'Unsupported message format',
-            isUsingTool: false,
-            hasImages: false,
-        };
+        return { content: '', hasImages: false };
     };
 
     const renderMessageImages = (message: Message) => {
@@ -472,29 +520,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 }}
             >
                 {currentThread ? (
-                    currentThread.messages.filter(
-                        (msg: Message) =>
-                            msg.role === 'user' ||
-                            msg.role === 'assistant' ||
-                            (msg.role === 'system' &&
-                                typeof msg.content === 'string' &&
-                                msg.content.startsWith('[CRITIC]')),
-                    ).length > 0 ? (
+                    currentThread.messages.filter(isVisibleMessage).length >
+                    0 ? (
                         <>
                             {currentThread.messages
-                                // Only show user, assistant and critic messages (including system messages with [CRITIC] prefix)
-                                .filter(
-                                    (message: Message) =>
-                                        message.role === 'user' ||
-                                        message.role === 'assistant' ||
-                                        message.role === 'critic' ||
-                                        (message.role === 'system' &&
-                                            typeof message.content ===
-                                                'string' &&
-                                            message.content.startsWith(
-                                                '[CRITIC]',
-                                            )),
-                                )
+                                .filter(isVisibleMessage)
                                 .map(
                                     (
                                         message: Message,
@@ -504,15 +534,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                         const isUser = message.role === 'user';
                                         const isAssistant =
                                             message.role === 'assistant';
-                                        // Check for system messages with [CRITIC] prefix
-                                        const isCritic =
-                                            message.role === 'critic' ||
-                                            (message.role === 'system' &&
-                                                typeof message.content ===
-                                                    'string' &&
-                                                message.content.startsWith(
-                                                    '[CRITIC]',
-                                                ));
 
                                         // Only show streaming indicators for the last assistant message
                                         const isLastAssistantMessage =
@@ -523,11 +544,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                             isLastAssistantMessage &&
                                             isProcessing;
 
-                                        const {
-                                            content,
-                                            isUsingTool,
-                                            hasImages,
-                                        } = processMessageContent(message);
+                                        const { content, hasImages } =
+                                            processMessageContent(message);
 
                                         return (
                                             <Box
@@ -559,20 +577,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                                             height: 28,
                                                             bgcolor: isUser
                                                                 ? 'primary.main'
-                                                                : isAssistant
-                                                                  ? '#F5F5F7'
-                                                                  : isCritic
-                                                                    ? '#FDF7E2'
-                                                                    : 'grey.300',
-                                                            border:
-                                                                isAssistant ||
-                                                                isCritic
-                                                                    ? '1px solid'
-                                                                    : 'none',
+                                                                : '#F5F5F7',
+                                                            border: isUser
+                                                                ? 'none'
+                                                                : '1px solid',
                                                             borderColor:
-                                                                isCritic
-                                                                    ? '#F0B432'
-                                                                    : 'divider',
+                                                                'divider',
                                                         }}
                                                     >
                                                         {isUser ? (
@@ -583,7 +593,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                                                         '0.9rem',
                                                                 }}
                                                             />
-                                                        ) : isAssistant ? (
+                                                        ) : (
                                                             <SmartToyOutlinedIcon
                                                                 sx={{
                                                                     color: 'text.secondary',
@@ -591,15 +601,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                                                         '0.9rem',
                                                                 }}
                                                             />
-                                                        ) : isCritic ? (
-                                                            <RateReviewIcon
-                                                                sx={{
-                                                                    color: '#D4A017',
-                                                                    fontSize:
-                                                                        '0.9rem',
-                                                                }}
-                                                            />
-                                                        ) : null}
+                                                        )}
                                                     </Avatar>
 
                                                     {/* Message Content */}
@@ -625,26 +627,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                                         >
                                                             {isUser
                                                                 ? 'You'
-                                                                : isAssistant
-                                                                  ? 'AI Assistant'
-                                                                  : isCritic
-                                                                    ? 'Presentation Critic'
-                                                                    : 'System'}{' '}
+                                                                : 'AI Assistant'}{' '}
                                                             •{' '}
                                                             {formatTimestamp(
                                                                 message.timestamp,
-                                                            )}
-                                                            {isUsingTool && (
-                                                                <Tooltip title="Using a tool">
-                                                                    <BuildCircleIcon
-                                                                        sx={{
-                                                                            ml: 0.5,
-                                                                            fontSize:
-                                                                                '0.85rem',
-                                                                            color: 'primary.main',
-                                                                        }}
-                                                                    />
-                                                                </Tooltip>
                                                             )}
                                                             {message.streamingState ===
                                                                 'streaming' &&
@@ -681,35 +667,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                                                     'break-word',
                                                                 bgcolor: isUser
                                                                     ? 'primary.main'
-                                                                    : isAssistant
-                                                                      ? isUsingTool
-                                                                          ? alpha(
-                                                                                '#007AFF',
-                                                                                0.08,
-                                                                            )
-                                                                          : alpha(
-                                                                                '#000',
-                                                                                0.03,
-                                                                            )
-                                                                      : isCritic
-                                                                        ? alpha(
-                                                                              '#F0B432',
-                                                                              0.1,
-                                                                          )
-                                                                        : alpha(
-                                                                              '#000',
-                                                                              0.02,
-                                                                          ),
+                                                                    : alpha(
+                                                                          '#000',
+                                                                          0.03,
+                                                                      ),
                                                                 border: !isUser
                                                                     ? '1px solid'
                                                                     : 'none',
                                                                 borderColor:
-                                                                    isCritic
-                                                                        ? alpha(
-                                                                              '#F0B432',
-                                                                              0.5,
-                                                                          )
-                                                                        : 'divider',
+                                                                    'divider',
                                                             }}
                                                         >
                                                             <Typography
@@ -723,9 +689,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                                                         'visible',
                                                                     color: isUser
                                                                         ? 'white'
-                                                                        : isCritic
-                                                                          ? '#6B4700'
-                                                                          : 'text.primary',
+                                                                        : 'text.primary',
                                                                     fontSize:
                                                                         '0.85rem',
                                                                     lineHeight: 1.5,
@@ -814,91 +778,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                     },
                                 )}
 
-                            {/* Show processing indicator when processing but not streaming */}
                             {isProcessing &&
                                 !currentThread.messages.some(
                                     (m) => m.streamingState === 'streaming',
-                                ) && (
-                                    <Box
-                                        sx={{
-                                            maxWidth: '85%',
-                                            width: 'fit-content',
-                                            alignSelf: 'flex-start',
-                                            mb: 1.5,
-                                        }}
-                                    >
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                flexDirection: 'row',
-                                                gap: 1,
-                                                alignItems: 'flex-start',
-                                            }}
-                                        >
-                                            <Avatar
-                                                sx={{
-                                                    width: 28,
-                                                    height: 28,
-                                                    bgcolor: '#F5F5F7',
-                                                    border: '1px solid',
-                                                    borderColor: 'divider',
-                                                }}
-                                            >
-                                                <SmartToyOutlinedIcon
-                                                    sx={{
-                                                        color: 'text.secondary',
-                                                        fontSize: '0.9rem',
-                                                    }}
-                                                />
-                                            </Avatar>
-                                            <Box>
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 0.5,
-                                                        mb: 0.5,
-                                                        color: 'text.secondary',
-                                                        fontSize: '0.65rem',
-                                                    }}
-                                                >
-                                                    AI Assistant • Processing...
-                                                    <CircularProgress
-                                                        size={8}
-                                                        thickness={6}
-                                                    />
-                                                </Typography>
-                                                <Paper
-                                                    elevation={0}
-                                                    sx={{
-                                                        p: 1.5,
-                                                        borderRadius: 1.5,
-                                                        maxWidth: '100%',
-                                                        bgcolor: alpha(
-                                                            '#007AFF',
-                                                            0.08,
-                                                        ),
-                                                        border: '1px solid',
-                                                        borderColor: 'divider',
-                                                    }}
-                                                >
-                                                    <Typography
-                                                        variant="body2"
-                                                        sx={{
-                                                            color: 'text.secondary',
-                                                            fontSize: '0.85rem',
-                                                            fontStyle: 'italic',
-                                                        }}
-                                                    >
-                                                        Analyzing and executing
-                                                        tools...
-                                                    </Typography>
-                                                </Paper>
-                                            </Box>
-                                        </Box>
-                                    </Box>
-                                )}
+                                ) &&
+                                renderLiveActivity()}
 
                             <Box ref={messagesEndRef} />
                         </>

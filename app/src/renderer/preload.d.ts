@@ -1,8 +1,4 @@
-import {
-    PresentationChannels,
-    AIChannels,
-    CriticChannels,
-} from '../main/preload';
+import { PresentationChannels, AIChannels } from '../main/preload';
 
 declare global {
     // eslint-disable-next-line no-unused-vars
@@ -11,10 +7,7 @@ declare global {
             ipcRenderer: {
                 sendMessage(channel: string, args: unknown[]): void;
                 on(
-                    channel:
-                        | PresentationChannels
-                        | AIChannels
-                        | CriticChannels,
+                    channel: PresentationChannels | AIChannels,
                     func: (...args: unknown[]) => void,
                 ): () => void;
                 once(channel: string, func: (...args: unknown[]) => void): void;
@@ -31,19 +24,6 @@ declare global {
                 ): Promise<unknown>;
                 deleteThread(threadId: string): Promise<unknown>;
                 sendMessage(request: unknown): Promise<unknown>;
-            };
-            critic: {
-                createThread(
-                    title: string,
-                    presentationId: string,
-                ): Promise<unknown>;
-                getThread(threadId: string): Promise<unknown>;
-                saveThread(thread: unknown): Promise<unknown>;
-                getThreadsForPresentation(
-                    presentationId: string,
-                ): Promise<unknown>;
-                deleteThread(threadId: string): Promise<unknown>;
-                reviewSlide(threadId: string, slideId: string): Promise<string>;
             };
             presentation: {
                 initializePresentation(title: string): Promise<unknown>;

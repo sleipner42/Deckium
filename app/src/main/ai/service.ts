@@ -192,7 +192,11 @@ export class AIService {
             if (part.type === 'text-delta') {
                 loop.appendText(part.text);
             } else if (part.type === 'tool-call') {
-                loop.onToolCall(part.toolName);
+                loop.onToolCall(part.toolCallId, part.toolName, part.input);
+            } else if (part.type === 'tool-result') {
+                loop.onToolResult(part.toolCallId, part.output);
+            } else if (part.type === 'tool-error') {
+                loop.onToolResult(part.toolCallId, undefined, true);
             } else if (part.type === 'error') {
                 throw part.error;
             }
@@ -291,6 +295,8 @@ class AgentLoopState {
 
     private finalText = '';
 
+    private toolStepIds: Map<string, string> = new Map();
+
     constructor(
         private state: AIState,
         private eventBus: AIEventBus,
@@ -316,12 +322,29 @@ class AgentLoopState {
         this.eventBus.broadcastThreadUpdated(this.thread);
     }
 
-    onToolCall(toolName: string): void {
+    onToolCall(toolCallId: string, toolName: string, input: unknown): void {
         this.closeAssistantMessage();
-        this.thread = this.state.addMessage(
+        const stepId = crypto.randomUUID();
+        this.toolStepIds.set(toolCallId, stepId);
+        this.thread = this.state.addMessageWithState(
             this.thread,
-            `🔧 ${toolName}`,
+            encodeToolStep(toolName, input, 'running'),
             'system',
+            stepId,
+        );
+        this.eventBus.broadcastThreadUpdated(this.thread);
+    }
+
+    onToolResult(toolCallId: string, output: unknown, failed = false): void {
+        const stepId = this.toolStepIds.get(toolCallId);
+        if (!stepId) {
+            return;
+        }
+        const status = failed || isFailedOutput(output) ? 'error' : 'done';
+        this.thread = this.state.updateMessageContent(
+            this.thread,
+            stepId,
+            updateToolStepStatus(this.thread, stepId, status),
         );
         this.eventBus.broadcastThreadUpdated(this.thread);
     }
@@ -369,6 +392,88 @@ class AgentLoopState {
         this.currentAssistantId = null;
         this.currentContent = '';
     }
+}
+
+const TOOL_PREFIX = '[TOOL]';
+
+function encodeToolStep(
+    name: string,
+    input: unknown,
+    status: 'running' | 'done' | 'error',
+): string {
+    return (
+        TOOL_PREFIX +
+        JSON.stringify({
+            name,
+            label: humanizeToolName(name),
+            detail: toolDetail(input),
+            status,
+        })
+    );
+}
+
+function updateToolStepStatus(
+    thread: Thread,
+    stepId: string,
+    status: 'running' | 'done' | 'error',
+): string {
+    const message = thread.messages.find((m) => m.id === stepId);
+    let data: Record<string, unknown> = { status };
+    if (
+        message &&
+        typeof message.content === 'string' &&
+        message.content.startsWith(TOOL_PREFIX)
+    ) {
+        try {
+            data = {
+                ...JSON.parse(message.content.slice(TOOL_PREFIX.length)),
+                status,
+            };
+        } catch {
+            data = { status };
+        }
+    }
+    return TOOL_PREFIX + JSON.stringify(data);
+}
+
+function isFailedOutput(output: unknown): boolean {
+    if (
+        output &&
+        typeof output === 'object' &&
+        typeof (output as { text?: unknown }).text === 'string'
+    ) {
+        return / failed:/i.test((output as { text: string }).text);
+    }
+    return false;
+}
+
+function humanizeToolName(name: string): string {
+    const spaced = name
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
+}
+
+function toolDetail(input: unknown): string {
+    if (!input || typeof input !== 'object') {
+        return '';
+    }
+    const fields = input as Record<string, unknown>;
+    const candidate =
+        fields.prompt ??
+        fields.content ??
+        fields.query ??
+        fields.title ??
+        fields.text ??
+        fields.expression;
+    if (typeof candidate !== 'string') {
+        return '';
+    }
+    const plain = candidate
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    return plain.length > 70 ? `${plain.slice(0, 70)}…` : plain;
 }
 
 function isAbortError(error: unknown): boolean {

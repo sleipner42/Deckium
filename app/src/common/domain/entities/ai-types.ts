@@ -1,7 +1,7 @@
 import { MessageContent } from '../interfaces/ai-service.interface';
 import { ContentElement, UUID } from './types';
 
-export type MessageRole = 'user' | 'assistant' | 'system' | 'critic';
+export type MessageRole = 'user' | 'assistant' | 'system';
 
 export interface Message {
     id: UUID;

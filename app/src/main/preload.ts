@@ -58,22 +58,6 @@ export type AIChannels =
     | 'ai:processing-error'
     | 'ai:message-chunk-received';
 
-export type CriticChannels =
-    | 'critic:create-thread'
-    | 'critic:get-thread'
-    | 'critic:save-thread'
-    | 'critic:get-threads-for-presentation'
-    | 'critic:delete-thread'
-    | 'critic:review-slide'
-    | 'critic:thread-created'
-    | 'critic:thread-updated'
-    | 'critic:thread-deleted'
-    | 'critic:message-received'
-    | 'critic:processing-started'
-    | 'critic:processing-completed'
-    | 'critic:processing-error'
-    | 'critic:message-chunk-received';
-
 export type LintingChannels =
     | 'linting:lint-slide'
     | 'linting:get-errors'
@@ -107,7 +91,6 @@ export type LLMSettingsChannels =
 type IpcChannels =
     | PresentationChannels
     | AIChannels
-    | CriticChannels
     | LintingChannels
     | PDFExportChannels
     | PowerPointImportChannels
@@ -162,34 +145,6 @@ const electronHandler = {
         },
         abortRequest(threadId: string) {
             return ipcRenderer.invoke('ai:abort-request', threadId);
-        },
-    },
-
-    critic: {
-        createThread(title: string, presentationId: string) {
-            return ipcRenderer.invoke(
-                'critic:create-thread',
-                title,
-                presentationId,
-            );
-        },
-        getThread(threadId: string) {
-            return ipcRenderer.invoke('critic:get-thread', threadId);
-        },
-        saveThread(thread: unknown) {
-            return ipcRenderer.invoke('critic:save-thread', thread);
-        },
-        getThreadsForPresentation(presentationId: string) {
-            return ipcRenderer.invoke(
-                'critic:get-threads-for-presentation',
-                presentationId,
-            );
-        },
-        deleteThread(threadId: string) {
-            return ipcRenderer.invoke('critic:delete-thread', threadId);
-        },
-        reviewSlide(threadId: string, slideId: string) {
-            return ipcRenderer.invoke('critic:review-slide', threadId, slideId);
         },
     },
 

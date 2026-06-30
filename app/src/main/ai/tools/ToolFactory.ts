@@ -11,7 +11,6 @@ import { CreateBarChartTool } from './tools/CreateBarChartTool';
 import { CreateShapeTool } from './tools/CreateShapeTool';
 import { CreateSlideTool } from './tools/CreateSlideTool';
 import { CreateSVGImageTool } from './tools/CreateSVGImageTool';
-import { CriticTool } from './tools/CriticTool';
 import { DeleteElementTool } from './tools/DeleteElementTool';
 import { DeleteSlideTool } from './tools/DeleteSlideTool';
 import { DuplicateSlideTool } from './tools/DuplicateSlideTool';
@@ -53,7 +52,6 @@ export class ToolFactory {
             new AddImageFromUrlTool(),
             new UpdateImageElementTool(),
             new DeleteElementTool(),
-            new CriticTool(),
             new AlignToSlideTool(),
             new ArrangeInMatrixTool(),
             new MatchSizeTool(),

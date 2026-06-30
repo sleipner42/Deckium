@@ -1,8 +1,6 @@
 import path from 'node:path';
 import * as dotenv from 'dotenv';
 import { app, BrowserWindow, shell } from 'electron';
-import { setupCriticIPC } from './ai/critic/ipc-handler';
-import { CriticService } from './ai/critic/service';
 import { setupAIIPC } from './ai/ipc-handler';
 import { AIService } from './ai/service';
 import { AppImageIntegration } from './appimage-integration';
@@ -26,7 +24,6 @@ let mainWindow: BrowserWindow | null = null;
 let secondWindow: BrowserWindow | null = null;
 let presentationService: PresentationService;
 let aiService: AIService;
-let criticService: CriticService;
 let llmSettingsService: LLMSettingsService;
 let lintingService: LintingService;
 let pdfExportService: PDFExportService;
@@ -245,13 +242,8 @@ if (!gotTheLock) {
                 presentationService,
                 lintingService,
             );
-            criticService = new CriticService(
-                llmSettingsService,
-                presentationService,
-            );
 
             setupAIIPC(aiService);
-            setupCriticIPC(criticService);
             setupPresentationIPC(presentationService);
             setupTextMeasurementIPC();
             new LintingIpcHandler(lintingService);

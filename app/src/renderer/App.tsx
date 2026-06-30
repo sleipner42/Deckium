@@ -2,7 +2,6 @@ import { CssBaseline, ThemeProvider } from '@mui/material';
 import React from 'react';
 import { AIProvider } from './application/context/AIContext';
 import { AuthProvider } from './application/context/AuthContext';
-import { CriticProvider } from './application/context/CriticContext';
 import { LintingProvider } from './application/context/LintingContext';
 import { PresentationProvider } from './application/context/PresentationContext';
 import { TextEditingProvider } from './application/context/TextEditingContext';
@@ -22,14 +21,12 @@ const App: React.FC = () => {
                         <LintingProvider>
                             <TextEditingProvider>
                                 <AIProvider>
-                                    <CriticProvider>
-                                        <Routes>
-                                            <Route
-                                                path="/"
-                                                element={<AppContent />}
-                                            />
-                                        </Routes>
-                                    </CriticProvider>
+                                    <Routes>
+                                        <Route
+                                            path="/"
+                                            element={<AppContent />}
+                                        />
+                                    </Routes>
                                 </AIProvider>
                             </TextEditingProvider>
                         </LintingProvider>
