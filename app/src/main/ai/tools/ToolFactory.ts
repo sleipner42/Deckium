@@ -1,5 +1,6 @@
 import type { AITool } from './AITool';
 import { AddImageFromUrlTool } from './tools/AddImageFromUrlTool';
+import { AddLogoTool } from './tools/AddLogoTool';
 import { AddTextElementTool } from './tools/AddTextElementTool';
 import { AlignElementsTool } from './tools/AlignElementsTool';
 import { AlignToSlideTool } from './tools/AlignToSlideTool';
@@ -50,6 +51,7 @@ export class ToolFactory {
             new CalculatorTool(),
             new GenerateImageTool(),
             new AddImageFromUrlTool(),
+            new AddLogoTool(),
             new UpdateImageElementTool(),
             new DeleteElementTool(),
             new AlignToSlideTool(),
