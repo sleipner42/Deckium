@@ -168,7 +168,9 @@ export class PowerPointExportService {
                     await this.convertPlotToImage(slide, element, position);
                     break;
                 default:
-                    console.warn(`Unsupported element type: ${element.type}`);
+                    console.warn(
+                        `Unsupported element type: ${(element as ContentElement).type}`,
+                    );
             }
         } catch (error) {
             console.error(`Error converting element ${element.type}:`, error);
@@ -421,7 +423,7 @@ export class PowerPointExportService {
             // For now, we'll create a simple placeholder since plot rendering is complex
 
             // Option 1: Create a placeholder
-            const placeholderText = `Plot: ${element.title || 'Mathematical Plot'}`;
+            const placeholderText = `Plot: ${(element as { title?: string }).title || 'Mathematical Plot'}`;
             slide.addText(placeholderText, {
                 x: position.x,
                 y: position.y,
@@ -440,7 +442,10 @@ export class PowerPointExportService {
             // 2. Convert canvas to base64 image
             // 3. Add the image to the slide using slide.addImage()
 
-            console.log('Plot converted to placeholder text:', element.title);
+            console.log(
+                'Plot converted to placeholder text:',
+                (element as { title?: string }).title,
+            );
         } catch (error) {
             console.error('Error converting plot to image:', error);
             // Fallback to a simple text placeholder
@@ -684,10 +689,10 @@ export class PowerPointExportService {
                 if (!items) return match;
 
                 // Check what type of list this should be based on data-list attributes
-                const hasOrderedItems = items.some((item) =>
+                const hasOrderedItems = items.some((item: string) =>
                     item.includes('data-list="ordered"'),
                 );
-                const hasBulletItems = items.some((item) =>
+                const hasBulletItems = items.some((item: string) =>
                     item.includes('data-list="bullet"'),
                 );
 
@@ -702,7 +707,7 @@ export class PowerPointExportService {
 
                 // Process the list items and add manual numbering/bullets
                 const listItems = items
-                    .map((item, index) => {
+                    .map((item: string, index: number) => {
                         const textMatch = item.match(/<li[^>]*>(.*?)<\/li>/s);
                         if (textMatch) {
                             let text = textMatch[1];
@@ -731,10 +736,10 @@ export class PowerPointExportService {
                         }
                         return '';
                     })
-                    .filter((item) => item);
+                    .filter((item: string) => item);
 
                 // Return as a single paragraph with line breaks instead of multiple paragraphs
-                return `<p>${listItems.map((item) => item.replace(/<\/?p>/g, '')).join('<br>')}</p>`;
+                return `<p>${listItems.map((item: string) => item.replace(/<\/?p>/g, '')).join('<br>')}</p>`;
             },
         );
 

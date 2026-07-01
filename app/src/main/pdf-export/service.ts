@@ -56,7 +56,7 @@ export class PDFExportService {
             // Log slide information
             slides.forEach((slide, index) => {
                 console.log(
-                    `Slide ${index + 1}: ID=${slide.id}, Title="${slide.title || 'Untitled'}"`,
+                    `Slide ${index + 1}: ID=${slide.id}, Title="${(slide as { title?: string }).title || 'Untitled'}"`,
                 );
             });
 
@@ -72,7 +72,8 @@ export class PDFExportService {
             onProgress?.({
                 slideIndex: 0,
                 totalSlides: slides.length,
-                currentSlide: slides[0]?.title || 'Slide 1',
+                currentSlide:
+                    (slides[0] as { title?: string })?.title || 'Slide 1',
                 status: 'starting',
                 message: 'Initializing PDF export...',
             });

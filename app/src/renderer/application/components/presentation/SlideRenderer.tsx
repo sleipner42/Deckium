@@ -199,7 +199,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
         const handleKeyDown = (e: KeyboardEvent) => {
             // Prevent deletion if focus is on an input, textarea, or contenteditable element
-            const activeElement = document.activeElement;
+            const activeElement = document.activeElement as HTMLElement | null;
             const isInputFocused =
                 activeElement &&
                 (activeElement.tagName === 'INPUT' ||
@@ -315,7 +315,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
         const handlePaste = async (e: ClipboardEvent) => {
             // Check if focus is on an input, textarea, or contenteditable element
-            const activeElement = document.activeElement;
+            const activeElement = document.activeElement as HTMLElement | null;
             const isInputFocused =
                 activeElement &&
                 (activeElement.tagName === 'INPUT' ||

@@ -55,7 +55,7 @@ interface PresentationContextActions {
         toIndex: number,
     ) => Promise<Presentation>;
     startEditingElement: (elementId: string) => void;
-    stopEditingElement: (elementId: string, content?: string) => void;
+    stopEditingElement: () => void;
     moveElement: (elementId: string, x: number, y: number) => void;
     resizeElement: (elementId: string, width: number, height: number) => void;
     savePresentation: () => Promise<string | null>;

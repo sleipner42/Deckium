@@ -39,6 +39,10 @@ jobs:
         working-directory: app
         run: npm ci
 
+      - name: Type check
+        working-directory: app
+        run: npm run typecheck
+
       - name: Build application
         working-directory: app
         run: npm run package

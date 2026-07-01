@@ -79,6 +79,18 @@ export type PowerPointImportChannels =
     | 'powerpoint-import:import-file'
     | 'powerpoint-import:progress';
 
+export type PowerPointExportChannels =
+    | 'powerpoint-export:progress'
+    | 'powerpoint-export:complete'
+    | 'powerpoint-export:error';
+
+export type MenuChannels =
+    | 'menu:undo'
+    | 'menu:redo'
+    | 'menu:copy'
+    | 'menu:select-all'
+    | 'menu:open-llm-settings';
+
 export type LLMSettingsChannels =
     | 'llm-settings:get-settings'
     | 'llm-settings:get-current-provider'
@@ -94,6 +106,8 @@ type IpcChannels =
     | LintingChannels
     | PDFExportChannels
     | PowerPointImportChannels
+    | PowerPointExportChannels
+    | MenuChannels
     | LLMSettingsChannels;
 
 const electronHandler = {
@@ -333,3 +347,5 @@ const electronHandler = {
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);
+
+export type ElectronHandler = typeof electronHandler;

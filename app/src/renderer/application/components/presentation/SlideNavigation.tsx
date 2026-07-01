@@ -59,7 +59,8 @@ export const SlideNavigation: React.FC<SlideNavigationProps> = ({
                 currentPresentation.slides.length > 1 // Prevent deleting the last slide
             ) {
                 // Check if we're not focused on an input, textarea, or contenteditable element
-                const activeElement = document.activeElement;
+                const activeElement =
+                    document.activeElement as HTMLElement | null;
                 const isInputFocused =
                     activeElement &&
                     (activeElement.tagName === 'INPUT' ||

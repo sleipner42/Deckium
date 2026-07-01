@@ -414,7 +414,8 @@ export const useMainProcessPresentation = () => {
             () => {
                 console.log('Menu select all event received');
                 // Select all elements on current slide if we're not in an input field
-                const activeElement = document.activeElement;
+                const activeElement =
+                    document.activeElement as HTMLElement | null;
                 const isInputFocused =
                     activeElement &&
                     (activeElement.tagName === 'INPUT' ||

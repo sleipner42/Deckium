@@ -145,7 +145,9 @@ function ollamaModel(config: LLMProviderConfig): LanguageModel {
 
 function toUserContent(
     content: string | MessageContent[],
-): string | Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> {
+):
+    | string
+    | Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> {
     if (typeof content === 'string') {
         return content;
     }

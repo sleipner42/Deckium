@@ -38,18 +38,24 @@ export class GenerateImageTool extends BaseTool {
             ),
         x: z
             .number()
-            .describe('The horizontal position in pixels of the top-left corner'),
+            .describe(
+                'The horizontal position in pixels of the top-left corner',
+            ),
         y: z
             .number()
             .describe('The vertical position in pixels of the top-left corner'),
         width: z
             .number()
             .optional()
-            .describe('The width of the image element in pixels (defaults to 400)'),
+            .describe(
+                'The width of the image element in pixels (defaults to 400)',
+            ),
         height: z
             .number()
             .optional()
-            .describe('The height of the image element in pixels (defaults to 400)'),
+            .describe(
+                'The height of the image element in pixels (defaults to 400)',
+            ),
         zIndex: z
             .number()
             .optional()

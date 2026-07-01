@@ -1,7 +1,7 @@
+import { z } from 'zod';
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createShape } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
-import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class CreateShapeTool extends BaseTool {
@@ -30,9 +30,7 @@ export class CreateShapeTool extends BaseTool {
     };
 
     inputSchema = z.object({
-        slideId: z
-            .string()
-            .describe('The ID of the slide to add the shape to'),
+        slideId: z.string().describe('The ID of the slide to add the shape to'),
         shapeType: z
             .enum(['rectangle', 'circle', 'triangle'])
             .describe(
@@ -66,7 +64,9 @@ export class CreateShapeTool extends BaseTool {
             .optional(),
         strokeColor: z
             .string()
-            .describe('The stroke/border color of the shape (defaults to black)')
+            .describe(
+                'The stroke/border color of the shape (defaults to black)',
+            )
             .optional(),
         strokeWidth: z
             .number()

@@ -292,11 +292,11 @@ export class Logger {
         } else if (Array.isArray(data.content)) {
             // Handle multi-content (text + images)
             const textParts = data.content
-                .filter((item) => item.type === 'text')
-                .map((item) => item.text)
+                .filter((item: { type: string }) => item.type === 'text')
+                .map((item: { text: string }) => item.text)
                 .join(' ');
             const imageParts = data.content
-                .filter((item) => item.type === 'image_url')
+                .filter((item: { type: string }) => item.type === 'image_url')
                 .map(() => '[IMAGE]');
             content =
                 textParts +
@@ -414,7 +414,7 @@ export class Logger {
             }
         } catch (error) {
             this.logSystem('Failed to export session logs', 'error', {
-                error: error.message,
+                error: error instanceof Error ? error.message : String(error),
             });
         }
 
@@ -443,7 +443,7 @@ export class Logger {
             }
         } catch (error) {
             this.logSystem('Failed to cleanup old logs', 'error', {
-                error: error.message,
+                error: error instanceof Error ? error.message : String(error),
             });
         }
     }

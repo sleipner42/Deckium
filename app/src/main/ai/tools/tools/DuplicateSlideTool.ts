@@ -75,13 +75,15 @@ export class DuplicateSlideTool extends BaseTool {
                         ...(element.type === 'image' && {
                             content: (element as any).content,
                         }),
-                        ...(element.type === 'shape' && {
+                        ...((element.type === 'rectangle' ||
+                            element.type === 'circle' ||
+                            element.type === 'triangle') && {
                             shapeType: (element as any).shapeType,
                             fillColor: (element as any).fillColor,
                             strokeColor: (element as any).strokeColor,
                             strokeWidth: (element as any).strokeWidth,
                         }),
-                        ...(element.type === 'barChart' && {
+                        ...(element.type === 'barchart' && {
                             title: (element as any).title,
                             xAxisLabel: (element as any).xAxisLabel,
                             yAxisLabel: (element as any).yAxisLabel,

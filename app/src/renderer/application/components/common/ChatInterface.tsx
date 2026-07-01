@@ -55,7 +55,9 @@ const parseToolStep = (message: Message): ToolStep | null => {
         return null;
     }
     try {
-        return JSON.parse(message.content.slice(TOOL_PREFIX.length)) as ToolStep;
+        return JSON.parse(
+            message.content.slice(TOOL_PREFIX.length),
+        ) as ToolStep;
     } catch {
         return null;
     }

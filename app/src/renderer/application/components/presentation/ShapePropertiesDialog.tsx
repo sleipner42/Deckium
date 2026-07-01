@@ -83,13 +83,13 @@ export const ShapePropertiesDialog: React.FC<ShapePropertiesDialogProps> = ({
                 <Box sx={{ mt: 2 }}>
                     <Grid container spacing={3}>
                         {/* Size Section */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <Typography variant="h6" gutterBottom>
                                 Size
                             </Typography>
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                             <TextField
                                 fullWidth
                                 label="Width"
@@ -102,7 +102,7 @@ export const ShapePropertiesDialog: React.FC<ShapePropertiesDialogProps> = ({
                             />
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                             <TextField
                                 fullWidth
                                 label="Height"
@@ -116,7 +116,7 @@ export const ShapePropertiesDialog: React.FC<ShapePropertiesDialogProps> = ({
                         </Grid>
 
                         {/* Colors Section */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <Typography
                                 variant="h6"
                                 gutterBottom
@@ -126,7 +126,7 @@ export const ShapePropertiesDialog: React.FC<ShapePropertiesDialogProps> = ({
                             </Typography>
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                             <Box>
                                 <Typography variant="body2" gutterBottom>
                                     Fill Color
@@ -164,7 +164,7 @@ export const ShapePropertiesDialog: React.FC<ShapePropertiesDialogProps> = ({
                             </Box>
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                             <Box>
                                 <Typography variant="body2" gutterBottom>
                                     Border Color
@@ -203,7 +203,7 @@ export const ShapePropertiesDialog: React.FC<ShapePropertiesDialogProps> = ({
                         </Grid>
 
                         {/* Border Width */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <TextField
                                 fullWidth
                                 label="Border Width"

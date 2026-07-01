@@ -311,7 +311,7 @@ export function createTextElement(
         content,
         color,
         zIndex,
-    };
+    } as TextBox;
 }
 
 /**

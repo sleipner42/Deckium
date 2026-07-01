@@ -164,11 +164,11 @@ export const BarChartElement: React.FC<BarChartElementProps> = ({
                             pad: 0,
                         },
                         xaxis: {
-                            title: xAxisLabel,
+                            title: { text: xAxisLabel },
                             automargin: true,
                         },
                         yaxis: {
-                            title: yAxisLabel,
+                            title: { text: yAxisLabel },
                             automargin: true,
                         },
                         paper_bgcolor: 'rgba(0,0,0,0)',

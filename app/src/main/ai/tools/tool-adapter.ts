@@ -104,7 +104,9 @@ async function buildFeedback(
         .filter((grid) => grid.length > 0);
 
     if (grids.length > 0) {
-        parts.push(`Updated slides visual representation:\n\n${grids.join('\n\n')}`);
+        parts.push(
+            `Updated slides visual representation:\n\n${grids.join('\n\n')}`,
+        );
     }
 
     const lintingMessage = await lintEditedSlides(

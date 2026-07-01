@@ -23,6 +23,12 @@ const SizeStyle = Quill.import('attributors/style/size') as any;
 SizeStyle.whitelist = Array.from({ length: 117 }, (_, i) => `${i + 4}px`);
 Quill.register(SizeStyle, true);
 
+// Quill's `getModule` is typed as returning `unknown`; the toolbar module
+// exposes a `container` element we rely on for our custom pickers.
+type ToolbarModule = { container: HTMLElement };
+const getToolbarModule = (quill: Quill): ToolbarModule =>
+    quill.getModule('toolbar') as ToolbarModule;
+
 // Custom Size Picker for Quill Toolbar
 class CustomSizePicker {
     constructor(select: HTMLSelectElement, quill: Quill) {
@@ -95,7 +101,7 @@ class CustomSizePicker {
             if (range) {
                 const format = this.quill.getFormat(range);
                 if (format.size) {
-                    this.select.value = format.size;
+                    this.select.value = format.size as string;
                 } else {
                     this.select.value = '';
                 }
@@ -311,7 +317,7 @@ const registerCustomPickers = (
     onVerticalAlignChange: (align: string) => void,
     currentVerticalAlign: string,
 ) => {
-    const toolbar = quill.getModule('toolbar');
+    const toolbar = getToolbarModule(quill);
     if (toolbar && toolbar.container) {
         // Find the font group and add our custom size picker
         const fontGroup = toolbar.container.querySelector(
@@ -706,7 +712,7 @@ const showEmojiPicker = (quill: Quill) => {
     });
 
     // Position picker near the toolbar
-    const toolbar = quill.getModule('toolbar').container;
+    const toolbar = getToolbarModule(quill).container;
     const toolbarRect = toolbar.getBoundingClientRect();
     picker.style.top = `${toolbarRect.bottom + 5}px`;
     picker.style.left = `${toolbarRect.left}px`;
@@ -877,7 +883,7 @@ export const TextElement: React.FC<TextElementProps> = ({
                     verticalAlign || 'top',
                 );
 
-                const toolbar = quill.getModule('toolbar');
+                const toolbar = getToolbarModule(quill);
                 if (toolbar?.container) {
                     const handleToolbarClick = (e: Event) => {
                         e.stopPropagation();
@@ -911,7 +917,7 @@ export const TextElement: React.FC<TextElementProps> = ({
         if (quillRef.current) {
             if (isEditing) {
                 quillRef.current.enable();
-                const toolbar = quillRef.current.getModule('toolbar');
+                const toolbar = getToolbarModule(quillRef.current);
                 if (toolbar?.container) {
                     toolbar.container.style.display = 'block';
                 }
@@ -925,7 +931,7 @@ export const TextElement: React.FC<TextElementProps> = ({
                 }, 200);
             } else {
                 quillRef.current.disable();
-                const toolbar = quillRef.current.getModule('toolbar');
+                const toolbar = getToolbarModule(quillRef.current);
                 if (toolbar?.container) {
                     toolbar.container.style.display = 'none';
                 }
@@ -965,7 +971,7 @@ export const TextElement: React.FC<TextElementProps> = ({
 
                 let isWithinToolbar = false;
                 if (quillRef.current) {
-                    const toolbar = quillRef.current.getModule('toolbar');
+                    const toolbar = getToolbarModule(quillRef.current);
                     if (toolbar?.container) {
                         isWithinToolbar = toolbar.container.contains(target);
                     }

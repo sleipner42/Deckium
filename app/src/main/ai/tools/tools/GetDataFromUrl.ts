@@ -1,8 +1,8 @@
 import axios from 'axios';
 import TurndownService from 'turndown';
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
-import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class GetDataFromUrl extends BaseTool {

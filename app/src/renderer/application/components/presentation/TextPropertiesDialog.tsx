@@ -87,13 +87,13 @@ export const TextPropertiesDialog: React.FC<TextPropertiesDialogProps> = ({
                 <Box sx={{ mt: 2 }}>
                     <Grid container spacing={3}>
                         {/* Size Section */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <Typography variant="h6" gutterBottom>
                                 Size
                             </Typography>
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                             <TextField
                                 fullWidth
                                 label="Width"
@@ -106,7 +106,7 @@ export const TextPropertiesDialog: React.FC<TextPropertiesDialogProps> = ({
                             />
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                             <TextField
                                 fullWidth
                                 label="Height"
@@ -120,7 +120,7 @@ export const TextPropertiesDialog: React.FC<TextPropertiesDialogProps> = ({
                         </Grid>
 
                         {/* Background Section */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <Typography
                                 variant="h6"
                                 gutterBottom
@@ -130,7 +130,7 @@ export const TextPropertiesDialog: React.FC<TextPropertiesDialogProps> = ({
                             </Typography>
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <Box>
                                 <Typography variant="body2" gutterBottom>
                                     Background Color
@@ -183,7 +183,7 @@ export const TextPropertiesDialog: React.FC<TextPropertiesDialogProps> = ({
                         </Grid>
 
                         {/* Border Radius */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <TextField
                                 fullWidth
                                 label="Border Radius"
@@ -198,7 +198,7 @@ export const TextPropertiesDialog: React.FC<TextPropertiesDialogProps> = ({
                         </Grid>
 
                         {/* Vertical Alignment */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <Typography
                                 variant="h6"
                                 gutterBottom
@@ -208,7 +208,7 @@ export const TextPropertiesDialog: React.FC<TextPropertiesDialogProps> = ({
                             </Typography>
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <FormControl fullWidth>
                                 <InputLabel>Vertical Alignment</InputLabel>
                                 <Select

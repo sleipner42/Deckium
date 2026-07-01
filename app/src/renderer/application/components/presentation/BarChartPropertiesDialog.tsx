@@ -144,13 +144,13 @@ export const BarChartPropertiesDialog: React.FC<
                 <Box sx={{ mt: 2 }}>
                     <Grid container spacing={3}>
                         {/* Chart Info Section */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <Typography variant="h6" gutterBottom>
                                 Chart Information
                             </Typography>
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <TextField
                                 fullWidth
                                 label="Chart Title"
@@ -160,7 +160,7 @@ export const BarChartPropertiesDialog: React.FC<
                             />
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                             <TextField
                                 fullWidth
                                 label="X-Axis Label"
@@ -170,7 +170,7 @@ export const BarChartPropertiesDialog: React.FC<
                             />
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                             <TextField
                                 fullWidth
                                 label="Y-Axis Label"
@@ -181,7 +181,7 @@ export const BarChartPropertiesDialog: React.FC<
                         </Grid>
 
                         {/* Size Section */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <Typography
                                 variant="h6"
                                 gutterBottom
@@ -191,7 +191,7 @@ export const BarChartPropertiesDialog: React.FC<
                             </Typography>
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                             <TextField
                                 fullWidth
                                 label="Width"
@@ -204,7 +204,7 @@ export const BarChartPropertiesDialog: React.FC<
                             />
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                             <TextField
                                 fullWidth
                                 label="Height"
@@ -218,7 +218,7 @@ export const BarChartPropertiesDialog: React.FC<
                         </Grid>
 
                         {/* Appearance Section */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <Typography
                                 variant="h6"
                                 gutterBottom
@@ -228,7 +228,7 @@ export const BarChartPropertiesDialog: React.FC<
                             </Typography>
                         </Grid>
 
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                             <Box>
                                 <Typography variant="body2" gutterBottom>
                                     Bar Color
@@ -267,7 +267,7 @@ export const BarChartPropertiesDialog: React.FC<
                         </Grid>
 
                         {/* Data Section */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <Box
                                 sx={{
                                     display: 'flex',

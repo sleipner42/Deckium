@@ -1,7 +1,7 @@
+import { z } from 'zod';
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createBarChart } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
-import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class CreateBarChartTool extends BaseTool {

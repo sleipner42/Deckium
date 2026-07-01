@@ -164,7 +164,7 @@ export function setupPresentationIPC(service: PresentationService) {
             // Send error event
             event.sender.send('powerpoint-export:error', {
                 message: 'PowerPoint export failed',
-                error: error.message,
+                error: error instanceof Error ? error.message : String(error),
             });
 
             throw error;

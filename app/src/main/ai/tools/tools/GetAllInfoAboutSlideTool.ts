@@ -107,7 +107,7 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
                             id: textbox.id,
                             type: textbox.type,
                             content: textbox.content,
-                            color: textbox.color,
+                            color: (textbox as { color?: string }).color,
                             position: textbox.position,
                             size: textbox.size,
                             quillMetrics: quillInfo,

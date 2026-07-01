@@ -1,7 +1,7 @@
+import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { Shape } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
-import { z } from 'zod';
 import { BaseTool } from '../BaseTool';
 
 export class UpdateShapeTool extends BaseTool {
@@ -25,9 +25,7 @@ export class UpdateShapeTool extends BaseTool {
     };
 
     inputSchema = z.object({
-        elementId: z
-            .string()
-            .describe('The ID of the shape element to update'),
+        elementId: z.string().describe('The ID of the shape element to update'),
         x: z.number().describe('New X position').optional(),
         y: z.number().describe('New Y position').optional(),
         width: z.number().describe('New width').optional(),

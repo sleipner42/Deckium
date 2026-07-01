@@ -21,8 +21,8 @@ export const usePowerPointImport = () => {
         // Listen for progress updates
         const unsubscribe = window.electron.ipcRenderer.on(
             'powerpoint-import:progress',
-            (progressData: ImportProgress) => {
-                setProgress(progressData);
+            (...args: unknown[]) => {
+                setProgress(args[0] as ImportProgress);
             },
         );
 

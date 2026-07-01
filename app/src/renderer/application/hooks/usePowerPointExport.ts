@@ -52,21 +52,24 @@ export const usePowerPointExport = () => {
         // Listen for PowerPoint export events
         const unsubscribeProgress = window.electron.ipcRenderer.on(
             'powerpoint-export:progress',
-            (data: { message: string }) => {
+            (...args: unknown[]) => {
+                const data = args[0] as { message: string };
                 handleProgress(data.message);
             },
         );
 
         const unsubscribeComplete = window.electron.ipcRenderer.on(
             'powerpoint-export:complete',
-            (data: { message: string }) => {
+            (...args: unknown[]) => {
+                const data = args[0] as { message: string };
                 handleComplete(data.message);
             },
         );
 
         const unsubscribeError = window.electron.ipcRenderer.on(
             'powerpoint-export:error',
-            (data: { message: string; error?: string }) => {
+            (...args: unknown[]) => {
+                const data = args[0] as { message: string; error?: string };
                 handleError(data.message, data.error);
             },
         );

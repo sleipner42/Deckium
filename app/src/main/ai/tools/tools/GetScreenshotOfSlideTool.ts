@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
-import {
-    getScreenshotFromSecondaryWindow,
+import getScreenshotFromSecondaryWindow, {
     setSlideInHiddenWindow,
 } from '../../../main';
 import { PresentationService } from '../../../presentation/service';

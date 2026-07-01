@@ -129,11 +129,13 @@ export class PowerPointImportService {
                             }
 
                             // Text content analysis
-                            if (element.content) {
+                            if ((element as any).content) {
                                 console.log(
-                                    `    Content length: ${element.content.length}`,
+                                    `    Content length: ${(element as any).content.length}`,
                                 );
-                                console.log(`    Content: ${element.content}`);
+                                console.log(
+                                    `    Content: ${(element as any).content}`,
+                                );
                             }
 
                             // Name and order
@@ -159,7 +161,6 @@ export class PowerPointImportService {
             const presentation = await this.convertPptxToPresentation(
                 pptxData,
                 filePath,
-                fileBuffer,
             );
 
             this.reportProgress(

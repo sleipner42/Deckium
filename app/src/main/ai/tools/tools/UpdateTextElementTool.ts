@@ -60,9 +60,7 @@ export class UpdateTextElementTool extends BaseTool {
     };
 
     inputSchema = z.object({
-        elementId: z
-            .string()
-            .describe('The ID of the text element to update'),
+        elementId: z.string().describe('The ID of the text element to update'),
         content: z.string().optional().describe(this.optionalParams.content),
         x: z.number().optional().describe('New X position'),
         y: z.number().optional().describe('New Y position'),
@@ -74,10 +72,7 @@ export class UpdateTextElementTool extends BaseTool {
             ),
         width: z.number().optional().describe('New width'),
         height: z.number().optional().describe('New height'),
-        borderRadius: z
-            .number()
-            .optional()
-            .describe('The new border radius'),
+        borderRadius: z.number().optional().describe('The new border radius'),
         backgroundColor: z
             .string()
             .optional()

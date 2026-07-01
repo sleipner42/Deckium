@@ -187,7 +187,7 @@ export class ArrangeInMatrixTool extends BaseTool {
         }> = [];
 
         // Calculate positions for each element
-        elementIdList.forEach((elementId, index) => {
+        elementIdList.forEach((elementId: string, index: number) => {
             const element = elementsToArrange.find((el) => el.id === elementId);
             if (!element) return;
 

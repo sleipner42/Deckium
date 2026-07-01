@@ -25,14 +25,7 @@ export interface LLMSettings {
 
 // Default models for each provider
 export const DEFAULT_MODELS: Record<LLMProviderType, string[]> = {
-    openai: [
-        'gpt-5.5',
-        'gpt-5.5-pro',
-        'gpt-5.1',
-        'gpt-5',
-        'gpt-4.1',
-        'gpt-4o',
-    ],
+    openai: ['gpt-5.5', 'gpt-5.5-pro', 'gpt-5.1', 'gpt-5', 'gpt-4.1', 'gpt-4o'],
     anthropic: [
         'claude-opus-4-8',
         'claude-sonnet-4-6',

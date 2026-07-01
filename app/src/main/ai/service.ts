@@ -222,10 +222,7 @@ export class AIService {
         return slideContext ? `${base}\n\n${slideContext}` : base;
     }
 
-    private handleSendMessageError(
-        threadId: UUID,
-        error: unknown,
-    ): AIResponse {
+    private handleSendMessageError(threadId: UUID, error: unknown): AIResponse {
         if (isAbortError(error)) {
             const currentThread = this.getThread(threadId);
             if (currentThread) {
