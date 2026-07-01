@@ -76,11 +76,16 @@ const LLMSettingsDialog: React.FC<Props> = ({ open, onClose }) => {
             const fullConfig: LLMProviderConfig = {
                 provider: currentProvider,
                 model: config.model || DEFAULT_MODELS[currentProvider][0],
-                apiKey: config.apiKey,
                 endpoint: config.endpoint,
                 deployment: config.deployment,
                 apiVersion: config.apiVersion,
             };
+
+            // Only send a key when the user actually entered one; an empty
+            // field leaves the stored (encrypted) key untouched in main.
+            if (config.apiKey && config.apiKey.trim() !== '') {
+                fullConfig.apiKey = config.apiKey;
+            }
 
             await window.electron.llmSettings.setCurrentProvider(fullConfig);
             setSuccess(true);
@@ -112,7 +117,17 @@ const LLMSettingsDialog: React.FC<Props> = ({ open, onClose }) => {
                                 setConfig({ ...config, apiKey: e.target.value })
                             }
                             margin="normal"
-                            required
+                            required={!config.hasApiKey}
+                            placeholder={
+                                config.hasApiKey
+                                    ? '•••••••• (saved — leave blank to keep)'
+                                    : undefined
+                            }
+                            helperText={
+                                config.hasApiKey
+                                    ? 'A key is saved. Enter a new key to replace it.'
+                                    : undefined
+                            }
                         />
                         <FormControl fullWidth margin="normal">
                             <InputLabel>Model</InputLabel>
@@ -152,7 +167,17 @@ const LLMSettingsDialog: React.FC<Props> = ({ open, onClose }) => {
                                 setConfig({ ...config, apiKey: e.target.value })
                             }
                             margin="normal"
-                            required
+                            required={!config.hasApiKey}
+                            placeholder={
+                                config.hasApiKey
+                                    ? '•••••••• (saved — leave blank to keep)'
+                                    : undefined
+                            }
+                            helperText={
+                                config.hasApiKey
+                                    ? 'A key is saved. Enter a new key to replace it.'
+                                    : undefined
+                            }
                         />
                         <TextField
                             fullWidth

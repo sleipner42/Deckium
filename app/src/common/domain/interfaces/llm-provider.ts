@@ -16,6 +16,9 @@ export interface LLMProviderConfig {
     endpoint?: string; // For Azure OpenAI and Ollama
     deployment?: string; // For Azure OpenAI
     apiVersion?: string; // For Azure OpenAI
+    // Set on configs sent to the renderer instead of the raw apiKey: indicates
+    // whether a key is stored, without exposing the secret itself.
+    hasApiKey?: boolean;
 }
 
 export interface LLMSettings {
