@@ -336,18 +336,17 @@ export class PresentationState {
     }
 
     private deepClonePresentation(presentation: Presentation): Presentation {
-        return {
-            id: presentation.id,
-            title: presentation.title,
-            slides: presentation.slides.map((slide) => ({
-                id: slide.id,
-                background: slide.background,
-                transition: slide.transition || 'none',
-                elements: slide.elements.map((element) => ({ ...element })),
-            })),
-            createdAt: new Date(presentation.createdAt),
-            updatedAt: new Date(presentation.updatedAt),
-        };
+        // structuredClone produces a true deep copy, so nested element objects
+        // (position/size/data/style) are no longer shared across history
+        // snapshots — a shallow spread previously left them aliased, which
+        // would corrupt undo history the moment any element was mutated in place.
+        const cloned = structuredClone(presentation);
+        cloned.createdAt = new Date(presentation.createdAt);
+        cloned.updatedAt = new Date(presentation.updatedAt);
+        for (const slide of cloned.slides) {
+            slide.transition = slide.transition || 'none';
+        }
+        return cloned;
     }
 
     public canUndo(): boolean {

@@ -118,13 +118,14 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
     // Save final state to history when mouse is released
     const handleMouseUp = useCallback(() => {
-        if (isMouseDown && Object.keys(pendingUpdatesRef.current).length > 0) {
-            // Save final state with history
-            Object.entries(pendingUpdatesRef.current).forEach(
-                ([elementId, updates]) => {
-                    updateElement(elementId, updates, false); // Save to history
-                },
-            );
+        const pendingEntries = Object.entries(pendingUpdatesRef.current);
+        if (isMouseDown && pendingEntries.length > 0) {
+            // Commit the whole drag gesture as a single undo entry: apply all
+            // pending element updates, but only the last one records history.
+            pendingEntries.forEach(([elementId, updates], index) => {
+                const isLast = index === pendingEntries.length - 1;
+                updateElement(elementId, updates, !isLast);
+            });
             pendingUpdatesRef.current = {};
         }
         setIsMouseDown(false);
@@ -817,18 +818,41 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         const deltaX = snappedPosition.x - primaryUpdates.position.x;
         const deltaY = snappedPosition.y - primaryUpdates.position.y;
 
+        // While dragging, skip history to avoid flooding (and evicting) the
+        // undo stack; the final state is committed once on mouse up.
+        const skipHistory = isMouseDown;
+
         // Apply the snapped position to the primary element
-        updateElement(primaryElementId, { position: snappedPosition });
+        updateElement(
+            primaryElementId,
+            { position: snappedPosition },
+            skipHistory,
+        );
+        if (isMouseDown) {
+            pendingUpdatesRef.current[primaryElementId] = {
+                ...pendingUpdatesRef.current[primaryElementId],
+                position: snappedPosition,
+            };
+        }
 
         // Apply the same delta to all other selected elements (without snapping)
         allUpdates.forEach(({ elementId, updates: elementUpdates }) => {
             if (elementId !== primaryElementId && elementUpdates.position) {
-                updateElement(elementId, {
-                    position: {
-                        x: elementUpdates.position.x + deltaX,
-                        y: elementUpdates.position.y + deltaY,
-                    },
-                });
+                const newPosition = {
+                    x: elementUpdates.position.x + deltaX,
+                    y: elementUpdates.position.y + deltaY,
+                };
+                updateElement(
+                    elementId,
+                    { position: newPosition },
+                    skipHistory,
+                );
+                if (isMouseDown) {
+                    pendingUpdatesRef.current[elementId] = {
+                        ...pendingUpdatesRef.current[elementId],
+                        position: newPosition,
+                    };
+                }
             }
         });
     };
