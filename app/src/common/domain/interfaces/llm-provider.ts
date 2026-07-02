@@ -16,10 +16,26 @@ export interface LLMProviderConfig {
     endpoint?: string; // For Azure OpenAI and Ollama
     deployment?: string; // For Azure OpenAI
     apiVersion?: string; // For Azure OpenAI
+    // OpenAI reasoning models only. Empty/undefined means "use the model's
+    // default". Which values a given model accepts is model-specific and only
+    // enforced by the OpenAI API, so this is user-selected, not validated here.
+    reasoningEffort?: string;
     // Set on configs sent to the renderer instead of the raw apiKey: indicates
     // whether a key is stored, without exposing the secret itself.
     hasApiKey?: boolean;
 }
+
+// The full set of reasoning-effort values the OpenAI provider type accepts.
+// Mirrors the SDK's compile-time union (it is not exposed at runtime), and is
+// the superset across models — an individual model may reject some of these.
+export const OPENAI_REASONING_EFFORTS = [
+    'none',
+    'minimal',
+    'low',
+    'medium',
+    'high',
+    'xhigh',
+] as const;
 
 export interface LLMSettings {
     currentProvider: LLMProviderConfig;

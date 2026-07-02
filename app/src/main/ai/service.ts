@@ -13,17 +13,20 @@ import { LLMSettingsService } from '../settings/llm-settings-service';
 
 import { logger } from '../utils/logger';
 import { AIEventBus } from './event-bus';
-import {
-    conversationHistory,
-    providerOptionsFor,
-    resolveModel,
-} from './external/model-provider';
+import { conversationHistory } from './external/messages';
+import { providerOptionsFor, resolveModel } from './external/providers';
 import { getDeveloperPrompt } from './prompt/systemPrompt';
 import { AIState } from './state';
 import { buildToolSet } from './tools/tool-adapter';
 import { AIToolsService } from './tools/tools';
 
 const MAX_STEPS = 20;
+
+// Generation/agent parameters shared by every streamText call. Add tuning here
+// (temperature, maxOutputTokens, …) so all agent settings live in one place.
+const AGENT_DEFAULTS = {
+    stopWhen: stepCountIs(MAX_STEPS),
+} as const;
 
 export class AIService {
     private state: AIState;
@@ -179,11 +182,12 @@ export class AIService {
         const loop = new AgentLoopState(this.state, this.eventBus, thread);
 
         const result = streamText({
+            // Defaults first so explicit per-call values below always win.
+            ...AGENT_DEFAULTS,
             model,
             system,
             messages: history,
             tools,
-            stopWhen: stepCountIs(MAX_STEPS),
             abortSignal,
             providerOptions: providerOptionsFor(config),
         });

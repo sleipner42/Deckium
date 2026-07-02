@@ -7,6 +7,7 @@ import {
     DialogContent,
     DialogTitle,
     FormControl,
+    FormHelperText,
     InputLabel,
     MenuItem,
     Select,
@@ -22,6 +23,7 @@ import type {
 } from '../../../../common/domain/interfaces/llm-provider';
 import {
     DEFAULT_MODELS,
+    OPENAI_REASONING_EFFORTS,
     PROVIDER_DISPLAY_NAMES,
 } from '../../../../common/domain/interfaces/llm-provider';
 
@@ -79,6 +81,8 @@ const LLMSettingsDialog: React.FC<Props> = ({ open, onClose }) => {
                 endpoint: config.endpoint,
                 deployment: config.deployment,
                 apiVersion: config.apiVersion,
+                // Empty string = "Auto"; send undefined so the model default is used.
+                reasoningEffort: config.reasoningEffort || undefined,
             };
 
             // Only send a key when the user actually entered one; an empty
@@ -152,6 +156,34 @@ const LLMSettingsDialog: React.FC<Props> = ({ open, onClose }) => {
                                 )}
                             </Select>
                         </FormControl>
+                        {currentProvider === 'openai' && (
+                            <FormControl fullWidth margin="normal">
+                                <InputLabel>Reasoning Effort</InputLabel>
+                                <Select
+                                    label="Reasoning Effort"
+                                    value={config.reasoningEffort || ''}
+                                    onChange={(e) =>
+                                        setConfig({
+                                            ...config,
+                                            reasoningEffort: e.target.value,
+                                        })
+                                    }
+                                >
+                                    <MenuItem value="">
+                                        Auto (model default)
+                                    </MenuItem>
+                                    {OPENAI_REASONING_EFFORTS.map((effort) => (
+                                        <MenuItem key={effort} value={effort}>
+                                            {effort}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                                <FormHelperText>
+                                    Only some values are valid per model; leave
+                                    on Auto if unsure.
+                                </FormHelperText>
+                            </FormControl>
+                        )}
                     </>
                 );
 
