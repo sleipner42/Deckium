@@ -2,15 +2,12 @@ import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { slideNotFound } from '../utils/errors';
 
 export class DeleteSlideTool extends BaseTool {
     name = 'deleteSlide';
 
     description = 'Delete a slide from the current presentation';
-
-    requiredParams = {
-        slideId: 'The ID of the slide to delete',
-    };
 
     inputSchema = z.object({
         slideId: z.string().describe('The ID of the slide to delete'),
@@ -34,7 +31,10 @@ export class DeleteSlideTool extends BaseTool {
         if (!deletedSlideId) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 

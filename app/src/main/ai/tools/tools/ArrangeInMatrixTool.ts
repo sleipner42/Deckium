@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { elementsNotFound, slideNotFound } from '../utils/errors';
+import { COORDINATE_NOTE, SLIDE_HEIGHT, SLIDE_WIDTH } from '../utils/schemas';
 
 export class ArrangeInMatrixTool extends BaseTool {
     name = 'arrangeInMatrix';
@@ -9,58 +11,46 @@ export class ArrangeInMatrixTool extends BaseTool {
     description =
         'Arrange elements in a 2D matrix/grid layout with specified rows and columns. This can be used to create evenly spaces matrices. First create all the elements and the, use this tool to arrange them';
 
-    requiredParams = {
-        slideId: 'The ID of the slide containing the elements',
-        elementIds:
-            'Comma-separated list of element IDs to arrange in matrix order',
-        rows: 'Number of rows in the matrix (e.g., 2)',
-        columns: 'Number of columns in the matrix (e.g., 2)',
-    };
-
-    optionalParams = {
-        startX: 'X coordinate for top-left position of the matrix (defaults to 100)',
-        startY: 'Y coordinate for top-left position of the matrix (defaults to 100)',
-        spacingX:
-            'Horizontal spacing between elements in pixels (defaults to 50)',
-        spacingY:
-            'Vertical spacing between elements in pixels (defaults to 50)',
-        fillDirection:
-            'How to fill the matrix: "row-first" (left-to-right, top-to-bottom) or "column-first" (top-to-bottom, left-to-right). Defaults to "row-first"',
-    };
-
     inputSchema = z.object({
         slideId: z
             .string()
             .describe('The ID of the slide containing the elements'),
         elementIds: z
-            .string()
-            .describe(
-                'Comma-separated list of element IDs to arrange in matrix order',
-            ),
-        rows: z.number().describe('Number of rows in the matrix (e.g., 2)'),
+            .array(z.string())
+            .min(1)
+            .describe('Array of element IDs to arrange, in matrix order'),
+        rows: z
+            .number()
+            .int()
+            .min(1)
+            .describe('Number of rows in the matrix (e.g., 2)'),
         columns: z
             .number()
+            .int()
+            .min(1)
             .describe('Number of columns in the matrix (e.g., 2)'),
         startX: z
             .number()
             .describe(
-                'X coordinate for top-left position of the matrix (defaults to 100)',
+                `X coordinate for the top-left position of the matrix, ${COORDINATE_NOTE} (defaults to 100)`,
             )
             .optional(),
         startY: z
             .number()
             .describe(
-                'Y coordinate for top-left position of the matrix (defaults to 100)',
+                `Y coordinate for the top-left position of the matrix, ${COORDINATE_NOTE} (defaults to 100)`,
             )
             .optional(),
         spacingX: z
             .number()
+            .min(0)
             .describe(
                 'Horizontal spacing between elements in pixels (defaults to 50)',
             )
             .optional(),
         spacingY: z
             .number()
+            .min(0)
             .describe(
                 'Vertical spacing between elements in pixels (defaults to 50)',
             )
@@ -96,7 +86,7 @@ export class ArrangeInMatrixTool extends BaseTool {
             };
         }
 
-        if (!elementIds) {
+        if (!elementIds || !Array.isArray(elementIds)) {
             return {
                 success: false,
                 error: 'elementIds is required',
@@ -117,12 +107,18 @@ export class ArrangeInMatrixTool extends BaseTool {
             };
         }
 
+        // Tolerate string inputs at runtime; a legitimate 0 is kept as 0
+        const toFiniteNumber = (value: any, fallback: number): number => {
+            const num = Number(value);
+            return Number.isFinite(num) ? num : fallback;
+        };
+
         const numRows = Number(rows);
         const numColumns = Number(columns);
-        const matrixStartX = Number(startX);
-        const matrixStartY = Number(startY);
-        const hSpacing = Number(spacingX);
-        const vSpacing = Number(spacingY);
+        const matrixStartX = toFiniteNumber(startX, 100);
+        const matrixStartY = toFiniteNumber(startY, 100);
+        const hSpacing = toFiniteNumber(spacingX, 50);
+        const vSpacing = toFiniteNumber(spacingY, 50);
 
         if (!['row-first', 'column-first'].includes(fillDirection)) {
             return {
@@ -131,11 +127,7 @@ export class ArrangeInMatrixTool extends BaseTool {
             };
         }
 
-        // Parse element IDs
-        const elementIdList = elementIds
-            .split(',')
-            .map((id: string) => id.trim())
-            .filter((id: string) => id.length > 0);
+        const elementIdList: string[] = elementIds;
 
         if (elementIdList.length === 0) {
             return {
@@ -159,7 +151,10 @@ export class ArrangeInMatrixTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
@@ -174,7 +169,7 @@ export class ArrangeInMatrixTool extends BaseTool {
             );
             return {
                 success: false,
-                error: `Some elements were not found: ${missingIds.join(', ')}`,
+                error: elementsNotFound(missingIds, slide),
             };
         }
 
@@ -184,6 +179,13 @@ export class ArrangeInMatrixTool extends BaseTool {
             originalPos: { x: number; y: number };
             newPos: { x: number; y: number };
             matrixPosition: { row: number; column: number };
+        }> = [];
+
+        // Elements whose computed position had to be clamped to slide bounds
+        const adjustments: Array<{
+            id: string;
+            requested: { x: number; y: number };
+            applied: { x: number; y: number };
         }> = [];
 
         // Calculate positions for each element
@@ -209,10 +211,22 @@ export class ArrangeInMatrixTool extends BaseTool {
             const y = matrixStartY + row * (element.size.height + vSpacing);
 
             // Ensure the element stays within slide bounds
-            const maxX = 1280 - element.size.width;
-            const maxY = 720 - element.size.height;
+            const maxX = SLIDE_WIDTH - element.size.width;
+            const maxY = SLIDE_HEIGHT - element.size.height;
             const finalX = Math.max(0, Math.min(x, maxX));
             const finalY = Math.max(0, Math.min(y, maxY));
+
+            // Disclose when the requested grid position had to be clamped
+            if (
+                Math.round(finalX) !== Math.round(x) ||
+                Math.round(finalY) !== Math.round(y)
+            ) {
+                adjustments.push({
+                    id: element.id,
+                    requested: { x: Math.round(x), y: Math.round(y) },
+                    applied: { x: Math.round(finalX), y: Math.round(finalY) },
+                });
+            }
 
             // Only add update if position actually changes
             const positionChanged =
@@ -252,6 +266,7 @@ export class ArrangeInMatrixTool extends BaseTool {
                         fillDirection,
                     },
                 },
+                editedSlidesIds: [slideId],
             };
         }
 
@@ -266,10 +281,16 @@ export class ArrangeInMatrixTool extends BaseTool {
                 `${update.id.substring(0, 8)}... moved to matrix position (${update.matrixPosition.row}, ${update.matrixPosition.column}) at (${update.newPos.x}, ${update.newPos.y})`,
         );
 
+        const clampNote =
+            adjustments.length > 0
+                ? ` Note: ${adjustments.length} element(s) were clamped to stay within the ${SLIDE_WIDTH}x${SLIDE_HEIGHT} slide; see adjustments for requested vs applied positions.`
+                : '';
+
         return {
             success: true,
             data: {
-                message: `Successfully arranged ${updates.length} elements in a ${numRows}×${numColumns} matrix using "${fillDirection}" fill order`,
+                message: `Successfully arranged ${updates.length} elements in a ${numRows}×${numColumns} matrix using "${fillDirection}" fill order.${clampNote}`,
+                ...(adjustments.length > 0 ? { adjustments } : {}),
                 matrixInfo: {
                     rows: numRows,
                     columns: numColumns,

@@ -5,6 +5,14 @@ import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createImage } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { slideNotFound } from '../utils/errors';
+import {
+    heightSchema,
+    widthSchema,
+    xSchema,
+    ySchema,
+    zIndexSchema,
+} from '../utils/schemas';
 
 const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image';
 
@@ -13,19 +21,6 @@ export class GenerateImageTool extends BaseTool {
 
     description =
         'Generate a brand-new image with the Gemini Nano Banana image model from a text prompt and place it on a slide. Use this to create custom illustrations, backgrounds, icons, or photos instead of searching stock photos.';
-
-    requiredParams = {
-        slideId: 'The ID of the slide to add the generated image to',
-        prompt: 'A detailed description of the image to generate (subject, style, colors, composition)',
-        x: 'The horizontal position in pixels of the top-left corner',
-        y: 'The vertical position in pixels of the top-left corner',
-    };
-
-    optionalParams = {
-        width: 'The width of the image element in pixels (defaults to 400)',
-        height: 'The height of the image element in pixels (defaults to 400)',
-        zIndex: 'The stacking order of the image (defaults to 1)',
-    };
 
     inputSchema = z.object({
         slideId: z
@@ -36,30 +31,11 @@ export class GenerateImageTool extends BaseTool {
             .describe(
                 'A detailed description of the image to generate (subject, style, colors, composition)',
             ),
-        x: z
-            .number()
-            .describe(
-                'The horizontal position in pixels of the top-left corner',
-            ),
-        y: z
-            .number()
-            .describe('The vertical position in pixels of the top-left corner'),
-        width: z
-            .number()
-            .optional()
-            .describe(
-                'The width of the image element in pixels (defaults to 400)',
-            ),
-        height: z
-            .number()
-            .optional()
-            .describe(
-                'The height of the image element in pixels (defaults to 400)',
-            ),
-        zIndex: z
-            .number()
-            .optional()
-            .describe('The stacking order of the image (defaults to 1)'),
+        x: xSchema(" of the image's top-left corner"),
+        y: ySchema(" of the image's top-left corner"),
+        width: widthSchema(' (defaults to 400)').optional(),
+        height: heightSchema(' (defaults to 400)').optional(),
+        zIndex: zIndexSchema.optional(),
     });
 
     protected async executeImpl(
@@ -95,7 +71,10 @@ export class GenerateImageTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
@@ -119,8 +98,9 @@ export class GenerateImageTool extends BaseTool {
         }
 
         const dataUrl = `data:${imageFile.mediaType};base64,${imageFile.base64}`;
-        const width = Number(params.width) || 400;
-        const height = Number(params.height) || 400;
+        const width = params.width !== undefined ? Number(params.width) : 400;
+        const height =
+            params.height !== undefined ? Number(params.height) : 400;
         const zIndex = params.zIndex !== undefined ? Number(params.zIndex) : 1;
 
         const element = createImage({

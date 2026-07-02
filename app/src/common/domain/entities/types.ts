@@ -69,13 +69,29 @@ export interface TextBox {
     verticalAlign?: 'top' | 'middle' | 'bottom';
 }
 
+export interface PlotSeries {
+    name?: string;
+    x: (string | number)[];
+    y: number[];
+}
+
+// line/bar plots use `series`; pie plots use `labels` + `values`
+export interface PlotData {
+    series?: PlotSeries[];
+    labels?: string[];
+    values?: number[];
+}
+
 export interface Plot {
     id: UUID;
     type: 'plot';
     position: Position;
     size: Size;
-    data: any; // This will be more specific based on plot type
+    data: PlotData;
     plotType: 'line' | 'bar' | 'pie';
+    title?: string;
+    xAxisLabel?: string;
+    yAxisLabel?: string;
     zIndex?: number;
     style?: ElementStyle;
 }

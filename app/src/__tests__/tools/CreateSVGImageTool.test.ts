@@ -8,6 +8,7 @@ describe('CreateSVGImageTool', () => {
     beforeEach(() => {
         tool = new CreateSVGImageTool();
         mockService = new MockPresentationService();
+        mockService.addSlide(mockService.createMockSlide({ id: 'slide-1' }));
     });
 
     it('should create SVG image with valid parameters', async () => {

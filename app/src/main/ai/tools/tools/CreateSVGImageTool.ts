@@ -3,27 +3,23 @@ import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createImage } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { slideNotFound } from '../utils/errors';
+import {
+    heightSchema,
+    positionReferenceSchema,
+    SLIDE_HEIGHT,
+    SLIDE_WIDTH,
+    widthSchema,
+    xSchema,
+    ySchema,
+    zIndexSchema,
+} from '../utils/schemas';
 
 export class CreateSVGImageTool extends BaseTool {
     name = 'createSVGImage';
 
     description =
         'Create an SVG image element on a slide by providing SVG markup';
-
-    requiredParams = {
-        slideId: 'The ID of the slide to add the SVG image to',
-        svgContent: 'The SVG markup content to render as an image',
-    };
-
-    optionalParams = {
-        x: 'X position of the element (defaults to 100)',
-        y: 'Y position of the element (defaults to 100)',
-        positionReference:
-            'The reference position of the element (defaults to top left), choose from top left or center',
-        width: 'The width of the element (defaults to 200)',
-        height: 'The height of the element (defaults to 200)',
-        zIndex: 'The z-index of the element for stacking order (defaults to 1)',
-    };
 
     inputSchema = z.object({
         slideId: z
@@ -32,34 +28,12 @@ export class CreateSVGImageTool extends BaseTool {
         svgContent: z
             .string()
             .describe('The SVG markup content to render as an image'),
-        x: z
-            .number()
-            .describe('X position of the element (defaults to 100)')
-            .optional(),
-        y: z
-            .number()
-            .describe('Y position of the element (defaults to 100)')
-            .optional(),
-        positionReference: z
-            .enum(['top left', 'center'])
-            .describe(
-                'The reference position of the element (defaults to top left), choose from top left or center',
-            )
-            .optional(),
-        width: z
-            .number()
-            .describe('The width of the element (defaults to 200)')
-            .optional(),
-        height: z
-            .number()
-            .describe('The height of the element (defaults to 200)')
-            .optional(),
-        zIndex: z
-            .number()
-            .describe(
-                'The z-index of the element for stacking order (defaults to 1)',
-            )
-            .optional(),
+        x: xSchema(' (defaults to 100)').optional(),
+        y: ySchema(' (defaults to 100)').optional(),
+        positionReference: positionReferenceSchema.optional(),
+        width: widthSchema(' (defaults to 200)').optional(),
+        height: heightSchema(' (defaults to 200)').optional(),
+        zIndex: zIndexSchema.optional(),
     });
 
     protected async executeImpl(
@@ -102,8 +76,8 @@ export class CreateSVGImageTool extends BaseTool {
             };
         }
 
-        const widthValue = Number(width) || 200;
-        const heightValue = Number(height) || 200;
+        const widthValue = width !== undefined ? Number(width) : 200;
+        const heightValue = height !== undefined ? Number(height) : 200;
 
         let xPos = x !== undefined ? Number(x) : 100;
         let yPos = y !== undefined ? Number(y) : 100;
@@ -120,7 +94,10 @@ export class CreateSVGImageTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
@@ -130,8 +107,8 @@ export class CreateSVGImageTool extends BaseTool {
         const _isOutsideSlide =
             xPos < 0 ||
             yPos < 0 ||
-            xPos + widthValue > 1280 ||
-            yPos + heightValue > 720;
+            xPos + widthValue > SLIDE_WIDTH ||
+            yPos + heightValue > SLIDE_HEIGHT;
 
         // Convert SVG to data URI for the image content
         const svgDataUri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;

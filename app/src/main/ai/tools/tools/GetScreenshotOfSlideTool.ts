@@ -5,15 +5,12 @@ import getScreenshotFromSecondaryWindow, {
 } from '../../../main';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { slideNotFound } from '../utils/errors';
 
 export class GetScreenshotOfSlideTool extends BaseTool {
     name = 'getScreenshotOfSlide';
 
     description = 'Get a screenshot of a slide';
-
-    requiredParams = {
-        slideId: 'The ID of the slide to get a screenshot of',
-    };
 
     inputSchema = z.object({
         slideId: z
@@ -40,7 +37,10 @@ export class GetScreenshotOfSlideTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 

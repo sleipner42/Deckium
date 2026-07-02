@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import {
+    BarChart,
     Image,
     Plot,
     Shape,
@@ -9,16 +10,14 @@ import {
 import { PresentationService } from '../../../presentation/service';
 import { textMeasurementService } from '../../../text-measurement/service';
 import { BaseTool } from '../BaseTool';
+import { slideNotFound } from '../utils/errors';
+import { SLIDE_HEIGHT, SLIDE_WIDTH } from '../utils/schemas';
 
 export class GetAllInfoAboutSlideTool extends BaseTool {
     name = 'getAllInfoAboutSlide';
 
     description =
         'Get detailed information about a slide and its elements in text. Use this tool to get information about a slide before you edit or add something to it.';
-
-    requiredParams = {
-        slideId: 'The ID of the slide to get information about',
-    };
 
     inputSchema = z.object({
         slideId: z
@@ -45,7 +44,10 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
@@ -65,7 +67,11 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
                     type: element.type,
                     position: element.position,
                     size: element.size,
+                    zIndex: element.zIndex,
                     centerCordinates: centerCordinatesOfElement,
+                    ...('style' in element && element.style !== undefined
+                        ? { style: element.style }
+                        : {}),
                 };
 
                 switch (element.type) {
@@ -104,12 +110,12 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
                         }
 
                         return {
-                            id: textbox.id,
-                            type: textbox.type,
+                            ...baseInfo,
                             content: textbox.content,
                             color: (textbox as { color?: string }).color,
-                            position: textbox.position,
-                            size: textbox.size,
+                            backgroundColor: textbox.backgroundColor,
+                            borderRadius: textbox.borderRadius,
+                            verticalAlign: textbox.verticalAlign,
                             quillMetrics: quillInfo,
                             positionInfo: quillInfo?.containerBounds
                                 ? `Element at (${quillInfo.containerBounds.x}, ${quillInfo.containerBounds.y}) to (${quillInfo.containerBounds.x + quillInfo.containerBounds.width}, ${quillInfo.containerBounds.y + quillInfo.containerBounds.height})`
@@ -142,6 +148,20 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
                             ...baseInfo,
                             plotType: plot.plotType,
                             data: plot.data,
+                            title: plot.title,
+                            xAxisLabel: plot.xAxisLabel,
+                            yAxisLabel: plot.yAxisLabel,
+                        };
+                    }
+                    case 'barchart': {
+                        const barChart = element as BarChart;
+                        return {
+                            ...baseInfo,
+                            data: barChart.data,
+                            title: barChart.title,
+                            xAxisLabel: barChart.xAxisLabel,
+                            yAxisLabel: barChart.yAxisLabel,
+                            barColor: barChart.barColor,
                         };
                     }
                     default:
@@ -153,6 +173,7 @@ export class GetAllInfoAboutSlideTool extends BaseTool {
         const slideInfo = {
             id: slide.id,
             background: slide.background,
+            slideDimensions: { width: SLIDE_WIDTH, height: SLIDE_HEIGHT },
             elementsCount: slide.elements.length,
             elements: processedElements,
         };

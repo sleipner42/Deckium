@@ -1,3 +1,4 @@
+import type { ModelMessage } from 'ai';
 import { v4 as uuidv4 } from 'uuid';
 import { Message, Thread } from '../../common/domain/entities/ai-types';
 import { UUID } from '../../common/domain/entities/types';
@@ -6,6 +7,32 @@ import { logger } from '../utils/logger';
 
 export class AIState {
     private threads: Map<UUID, Thread> = new Map<UUID, Thread>();
+
+    // Full ModelMessage history per thread, persisted verbatim from
+    // result.response.messages and replayed verbatim on the next run. This is
+    // intentionally a separate source of truth from thread.messages: the
+    // Thread crosses the IPC boundary to the renderer on every stream delta
+    // and must stay small, while this history carries complete tool
+    // calls/results (including screenshots) and provider reasoning metadata,
+    // kept byte-stable so provider prompt caching works across turns.
+    private modelHistories: Map<UUID, ModelMessage[]> = new Map();
+
+    getModelMessages(threadId: UUID): ModelMessage[] {
+        return this.modelHistories.get(threadId) ?? [];
+    }
+
+    appendModelMessages(threadId: UUID, messages: ModelMessage[]): void {
+        if (messages.length === 0) {
+            return;
+        }
+        const history = this.modelHistories.get(threadId) ?? [];
+        history.push(...structuredClone(messages));
+        this.modelHistories.set(threadId, history);
+    }
+
+    replaceModelMessages(threadId: UUID, messages: ModelMessage[]): void {
+        this.modelHistories.set(threadId, structuredClone(messages));
+    }
 
     getThreadIds(): Set<UUID> {
         return new Set(this.threads.keys());
@@ -40,6 +67,7 @@ export class AIState {
     }
 
     deleteThread(threadId: UUID): boolean {
+        this.modelHistories.delete(threadId);
         return this.threads.delete(threadId);
     }
 

@@ -9,11 +9,6 @@ export class CalculatorTool extends BaseTool {
     description =
         'Calculate mathematical expressions for dimensions, positions, and other numeric values';
 
-    requiredParams = {
-        expression:
-            "Mathematical expression to evaluate (e.g., '(500+500)/2', '1280/3', '720-100', 'sqrt(64)', 'pow(2,3)'). Supports basic arithmetic (+, -, *, /), parentheses, and common functions like sqrt, pow, abs, round, floor, ceil, min, max.",
-    };
-
     inputSchema = z.object({
         expression: z
             .string()

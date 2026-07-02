@@ -11,10 +11,6 @@ export class GetDataFromUrl extends BaseTool {
     description =
         'Get data from a URL and convert HTML to Markdown. Always use this tool when you get a link with relevant information.';
 
-    requiredParams = {
-        url: 'The URL to get data from',
-    };
-
     inputSchema = z.object({
         url: z.string().describe('The URL to get data from'),
     });
@@ -140,20 +136,35 @@ export class GetDataFromUrl extends BaseTool {
         _presentationService: PresentationService,
     ): Promise<AIToolResult> {
         const { url } = params;
-        const response = await axios.get(url, {
-            headers: {
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'Cache-Control': 'no-cache',
-                Pragma: 'no-cache',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Sec-Fetch-User': '?1',
-            },
-        });
+
+        let response: { data: unknown };
+        try {
+            response = await axios.get(url, {
+                headers: {
+                    'User-Agent':
+                        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Cache-Control': 'no-cache',
+                    Pragma: 'no-cache',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                },
+            });
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const status = error.response
+                    ? `HTTP ${error.response.status} ${error.response.statusText}`
+                    : error.message;
+                return {
+                    success: false,
+                    error: `Failed to fetch ${url}: ${status}. The page may be unavailable, blocked, or the URL may be wrong.`,
+                };
+            }
+            throw error;
+        }
         const { data } = response;
 
         let markdown = '';
@@ -217,14 +228,24 @@ export class GetDataFromUrl extends BaseTool {
                 }
             } catch (error) {
                 console.error('Error converting HTML to Markdown:', error);
-                markdown = 'Error processing content from URL';
+                return {
+                    success: false,
+                    error: `Fetched ${url} but failed to convert its HTML content to Markdown: ${error instanceof Error ? error.message : 'unknown error'}`,
+                };
             }
+        }
+
+        if (!markdown) {
+            return {
+                success: false,
+                error: `Fetched ${url} but could not extract any readable content (the response was empty or not HTML).`,
+            };
         }
 
         return {
             success: true,
             data: {
-                markdown: markdown || 'No content extracted',
+                markdown,
                 url,
             },
             editedSlidesIds: [],

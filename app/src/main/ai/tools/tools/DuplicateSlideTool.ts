@@ -2,16 +2,13 @@ import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { slideNotFound } from '../utils/errors';
 
 export class DuplicateSlideTool extends BaseTool {
     name = 'duplicateSlide';
 
     description =
         'Duplicate an existing slide with all its elements, creating new IDs for the slide and all elements';
-
-    requiredParams = {
-        slideId: 'The ID of the slide to duplicate',
-    };
 
     inputSchema = z.object({
         slideId: z.string().describe('The ID of the slide to duplicate'),
@@ -37,7 +34,10 @@ export class DuplicateSlideTool extends BaseTool {
         if (!originalSlide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 

@@ -3,6 +3,8 @@ import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createImage } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { slideNotFound } from '../utils/errors';
+import { xSchema, ySchema, zIndexSchema } from '../utils/schemas';
 
 export class AddLogoTool extends BaseTool {
     name = 'addLogo';
@@ -10,41 +12,20 @@ export class AddLogoTool extends BaseTool {
     description =
         "Add a real company or brand logo to a slide by its website domain (e.g. 'ikea.com', 'spotify.com', 'volvocars.com'). Use this whenever a slide mentions a real company, product, or brand - logos look far more professional than plain text.";
 
-    requiredParams = {
-        slideId: 'The ID of the slide to add the logo to',
-        domain: "The company's website domain, e.g. 'ikea.com' or 'spotify.com'",
-        x: 'The horizontal position in pixels of the top-left corner',
-        y: 'The vertical position in pixels of the top-left corner',
-    };
-
-    optionalParams = {
-        size: 'The width and height of the square logo in pixels (defaults to 64)',
-        zIndex: 'The stacking order of the logo (defaults to 1)',
-    };
-
     inputSchema = z.object({
         slideId: z.string().describe('The ID of the slide to add the logo to'),
         domain: z
             .string()
             .describe("The company's website domain, e.g. 'ikea.com'"),
-        x: z
-            .number()
-            .describe(
-                'The horizontal position in pixels of the top-left corner',
-            ),
-        y: z
-            .number()
-            .describe('The vertical position in pixels of the top-left corner'),
+        x: xSchema(" of the logo's top-left corner"),
+        y: ySchema(" of the logo's top-left corner"),
         size: z
             .number()
             .optional()
             .describe(
                 'The width and height of the square logo in pixels (defaults to 64)',
             ),
-        zIndex: z
-            .number()
-            .optional()
-            .describe('The stacking order of the logo (defaults to 1)'),
+        zIndex: zIndexSchema.optional(),
     });
 
     protected async executeImpl(
@@ -69,12 +50,15 @@ export class AddLogoTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
         const normalizedDomain = normalizeDomain(domain);
-        const size = Number(params.size) || 64;
+        const size = params.size !== undefined ? Number(params.size) : 64;
         const zIndex = params.zIndex !== undefined ? Number(params.zIndex) : 1;
         const logoUrl = `https://www.google.com/s2/favicons?domain=${normalizedDomain}&sz=128`;
 

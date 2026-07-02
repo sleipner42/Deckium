@@ -3,29 +3,20 @@ import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createBarChart } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import {
+    COLOR_DESCRIPTION,
+    colorSchema,
+    heightSchema,
+    widthSchema,
+    xSchema,
+    ySchema,
+    zIndexSchema,
+} from '../utils/schemas';
 
 export class CreateBarChartTool extends BaseTool {
     name = 'createBarChart';
 
     description = 'Create a bar chart element on a slide';
-
-    requiredParams = {
-        slideId: 'The ID of the slide to add the bar chart to',
-        title: 'The title of the chart',
-        xAxisLabel: 'The label for the X axis',
-        yAxisLabel: 'The label for the Y axis',
-        xData: 'Array of x-axis values (labels) as comma-separated string, e.g. "Jan,Feb,Mar"',
-        yData: 'Array of y-axis values (numbers) as comma-separated string, e.g. "10,24,30"',
-    };
-
-    optionalParams = {
-        x: 'X position of the element (defaults to 100)',
-        y: 'Y position of the element (defaults to 100)',
-        width: 'The width of the element (defaults to 400)',
-        height: 'The height of the element (defaults to 300)',
-        barColor: 'The color of the bars (defaults to #000000)',
-        zIndex: 'The z-index of the element (defaults to 1) - controls stacking order with higher values appearing on top',
-    };
 
     inputSchema = z.object({
         slideId: z
@@ -35,41 +26,25 @@ export class CreateBarChartTool extends BaseTool {
         xAxisLabel: z.string().describe('The label for the X axis'),
         yAxisLabel: z.string().describe('The label for the Y axis'),
         xData: z
-            .string()
+            .array(z.union([z.string(), z.number()]))
             .describe(
-                'Array of x-axis values (labels) as comma-separated string, e.g. "Jan,Feb,Mar"',
+                'Array of x-axis values (category labels or numbers), e.g. ["Jan", "Feb", "Mar"]. Parallel to yData: must have the same length, where xData[i] labels the bar whose value is yData[i].',
             ),
         yData: z
-            .string()
+            .array(z.number())
             .describe(
-                'Array of y-axis values (numbers) as comma-separated string, e.g. "10,24,30"',
+                'Array of y-axis values (numbers), e.g. [10, 24, 30]. Parallel to xData: must have the same length, where yData[i] is the value for the bar labeled xData[i].',
             ),
-        x: z
-            .number()
-            .describe('X position of the element (defaults to 100)')
-            .optional(),
-        y: z
-            .number()
-            .describe('Y position of the element (defaults to 100)')
-            .optional(),
-        width: z
-            .number()
-            .describe('The width of the element (defaults to 400)')
-            .optional(),
-        height: z
-            .number()
-            .describe('The height of the element (defaults to 300)')
-            .optional(),
-        barColor: z
-            .string()
-            .describe('The color of the bars (defaults to #000000)')
-            .optional(),
-        zIndex: z
-            .number()
+        x: xSchema(' (defaults to 100)').optional(),
+        y: ySchema(' (defaults to 100)').optional(),
+        width: widthSchema(' (defaults to 400)').optional(),
+        height: heightSchema(' (defaults to 300)').optional(),
+        barColor: colorSchema
             .describe(
-                'The z-index of the element (defaults to 1) - controls stacking order with higher values appearing on top',
+                `The color of the bars (defaults to #000000). ${COLOR_DESCRIPTION}`,
             )
             .optional(),
+        zIndex: zIndexSchema.optional(),
     });
 
     protected async executeImpl(
@@ -112,16 +87,21 @@ export class CreateBarChartTool extends BaseTool {
             };
         }
 
-        // Parse data arrays
-        const xDataArray = xData.split(',').map((item: string) => item.trim());
-        const yDataArray = yData
-            .split(',')
-            .map((item: string) => Number(item.trim()));
+        // Runtime tolerance: accept comma-separated strings from older
+        // callers/tests, but prefer clean arrays as declared in the schema.
+        const xDataArray: (string | number)[] =
+            typeof xData === 'string'
+                ? xData.split(',').map((item: string) => item.trim())
+                : xData;
+        const yDataArray: number[] =
+            typeof yData === 'string'
+                ? yData.split(',').map((item: string) => Number(item.trim()))
+                : yData.map((item: string | number) => Number(item));
 
         if (xDataArray.length !== yDataArray.length) {
             return {
                 success: false,
-                error: 'xData and yData arrays must have the same length',
+                error: `xData and yData must be parallel arrays of the same length, but xData has ${xDataArray.length} item(s) and yData has ${yDataArray.length} item(s)`,
             };
         }
 
@@ -131,8 +111,8 @@ export class CreateBarChartTool extends BaseTool {
                 y: y !== undefined ? Number(y) : 100,
             },
             size: {
-                width: Number(width) || 400,
-                height: Number(height) || 300,
+                width: width !== undefined ? Number(width) : 400,
+                height: height !== undefined ? Number(height) : 300,
             },
             title,
             xAxisLabel,
@@ -159,6 +139,8 @@ export class CreateBarChartTool extends BaseTool {
             data: {
                 elementId: element.id,
                 message: 'Bar chart added successfully',
+                position: element.position,
+                size: element.size,
                 chartInfo: {
                     title,
                     xAxisLabel,

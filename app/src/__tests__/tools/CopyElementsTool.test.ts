@@ -34,7 +34,7 @@ describe('CopyElementsTool', () => {
         // Copy specific element
         const result = await tool.execute(
             {
-                targetSlideId: targetSlide.id,
+                slideId: targetSlide.id,
                 elementIds: ['elem1'],
                 positionOffset: { x: 20, y: 20 },
             },
@@ -44,7 +44,7 @@ describe('CopyElementsTool', () => {
         expect(result.success).toBe(true);
         expect(result.data.copiedElementsCount).toBe(1);
         expect(result.data.copiedElementTypes).toEqual(['textbox']);
-        expect(result.data.copiedElementIds).toEqual(['elem1']);
+        expect(result.data.sourceElementIds).toEqual(['elem1']);
         expect(result.editedSlidesIds).toEqual([targetSlide.id]);
 
         // Verify element was copied to target slide
@@ -74,7 +74,7 @@ describe('CopyElementsTool', () => {
         // Copy all elements by specifying their IDs
         const result = await tool.execute(
             {
-                targetSlideId: targetSlide.id,
+                slideId: targetSlide.id,
                 elementIds: ['elem1', 'elem2'],
                 positionOffset: { x: 10, y: 10 },
             },
@@ -87,7 +87,7 @@ describe('CopyElementsTool', () => {
             'textbox',
             'rectangle',
         ]);
-        expect(result.data.copiedElementIds).toEqual(['elem1', 'elem2']);
+        expect(result.data.sourceElementIds).toEqual(['elem1', 'elem2']);
 
         // Verify elements were copied to target slide
         const updatedPresentation = mockPresentationService.getPresentation();
@@ -112,7 +112,7 @@ describe('CopyElementsTool', () => {
         // Copy elements from different source slides
         const result = await tool.execute(
             {
-                targetSlideId: targetSlide.id,
+                slideId: targetSlide.id,
                 elementIds: ['elem1', 'elem2'],
             },
             mockPresentationService as any,
@@ -126,16 +126,14 @@ describe('CopyElementsTool', () => {
     it('should return error when target slide not found', async () => {
         const result = await tool.execute(
             {
-                targetSlideId: 'nonexistent-slide',
+                slideId: 'nonexistent-slide',
                 elementIds: ['elem1'],
             },
             mockPresentationService as any,
         );
 
         expect(result.success).toBe(false);
-        expect(result.error).toBe(
-            'Target slide with ID nonexistent-slide not found',
-        );
+        expect(result.error).toContain("Slide 'nonexistent-slide' not found");
     });
 
     it('should return error when specific element not found', async () => {
@@ -143,15 +141,15 @@ describe('CopyElementsTool', () => {
 
         const result = await tool.execute(
             {
-                targetSlideId: targetSlide.id,
+                slideId: targetSlide.id,
                 elementIds: ['nonexistent-element'],
             },
             mockPresentationService as any,
         );
 
         expect(result.success).toBe(false);
-        expect(result.error).toBe(
-            'Element with ID nonexistent-element not found in any slide',
+        expect(result.error).toContain(
+            "Element 'nonexistent-element' not found in the presentation",
         );
     });
 
@@ -160,7 +158,7 @@ describe('CopyElementsTool', () => {
 
         const result = await tool.execute(
             {
-                targetSlideId: targetSlide.id,
+                slideId: targetSlide.id,
                 elementIds: [],
             },
             mockPresentationService as any,
@@ -172,7 +170,7 @@ describe('CopyElementsTool', () => {
         );
     });
 
-    it('should return error when targetSlideId is missing', async () => {
+    it('should return error when slideId is missing', async () => {
         const result = await tool.execute(
             {
                 elementIds: ['elem1'],
@@ -181,7 +179,7 @@ describe('CopyElementsTool', () => {
         );
 
         expect(result.success).toBe(false);
-        expect(result.error).toBe('targetSlideId is required');
+        expect(result.error).toBe('slideId is required');
     });
 
     it('should return error when elementIds is missing', async () => {
@@ -189,7 +187,7 @@ describe('CopyElementsTool', () => {
 
         const result = await tool.execute(
             {
-                targetSlideId: targetSlide.id,
+                slideId: targetSlide.id,
             },
             mockPresentationService as any,
         );

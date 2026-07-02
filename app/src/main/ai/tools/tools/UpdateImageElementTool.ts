@@ -3,25 +3,16 @@ import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { Image } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import {
+    elementNotFoundInPresentation,
+    wrongElementType,
+} from '../utils/errors';
 
 export class UpdateImageElementTool extends BaseTool {
     name = 'updateImageElement';
 
     description =
         'Update an existing image element position, size, or z-index on a slide. When updating size, specify either width OR height and the other dimension will be calculated to maintain the current aspect ratio.';
-
-    requiredParams = {
-        elementId: 'The ID of the image element to update',
-    };
-
-    optionalParams = {
-        x: 'New X position in pixels',
-        y: 'New Y position in pixels',
-        width: 'New width in pixels. If specified, height will be calculated automatically to maintain current aspect ratio. If neither width nor height is specified, dimensions remain unchanged. Do not specify both width and height.',
-        height: 'New height in pixels. If specified, width will be calculated automatically to maintain current aspect ratio. If neither width nor height is specified, dimensions remain unchanged. Do not specify both width and height.',
-        zIndex: 'The new z-index value - controls stacking order with higher values appearing on top',
-        imageUrl: 'Direct URL to replace the current image',
-    };
 
     inputSchema = z.object({
         elementId: z.string().describe('The ID of the image element to update'),
@@ -108,13 +99,15 @@ export class UpdateImageElementTool extends BaseTool {
 
             const currentPresentation = presentationService.getPresentation();
 
+            let foundAny = null;
             for (const slide of currentPresentation.slides) {
-                const element = slide.elements.find(
-                    (e) => e.id === elementId,
-                ) as Image;
-                if (element && element.type === 'image') {
-                    targetElement = element;
-                    slideId = slide.id;
+                const element = slide.elements.find((e) => e.id === elementId);
+                if (element) {
+                    foundAny = element;
+                    if (element.type === 'image') {
+                        targetElement = element as Image;
+                        slideId = slide.id;
+                    }
                     break;
                 }
             }
@@ -122,7 +115,12 @@ export class UpdateImageElementTool extends BaseTool {
             if (!targetElement || !slideId) {
                 return {
                     success: false,
-                    error: `Image element with ID ${elementId} not found, or element is not an image`,
+                    error: foundAny
+                        ? wrongElementType(foundAny, 'image')
+                        : elementNotFoundInPresentation(
+                              elementId,
+                              currentPresentation,
+                          ),
                 };
             }
 

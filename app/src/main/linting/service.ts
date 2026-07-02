@@ -84,7 +84,7 @@ export class LintingService {
                         `ELEMENT_OUTSIDE_SLIDE: Element "${elementId}" is positioned outside slide boundaries (1280x720). Current position causes element to extend beyond slide edges.`,
                         'warning',
                         overlapCheck.suggestedPosition
-                            ? `ACTION_REQUIRED: Use updateTextElement, updateShapeTool, or updateImageElement tool to reposition element to x:${overlapCheck.suggestedPosition.x}, y:${overlapCheck.suggestedPosition.y}`
+                            ? `ACTION_REQUIRED: Use updateTextElement, updateShape, or updateImageElement tool to reposition element to x:${overlapCheck.suggestedPosition.x}, y:${overlapCheck.suggestedPosition.y}`
                             : 'ACTION_REQUIRED: Use appropriate update tool to move element within slide boundaries (0-1280 width, 0-720 height)',
                     ),
                 );
@@ -764,7 +764,7 @@ export class LintingService {
                 ? 'updateBarChart'
                 : element.type === 'image'
                   ? 'updateImageElement'
-                  : 'updateShapeTool';
+                  : 'updateShape';
 
         if (element.position.x < 0) {
             errors.push(
@@ -841,7 +841,7 @@ export class LintingService {
                 ? 'updateBarChart'
                 : element.type === 'image'
                   ? 'updateImageElement'
-                  : 'updateShapeTool';
+                  : 'updateShape';
 
         const overlappingElements = slide.elements.filter(
             (e) =>

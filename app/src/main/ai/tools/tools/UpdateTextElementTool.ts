@@ -1,94 +1,49 @@
 import { z } from 'zod';
-import {
-    DEFAULT_TEXT_FONT_SIZE,
-    HEADER_FONT_SIZES,
-} from '../../../../common/config/typography';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { TextBox } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import {
+    elementNotFoundInPresentation,
+    wrongElementType,
+} from '../utils/errors';
+import { HTML_CONTENT_DESCRIPTION } from '../utils/html-content';
+import {
+    COLOR_DESCRIPTION,
+    colorSchema,
+    heightSchema,
+    positionReferenceSchema,
+    widthSchema,
+    xSchema,
+    ySchema,
+    zIndexSchema,
+} from '../utils/schemas';
 
 export class UpdateTextElementTool extends BaseTool {
     name = 'updateTextElement';
 
     description = 'Update an existing text element on a slide';
 
-    requiredParams = {
-        elementId: 'The ID of the text element to update',
-    };
-
-    optionalParams = {
-        content:
-            'The text content to display as HTML. Supported formatting options:\n\n' +
-            'STRUCTURE:\n' +
-            '- <p>Regular paragraph text</p>\n' +
-            `- <h1>Large heading ${HEADER_FONT_SIZES.h1}</h1>, <h2>Medium heading ${HEADER_FONT_SIZES.h2}</h2>, <h3>Small heading ${HEADER_FONT_SIZES.h3}</h3>\n` +
-            '- <br> for line breaks\n\n' +
-            'TEXT STYLING:\n' +
-            '- <strong>Bold text</strong> or <b>Bold text</b>\n' +
-            '- <em>Italic text</em> or <i>Italic text</i>\n' +
-            '- <u>Underlined text</u>\n' +
-            '- <s>Strikethrough text</s>\n\n' +
-            'LISTS:\n' +
-            '- <ul><li>Bullet point item</li><li>Another item</li></ul>\n' +
-            '- <ol><li>Numbered item 1</li><li>Numbered item 2</li></ol>\n\n' +
-            'ALIGNMENT (IMPORTANT):\n' +
-            '- Default: Left aligned (no class needed)\n' +
-            "- Center: Add class='ql-align-center' to any element\n" +
-            "- Right: Add class='ql-align-right' to any element\n" +
-            "- Example: <p class='ql-align-center'>Centered paragraph</p>\n\n" +
-            'INLINE STYLING:\n' +
-            `- Font size: <span style='font-size: 50px'>Large text</span> (default is ${DEFAULT_TEXT_FONT_SIZE})\n` +
-            "- Font family: <span style='font-family: Arial'>Arial text</span>\n" +
-            "- Text color: <span style='color: #ff0000'>Red text</span>\n" +
-            "- Combined: <span style='font-size: 18px; color: blue; font-family: Georgia'>Styled text</span>\n\n" +
-            'EXAMPLES:\n' +
-            '- Simple: <p>Hello world</p>\n' +
-            "- Centered title: <h1 class='ql-align-center'>My Presentation Title</h1>\n" +
-            "- Mixed formatting: <p><strong>Bold</strong> and <em>italic</em> text with <span style='color: red'>red highlight</span></p>",
-        x: 'New X position',
-        y: 'New Y position',
-        positionReference:
-            'The reference position of the element (defaults to top left), choose from top left or center',
-        width: 'New width',
-        height: 'New height',
-        borderRadius: 'The new border radius',
-        backgroundColor:
-            'The new background color. Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
-        verticalAlign: 'The new vertical alignment of the element',
-        zIndex: 'The new z-index value - controls stacking order with higher values appearing on top',
-    };
-
     inputSchema = z.object({
         elementId: z.string().describe('The ID of the text element to update'),
-        content: z.string().optional().describe(this.optionalParams.content),
-        x: z.number().optional().describe('New X position'),
-        y: z.number().optional().describe('New Y position'),
-        positionReference: z
-            .enum(['top left', 'center'])
+        content: z.string().optional().describe(HTML_CONTENT_DESCRIPTION),
+        x: xSchema(' (new value)').optional(),
+        y: ySchema(' (new value)').optional(),
+        positionReference: positionReferenceSchema.optional(),
+        width: widthSchema(' (new value)').optional(),
+        height: heightSchema(' (new value)').optional(),
+        borderRadius: z
+            .number()
             .optional()
-            .describe(
-                'The reference position of the element (defaults to top left), choose from top left or center',
-            ),
-        width: z.number().optional().describe('New width'),
-        height: z.number().optional().describe('New height'),
-        borderRadius: z.number().optional().describe('The new border radius'),
-        backgroundColor: z
-            .string()
-            .optional()
-            .describe(
-                'The new background color. Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
-            ),
+            .describe('The new border radius in pixels'),
+        backgroundColor: colorSchema
+            .describe(`The new background color. ${COLOR_DESCRIPTION}`)
+            .optional(),
         verticalAlign: z
             .enum(['top', 'middle', 'bottom'])
             .optional()
             .describe('The new vertical alignment of the element'),
-        zIndex: z
-            .number()
-            .optional()
-            .describe(
-                'The new z-index value - controls stacking order with higher values appearing on top',
-            ),
+        zIndex: zIndexSchema.optional(),
     });
 
     protected async executeImpl(
@@ -137,13 +92,15 @@ export class UpdateTextElementTool extends BaseTool {
 
         const currentPresentation = presentationService.getPresentation();
 
+        let foundAny = null;
         for (const slide of currentPresentation.slides) {
-            const element = slide.elements.find(
-                (e) => e.id === elementId,
-            ) as TextBox;
-            if (element && element.type === 'textbox') {
-                targetElement = element;
-                slideId = slide.id;
+            const element = slide.elements.find((e) => e.id === elementId);
+            if (element) {
+                foundAny = element;
+                if (element.type === 'textbox') {
+                    targetElement = element as TextBox;
+                    slideId = slide.id;
+                }
                 break;
             }
         }
@@ -151,7 +108,12 @@ export class UpdateTextElementTool extends BaseTool {
         if (!targetElement || !slideId) {
             return {
                 success: false,
-                error: `Text element with ID ${elementId} not found, or element is not a text element`,
+                error: foundAny
+                    ? wrongElementType(foundAny, 'text element')
+                    : elementNotFoundInPresentation(
+                          elementId,
+                          currentPresentation,
+                      ),
             };
         }
 
@@ -211,6 +173,10 @@ export class UpdateTextElementTool extends BaseTool {
 
         const message = 'Text element updated successfully';
 
+        const finalElement =
+            updatedSlide.elements.find((e) => e.id === elementId) ??
+            targetElement;
+
         return {
             success: true,
             data: {
@@ -218,6 +184,8 @@ export class UpdateTextElementTool extends BaseTool {
                 slideId: updatedSlide.id,
                 message,
                 updates: Object.keys(updates),
+                position: updates.position ?? finalElement.position,
+                size: updates.size ?? finalElement.size,
             },
             editedSlidesIds: [slideId],
         };

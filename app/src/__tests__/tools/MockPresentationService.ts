@@ -94,6 +94,14 @@ export class MockPresentationService {
         return this.mockPresentation.slides[slideIndex];
     }
 
+    reorderSlides(fromIndex: number, toIndex: number): Presentation {
+        const slides = this.mockPresentation.slides;
+        const [moved] = slides.splice(fromIndex, 1);
+        slides.splice(toIndex, 0, moved);
+        this.mockPresentation.updatedAt = new Date();
+        return this.mockPresentation;
+    }
+
     deleteSlide(slideId: string): string | null {
         const slideIndex = this.mockPresentation.slides.findIndex(
             (s) => s.id === slideId,

@@ -2,7 +2,7 @@ import { createAnthropic } from '@ai-sdk/anthropic';
 import { createAzure } from '@ai-sdk/azure';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
-import type { LanguageModel } from 'ai';
+import type { LanguageModel, ModelMessage } from 'ai';
 import { createOllama } from 'ollama-ai-provider-v2';
 import type {
     LLMProviderConfig,
@@ -31,9 +31,12 @@ const PROVIDERS: Record<LLMProviderType, ProviderAdapter> = {
         // is only sent when the user selected one in settings: valid values are
         // model-specific (e.g. gpt-5 accepts 'minimal' but not 'none'; gpt-5.5
         // the reverse), so we never guess — an unset value uses the model default.
+        // With store:false, reasoning items are only replayable across turns when
+        // their encrypted content is included in the response.
         providerOptions: (c) => ({
             openai: {
                 store: false,
+                include: ['reasoning.encrypted_content'],
                 ...(c.reasoningEffort
                     ? { reasoningEffort: c.reasoningEffort }
                     : {}),
@@ -70,6 +73,46 @@ export function providerOptionsFor(
     config: LLMProviderConfig,
 ): ProviderOptions | undefined {
     return PROVIDERS[config.provider]?.providerOptions?.(config);
+}
+
+/**
+ * Attach Anthropic prompt-cache breakpoints at request time: one on the last
+ * message (caches the whole prefix incl. system + tools) and one on the
+ * previous user turn (a stable read point for the next request). Returns
+ * shallow copies so the annotations never leak into the persisted history.
+ * No-op for other providers (OpenAI caches automatically).
+ */
+export function withCacheBreakpoints(
+    messages: ModelMessage[],
+    provider: LLMProviderType,
+): ModelMessage[] {
+    if (provider !== 'anthropic' || messages.length === 0) {
+        return messages;
+    }
+
+    const cacheControl = {
+        anthropic: { cacheControl: { type: 'ephemeral' } },
+    };
+
+    const breakpoints = new Set<number>([messages.length - 1]);
+    for (let i = messages.length - 2; i >= 0; i--) {
+        if (messages[i].role === 'user') {
+            breakpoints.add(i);
+            break;
+        }
+    }
+
+    return messages.map((message, index) =>
+        breakpoints.has(index)
+            ? ({
+                  ...message,
+                  providerOptions: {
+                      ...message.providerOptions,
+                      ...cacheControl,
+                  },
+              } as ModelMessage)
+            : message,
+    );
 }
 
 function requireApiKey(config: LLMProviderConfig, label: string): string {

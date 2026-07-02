@@ -12,9 +12,6 @@ export abstract class AITool {
 
     abstract description: string;
 
-    requiredParams: Record<string, string> = {};
-    optionalParams: Record<string, string> = {};
-
     inputSchema: z.ZodType = z.object({});
 
     constructor() {

@@ -9,6 +9,7 @@ import { CalculatorTool } from './tools/CalculatorTool';
 import { ChangeElementZIndexTool } from './tools/ChangeElementZIndexTool';
 import { CopyElementsTool } from './tools/CopyElementsTool';
 import { CreateBarChartTool } from './tools/CreateBarChartTool';
+import { CreatePlotTool } from './tools/CreatePlotTool';
 import { CreateShapeTool } from './tools/CreateShapeTool';
 import { CreateSlideTool } from './tools/CreateSlideTool';
 import { CreateSVGImageTool } from './tools/CreateSVGImageTool';
@@ -21,9 +22,12 @@ import { GetDataFromUrl } from './tools/GetDataFromUrl';
 import { GetPresentationInfoTool } from './tools/GetPresentationInfoTool';
 import { GetScreenshotOfSlideTool } from './tools/GetScreenshotOfSlideTool';
 import { MatchSizeTool } from './tools/MatchSizeTool';
+import { MoveElementTool } from './tools/MoveElementTool';
+import { MoveSlideTool } from './tools/MoveSlideTool';
 import { SpaceElementsEvenlyTool } from './tools/SpaceElementsEvenlyTool';
 import { UpdateBarChartTool } from './tools/UpdateBarChartTool';
 import { UpdateImageElementTool } from './tools/UpdateImageElementTool';
+import { UpdatePlotTool } from './tools/UpdatePlotTool';
 import { UpdateShapeTool } from './tools/UpdateShapeTool';
 import { UpdateSlideTool } from './tools/UpdateSlideTool';
 import { UpdateTextElementTool } from './tools/UpdateTextElementTool';
@@ -41,6 +45,8 @@ export class ToolFactory {
             new UpdateTextElementTool(),
             new CreateBarChartTool(),
             new UpdateBarChartTool(),
+            new CreatePlotTool(),
+            new UpdatePlotTool(),
             new CreateShapeTool(),
             new UpdateShapeTool(),
             new AlignElementsTool(),
@@ -54,6 +60,8 @@ export class ToolFactory {
             new AddLogoTool(),
             new UpdateImageElementTool(),
             new DeleteElementTool(),
+            new MoveElementTool(),
+            new MoveSlideTool(),
             new AlignToSlideTool(),
             new ArrangeInMatrixTool(),
             new MatchSizeTool(),

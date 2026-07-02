@@ -32,8 +32,8 @@ describe('DeleteElementTool', () => {
             );
 
             expect(result.success).toBe(false);
-            expect(result.error).toBe(
-                'Element with ID non-existent-element not found',
+            expect(result.error).toContain(
+                "Element 'non-existent-element' not found in the presentation",
             );
         });
     });
@@ -267,7 +267,7 @@ describe('DeleteElementTool', () => {
             );
 
             expect(result.success).toBe(false);
-            expect(result.error).toBe('Element with ID non-existent not found');
+            expect(result.error).toContain("Element 'non-existent' not found");
         });
 
         it('should handle deletion when no slides exist', async () => {
@@ -282,7 +282,7 @@ describe('DeleteElementTool', () => {
             );
 
             expect(result.success).toBe(false);
-            expect(result.error).toBe('Element with ID any-id not found');
+            expect(result.error).toContain("Element 'any-id' not found");
         });
     });
 });

@@ -1,4 +1,4 @@
-import { stepCountIs, streamText } from 'ai';
+import { type ModelMessage, pruneMessages, stepCountIs, streamText } from 'ai';
 import {
     AIRequest,
     AIResponse,
@@ -7,20 +7,43 @@ import {
 } from '../../common/domain/entities/ai-types';
 
 import type { UUID } from '../../common/domain/entities/types';
+import type { MessageContent } from '../../common/domain/interfaces/ai-service.interface';
 import { LintingService } from '../linting/service';
 import { PresentationService } from '../presentation/service';
+import { generateSlideGrid } from '../presentation/utils';
 import { LLMSettingsService } from '../settings/llm-settings-service';
 
 import { logger } from '../utils/logger';
 import { AIEventBus } from './event-bus';
-import { conversationHistory } from './external/messages';
-import { providerOptionsFor, resolveModel } from './external/providers';
+import { conversationHistory, toUserContent } from './external/messages';
+import {
+    providerOptionsFor,
+    resolveModel,
+    withCacheBreakpoints,
+} from './external/providers';
 import { getDeveloperPrompt } from './prompt/systemPrompt';
+import {
+    diffSnapshots,
+    type PresentationSnapshot,
+    takeSnapshot,
+} from './staleness';
 import { AIState } from './state';
-import { buildToolSet } from './tools/tool-adapter';
+import { buildToolSet, type ToolModelOutput } from './tools/tool-adapter';
 import { AIToolsService } from './tools/tools';
 
 const MAX_STEPS = 20;
+
+// When the accumulated model history (JSON chars, incl. base64 screenshots)
+// exceeds this, prune old reasoning/tool results once. Pruning changes the
+// prompt prefix and forfeits the provider cache for one request, so it is a
+// size safeguard, not a per-turn default.
+const HISTORY_PRUNE_THRESHOLD_CHARS = 400_000;
+
+const STEP_LIMIT_WARNING =
+    'System note: only 2 tool steps remain for this request. Finish the most important remaining work and reply with a summary of what is done and what is left.';
+
+const TRUNCATION_NOTICE =
+    'I reached the per-request step limit before finishing. Say "continue" and I will pick up where I left off.';
 
 // Generation/agent parameters shared by every streamText call. Add tuning here
 // (temperature, maxOutputTokens, …) so all agent settings live in one place.
@@ -45,6 +68,10 @@ export class AIService {
 
     private processingThreads: Set<UUID> = new Set();
 
+    // Presentation state as of the end of each thread's last agent turn,
+    // used to detect manual user edits between turns.
+    private threadSnapshots: Map<UUID, PresentationSnapshot> = new Map();
+
     constructor(
         settings: LLMSettingsService,
         presentationService: PresentationService,
@@ -60,8 +87,7 @@ export class AIService {
     }
 
     createThread(title: string, presentationId: UUID): Thread {
-        const presentation = this.presentationService.getPresentation();
-        const developerPrompt = getDeveloperPrompt(presentation);
+        const developerPrompt = getDeveloperPrompt();
 
         const thread = this.state.createThread(
             title,
@@ -89,6 +115,7 @@ export class AIService {
     deleteThread(threadId: UUID): boolean {
         const result = this.state.deleteThread(threadId);
         if (result) {
+            this.threadSnapshots.delete(threadId);
             this.eventBus.broadcastThreadDeleted(threadId);
         }
         return result;
@@ -123,6 +150,13 @@ export class AIService {
                     : request.message;
 
             this.eventBus.broadcastProcessingStarted(thread.id);
+
+            // The model-facing user message carries a per-turn context block
+            // (volatile presentation state + any user edits since the last
+            // turn); the UI message stays exactly what the user typed.
+            this.state.appendModelMessages(thread.id, [
+                this.buildModelUserMessage(thread.id, userContent),
+            ]);
 
             let updatedThread = this.state.addMessage(
                 thread,
@@ -170,7 +204,13 @@ export class AIService {
         abortSignal: AbortSignal,
     ): Promise<{ thread: Thread; finalText: string }> {
         const system = this.buildSystemPrompt();
-        const history = conversationHistory(thread.messages);
+        const storedHistory = this.state.getModelMessages(thread.id);
+        // Fallback for threads that predate the model-message store: replay
+        // the plain-text conversation instead.
+        const history =
+            storedHistory.length > 0
+                ? storedHistory
+                : conversationHistory(thread.messages);
         const config = this.settings.getCurrentProvider();
         const model = resolveModel(config);
         const tools = buildToolSet(
@@ -181,6 +221,13 @@ export class AIService {
 
         const loop = new AgentLoopState(this.state, this.eventBus, thread);
 
+        // Cumulative response messages from the last completed step; persisted
+        // in `finally` so completed tool calls/results survive an abort. A
+        // step's messages always contain paired tool-call/tool-result parts,
+        // so the stored history never ends on an orphaned tool call.
+        let capturedMessages: ModelMessage[] = [];
+        let truncated = false;
+
         // Group every presentation edit made by this AI turn into a single
         // undo step, including partial edits from aborted or failed turns.
         this.presentationService.beginTransaction();
@@ -190,10 +237,25 @@ export class AIService {
                 ...AGENT_DEFAULTS,
                 model,
                 system,
-                messages: history,
+                messages: withCacheBreakpoints(history, config.provider),
                 tools,
                 abortSignal,
                 providerOptions: providerOptionsFor(config),
+                onStepFinish: (step) => {
+                    capturedMessages = step.response.messages;
+                },
+                prepareStep: ({ stepNumber, messages }) =>
+                    stepNumber === MAX_STEPS - 2
+                        ? {
+                              messages: [
+                                  ...messages,
+                                  {
+                                      role: 'user' as const,
+                                      content: STEP_LIMIT_WARNING,
+                                  },
+                              ],
+                          }
+                        : undefined,
             });
 
             for await (const part of result.fullStream) {
@@ -209,28 +271,144 @@ export class AIService {
                     throw part.error;
                 }
             }
+
+            const [steps, finishReason, response] = await Promise.all([
+                result.steps,
+                result.finishReason,
+                result.response,
+            ]);
+            capturedMessages = response.messages;
+            truncated =
+                steps.length >= MAX_STEPS && finishReason === 'tool-calls';
         } finally {
             this.presentationService.endTransaction();
+            if (capturedMessages.length > 0) {
+                this.state.appendModelMessages(thread.id, capturedMessages);
+                this.pruneHistoryIfNeeded(thread.id);
+            }
+            // Remember what the presentation looked like when the agent
+            // stopped, so the next turn can report user edits made since.
+            this.threadSnapshots.set(
+                thread.id,
+                takeSnapshot(this.presentationService.getPresentation()),
+            );
         }
 
         loop.finalize();
-        const workingThread = loop.getThread();
+        let workingThread = loop.getThread();
+        let finalText = loop.getFinalText();
+
+        if (truncated) {
+            workingThread = this.state.addMessage(
+                workingThread,
+                TRUNCATION_NOTICE,
+                'assistant',
+            );
+            finalText =
+                finalText === 'Done.'
+                    ? TRUNCATION_NOTICE
+                    : `${finalText}\n\n${TRUNCATION_NOTICE}`;
+        }
+
         this.saveThread(workingThread);
 
         logger.logAIResponse('AI response generated', {
             threadId: workingThread.id,
             messageCount: workingThread.messages.length,
-            finalLength: loop.getFinalText().length,
+            finalLength: finalText.length,
+            truncated,
         });
 
-        return { thread: workingThread, finalText: loop.getFinalText() };
+        return { thread: workingThread, finalText };
     }
 
+    // The system prompt is deliberately constant: any per-turn state in it
+    // would change the prompt prefix every request and defeat provider prompt
+    // caching. Volatile context travels in the user message instead (see
+    // buildModelUserMessage).
     private buildSystemPrompt(): string {
+        return getDeveloperPrompt();
+    }
+
+    /**
+     * Build the model-facing user message: a `[Context: ...]` block with the
+     * volatile presentation state (slide list, current slide) and — when the
+     * user manually edited the presentation since the agent's last turn — a
+     * summary of those edits plus fresh grids for the changed slides.
+     */
+    private buildModelUserMessage(
+        threadId: UUID,
+        userContent: string | MessageContent[],
+    ): ModelMessage {
         const presentation = this.presentationService.getPresentation();
-        const base = getDeveloperPrompt(presentation);
+        const parts: string[] = [];
+
+        const slideList = presentation.slides
+            .map((slide, index) => `${index + 1}: ${slide.id}`)
+            .join(', ');
+        parts.push(
+            `Presentation status: ${presentation.slides.length} slide(s). Slide IDs in order: ${slideList || 'none'}.`,
+        );
+
         const slideContext = this.getCurrentSlideContextMessage();
-        return slideContext ? `${base}\n\n${slideContext}` : base;
+        if (slideContext) {
+            parts.push(slideContext);
+        }
+
+        const snapshot = this.threadSnapshots.get(threadId);
+        if (snapshot) {
+            const diff = diffSnapshots(snapshot, takeSnapshot(presentation));
+            if (diff) {
+                parts.push(
+                    `The user manually edited the presentation since your last turn:\n${diff.summary}`,
+                );
+                for (const slideId of diff.changedSlideIds) {
+                    const slide = presentation.slides.find(
+                        (s) => s.id === slideId,
+                    );
+                    if (slide) {
+                        parts.push(
+                            generateSlideGrid(slide, { pixelsPerSquare: 20 }),
+                        );
+                    }
+                }
+            }
+        }
+
+        const contextBlock = `[Context: current presentation state — not written by the user]\n${parts.join('\n\n')}`;
+
+        const content = toUserContent(userContent);
+        const contentParts =
+            typeof content === 'string'
+                ? [{ type: 'text' as const, text: content }]
+                : content;
+
+        return {
+            role: 'user',
+            content: [
+                { type: 'text' as const, text: contextBlock },
+                ...contentParts,
+            ],
+        };
+    }
+
+    private pruneHistoryIfNeeded(threadId: UUID): void {
+        const history = this.state.getModelMessages(threadId);
+        const approxChars = JSON.stringify(history).length;
+        if (approxChars <= HISTORY_PRUNE_THRESHOLD_CHARS) {
+            return;
+        }
+        const pruned = pruneMessages({
+            messages: history,
+            reasoning: 'before-last-message',
+            toolCalls: 'before-last-4-messages',
+        });
+        this.state.replaceModelMessages(threadId, pruned);
+        logger.logSystem('Pruned model history', 'info', {
+            threadId,
+            beforeChars: approxChars,
+            afterChars: JSON.stringify(pruned).length,
+        });
     }
 
     private handleSendMessageError(threadId: UUID, error: unknown): AIResponse {
@@ -348,7 +526,10 @@ class AgentLoopState {
         if (!stepId) {
             return;
         }
-        const status = failed || isFailedOutput(output) ? 'error' : 'done';
+        const status =
+            failed || (output as ToolModelOutput | undefined)?.success === false
+                ? 'error'
+                : 'done';
         this.thread = this.state.updateMessageContent(
             this.thread,
             stepId,
@@ -442,17 +623,6 @@ function updateToolStepStatus(
         }
     }
     return TOOL_PREFIX + JSON.stringify(data);
-}
-
-function isFailedOutput(output: unknown): boolean {
-    if (
-        output &&
-        typeof output === 'object' &&
-        typeof (output as { text?: unknown }).text === 'string'
-    ) {
-        return / failed:/i.test((output as { text: string }).text);
-    }
-    return false;
 }
 
 function humanizeToolName(name: string): string {

@@ -2,23 +2,13 @@ import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { elementNotFound, slideNotFound } from '../utils/errors';
 
 export class ChangeElementZIndexTool extends BaseTool {
     name = 'changeElementZIndex';
 
     description =
         'Change the z-index of an element to control its stacking order (which elements appear on top of others)';
-
-    requiredParams = {
-        slideId: 'The ID of the slide containing the element',
-        elementId: 'The ID of the element to change the z-index of',
-        zIndex: 'The new z-index value (higher values appear on top, default is 1). Good values: 0 for background, 1-4 for regular content, 5+ for headers/important elements',
-    };
-
-    optionalParams = {
-        relative:
-            'Set to true to make the change relative to current z-index (e.g., +1, -2). This is useful for bringing an element forward or backward in the stack',
-    };
 
     inputSchema = z.object({
         slideId: z
@@ -74,7 +64,10 @@ export class ChangeElementZIndexTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
@@ -84,7 +77,7 @@ export class ChangeElementZIndexTool extends BaseTool {
         if (!element) {
             return {
                 success: false,
-                error: `Element with ID ${elementId} not found on slide ${slideId}`,
+                error: elementNotFound(elementId, slide),
             };
         }
 

@@ -3,27 +3,14 @@ import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createImage } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { slideNotFound } from '../utils/errors';
+import { xSchema, ySchema, zIndexSchema } from '../utils/schemas';
 
 export class AddImageFromUrlTool extends BaseTool {
     name = 'addImageFromUrl';
 
     description =
         'Add an image from an existing URL to a presentation slide. To create a new custom image from a text description, use the generateImage tool instead.';
-
-    requiredParams = {
-        slideId:
-            'The unique identifier of the slide where the image should be added',
-        imageUrl: 'The URL of the image to add to the slide',
-        x: 'The horizontal position (in pixels) where the image should be placed on the slide',
-        y: 'The vertical position (in pixels) where the image should be placed on the slide',
-    };
-
-    optionalParams = {
-        width: 'The desired width of the image in pixels. If specified, height will be calculated automatically based on the image aspect ratio. Do not specify both width and height. Defaults to 400 if neither is specified.',
-        height: 'The desired height of the image in pixels. If specified, width will be calculated automatically based on the image aspect ratio. Do not specify both width and height.',
-        zIndex: 'The stacking order of the image relative to other elements (higher numbers appear on top). Defaults to 1.',
-        title: 'Optional title/description for the image element',
-    };
 
     inputSchema = z.object({
         slideId: z
@@ -34,16 +21,8 @@ export class AddImageFromUrlTool extends BaseTool {
         imageUrl: z
             .string()
             .describe('The URL of the image to add to the slide'),
-        x: z
-            .number()
-            .describe(
-                'The horizontal position (in pixels) where the image should be placed on the slide',
-            ),
-        y: z
-            .number()
-            .describe(
-                'The vertical position (in pixels) where the image should be placed on the slide',
-            ),
+        x: xSchema(" of the image's top-left corner"),
+        y: ySchema(" of the image's top-left corner"),
         width: z
             .number()
             .describe(
@@ -56,12 +35,7 @@ export class AddImageFromUrlTool extends BaseTool {
                 'The desired height of the image in pixels. If specified, width will be calculated automatically based on the image aspect ratio. Do not specify both width and height.',
             )
             .optional(),
-        zIndex: z
-            .number()
-            .describe(
-                'The stacking order of the image relative to other elements (higher numbers appear on top). Defaults to 1.',
-            )
-            .optional(),
+        zIndex: zIndexSchema.optional(),
         title: z
             .string()
             .describe('Optional title/description for the image element')
@@ -120,7 +94,7 @@ export class AddImageFromUrlTool extends BaseTool {
             const xPos = Number(x);
             const yPos = Number(y);
 
-            if (isNaN(xPos) || isNaN(yPos)) {
+            if (Number.isNaN(xPos) || Number.isNaN(yPos)) {
                 return {
                     success: false,
                     error: 'Position coordinates must be valid numbers',
@@ -129,9 +103,9 @@ export class AddImageFromUrlTool extends BaseTool {
 
             // Validate dimension parameters
             const hasWidth =
-                providedWidth !== undefined && !isNaN(Number(providedWidth));
+                providedWidth !== undefined && !Number.isNaN(Number(providedWidth));
             const hasHeight =
-                providedHeight !== undefined && !isNaN(Number(providedHeight));
+                providedHeight !== undefined && !Number.isNaN(Number(providedHeight));
 
             let dimensionWarning = '';
             if (hasWidth && hasHeight) {
@@ -146,7 +120,10 @@ export class AddImageFromUrlTool extends BaseTool {
             if (!slide) {
                 return {
                     success: false,
-                    error: `Slide with ID ${slideId} not found`,
+                    error: slideNotFound(
+                        slideId,
+                        presentationService.getPresentation(),
+                    ),
                 };
             }
 

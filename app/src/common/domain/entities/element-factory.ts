@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { BarChartData, ContentElement } from './types';
+import type { BarChartData, ContentElement, PlotData } from './types';
 
 export function createTextBox(options: {
     content: string;
@@ -65,6 +65,30 @@ export function createBarChart(options: {
         yAxisLabel: options.yAxisLabel,
         barColor: options.barColor || '#000000',
         zIndex: options.zIndex || 1,
+    };
+}
+
+export function createPlot(options: {
+    plotType: 'line' | 'bar' | 'pie';
+    data: PlotData;
+    position: { x: number; y: number };
+    size: { width: number; height: number };
+    title?: string;
+    xAxisLabel?: string;
+    yAxisLabel?: string;
+    zIndex?: number;
+}): ContentElement {
+    return {
+        id: uuidv4(),
+        type: 'plot',
+        plotType: options.plotType,
+        position: options.position,
+        size: options.size,
+        data: options.data,
+        title: options.title,
+        xAxisLabel: options.xAxisLabel,
+        yAxisLabel: options.yAxisLabel,
+        zIndex: options.zIndex ?? 1,
     };
 }
 

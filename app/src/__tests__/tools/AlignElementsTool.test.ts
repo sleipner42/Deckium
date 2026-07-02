@@ -19,7 +19,7 @@ describe('AlignElementsTool', () => {
         it('should return error when slideId is missing', async () => {
             const result = await tool.execute(
                 {
-                    elementIds: 'el1,el2',
+                    elementIds: ['el1', 'el2'],
                     alignType: 'left',
                 },
                 mockService as any,
@@ -46,7 +46,7 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: 'el1,el2',
+                    elementIds: ['el1', 'el2'],
                     alignType: 'invalid-type',
                 },
                 mockService as any,
@@ -60,7 +60,7 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: 'el1',
+                    elementIds: ['el1'],
                     alignType: 'left',
                 },
                 mockService as any,
@@ -78,28 +78,28 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId: 'non-existent',
-                    elementIds: 'el1,el2',
+                    elementIds: ['el1', 'el2'],
                     alignType: 'left',
                 },
                 mockService as any,
             );
 
             expect(result.success).toBe(false);
-            expect(result.error).toBe('Slide with ID non-existent not found');
+            expect(result.error).toContain("Slide 'non-existent' not found");
         });
 
         it('should return error when elements not found', async () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: 'non-existent-1,non-existent-2',
+                    elementIds: ['non-existent-1', 'non-existent-2'],
                     alignType: 'left',
                 },
                 mockService as any,
             );
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain('Some elements were not found');
+            expect(result.error).toContain('Elements not found on slide');
         });
     });
 
@@ -136,7 +136,7 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: `${element1Id},${element2Id},${element3Id}`,
+                    elementIds: [element1Id, element2Id, element3Id],
                     alignType: 'left',
                 },
                 mockService as any,
@@ -157,7 +157,7 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: `${element1Id},${element2Id},${element3Id}`,
+                    elementIds: [element1Id, element2Id, element3Id],
                     alignType: 'right',
                 },
                 mockService as any,
@@ -179,7 +179,7 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: `${element1Id},${element2Id},${element3Id}`,
+                    elementIds: [element1Id, element2Id, element3Id],
                     alignType: 'center-horizontal',
                 },
                 mockService as any,
@@ -225,7 +225,7 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: `${element1Id},${element2Id}`,
+                    elementIds: [element1Id, element2Id],
                     alignType: 'top',
                 },
                 mockService as any,
@@ -246,7 +246,7 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: `${element1Id},${element2Id}`,
+                    elementIds: [element1Id, element2Id],
                     alignType: 'bottom',
                 },
                 mockService as any,
@@ -294,7 +294,7 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: `${element1Id},${element2Id},${referenceId}`,
+                    elementIds: [element1Id, element2Id, referenceId],
                     alignType: 'left',
                     referenceElementId: referenceId,
                 },
@@ -316,7 +316,7 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: `${element1Id},${element2Id}`, // Reference not included
+                    elementIds: [element1Id, element2Id], // Reference not included
                     alignType: 'left',
                     referenceElementId: referenceId,
                 },
@@ -360,7 +360,7 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: `${element1Id},${element2Id},${element3Id}`,
+                    elementIds: [element1Id, element2Id, element3Id],
                     alignType: 'distribute-horizontal',
                 },
                 mockService as any,
@@ -394,7 +394,7 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: `${element1Id},${element2Id}`,
+                    elementIds: [element1Id, element2Id],
                     alignType: 'distribute-horizontal',
                 },
                 mockService as any,
@@ -423,7 +423,7 @@ describe('AlignElementsTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: `${el1.id},${el2.id}`,
+                    elementIds: [el1.id, el2.id],
                     alignType: 'left',
                 },
                 mockService as any,

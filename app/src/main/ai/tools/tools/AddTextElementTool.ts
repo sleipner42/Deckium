@@ -1,114 +1,56 @@
 import { z } from 'zod';
-import {
-    DEFAULT_TEXT_FONT_SIZE,
-    HEADER_FONT_SIZES,
-} from '../../../../common/config/typography';
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createTextBox } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { slideNotFound } from '../utils/errors';
+import { HTML_CONTENT_DESCRIPTION } from '../utils/html-content';
+import {
+    COLOR_DESCRIPTION,
+    colorSchema,
+    heightSchema,
+    positionReferenceSchema,
+    SLIDE_HEIGHT,
+    SLIDE_WIDTH,
+    widthSchema,
+    xSchema,
+    ySchema,
+    zIndexSchema,
+} from '../utils/schemas';
 
 export class AddTextElementTool extends BaseTool {
     name = 'addTextElement';
 
     description = 'Add a text element to a slide';
 
-    requiredParams = {
-        slideId: 'The ID of the slide to add the element to',
-        content:
-            'The text content to display as HTML. Supported formatting options:\n\n' +
-            'STRUCTURE:\n' +
-            '- <p>Regular paragraph text</p>\n' +
-            `- <h1>Large heading ${HEADER_FONT_SIZES.h1}</h1>, <h2>Medium heading ${HEADER_FONT_SIZES.h2}</h2>, <h3>Small heading ${HEADER_FONT_SIZES.h3}</h3>\n` +
-            '- <br> for line breaks\n\n' +
-            'TEXT STYLING:\n' +
-            '- <strong>Bold text</strong> or <b>Bold text</b>\n' +
-            '- <em>Italic text</em> or <i>Italic text</i>\n' +
-            '- <u>Underlined text</u>\n' +
-            '- <s>Strikethrough text</s>\n\n' +
-            'LISTS:\n' +
-            '- <ul><li>Bullet point item</li><li>Another item</li></ul>\n' +
-            '- <ol><li>Numbered item 1</li><li>Numbered item 2</li></ol>\n\n' +
-            'ALIGNMENT (IMPORTANT):\n' +
-            '- Default: Left aligned (no class needed)\n' +
-            "- Center: Add class='ql-align-center' to any element\n" +
-            "- Right: Add class='ql-align-right' to any element\n" +
-            "- Example: <p class='ql-align-center'>Centered paragraph</p>\n\n" +
-            'INLINE STYLING:\n' +
-            `- Font size: <span style='font-size: 50px'>Large text</span> (default is ${DEFAULT_TEXT_FONT_SIZE})\n` +
-            "- Font family: <span style='font-family: Arial'>Arial text</span>\n" +
-            "- Text color: <span style='color: #ff0000'>Red text</span>\n" +
-            "- Combined: <span style='font-size: 18px; color: blue; font-family: Georgia'>Styled text</span>\n\n" +
-            'EXAMPLES:\n' +
-            '- Simple: <p>Hello world</p>\n' +
-            "- Centered title: <h1 class='ql-align-center'>My Presentation Title</h1>\n" +
-            "- Mixed formatting: <p><strong>Bold</strong> and <em>italic</em> text with <span style='color: red'>red highlight</span></p>",
-    };
-
-    optionalParams = {
-        x: 'X position of the element (defaults to center)',
-        y: 'Y position of the element (defaults to center)',
-        positionReference:
-            'The reference position of the element (defaults to top left), choose from top left or center',
-        width: 'The width of the element (defaults to 400)',
-        height: 'The height of the element (defaults to 200)',
-        borderRadius: 'The border radius of the element (defaults to 0)',
-        backgroundColor:
-            'The background color of the element (defaults to transparent). Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
-        verticalAlign:
-            'The vertical alignment of the element (defaults to top), choose from top, middle, bottom',
-        zIndex: 'The z-index of the element (defaults to 1) - controls stacking order with higher values appearing on top',
-    };
-
     inputSchema = z.object({
         slideId: z
             .string()
             .describe('The ID of the slide to add the element to'),
-        content: z.string().describe(this.requiredParams.content),
-        x: z
-            .number()
-            .optional()
-            .describe('X position of the element (defaults to center)'),
-        y: z
-            .number()
-            .optional()
-            .describe('Y position of the element (defaults to center)'),
-        positionReference: z
-            .enum(['top left', 'center'])
-            .optional()
-            .describe(
-                'The reference position of the element (defaults to top left), choose from top left or center',
-            ),
-        width: z
-            .number()
-            .optional()
-            .describe('The width of the element (defaults to 400)'),
-        height: z
-            .number()
-            .optional()
-            .describe('The height of the element (defaults to 200)'),
+        content: z.string().describe(HTML_CONTENT_DESCRIPTION),
+        x: xSchema(' (defaults to horizontally centered)').optional(),
+        y: ySchema(' (defaults to vertically centered)').optional(),
+        positionReference: positionReferenceSchema.optional(),
+        width: widthSchema(' (defaults to 400)').optional(),
+        height: heightSchema(' (defaults to 200)').optional(),
         borderRadius: z
             .number()
             .optional()
-            .describe('The border radius of the element (defaults to 0)'),
-        backgroundColor: z
-            .string()
-            .optional()
             .describe(
-                'The background color of the element (defaults to transparent). Supports hex (#ff0000), rgb (rgb(255,0,0)), rgba (rgba(255,0,0,0.5)), hsl (hsl(0,100%,50%)), hsla (hsla(0,100%,50%,0.5)), and named colors (red, blue, etc.). Use rgba or hsla formats to include opacity/transparency.',
+                'The border radius of the element in pixels (defaults to 0)',
             ),
+        backgroundColor: colorSchema
+            .describe(
+                `The background color of the element (defaults to transparent). ${COLOR_DESCRIPTION}`,
+            )
+            .optional(),
         verticalAlign: z
             .enum(['top', 'middle', 'bottom'])
             .optional()
             .describe(
                 'The vertical alignment of the element (defaults to top), choose from top, middle, bottom',
             ),
-        zIndex: z
-            .number()
-            .optional()
-            .describe(
-                'The z-index of the element (defaults to 1) - controls stacking order with higher values appearing on top',
-            ),
+        zIndex: zIndexSchema.optional(),
     });
 
     protected async executeImpl(
@@ -140,11 +82,12 @@ export class AddTextElementTool extends BaseTool {
             };
         }
 
-        const width = Number(params.width) || 400;
-        const height = Number(params.height) || 200;
+        const width = params.width !== undefined ? Number(params.width) : 400;
+        const height =
+            params.height !== undefined ? Number(params.height) : 200;
 
-        let xPos = x !== undefined ? Number(x) : 1280 / 2 - width / 2;
-        let yPos = y !== undefined ? Number(y) : 720 / 2 - height / 2;
+        let xPos = x !== undefined ? Number(x) : SLIDE_WIDTH / 2 - width / 2;
+        let yPos = y !== undefined ? Number(y) : SLIDE_HEIGHT / 2 - height / 2;
 
         if (positionReference === 'center') {
             xPos -= width / 2;
@@ -157,7 +100,10 @@ export class AddTextElementTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
@@ -167,7 +113,7 @@ export class AddTextElementTool extends BaseTool {
             content,
             position: { x: xPos, y: yPos },
             size: { width, height },
-            borderRadius: Number(borderRadius) || 0,
+            borderRadius: borderRadius !== undefined ? Number(borderRadius) : 0,
             backgroundColor: backgroundColor || 'transparent',
             verticalAlign: verticalAlign || 'top',
             zIndex,

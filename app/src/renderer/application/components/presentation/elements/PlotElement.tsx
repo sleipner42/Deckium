@@ -1,9 +1,42 @@
 import React, { useEffect, useRef, useState } from 'react';
+import PlotlyChart from 'react-plotly.js';
 import {
     ContentElement,
     Plot,
+    PlotData,
 } from '../../../../../common/domain/entities/types';
 import { ResizeHandles } from '../ResizeHandles';
+
+const SERIES_COLORS = [
+    '#007bff',
+    '#fd7e14',
+    '#28a745',
+    '#dc3545',
+    '#6f42c1',
+    '#20c997',
+];
+
+function buildTraces(plotType: Plot['plotType'], data: PlotData): object[] {
+    if (plotType === 'pie') {
+        return [
+            {
+                type: 'pie',
+                labels: data.labels ?? [],
+                values: data.values ?? [],
+                textinfo: 'label+percent',
+            },
+        ];
+    }
+
+    return (data.series ?? []).map((series, index) => ({
+        type: plotType === 'bar' ? 'bar' : 'scatter',
+        mode: plotType === 'line' ? 'lines+markers' : undefined,
+        name: series.name,
+        x: series.x,
+        y: series.y,
+        marker: { color: SERIES_COLORS[index % SERIES_COLORS.length] },
+    }));
+}
 
 interface PlotElementProps {
     element: Plot;
@@ -154,8 +187,10 @@ export const PlotElement: React.FC<PlotElementProps> = ({
         setTimeout(() => setHasDragged(false), 100);
     };
 
-    // This is a placeholder for actual plot rendering
-    // You would typically use a charting library like Chart.js, Recharts, or D3.js
+    const showLegend =
+        plotType === 'pie' ||
+        (data.series ?? []).filter((series) => series.name).length > 1;
+
     return (
         <div
             data-element-id={element.id}
@@ -166,26 +201,57 @@ export const PlotElement: React.FC<PlotElementProps> = ({
                 top: `${position.y}px`,
                 width: `${size.width}px`,
                 height: `${size.height}px`,
-                backgroundColor: '#f5f5f5',
-                border: '1px solid #ddd',
                 cursor: readOnly ? 'default' : isSelected ? 'move' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
                 outline: isSelected ? '2px solid #0066ff' : 'none',
                 outlineOffset: '2px',
+                backgroundColor: 'white',
+                borderRadius: '4px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                overflow: 'hidden',
                 ...style,
             }}
             onClick={handleClick}
             onMouseDown={handleMouseDown}
             onContextMenu={onContextMenu}
         >
-            <div>
-                {plotType} Chart Placeholder
-                <pre style={{ fontSize: '10px' }}>
-                    {JSON.stringify(data, null, 2)}
-                </pre>
-            </div>
+            <PlotlyChart
+                data={buildTraces(plotType, data) as any}
+                layout={{
+                    title: {
+                        text: element.title,
+                        font: { size: 14 },
+                    },
+                    autosize: true,
+                    width: size.width,
+                    height: size.height,
+                    margin: { l: 50, r: 30, b: 50, t: 50, pad: 0 },
+                    xaxis:
+                        plotType === 'pie'
+                            ? undefined
+                            : {
+                                  title: { text: element.xAxisLabel },
+                                  automargin: true,
+                              },
+                    yaxis:
+                        plotType === 'pie'
+                            ? undefined
+                            : {
+                                  title: { text: element.yAxisLabel },
+                                  automargin: true,
+                              },
+                    showlegend: showLegend,
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                }}
+                config={{
+                    displayModeBar: false,
+                    responsive: true,
+                }}
+                style={{
+                    width: '100%',
+                    height: '100%',
+                }}
+            />
             <ResizeHandles
                 isSelected={isSelected}
                 isEditing={isEditing}

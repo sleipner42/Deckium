@@ -2,26 +2,21 @@ import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { slideNotFound } from '../utils/errors';
+import { COLOR_DESCRIPTION, colorSchema } from '../utils/schemas';
 
 export class UpdateSlideTool extends BaseTool {
     name = 'updateSlide';
 
     description = 'Update details of a slide';
 
-    requiredParams = {
-        slideId: 'The ID of the slide to update',
-    };
-
-    optionalParams = {
-        background: 'The new background color for the slide',
-    };
-
     inputSchema = z.object({
         slideId: z.string().describe('The ID of the slide to update'),
-        background: z
-            .string()
-            .optional()
-            .describe('The new background color for the slide'),
+        background: colorSchema
+            .describe(
+                `The new background color for the slide. ${COLOR_DESCRIPTION}`,
+            )
+            .optional(),
     });
 
     protected async executeImpl(
@@ -45,7 +40,10 @@ export class UpdateSlideTool extends BaseTool {
         if (!updatedSlide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
@@ -53,6 +51,7 @@ export class UpdateSlideTool extends BaseTool {
             success: true,
             data: {
                 slideId: updatedSlide.id,
+                background: updatedSlide.background,
                 message: `Slide updated successfully`,
             },
             editedSlidesIds: [slideId],

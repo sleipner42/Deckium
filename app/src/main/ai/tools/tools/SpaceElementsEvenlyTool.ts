@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { elementsNotFound, slideNotFound } from '../utils/errors';
 
 export class SpaceElementsEvenlyTool extends BaseTool {
     name = 'spaceElementsEvenly';
@@ -9,31 +10,22 @@ export class SpaceElementsEvenlyTool extends BaseTool {
     description =
         'Space multiple elements evenly on a slide with equal gaps between them';
 
-    requiredParams = {
-        slideId: 'The ID of the slide containing the elements',
-        elementIds: 'Comma-separated list of element IDs to space evenly',
-        direction: 'Direction to apply spacing: "horizontal" or "vertical"',
-    };
-
-    optionalParams = {
-        spacing:
-            'Fixed spacing between elements in pixels. If not provided, elements will be distributed evenly across the available space',
-    };
-
     inputSchema = z.object({
         slideId: z
             .string()
             .describe('The ID of the slide containing the elements'),
         elementIds: z
-            .string()
-            .describe('Comma-separated list of element IDs to space evenly'),
+            .array(z.string())
+            .min(3)
+            .describe('Array of element IDs to space evenly (at least 3)'),
         direction: z
             .enum(['horizontal', 'vertical'])
             .describe('Direction to apply spacing: "horizontal" or "vertical"'),
         spacing: z
             .number()
+            .min(0)
             .describe(
-                'Fixed spacing between elements in pixels. If not provided, elements will be distributed evenly across the available space',
+                'Fixed spacing between elements in pixels. If not provided, elements will be distributed evenly across the space between the first and last element',
             )
             .optional(),
     });
@@ -51,7 +43,7 @@ export class SpaceElementsEvenlyTool extends BaseTool {
             };
         }
 
-        if (!elementIds) {
+        if (!elementIds || !Array.isArray(elementIds)) {
             return {
                 success: false,
                 error: 'elementIds is required',
@@ -65,11 +57,7 @@ export class SpaceElementsEvenlyTool extends BaseTool {
             };
         }
 
-        // Parse element IDs
-        const elementIdList = elementIds
-            .split(',')
-            .map((id: string) => id.trim())
-            .filter((id: string) => id.length > 0);
+        const elementIdList: string[] = elementIds;
 
         if (elementIdList.length < 3) {
             return {
@@ -85,7 +73,10 @@ export class SpaceElementsEvenlyTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
@@ -100,7 +91,7 @@ export class SpaceElementsEvenlyTool extends BaseTool {
             );
             return {
                 success: false,
-                error: `Some elements were not found: ${missingIds.join(', ')}`,
+                error: elementsNotFound(missingIds, slide),
             };
         }
 
@@ -136,7 +127,7 @@ export class SpaceElementsEvenlyTool extends BaseTool {
             const gapCount = Math.max(1, middleElements.length);
 
             // Calculate the size of each gap
-            let gapSize;
+            let gapSize: number;
 
             if (spacing !== undefined && !Number.isNaN(Number(spacing))) {
                 // Use fixed spacing if provided
@@ -188,7 +179,7 @@ export class SpaceElementsEvenlyTool extends BaseTool {
             const gapCount = Math.max(1, middleElements.length);
 
             // Calculate the size of each gap
-            let gapSize;
+            let gapSize: number;
 
             if (spacing !== undefined && !Number.isNaN(Number(spacing))) {
                 // Use fixed spacing if provided
@@ -232,6 +223,7 @@ export class SpaceElementsEvenlyTool extends BaseTool {
                 data: {
                     message: 'Elements are already spaced evenly',
                 },
+                editedSlidesIds: [slideId],
             };
         }
 

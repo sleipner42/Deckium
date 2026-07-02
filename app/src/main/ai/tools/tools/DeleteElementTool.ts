@@ -2,15 +2,12 @@ import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { elementNotFoundInPresentation } from '../utils/errors';
 
 export class DeleteElementTool extends BaseTool {
     name = 'deleteElement';
 
     description = 'Delete an element from a slide';
-
-    requiredParams = {
-        elementId: 'The ID of the element to delete',
-    };
 
     inputSchema = z.object({
         elementId: z.string().describe('The ID of the element to delete'),
@@ -46,7 +43,10 @@ export class DeleteElementTool extends BaseTool {
         if (!targetElement || !slideId) {
             return {
                 success: false,
-                error: `Element with ID ${elementId} not found`,
+                error: elementNotFoundInPresentation(
+                    elementId,
+                    currentPresentation,
+                ),
             };
         }
 

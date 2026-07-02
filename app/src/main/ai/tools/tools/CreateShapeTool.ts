@@ -3,31 +3,23 @@ import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createShape } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { slideNotFound } from '../utils/errors';
+import {
+    COLOR_DESCRIPTION,
+    colorSchema,
+    heightSchema,
+    positionReferenceSchema,
+    widthSchema,
+    xSchema,
+    ySchema,
+    zIndexSchema,
+} from '../utils/schemas';
 
 export class CreateShapeTool extends BaseTool {
     name = 'createShape';
 
     description =
         'Create a shape element (rectangle, circle, or triangle) on a slide';
-
-    requiredParams = {
-        slideId: 'The ID of the slide to add the shape to',
-        shapeType:
-            'The type of shape to create (rectangle, circle, or triangle)',
-    };
-
-    optionalParams = {
-        x: 'X position of the element (defaults to 100)',
-        y: 'Y position of the element (defaults to 100)',
-        positionReference:
-            'The reference position of the element (defaults to top left), choose from top left or center',
-        width: 'The width of the element (defaults to 150)',
-        height: 'The height of the element (defaults to 150)',
-        fillColor: 'The fill color of the shape (defaults to white)',
-        strokeColor: 'The stroke/border color of the shape (defaults to black)',
-        strokeWidth: 'The stroke/border width of the shape (defaults to 2)',
-        zIndex: 'The z-index of the element for stacking order (defaults to 1)',
-    };
 
     inputSchema = z.object({
         slideId: z.string().describe('The ID of the slide to add the shape to'),
@@ -36,48 +28,28 @@ export class CreateShapeTool extends BaseTool {
             .describe(
                 'The type of shape to create (rectangle, circle, or triangle)',
             ),
-        x: z
-            .number()
-            .describe('X position of the element (defaults to 100)')
-            .optional(),
-        y: z
-            .number()
-            .describe('Y position of the element (defaults to 100)')
-            .optional(),
-        positionReference: z
-            .string()
+        x: xSchema(' (defaults to 100)').optional(),
+        y: ySchema(' (defaults to 100)').optional(),
+        positionReference: positionReferenceSchema.optional(),
+        width: widthSchema(' (defaults to 150)').optional(),
+        height: heightSchema(' (defaults to 150)').optional(),
+        fillColor: colorSchema
             .describe(
-                'The reference position of the element (defaults to top left), choose from top left or center',
+                `The fill color of the shape (defaults to white). ${COLOR_DESCRIPTION}`,
             )
             .optional(),
-        width: z
-            .number()
-            .describe('The width of the element (defaults to 150)')
-            .optional(),
-        height: z
-            .number()
-            .describe('The height of the element (defaults to 150)')
-            .optional(),
-        fillColor: z
-            .string()
-            .describe('The fill color of the shape (defaults to white)')
-            .optional(),
-        strokeColor: z
-            .string()
+        strokeColor: colorSchema
             .describe(
-                'The stroke/border color of the shape (defaults to black)',
+                `The stroke/border color of the shape (defaults to black). ${COLOR_DESCRIPTION}`,
             )
             .optional(),
         strokeWidth: z
             .number()
-            .describe('The stroke/border width of the shape (defaults to 2)')
-            .optional(),
-        zIndex: z
-            .number()
             .describe(
-                'The z-index of the element for stacking order (defaults to 1)',
+                'The stroke/border width of the shape in pixels (defaults to 2)',
             )
             .optional(),
+        zIndex: zIndexSchema.optional(),
     });
 
     protected async executeImpl(
@@ -115,8 +87,10 @@ export class CreateShapeTool extends BaseTool {
             };
         }
 
-        const widthValue = Number(width) || 150;
-        const heightValue = Number(height) || 150;
+        const widthValue = width !== undefined ? Number(width) : 150;
+        const heightValue = height !== undefined ? Number(height) : 150;
+        const strokeWidthValue =
+            strokeWidth !== undefined ? Number(strokeWidth) : 2;
 
         let xPos = x !== undefined ? Number(x) : 100;
         let yPos = y !== undefined ? Number(y) : 100;
@@ -133,7 +107,10 @@ export class CreateShapeTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
@@ -146,7 +123,7 @@ export class CreateShapeTool extends BaseTool {
             },
             fillColor: fillColor || '#FFFFFF',
             strokeColor: strokeColor || '#000000',
-            strokeWidth: Number(strokeWidth) || 2,
+            strokeWidth: strokeWidthValue,
             zIndex: zIndex !== undefined ? Number(zIndex) : 1,
         });
 
@@ -165,6 +142,7 @@ export class CreateShapeTool extends BaseTool {
             success: true,
             data: {
                 elementId: element.id,
+                slideId: updatedSlide.id,
                 message,
                 shapeInfo: {
                     type: shapeType,
@@ -175,7 +153,7 @@ export class CreateShapeTool extends BaseTool {
                     },
                     fillColor: fillColor || '#FFFFFF',
                     strokeColor: strokeColor || '#000000',
-                    strokeWidth: Number(strokeWidth) || 2,
+                    strokeWidth: strokeWidthValue,
                 },
             },
             editedSlidesIds: [slideId],

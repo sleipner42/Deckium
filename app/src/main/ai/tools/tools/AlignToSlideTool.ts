@@ -2,31 +2,22 @@ import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { elementsNotFound, slideNotFound } from '../utils/errors';
 
 export class AlignToSlideTool extends BaseTool {
     name = 'alignToSlide';
 
     description =
-        'Align elements to the slide (center of slide, slide edges, etc.)';
-
-    requiredParams = {
-        slideId: 'The ID of the slide containing the elements',
-        elementIds: 'Comma-separated list of element IDs to align to slide',
-        alignType:
-            'Type of alignment: "center", "center-horizontal", "center-vertical", "top", "bottom", "left", "right"',
-    };
-
-    optionalParams = {
-        margin: 'Margin from slide edges in pixels (defaults to 0)',
-    };
+        'Align elements relative to the 1280x720 SLIDE itself (center of slide, slide edges, etc.). To align elements relative to each other, use alignElements instead.';
 
     inputSchema = z.object({
         slideId: z
             .string()
             .describe('The ID of the slide containing the elements'),
         elementIds: z
-            .string()
-            .describe('Comma-separated list of element IDs to align to slide'),
+            .array(z.string())
+            .min(1)
+            .describe('Array of element IDs to align to the slide'),
         alignType: z
             .enum([
                 'center',
@@ -38,11 +29,12 @@ export class AlignToSlideTool extends BaseTool {
                 'right',
             ])
             .describe(
-                'Type of alignment: "center", "center-horizontal", "center-vertical", "top", "bottom", "left", "right"',
+                'Type of alignment, relative to the 1280x720 slide (e.g. "left" moves elements to the left edge of the slide): "center", "center-horizontal", "center-vertical", "top", "bottom", "left", "right"',
             ),
         margin: z
             .number()
-            .describe('Margin from slide edges in pixels (defaults to 0)')
+            .min(0)
+            .describe('Margin from the slide edges in pixels (defaults to 0)')
             .optional(),
     });
 
@@ -59,7 +51,7 @@ export class AlignToSlideTool extends BaseTool {
             };
         }
 
-        if (!elementIds) {
+        if (!elementIds || !Array.isArray(elementIds)) {
             return {
                 success: false,
                 error: 'elementIds is required',
@@ -90,11 +82,7 @@ export class AlignToSlideTool extends BaseTool {
             };
         }
 
-        // Parse element IDs
-        const elementIdList = elementIds
-            .split(',')
-            .map((id: string) => id.trim())
-            .filter((id: string) => id.length > 0);
+        const elementIdList: string[] = elementIds;
 
         if (elementIdList.length === 0) {
             return {
@@ -110,7 +98,10 @@ export class AlignToSlideTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
@@ -125,13 +116,15 @@ export class AlignToSlideTool extends BaseTool {
             );
             return {
                 success: false,
-                error: `Some elements were not found: ${missingIds.join(', ')}`,
+                error: elementsNotFound(missingIds, slide),
             };
         }
 
         const slideWidth = 1280;
         const slideHeight = 720;
-        const marginValue = Number(margin);
+        // Tolerate string input at runtime; a legitimate 0 is kept as 0
+        const marginNumber = Number(margin);
+        const marginValue = Number.isFinite(marginNumber) ? marginNumber : 0;
         const updates: Array<{ id: string; updates: any }> = [];
 
         // Calculate alignment based on slide dimensions
@@ -182,6 +175,7 @@ export class AlignToSlideTool extends BaseTool {
                     message:
                         'Elements are already aligned to slide as requested',
                 },
+                editedSlidesIds: [slideId],
             };
         }
 

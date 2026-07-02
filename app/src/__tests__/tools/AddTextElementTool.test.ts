@@ -50,8 +50,8 @@ describe('AddTextElementTool', () => {
             );
 
             expect(result.success).toBe(false);
-            expect(result.error).toBe(
-                'Slide with ID non-existent-slide not found',
+            expect(result.error).toContain(
+                "Slide 'non-existent-slide' not found",
             );
         });
     });
@@ -78,8 +78,6 @@ describe('AddTextElementTool', () => {
             const element = slide?.elements[0] as any;
             expect(element?.type).toBe('textbox');
             expect(element?.content).toBe('Test text content');
-            expect(element?.fontSize).toBe(12); // default
-            expect(element?.fontFamily).toBe('Arial'); // default
         });
 
         it('should create text element with custom parameters', async () => {
@@ -90,9 +88,7 @@ describe('AddTextElementTool', () => {
                     x: 200,
                     y: 150,
                     width: 300,
-                    fontSize: 24,
-                    fontFamily: 'Helvetica',
-                    color: '#ff0000',
+                    backgroundColor: '#ff0000',
                     zIndex: 5,
                 },
                 mockService as any,
@@ -106,9 +102,7 @@ describe('AddTextElementTool', () => {
             expect(element?.content).toBe('Custom text');
             expect(element?.position).toEqual({ x: 200, y: 150 });
             expect(element?.size.width).toBe(300);
-            expect(element?.fontSize).toBe(24);
-            expect(element?.fontFamily).toBe('Helvetica');
-            expect(element?.color).toBe('#ff0000');
+            expect(element?.backgroundColor).toBe('#ff0000');
             expect(element?.zIndex).toBe(5);
         });
 
@@ -134,57 +128,8 @@ describe('AddTextElementTool', () => {
         });
     });
 
-    describe('Overlap Detection', () => {
-        it('should detect overlap with existing elements', async () => {
-            // Add first element
-            await tool.execute(
-                {
-                    slideId,
-                    content: 'First element',
-                    x: 100,
-                    y: 100,
-                    width: 200,
-                    height: 50,
-                },
-                mockService as any,
-            );
-
-            // Add overlapping element
-            const result = await tool.execute(
-                {
-                    slideId,
-                    content: 'Overlapping element',
-                    x: 150, // Overlaps with first element
-                    y: 120,
-                    width: 200,
-                    height: 50,
-                },
-                mockService as any,
-            );
-
-            expect(result.success).toBe(true);
-            expect(result.data.message).toContain('OVERLAP DETECTED');
-        });
-
-        it('should detect when element is outside slide boundaries', async () => {
-            const result = await tool.execute(
-                {
-                    slideId,
-                    content: 'Outside element',
-                    x: 1300, // Outside 1280px width
-                    y: 100,
-                    width: 200,
-                    height: 50,
-                },
-                mockService as any,
-            );
-
-            expect(result.success).toBe(true);
-            expect(result.data.message).toContain(
-                'outside the slide boundaries',
-            );
-        });
-    });
+    // Overlap and boundary violations are reported by the linting system
+    // after each edit, not by this tool.
 
     describe('Text Dimension Estimation', () => {
         it('should estimate and adjust height for long text', async () => {

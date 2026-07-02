@@ -48,7 +48,7 @@ export function conversationHistory(messages: Message[]): ModelMessage[] {
     return firstUserIndex === -1 ? [] : userAssistant.slice(firstUserIndex);
 }
 
-function toUserContent(
+export function toUserContent(
     content: string | MessageContent[],
 ):
     | string

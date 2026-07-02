@@ -8,8 +8,6 @@ export class GetPresentationInfoTool extends BaseTool {
 
     description = 'Get information about the current presentation';
 
-    requiredParams = {};
-
     inputSchema = z.object({});
 
     protected async executeImpl(

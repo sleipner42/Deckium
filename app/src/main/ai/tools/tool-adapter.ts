@@ -11,8 +11,9 @@ export type ToolEventListener = (
     result: AIToolResult,
 ) => void;
 
-interface ToolModelOutput {
+export interface ToolModelOutput {
     text: string;
+    success: boolean;
     screenshot?: string;
 }
 
@@ -43,6 +44,7 @@ export function buildToolSet(
 
                 const output: ToolModelOutput = {
                     text: formatResultText(aiTool.name, result, feedback),
+                    success: result.success,
                     screenshot: result.success ? result.screenshot : undefined,
                 };
                 return output;

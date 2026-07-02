@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { elementsNotFound, slideNotFound } from '../utils/errors';
+import { SLIDE_HEIGHT, SLIDE_WIDTH } from '../utils/schemas';
 
 export class MatchSizeTool extends BaseTool {
     name = 'matchSize';
@@ -9,27 +11,14 @@ export class MatchSizeTool extends BaseTool {
     description =
         'Make elements the same size by matching width, height, or both dimensions';
 
-    requiredParams = {
-        slideId: 'The ID of the slide containing the elements',
-        elementIds: 'Comma-separated list of element IDs to resize',
-        sizeMode:
-            'What to match: "width", "height", "both", "largest-width", "largest-height", "largest-both", "smallest-width", "smallest-height", "smallest-both"',
-    };
-
-    optionalParams = {
-        referenceElementId:
-            'ID of the element to use as size reference. If not provided, behavior depends on sizeMode (e.g., largest/smallest modes use automatic selection)',
-        maintainAspectRatio:
-            'boolean (true/false) to maintain aspect ratio when resizing. Defaults to false for individual width/height, true for "both" modes',
-    };
-
     inputSchema = z.object({
         slideId: z
             .string()
             .describe('The ID of the slide containing the elements'),
         elementIds: z
-            .string()
-            .describe('Comma-separated list of element IDs to resize'),
+            .array(z.string())
+            .min(2)
+            .describe('Array of element IDs to resize (at least 2)'),
         sizeMode: z
             .enum([
                 'width',
@@ -78,7 +67,7 @@ export class MatchSizeTool extends BaseTool {
             };
         }
 
-        if (!elementIds) {
+        if (!elementIds || !Array.isArray(elementIds)) {
             return {
                 success: false,
                 error: 'elementIds is required',
@@ -104,11 +93,7 @@ export class MatchSizeTool extends BaseTool {
             };
         }
 
-        // Parse element IDs
-        const elementIdList = elementIds
-            .split(',')
-            .map((id: string) => id.trim())
-            .filter((id: string) => id.length > 0);
+        const elementIdList: string[] = elementIds;
 
         if (elementIdList.length < 2) {
             return {
@@ -124,7 +109,10 @@ export class MatchSizeTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
@@ -139,7 +127,7 @@ export class MatchSizeTool extends BaseTool {
             );
             return {
                 success: false,
-                error: `Some elements were not found: ${missingIds.join(', ')}`,
+                error: elementsNotFound(missingIds, slide),
             };
         }
 
@@ -155,7 +143,7 @@ export class MatchSizeTool extends BaseTool {
             if (!referenceElement) {
                 return {
                     success: false,
-                    error: `Reference element with ID ${referenceElementId} was not found in the elementIds list`,
+                    error: `Reference element with ID ${referenceElementId} was not found in the elementIds list. Provided elementIds: ${elementIdList.join(', ')}`,
                 };
             }
             targetWidth = referenceElement.size.width;
@@ -184,6 +172,14 @@ export class MatchSizeTool extends BaseTool {
             originalSize: { width: number; height: number };
             newSize: { width: number; height: number };
             sizeChange: string;
+        }> = [];
+
+        // Elements whose target size had to be clamped (minimum 10px size,
+        // or to stay within the slide bounds at their current position)
+        const adjustments: Array<{
+            id: string;
+            requested: { width: number; height: number };
+            applied: { width: number; height: number };
         }> = [];
 
         // Calculate new sizes for each element
@@ -239,13 +235,28 @@ export class MatchSizeTool extends BaseTool {
             newWidth = Math.round(newWidth);
             newHeight = Math.round(newHeight);
 
+            const requestedWidth = newWidth;
+            const requestedHeight = newHeight;
+
             // Ensure minimum size (prevent elements from becoming too small)
             newWidth = Math.max(10, newWidth);
             newHeight = Math.max(10, newHeight);
 
             // Ensure elements don't exceed slide boundaries when positioned
-            newWidth = Math.min(newWidth, 1280 - element.position.x);
-            newHeight = Math.min(newHeight, 720 - element.position.y);
+            newWidth = Math.min(newWidth, SLIDE_WIDTH - element.position.x);
+            newHeight = Math.min(newHeight, SLIDE_HEIGHT - element.position.y);
+
+            // Disclose when the matched size had to be clamped
+            if (newWidth !== requestedWidth || newHeight !== requestedHeight) {
+                adjustments.push({
+                    id: element.id,
+                    requested: {
+                        width: requestedWidth,
+                        height: requestedHeight,
+                    },
+                    applied: { width: newWidth, height: newHeight },
+                });
+            }
 
             // Only add update if size actually changes
             const sizeChanged =
@@ -282,6 +293,7 @@ export class MatchSizeTool extends BaseTool {
                     sizeMode,
                     maintainedAspectRatio: shouldMaintainAspectRatio,
                 },
+                editedSlidesIds: [slideId],
             };
         }
 
@@ -303,10 +315,16 @@ export class MatchSizeTool extends BaseTool {
             referenceDescription = `using ${sizeMode} automatic selection`;
         }
 
+        const clampNote =
+            adjustments.length > 0
+                ? ` Note: ${adjustments.length} element(s) could not be set to the exact target size and were clamped (minimum 10px size, and elements must fit within the ${SLIDE_WIDTH}x${SLIDE_HEIGHT} slide); see adjustments for requested vs applied sizes.`
+                : '';
+
         return {
             success: true,
             data: {
-                message: `Successfully matched ${sizeMode} for ${updates.length} elements ${referenceDescription}`,
+                message: `Successfully matched ${sizeMode} for ${updates.length} elements ${referenceDescription}.${clampNote}`,
+                ...(adjustments.length > 0 ? { adjustments } : {}),
                 targetSize: { width: targetWidth, height: targetHeight },
                 sizeMode,
                 maintainedAspectRatio: shouldMaintainAspectRatio,

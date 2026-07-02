@@ -15,7 +15,7 @@ describe('MatchSizeTool', () => {
         it('should return error when slideId is missing', async () => {
             const result = await tool.execute(
                 {
-                    elementIds: 'el1,el2',
+                    elementIds: ['el1', 'el2'],
                     sizeMode: 'width',
                 },
                 mockService as any,
@@ -44,7 +44,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId: slide.id,
-                    elementIds: 'el1,el2',
+                    elementIds: ['el1', 'el2'],
                     sizeMode: 'invalid-mode',
                 },
                 mockService as any,
@@ -59,7 +59,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId: slide.id,
-                    elementIds: 'el1',
+                    elementIds: ['el1'],
                     sizeMode: 'width',
                 },
                 mockService as any,
@@ -80,7 +80,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: elementIds.join(','),
+                    elementIds,
                     sizeMode: 'width',
                 },
                 mockService as any,
@@ -105,7 +105,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: elementIds.join(','),
+                    elementIds,
                     sizeMode: 'largest-width',
                 },
                 mockService as any,
@@ -129,7 +129,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: elementIds.join(','),
+                    elementIds,
                     sizeMode: 'smallest-width',
                 },
                 mockService as any,
@@ -155,7 +155,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: elementIds.join(','),
+                    elementIds,
                     sizeMode: 'height',
                 },
                 mockService as any,
@@ -179,7 +179,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: elementIds.join(','),
+                    elementIds,
                     sizeMode: 'largest-height',
                 },
                 mockService as any,
@@ -205,7 +205,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: elementIds.join(','),
+                    elementIds,
                     sizeMode: 'both',
                     maintainAspectRatio: 'false',
                 },
@@ -241,7 +241,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId: slide.id,
-                    elementIds: `${el1.id},${el2.id}`,
+                    elementIds: [el1.id, el2.id],
                     sizeMode: 'both',
                     maintainAspectRatio: 'true',
                 },
@@ -273,7 +273,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: elementIds.join(','),
+                    elementIds,
                     sizeMode: 'width',
                     referenceElementId,
                 },
@@ -300,7 +300,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: elementIds.join(','), // Reference not included
+                    elementIds, // Reference not included
                     sizeMode: 'width',
                     referenceElementId: outsideElement.id,
                 },
@@ -329,7 +329,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId: slide.id,
-                    elementIds: `${el1.id},${el2.id}`,
+                    elementIds: [el1.id, el2.id],
                     sizeMode: 'smallest-both',
                 },
                 mockService as any,
@@ -365,7 +365,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId: slide.id,
-                    elementIds: `${el1.id},${el2.id}`,
+                    elementIds: [el1.id, el2.id],
                     sizeMode: 'largest-width',
                 },
                 mockService as any,
@@ -405,7 +405,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId: slide.id,
-                    elementIds: `${el1.id},${el2.id}`,
+                    elementIds: [el1.id, el2.id],
                     sizeMode: 'width',
                 },
                 mockService as any,
@@ -426,7 +426,7 @@ describe('MatchSizeTool', () => {
             const result = await tool.execute(
                 {
                     slideId,
-                    elementIds: elementIds.join(','),
+                    elementIds,
                     sizeMode: 'largest-width',
                 },
                 mockService as any,

@@ -3,42 +3,42 @@ import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { Shape } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import {
+    elementNotFoundInPresentation,
+    wrongElementType,
+} from '../utils/errors';
+import {
+    COLOR_DESCRIPTION,
+    colorSchema,
+    heightSchema,
+    widthSchema,
+    xSchema,
+    ySchema,
+    zIndexSchema,
+} from '../utils/schemas';
 
 export class UpdateShapeTool extends BaseTool {
     name = 'updateShape';
 
     description = 'Update an existing shape element on a slide';
 
-    requiredParams = {
-        elementId: 'The ID of the shape element to update',
-    };
-
-    optionalParams = {
-        x: 'New X position',
-        y: 'New Y position',
-        width: 'New width',
-        height: 'New height',
-        fillColor: 'New fill color',
-        strokeColor: 'New stroke/border color',
-        strokeWidth: 'New stroke/border width',
-        zIndex: 'The new z-index value - controls stacking order with higher values appearing on top',
-    };
-
     inputSchema = z.object({
         elementId: z.string().describe('The ID of the shape element to update'),
-        x: z.number().describe('New X position').optional(),
-        y: z.number().describe('New Y position').optional(),
-        width: z.number().describe('New width').optional(),
-        height: z.number().describe('New height').optional(),
-        fillColor: z.string().describe('New fill color').optional(),
-        strokeColor: z.string().describe('New stroke/border color').optional(),
-        strokeWidth: z.number().describe('New stroke/border width').optional(),
-        zIndex: z
-            .number()
-            .describe(
-                'The new z-index value - controls stacking order with higher values appearing on top',
-            )
+        x: xSchema(' (new value)').optional(),
+        y: ySchema(' (new value)').optional(),
+        width: widthSchema(' (new value)').optional(),
+        height: heightSchema(' (new value)').optional(),
+        fillColor: colorSchema
+            .describe(`New fill color. ${COLOR_DESCRIPTION}`)
             .optional(),
+        strokeColor: colorSchema
+            .describe(`New stroke/border color. ${COLOR_DESCRIPTION}`)
+            .optional(),
+        strokeWidth: z
+            .number()
+            .describe('New stroke/border width in pixels')
+            .optional(),
+        zIndex: zIndexSchema.optional(),
     });
 
     protected async executeImpl(
@@ -81,14 +81,17 @@ export class UpdateShapeTool extends BaseTool {
         if (!foundElement) {
             return {
                 success: false,
-                error: `Element with ID ${elementId} not found`,
+                error: elementNotFoundInPresentation(
+                    elementId,
+                    currentPresentation,
+                ),
             };
         }
 
         if (!['rectangle', 'circle', 'triangle'].includes(foundElement.type)) {
             return {
                 success: false,
-                error: `Element with ID ${elementId} is not a shape`,
+                error: wrongElementType(foundElement, 'shape'),
             };
         }
 
@@ -136,6 +139,7 @@ export class UpdateShapeTool extends BaseTool {
                 data: {
                     message: 'No updates were requested',
                 },
+                editedSlidesIds: slideId ? [slideId] : [],
             };
         }
 

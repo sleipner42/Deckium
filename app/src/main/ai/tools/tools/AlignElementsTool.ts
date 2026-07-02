@@ -1,35 +1,24 @@
 import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
+import { ContentElement } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { elementsNotFound, slideNotFound } from '../utils/errors';
 
 export class AlignElementsTool extends BaseTool {
     name = 'alignElements';
 
     description =
-        'Align multiple elements on a slide horizontally or vertically';
-
-    requiredParams = {
-        slideId: 'The ID of the slide containing the elements',
-        elementIds: 'Comma-separated list of element IDs to align',
-        alignType:
-            'Type of alignment: "top", "bottom", "left", "right", "center-horizontal", "center-vertical", "distribute-horizontal", "distribute-vertical"',
-    };
-
-    optionalParams = {
-        referenceElementId:
-            'ID of the element to use as reference for alignment. If not provided, the tool will determine a reference automatically based on the alignment type.',
-        spacing:
-            'Spacing between elements in pixels (only used for distribute alignment types)',
-    };
+        'Align or distribute multiple elements relative to the GROUP of selected elements (the bounding box of the group, or a reference element if provided) — not relative to the slide. To align relative to the whole slide, use alignToSlide instead.';
 
     inputSchema = z.object({
         slideId: z
             .string()
             .describe('The ID of the slide containing the elements'),
         elementIds: z
-            .string()
-            .describe('Comma-separated list of element IDs to align'),
+            .array(z.string())
+            .min(2)
+            .describe('Array of element IDs to align (at least 2)'),
         alignType: z
             .enum([
                 'top',
@@ -42,7 +31,7 @@ export class AlignElementsTool extends BaseTool {
                 'distribute-vertical',
             ])
             .describe(
-                'Type of alignment: "top", "bottom", "left", "right", "center-horizontal", "center-vertical", "distribute-horizontal", "distribute-vertical"',
+                'Type of alignment, relative to the group of selected elements (e.g. "left" aligns all elements to the leftmost element of the group, or to the reference element if given): "top", "bottom", "left", "right", "center-horizontal", "center-vertical", "distribute-horizontal", "distribute-vertical". To align relative to the whole slide, use alignToSlide instead.',
             ),
         referenceElementId: z
             .string()
@@ -52,8 +41,9 @@ export class AlignElementsTool extends BaseTool {
             .optional(),
         spacing: z
             .number()
+            .min(0)
             .describe(
-                'Spacing between elements in pixels (only used for distribute alignment types)',
+                'Spacing between elements in pixels (only used for distribute alignment types). If omitted, elements are spaced evenly between the first and last element.',
             )
             .optional(),
     });
@@ -72,7 +62,7 @@ export class AlignElementsTool extends BaseTool {
             };
         }
 
-        if (!elementIds) {
+        if (!elementIds || !Array.isArray(elementIds)) {
             return {
                 success: false,
                 error: 'elementIds is required',
@@ -104,11 +94,7 @@ export class AlignElementsTool extends BaseTool {
             };
         }
 
-        // Parse element IDs
-        const elementIdList = elementIds
-            .split(',')
-            .map((id: string) => id.trim())
-            .filter((id: string) => id.length > 0);
+        const elementIdList: string[] = elementIds;
 
         if (elementIdList.length < 2) {
             return {
@@ -124,7 +110,10 @@ export class AlignElementsTool extends BaseTool {
         if (!slide) {
             return {
                 success: false,
-                error: `Slide with ID ${slideId} not found`,
+                error: slideNotFound(
+                    slideId,
+                    presentationService.getPresentation(),
+                ),
             };
         }
 
@@ -139,7 +128,7 @@ export class AlignElementsTool extends BaseTool {
             );
             return {
                 success: false,
-                error: `Some elements were not found: ${missingIds.join(', ')}`,
+                error: elementsNotFound(missingIds, slide),
             };
         }
 
@@ -155,10 +144,22 @@ export class AlignElementsTool extends BaseTool {
             if (!referenceElement) {
                 return {
                     success: false,
-                    error: `Reference element with ID ${referenceElementId} was not found in the elementIds list`,
+                    error: `Reference element with ID ${referenceElementId} was not found in the elementIds list. Provided elementIds: ${elementIdList.join(', ')}`,
                 };
             }
         }
+
+        // Tolerate string inputs at runtime (tests call executeImpl directly),
+        // but never turn a legitimate 0 into "not provided".
+        const spacingNumber =
+            spacing === undefined ? Number.NaN : Number(spacing);
+        const spacingValue = Number.isFinite(spacingNumber)
+            ? spacingNumber
+            : undefined;
+
+        // Set when elements don't fit and a minimum 10px gap is substituted
+        // for even distribution.
+        let minimumGapFallback = false;
 
         // Calculate alignment values based on alignType
         const updates: Array<{ id: string; updates: any }> = [];
@@ -175,7 +176,7 @@ export class AlignElementsTool extends BaseTool {
         switch (alignType) {
             case 'top': {
                 // Find the reference position
-                let topY;
+                let topY: number;
                 if (referenceElement) {
                     topY = referenceElement.position.y;
                 } else {
@@ -200,7 +201,7 @@ export class AlignElementsTool extends BaseTool {
             }
             case 'bottom': {
                 // Find the reference position
-                let bottomY;
+                let bottomY: number;
                 if (referenceElement) {
                     bottomY =
                         referenceElement.position.y +
@@ -230,7 +231,7 @@ export class AlignElementsTool extends BaseTool {
             }
             case 'left': {
                 // Find the reference position
-                let leftX;
+                let leftX: number;
                 if (referenceElement) {
                     leftX = referenceElement.position.x;
                 } else {
@@ -255,7 +256,7 @@ export class AlignElementsTool extends BaseTool {
             }
             case 'right': {
                 // Find the reference position
-                let rightX;
+                let rightX: number;
                 if (referenceElement) {
                     rightX =
                         referenceElement.position.x +
@@ -285,7 +286,7 @@ export class AlignElementsTool extends BaseTool {
             }
             case 'center-horizontal': {
                 // Find the reference center position
-                let centerX;
+                let centerX: number;
                 if (referenceElement) {
                     centerX =
                         referenceElement.position.x +
@@ -317,7 +318,7 @@ export class AlignElementsTool extends BaseTool {
             }
             case 'center-vertical': {
                 // Find the reference center position
-                let centerY;
+                let centerY: number;
                 if (referenceElement) {
                     centerY =
                         referenceElement.position.y +
@@ -357,8 +358,8 @@ export class AlignElementsTool extends BaseTool {
 
                 // For distribution, we need first and last element
                 // If reference element is provided, it becomes the first element
-                let firstEl;
-                let lastEl;
+                let firstEl: ContentElement;
+                let lastEl: ContentElement;
 
                 if (referenceElement) {
                     // Use the reference element as the first element and find the rightmost as the last
@@ -385,7 +386,7 @@ export class AlignElementsTool extends BaseTool {
                 }
 
                 // Get all elements between first and last
-                let middleElements;
+                let middleElements: ContentElement[];
                 if (referenceElement) {
                     // Need to reorder based on x position with reference first
                     const sorted = elementsSortedHorizontal.filter(
@@ -400,8 +401,6 @@ export class AlignElementsTool extends BaseTool {
                 const endX = lastEl.position.x;
                 const totalWidth = endX - startX;
 
-                const spacingValue = Number(spacing) || 0;
-
                 // Calculate even distribution
                 const totalElementsWidth = middleElements.reduce(
                     (sum, el) => sum + el.size.width,
@@ -409,24 +408,26 @@ export class AlignElementsTool extends BaseTool {
                 );
 
                 // If spacing is provided, use it; otherwise calculate even spacing
-                let gapWidth;
-                if (spacingValue) {
+                let gapWidth: number;
+                if (spacingValue !== undefined) {
                     gapWidth = spacingValue;
                 } else {
-                    // Calculate even spacing across available space
-                    const numberOfGaps = middleElements.length + 1; // gaps before, between, and after elements
-                    gapWidth =
-                        totalWidth > totalElementsWidth
-                            ? (totalWidth - totalElementsWidth) / numberOfGaps
-                            : 10; // minimum gap if elements are too large
+                    // Gaps before, between, and after the middle elements
+                    const numberOfGaps = middleElements.length + 1;
+                    if (totalWidth > totalElementsWidth) {
+                        gapWidth =
+                            (totalWidth - totalElementsWidth) / numberOfGaps;
+                    } else {
+                        // Elements don't fit: fall back to a minimum 10px gap
+                        gapWidth = 10;
+                        minimumGapFallback = true;
+                    }
                 }
 
                 let currentX = startX;
 
-                middleElements.forEach((el, index) => {
-                    if (index > 0) {
-                        currentX += gapWidth;
-                    }
+                middleElements.forEach((el) => {
+                    currentX += gapWidth;
 
                     if (el.position.x !== currentX) {
                         updates.push({
@@ -454,8 +455,8 @@ export class AlignElementsTool extends BaseTool {
 
                 // For distribution, we need top and bottom element
                 // If reference element is provided, it becomes the top element
-                let topEl;
-                let bottomEl;
+                let topEl: ContentElement;
+                let bottomEl: ContentElement;
 
                 if (referenceElement) {
                     // Use the reference element as the top element and find the bottommost as the last
@@ -482,7 +483,7 @@ export class AlignElementsTool extends BaseTool {
                 }
 
                 // Get all elements between top and bottom
-                let middleElements;
+                let middleElements: ContentElement[];
                 if (referenceElement) {
                     // Need to reorder based on y position with reference first
                     const sorted = elementsSortedVertical.filter(
@@ -497,8 +498,6 @@ export class AlignElementsTool extends BaseTool {
                 const endY = bottomEl.position.y;
                 const totalHeight = endY - startY;
 
-                const spacingValue = Number(spacing) || 0;
-
                 // Calculate even distribution
                 const totalElementsHeight = middleElements.reduce(
                     (sum, el) => sum + el.size.height,
@@ -506,19 +505,26 @@ export class AlignElementsTool extends BaseTool {
                 );
 
                 // If spacing is provided, use it; otherwise calculate even spacing
-                const totalSpacing = spacingValue
-                    ? (middleElements.length - 1) * spacingValue
-                    : totalHeight - totalElementsHeight;
-
-                const gapHeight =
-                    totalSpacing / (middleElements.length - 1 || 1);
+                let gapHeight: number;
+                if (spacingValue !== undefined) {
+                    gapHeight = spacingValue;
+                } else {
+                    // Gaps before, between, and after the middle elements
+                    const numberOfGaps = middleElements.length + 1;
+                    if (totalHeight > totalElementsHeight) {
+                        gapHeight =
+                            (totalHeight - totalElementsHeight) / numberOfGaps;
+                    } else {
+                        // Elements don't fit: fall back to a minimum 10px gap
+                        gapHeight = 10;
+                        minimumGapFallback = true;
+                    }
+                }
 
                 let currentY = startY;
 
-                middleElements.forEach((el, index) => {
-                    if (index > 0) {
-                        currentY += gapHeight;
-                    }
+                middleElements.forEach((el) => {
+                    currentY += gapHeight;
 
                     if (el.position.y !== currentY) {
                         updates.push({
@@ -544,6 +550,7 @@ export class AlignElementsTool extends BaseTool {
                 data: {
                     message: 'Elements are already aligned as requested',
                 },
+                editedSlidesIds: [slideId],
             };
         }
 
@@ -552,11 +559,26 @@ export class AlignElementsTool extends BaseTool {
             presentationService.updateElement(update.id, update.updates);
         }
 
+        const fallbackNote = minimumGapFallback
+            ? ' Note: the elements did not fit between the first and last element, so a minimum 10px gap was used instead of even spacing (elements may extend past the last element).'
+            : '';
+
         return {
             success: true,
             data: {
-                message: `Successfully aligned ${updates.length} elements using "${alignType}" alignment`,
+                message: `Successfully aligned ${updates.length} elements using "${alignType}" alignment.${fallbackNote}`,
                 updates,
+                ...(minimumGapFallback
+                    ? {
+                          adjustments: [
+                              {
+                                  requested: 'even distribution',
+                                  applied:
+                                      'minimum 10px gap (elements did not fit in the available space)',
+                              },
+                          ],
+                      }
+                    : {}),
             },
             editedSlidesIds: [slideId],
         };

@@ -4,6 +4,8 @@ import { cloneElements } from '../../../../common/domain/entities/element-factor
 import { ContentElement } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { elementNotFoundInPresentation, slideNotFound } from '../utils/errors';
+import { elementIdsSchema } from '../utils/schemas';
 
 export class CopyElementsTool extends BaseTool {
     name = 'copyElements';
@@ -11,30 +13,20 @@ export class CopyElementsTool extends BaseTool {
     description =
         'Copy specific elements to a target slide. Requires the target slide ID and a list of element IDs to copy.';
 
-    requiredParams = {
-        targetSlideId: 'The ID of the slide where elements should be copied to',
-        elementIds: 'Array of element IDs to copy (must not be empty)',
-    };
-
-    optionalParams = {
-        positionOffset:
-            'Offset to apply to copied elements position. Default is {x: 0, y: 0}',
-    };
-
     inputSchema = z.object({
-        targetSlideId: z
+        slideId: z
             .string()
             .describe('The ID of the slide where elements should be copied to'),
-        elementIds: z
-            .array(z.string())
-            .describe('Array of element IDs to copy (must not be empty)'),
+        elementIds: elementIdsSchema.describe(
+            'Array of element IDs to copy (must not be empty)',
+        ),
         positionOffset: z
             .object({
                 x: z.number(),
                 y: z.number(),
             })
             .describe(
-                'Offset to apply to copied elements position. Default is {x: 0, y: 0}',
+                'Offset in pixels to apply to the position of copied elements. Default is {x: 0, y: 0}',
             )
             .optional(),
     });
@@ -43,12 +35,12 @@ export class CopyElementsTool extends BaseTool {
         params: Record<string, any>,
         presentationService: PresentationService,
     ): Promise<AIToolResult> {
-        const { targetSlideId, elementIds, positionOffset } = params;
+        const { slideId, elementIds, positionOffset } = params;
 
-        if (!targetSlideId) {
+        if (!slideId) {
             return {
                 success: false,
-                error: 'targetSlideId is required',
+                error: 'slideId is required',
             };
         }
 
@@ -67,12 +59,12 @@ export class CopyElementsTool extends BaseTool {
 
         // Find target slide
         const targetSlide = currentPresentation.slides.find(
-            (s) => s.id === targetSlideId,
+            (s) => s.id === slideId,
         );
         if (!targetSlide) {
             return {
                 success: false,
-                error: `Target slide with ID ${targetSlideId} not found`,
+                error: slideNotFound(slideId, currentPresentation),
             };
         }
 
@@ -102,7 +94,10 @@ export class CopyElementsTool extends BaseTool {
             } else {
                 return {
                     success: false,
-                    error: `Element with ID ${elementId} not found in any slide`,
+                    error: elementNotFoundInPresentation(
+                        elementId,
+                        currentPresentation,
+                    ),
                 };
             }
         }
@@ -121,13 +116,13 @@ export class CopyElementsTool extends BaseTool {
         // Add cloned elements to target slide
         for (const clonedElement of clonedElements) {
             const updatedSlide = presentationService.addElement(
-                targetSlideId,
+                slideId,
                 clonedElement,
             );
             if (!updatedSlide) {
                 return {
                     success: false,
-                    error: `Failed to add element to slide ${targetSlideId}`,
+                    error: `Failed to add element to slide ${slideId}`,
                 };
             }
         }
@@ -138,14 +133,15 @@ export class CopyElementsTool extends BaseTool {
         return {
             success: true,
             data: {
-                targetSlideId,
+                slideId,
                 sourceSlideIds,
                 copiedElementsCount: clonedElements.length,
                 copiedElementTypes,
-                copiedElementIds: elementIds,
+                sourceElementIds: elementIds,
+                newElementIds: clonedElements.map((element) => element.id),
                 message,
             },
-            editedSlidesIds: [targetSlideId],
+            editedSlidesIds: [slideId],
         };
     }
 }

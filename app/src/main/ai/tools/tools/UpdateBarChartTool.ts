@@ -3,29 +3,24 @@ import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { BarChart } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import {
+    elementNotFoundInPresentation,
+    wrongElementType,
+} from '../utils/errors';
+import {
+    COLOR_DESCRIPTION,
+    colorSchema,
+    heightSchema,
+    widthSchema,
+    xSchema,
+    ySchema,
+    zIndexSchema,
+} from '../utils/schemas';
 
 export class UpdateBarChartTool extends BaseTool {
     name = 'updateBarChart';
 
     description = 'Update an existing bar chart on a slide';
-
-    requiredParams = {
-        elementId: 'The ID of the bar chart element to update',
-    };
-
-    optionalParams = {
-        title: 'The new title of the chart',
-        xAxisLabel: 'The new label for the X axis',
-        yAxisLabel: 'The new label for the Y axis',
-        xData: 'New array of x-axis values as comma-separated string',
-        yData: 'New array of y-axis values as comma-separated string',
-        x: 'New X position',
-        y: 'New Y position',
-        width: 'New width',
-        height: 'New height',
-        barColor: 'New color for the bars',
-        zIndex: 'The new z-index value - controls stacking order with higher values appearing on top',
-    };
 
     inputSchema = z.object({
         elementId: z
@@ -41,24 +36,25 @@ export class UpdateBarChartTool extends BaseTool {
             .describe('The new label for the Y axis')
             .optional(),
         xData: z
-            .string()
-            .describe('New array of x-axis values as comma-separated string')
-            .optional(),
-        yData: z
-            .string()
-            .describe('New array of y-axis values as comma-separated string')
-            .optional(),
-        x: z.number().describe('New X position').optional(),
-        y: z.number().describe('New Y position').optional(),
-        width: z.number().describe('New width').optional(),
-        height: z.number().describe('New height').optional(),
-        barColor: z.string().describe('New color for the bars').optional(),
-        zIndex: z
-            .number()
+            .array(z.union([z.string(), z.number()]))
             .describe(
-                'The new z-index value - controls stacking order with higher values appearing on top',
+                'New array of x-axis values (category labels or numbers), e.g. ["Jan", "Feb", "Mar"]. Parallel to yData: the resulting x and y arrays must have the same length.',
             )
             .optional(),
+        yData: z
+            .array(z.number())
+            .describe(
+                'New array of y-axis values (numbers), e.g. [10, 24, 30]. Parallel to xData: the resulting x and y arrays must have the same length.',
+            )
+            .optional(),
+        x: xSchema(' (new value)').optional(),
+        y: ySchema(' (new value)').optional(),
+        width: widthSchema(' (new value)').optional(),
+        height: heightSchema(' (new value)').optional(),
+        barColor: colorSchema
+            .describe(`New color for the bars. ${COLOR_DESCRIPTION}`)
+            .optional(),
+        zIndex: zIndexSchema.optional(),
     });
 
     protected async executeImpl(
@@ -104,14 +100,17 @@ export class UpdateBarChartTool extends BaseTool {
         if (!foundElement) {
             return {
                 success: false,
-                error: `Element with ID ${elementId} not found`,
+                error: elementNotFoundInPresentation(
+                    elementId,
+                    currentPresentation,
+                ),
             };
         }
 
         if (foundElement.type !== 'barchart') {
             return {
                 success: false,
-                error: `Element with ID ${elementId} is not a bar chart`,
+                error: wrongElementType(foundElement, 'barchart'),
             };
         }
 
@@ -154,21 +153,29 @@ export class UpdateBarChartTool extends BaseTool {
             let newXData = currentData.x;
             let newYData = currentData.y;
 
+            // Runtime tolerance: accept comma-separated strings from older
+            // callers/tests, but prefer clean arrays as declared in the schema.
             if (xData) {
-                newXData = xData.split(',').map((item: string) => item.trim());
+                newXData =
+                    typeof xData === 'string'
+                        ? xData.split(',').map((item: string) => item.trim())
+                        : xData;
             }
 
             if (yData) {
-                newYData = yData
-                    .split(',')
-                    .map((item: string) => Number(item.trim()));
+                newYData =
+                    typeof yData === 'string'
+                        ? yData
+                              .split(',')
+                              .map((item: string) => Number(item.trim()))
+                        : yData.map((item: string | number) => Number(item));
             }
 
             // Verify data arrays have the same length
             if (newXData.length !== newYData.length) {
                 return {
                     success: false,
-                    error: 'xData and yData arrays must have the same length',
+                    error: `xData and yData must be parallel arrays of the same length, but the resulting x data has ${newXData.length} item(s) and y data has ${newYData.length} item(s)`,
                 };
             }
 
@@ -198,6 +205,7 @@ export class UpdateBarChartTool extends BaseTool {
                 data: {
                     message: 'No updates were requested',
                 },
+                editedSlidesIds: slideId ? [slideId] : [],
             };
         }
 
