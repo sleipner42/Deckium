@@ -50,6 +50,8 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     const {
         updateElement,
         updateSlide,
+        beginTransaction,
+        endTransaction,
         selectedElementId,
         selectedElementIds,
         editingElementId,
@@ -83,13 +85,11 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         },
     });
 
-    // Track mouse state for debounced updates
-    const [isMouseDown, setIsMouseDown] = useState(false);
-    const pendingUpdatesRef = useRef<{
-        [elementId: string]: Partial<ContentElement>;
-    }>({});
+    // Tracks the history transaction opened for the current mouse gesture,
+    // so a whole drag becomes a single undo step.
+    const transactionOpenRef = useRef(false);
 
-    // Enhanced updateElement with snap support and debounced history
+    // Enhanced updateElement with snap support
     const updateElementWithSnap = (
         elementId: string,
         updates: Partial<ContentElement>,
@@ -103,52 +103,54 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             updates.position = snapResult.position;
         }
 
-        // If mouse is down, skip history to avoid flooding undo stack
-        const skipHistory = isMouseDown;
-        updateElement(elementId, updates, skipHistory);
-
-        // Track pending updates for final history save
-        if (isMouseDown) {
-            pendingUpdatesRef.current[elementId] = {
-                ...pendingUpdatesRef.current[elementId],
-                ...updates,
-            };
-        }
+        updateElement(elementId, updates);
     };
 
-    // Save final state to history when mouse is released
+    const handleMouseDown = useCallback(() => {
+        transactionOpenRef.current = true;
+        beginTransaction();
+    }, [beginTransaction]);
+
     const handleMouseUp = useCallback(() => {
-        const pendingEntries = Object.entries(pendingUpdatesRef.current);
-        if (isMouseDown && pendingEntries.length > 0) {
-            // Commit the whole drag gesture as a single undo entry: apply all
-            // pending element updates, but only the last one records history.
-            pendingEntries.forEach(([elementId, updates], index) => {
-                const isLast = index === pendingEntries.length - 1;
-                updateElement(elementId, updates, !isLast);
-            });
-            pendingUpdatesRef.current = {};
+        if (transactionOpenRef.current) {
+            transactionOpenRef.current = false;
+            endTransaction();
         }
-        setIsMouseDown(false);
 
         // Clear snap guides
         setTimeout(() => {
             clearGuides();
         }, 0);
-    }, [isMouseDown, updateElement, clearGuides]);
+    }, [endTransaction, clearGuides]);
 
-    const handleMouseDown = useCallback(() => {
-        setIsMouseDown(true);
-    }, []);
-
-    // Add mouse event listeners for debounced updates
+    // Wrap each mouse gesture in a history transaction so drags collapse
+    // into one undo step. Only the editable canvas participates — thumbnails
+    // and viewers must not open transactions on unrelated clicks.
+    // Capture phase: element handlers call stopPropagation() when starting a
+    // drag, which would keep bubble-phase document listeners from ever firing.
     useEffect(() => {
-        document.addEventListener('mouseup', handleMouseUp);
-        document.addEventListener('mousedown', handleMouseDown);
+        if (readOnly || !selectableElements) return undefined;
+
+        document.addEventListener('mousedown', handleMouseDown, true);
+        document.addEventListener('mouseup', handleMouseUp, true);
+        // Mouse released outside the window never fires mouseup
+        window.addEventListener('blur', handleMouseUp);
         return () => {
-            document.removeEventListener('mouseup', handleMouseUp);
-            document.removeEventListener('mousedown', handleMouseDown);
+            document.removeEventListener('mousedown', handleMouseDown, true);
+            document.removeEventListener('mouseup', handleMouseUp, true);
+            window.removeEventListener('blur', handleMouseUp);
+            if (transactionOpenRef.current) {
+                transactionOpenRef.current = false;
+                endTransaction();
+            }
         };
-    }, [handleMouseUp, handleMouseDown]);
+    }, [
+        readOnly,
+        selectableElements,
+        handleMouseDown,
+        handleMouseUp,
+        endTransaction,
+    ]);
 
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
@@ -818,22 +820,8 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         const deltaX = snappedPosition.x - primaryUpdates.position.x;
         const deltaY = snappedPosition.y - primaryUpdates.position.y;
 
-        // While dragging, skip history to avoid flooding (and evicting) the
-        // undo stack; the final state is committed once on mouse up.
-        const skipHistory = isMouseDown;
-
         // Apply the snapped position to the primary element
-        updateElement(
-            primaryElementId,
-            { position: snappedPosition },
-            skipHistory,
-        );
-        if (isMouseDown) {
-            pendingUpdatesRef.current[primaryElementId] = {
-                ...pendingUpdatesRef.current[primaryElementId],
-                position: snappedPosition,
-            };
-        }
+        updateElement(primaryElementId, { position: snappedPosition });
 
         // Apply the same delta to all other selected elements (without snapping)
         allUpdates.forEach(({ elementId, updates: elementUpdates }) => {
@@ -842,17 +830,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     x: elementUpdates.position.x + deltaX,
                     y: elementUpdates.position.y + deltaY,
                 };
-                updateElement(
-                    elementId,
-                    { position: newPosition },
-                    skipHistory,
-                );
-                if (isMouseDown) {
-                    pendingUpdatesRef.current[elementId] = {
-                        ...pendingUpdatesRef.current[elementId],
-                        position: newPosition,
-                    };
-                }
+                updateElement(elementId, { position: newPosition });
             }
         });
     };

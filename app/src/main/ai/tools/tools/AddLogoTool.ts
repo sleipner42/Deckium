@@ -29,7 +29,9 @@ export class AddLogoTool extends BaseTool {
             .describe("The company's website domain, e.g. 'ikea.com'"),
         x: z
             .number()
-            .describe('The horizontal position in pixels of the top-left corner'),
+            .describe(
+                'The horizontal position in pixels of the top-left corner',
+            ),
         y: z
             .number()
             .describe('The vertical position in pixels of the top-left corner'),

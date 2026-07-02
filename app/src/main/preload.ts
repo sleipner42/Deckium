@@ -12,6 +12,8 @@ export type PresentationChannels =
     | 'presentation:add-element'
     | 'presentation:update-element'
     | 'presentation:delete-element'
+    | 'presentation:transaction-start'
+    | 'presentation:transaction-end'
     | 'presentation:undo'
     | 'presentation:redo'
     | 'presentation:can-undo'
@@ -202,20 +204,21 @@ const electronHandler = {
                 element,
             );
         },
-        updateElement(
-            elementId: string,
-            updates: unknown,
-            skipHistory?: boolean,
-        ) {
+        updateElement(elementId: string, updates: unknown) {
             return ipcRenderer.invoke(
                 'presentation:update-element',
                 elementId,
                 updates,
-                skipHistory,
             );
         },
         deleteElement(elementId: string) {
             return ipcRenderer.invoke('presentation:delete-element', elementId);
+        },
+        beginTransaction() {
+            return ipcRenderer.invoke('presentation:transaction-start');
+        },
+        endTransaction() {
+            return ipcRenderer.invoke('presentation:transaction-end');
         },
         undo() {
             return ipcRenderer.invoke('presentation:undo');

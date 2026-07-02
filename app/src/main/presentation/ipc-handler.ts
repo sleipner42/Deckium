@@ -51,15 +51,18 @@ export function setupPresentationIPC(service: PresentationService) {
 
     ipcMain.handle(
         'presentation:update-element',
-        (
-            _,
-            elementId: string,
-            updates: Partial<ContentElement>,
-            skipHistory?: boolean,
-        ) => {
-            return service.updateElement(elementId, updates, skipHistory);
+        (_, elementId: string, updates: Partial<ContentElement>) => {
+            return service.updateElement(elementId, updates);
         },
     );
+
+    ipcMain.handle('presentation:transaction-start', () => {
+        service.beginTransaction();
+    });
+
+    ipcMain.handle('presentation:transaction-end', () => {
+        service.endTransaction();
+    });
 
     ipcMain.handle('presentation:delete-element', (_, elementId: string) => {
         return service.deleteElement(elementId);

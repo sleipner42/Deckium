@@ -45,9 +45,10 @@ interface PresentationContextActions {
     updateElement: (
         elementId: string,
         updates: Partial<ContentElement>,
-        skipHistory?: boolean,
     ) => void;
     deleteElement: (elementId: string) => void;
+    beginTransaction: () => Promise<void>;
+    endTransaction: () => Promise<void>;
     undo: () => Promise<Presentation | null>;
     redo: () => Promise<Presentation | null>;
     reorderSlides: (
@@ -118,6 +119,8 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
         addElement,
         updateElement,
         deleteElement,
+        beginTransaction,
+        endTransaction,
         undo,
         redo,
         reorderSlides,
@@ -167,6 +170,8 @@ export const PresentationProvider: React.FC<PresentationProviderProps> = ({
                 addElement,
                 updateElement,
                 deleteElement,
+                beginTransaction,
+                endTransaction,
                 undo,
                 redo,
                 reorderSlides,

@@ -1,3 +1,4 @@
+import { freeze, produce } from 'immer';
 import {
     ContentElement,
     Presentation,
@@ -5,22 +6,31 @@ import {
 } from '../../common/domain/entities/types';
 
 export class PresentationState {
+    // Always frozen (immer autofreeze); never stored in either stack.
     private presentation: Presentation;
-    private history: Presentation[] = [];
-    private historyIndex: number = -1;
+    // Past states, oldest first. The current state lives in neither stack.
+    private undoStack: Presentation[] = [];
+    private redoStack: Presentation[] = [];
     private maxHistorySize: number = 150;
-    private isApplyingHistory: boolean = false;
+    // Transaction nesting depth; while > 0, only the first mutation
+    // checkpoints, so the whole transaction becomes one undo step.
+    private txDepth: number = 0;
+    private txCheckpointed: boolean = false;
+    private readonly onHistoryChange?: () => void;
 
-    constructor() {
+    constructor(onHistoryChange?: () => void) {
+        this.onHistoryChange = onHistoryChange;
         const titleSlide = this.createSlide();
-        this.presentation = {
-            id: 'singleton',
-            title: 'Untitled Presentation',
-            slides: [titleSlide],
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
-        this.saveToHistory();
+        this.presentation = freeze(
+            {
+                id: 'singleton',
+                title: 'Untitled Presentation',
+                slides: [titleSlide],
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            true,
+        );
     }
 
     private createSlide(): Slide {
@@ -36,18 +46,60 @@ export class PresentationState {
         return this.presentation;
     }
 
+    beginTransaction(): void {
+        this.txDepth++;
+    }
+
+    endTransaction(): void {
+        this.txDepth = Math.max(0, this.txDepth - 1);
+        if (this.txDepth === 0) {
+            this.txCheckpointed = false;
+        }
+    }
+
+    /**
+     * Push the current (pre-mutation) state onto the undo stack. Mutation
+     * methods call this after validation, immediately before producing the
+     * next state. Inside a transaction only the first mutation checkpoints.
+     */
+    private checkpoint(): void {
+        if (this.txDepth > 0) {
+            if (this.txCheckpointed) return;
+            this.txCheckpointed = true;
+        }
+
+        this.undoStack.push(this.presentation);
+        if (this.undoStack.length > this.maxHistorySize) {
+            this.undoStack.shift();
+        }
+        // Remove any forward history when making new changes
+        this.redoStack = [];
+        this.onHistoryChange?.();
+    }
+
+    private resetHistory(): void {
+        this.undoStack = [];
+        this.redoStack = [];
+        this.txDepth = 0;
+        this.txCheckpointed = false;
+        this.onHistoryChange?.();
+    }
+
     initializePresentation(title = 'Untitled Presentation'): Presentation {
         const titleSlide = this.createSlide();
 
-        this.presentation = {
-            id: 'singleton',
-            title,
-            slides: [titleSlide],
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
+        this.presentation = freeze(
+            {
+                id: 'singleton',
+                title,
+                slides: [titleSlide],
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            true,
+        );
 
-        this.saveToHistory();
+        this.resetHistory();
         return this.presentation;
     }
 
@@ -57,40 +109,38 @@ export class PresentationState {
      * @returns The loaded presentation
      */
     loadPresentation(presentation: Presentation): Presentation {
-        this.presentation = {
-            ...presentation,
-            updatedAt: new Date(), // Update the timestamp when loading
-        };
+        this.presentation = produce(presentation, (draft) => {
+            draft.updatedAt = new Date(); // Update the timestamp when loading
+            for (const slide of draft.slides) {
+                slide.transition = slide.transition || 'none';
+            }
+        });
 
         // Reset history when loading a new presentation
-        this.history = [];
-        this.historyIndex = -1;
-        this.saveToHistory();
+        this.resetHistory();
         return this.presentation;
     }
 
     updatePresentationMeta(title: string): Presentation {
-        this.presentation = {
-            ...this.presentation,
-            title,
-            updatedAt: new Date(),
-        };
+        this.checkpoint();
+        this.presentation = produce(this.presentation, (draft) => {
+            draft.title = title;
+            draft.updatedAt = new Date();
+        });
 
-        this.saveToHistory();
         return this.presentation;
     }
 
     addSlide(): Slide {
         const newSlide = this.createSlide();
 
-        this.presentation = {
-            ...this.presentation,
-            slides: [...this.presentation.slides, newSlide],
-            updatedAt: new Date(),
-        };
+        this.checkpoint();
+        this.presentation = produce(this.presentation, (draft) => {
+            draft.slides.push(newSlide);
+            draft.updatedAt = new Date();
+        });
 
-        this.saveToHistory();
-        return newSlide;
+        return this.presentation.slides[this.presentation.slides.length - 1];
     }
 
     duplicateSlide(slideId: string): Slide | null {
@@ -110,61 +160,42 @@ export class PresentationState {
             })),
         };
 
-        // Insert the duplicated slide right after the original
-        const updatedSlides = [...this.presentation.slides];
-        updatedSlides.splice(slideIndex + 1, 0, duplicatedSlide);
+        this.checkpoint();
+        this.presentation = produce(this.presentation, (draft) => {
+            // Insert the duplicated slide right after the original
+            draft.slides.splice(slideIndex + 1, 0, duplicatedSlide);
+            draft.updatedAt = new Date();
+        });
 
-        this.presentation = {
-            ...this.presentation,
-            slides: updatedSlides,
-            updatedAt: new Date(),
-        };
-
-        this.saveToHistory();
-        return duplicatedSlide;
+        return this.presentation.slides[slideIndex + 1];
     }
 
     updateSlide(slideId: string, updates: Partial<Slide>): Slide | null {
         const slideIndex = this.findSlideIndex(slideId);
         if (slideIndex === -1) return null;
 
-        const updatedSlide = {
-            ...this.presentation.slides[slideIndex],
-            ...updates,
-        };
+        this.checkpoint();
+        this.presentation = produce(this.presentation, (draft) => {
+            Object.assign(draft.slides[slideIndex], updates);
+            draft.updatedAt = new Date();
+        });
 
-        const updatedSlides = [...this.presentation.slides];
-        updatedSlides[slideIndex] = updatedSlide;
-
-        this.presentation = {
-            ...this.presentation,
-            slides: updatedSlides,
-            updatedAt: new Date(),
-        };
-
-        this.saveToHistory();
-        return updatedSlide;
+        return this.presentation.slides[slideIndex];
     }
 
     deleteSlide(slideId: string): string | null {
         const slideIndex = this.findSlideIndex(slideId);
         if (slideIndex === -1) return null;
 
-        const newSlides = this.presentation.slides.filter(
-            (slide) => slide.id !== slideId,
-        );
+        this.checkpoint();
+        this.presentation = produce(this.presentation, (draft) => {
+            draft.slides.splice(slideIndex, 1);
+            if (draft.slides.length === 0) {
+                draft.slides.push(this.createSlide());
+            }
+            draft.updatedAt = new Date();
+        });
 
-        if (newSlides.length === 0) {
-            newSlides.push(this.createSlide());
-        }
-
-        this.presentation = {
-            ...this.presentation,
-            slides: newSlides,
-            updatedAt: new Date(),
-        };
-
-        this.saveToHistory();
         return slideId;
     }
 
@@ -179,17 +210,13 @@ export class PresentationState {
             return this.presentation;
         }
 
-        const newSlides = [...this.presentation.slides];
-        const [movedSlide] = newSlides.splice(fromIndex, 1);
-        newSlides.splice(toIndex, 0, movedSlide);
+        this.checkpoint();
+        this.presentation = produce(this.presentation, (draft) => {
+            const [movedSlide] = draft.slides.splice(fromIndex, 1);
+            draft.slides.splice(toIndex, 0, movedSlide);
+            draft.updatedAt = new Date();
+        });
 
-        this.presentation = {
-            ...this.presentation,
-            slides: newSlides,
-            updatedAt: new Date(),
-        };
-
-        this.saveToHistory();
         return this.presentation;
     }
 
@@ -199,103 +226,47 @@ export class PresentationState {
             return null;
         }
 
-        const slide = this.presentation.slides[slideIndex];
-        const updatedSlide = {
-            ...slide,
-            elements: [...slide.elements, element],
-        };
+        this.checkpoint();
+        this.presentation = produce(this.presentation, (draft) => {
+            draft.slides[slideIndex].elements.push(element);
+            draft.updatedAt = new Date();
+        });
 
-        const updatedSlides = [...this.presentation.slides];
-        updatedSlides[slideIndex] = updatedSlide;
-
-        this.presentation = {
-            ...this.presentation,
-            slides: updatedSlides,
-            updatedAt: new Date(),
-        };
-
-        this.saveToHistory();
-
-        return updatedSlide;
+        return this.presentation.slides[slideIndex];
     }
 
     updateElement(
         elementId: string,
         updates: Partial<ContentElement>,
-        skipHistory = false,
     ): Slide | null {
-        for (let i = 0; i < this.presentation.slides.length; i++) {
-            const slide = this.presentation.slides[i];
-            const elementIndex = slide.elements.findIndex(
-                (e) => e.id === elementId,
-            );
+        const location = this.findElementLocation(elementId);
+        if (!location) return null;
 
-            if (elementIndex !== -1) {
-                const element = slide.elements[elementIndex];
-                const updatedElement = {
-                    ...element,
-                    ...updates,
-                } as ContentElement;
-                const updatedElements = [...slide.elements];
-                updatedElements[elementIndex] = updatedElement;
+        const { slideIndex, elementIndex } = location;
 
-                const updatedSlide = {
-                    ...slide,
-                    elements: updatedElements,
-                };
+        this.checkpoint();
+        this.presentation = produce(this.presentation, (draft) => {
+            const element = draft.slides[slideIndex].elements[elementIndex];
+            Object.assign(element, updates);
+            draft.updatedAt = new Date();
+        });
 
-                const updatedSlides = [...this.presentation.slides];
-                updatedSlides[i] = updatedSlide;
-
-                this.presentation = {
-                    ...this.presentation,
-                    slides: updatedSlides,
-                    updatedAt: new Date(),
-                };
-
-                if (!skipHistory) {
-                    this.saveToHistory();
-                }
-
-                return updatedSlide;
-            }
-        }
-
-        return null;
+        return this.presentation.slides[slideIndex];
     }
 
     deleteElement(elementId: string): Slide | null {
-        for (let i = 0; i < this.presentation.slides.length; i++) {
-            const slide = this.presentation.slides[i];
-            const elementIndex = slide.elements.findIndex(
-                (e) => e.id === elementId,
-            );
+        const location = this.findElementLocation(elementId);
+        if (!location) return null;
 
-            if (elementIndex !== -1) {
-                const updatedElements = slide.elements.filter(
-                    (e) => e.id !== elementId,
-                );
+        const { slideIndex, elementIndex } = location;
 
-                const updatedSlide = {
-                    ...slide,
-                    elements: updatedElements,
-                };
+        this.checkpoint();
+        this.presentation = produce(this.presentation, (draft) => {
+            draft.slides[slideIndex].elements.splice(elementIndex, 1);
+            draft.updatedAt = new Date();
+        });
 
-                const updatedSlides = [...this.presentation.slides];
-                updatedSlides[i] = updatedSlide;
-
-                this.presentation = {
-                    ...this.presentation,
-                    slides: updatedSlides,
-                    updatedAt: new Date(),
-                };
-
-                this.saveToHistory();
-                return updatedSlide;
-            }
-        }
-
-        return null;
+        return this.presentation.slides[slideIndex];
     }
 
     private findSlideIndex(slideId: string): number {
@@ -304,70 +275,36 @@ export class PresentationState {
         );
     }
 
-    private findElement(elementId: string): ContentElement | null {
-        for (const slide of this.presentation.slides) {
-            const element = slide.elements.find((e) => e.id === elementId);
-            if (element) return element;
+    private findElementLocation(
+        elementId: string,
+    ): { slideIndex: number; elementIndex: number } | null {
+        for (let i = 0; i < this.presentation.slides.length; i++) {
+            const elementIndex = this.presentation.slides[i].elements.findIndex(
+                (e) => e.id === elementId,
+            );
+            if (elementIndex !== -1) {
+                return { slideIndex: i, elementIndex };
+            }
         }
         return null;
     }
 
-    private saveToHistory(): void {
-        if (this.isApplyingHistory) {
-            return;
-        }
-
-        const currentState = this.deepClonePresentation(this.presentation);
-
-        // Remove any forward history when making new changes
-        if (this.historyIndex < this.history.length - 1) {
-            this.history = this.history.slice(0, this.historyIndex + 1);
-        }
-
-        // Add current state to history
-        this.history.push(currentState);
-        this.historyIndex = this.history.length - 1;
-
-        // Limit history size
-        if (this.history.length > this.maxHistorySize) {
-            this.history.shift();
-            this.historyIndex--;
-        }
-    }
-
-    private deepClonePresentation(presentation: Presentation): Presentation {
-        // structuredClone produces a true deep copy, so nested element objects
-        // (position/size/data/style) are no longer shared across history
-        // snapshots — a shallow spread previously left them aliased, which
-        // would corrupt undo history the moment any element was mutated in place.
-        const cloned = structuredClone(presentation);
-        cloned.createdAt = new Date(presentation.createdAt);
-        cloned.updatedAt = new Date(presentation.updatedAt);
-        for (const slide of cloned.slides) {
-            slide.transition = slide.transition || 'none';
-        }
-        return cloned;
-    }
-
     public canUndo(): boolean {
-        const result = this.historyIndex > 0;
-        return result;
+        return this.undoStack.length > 0;
     }
 
     public canRedo(): boolean {
-        const result = this.historyIndex < this.history.length - 1;
-        return result;
+        return this.redoStack.length > 0;
     }
 
     public undo(): Presentation | null {
         if (!this.canUndo()) return null;
 
-        this.isApplyingHistory = true;
-        this.historyIndex--;
-        this.presentation = this.deepClonePresentation(
-            this.history[this.historyIndex],
-        );
-        this.isApplyingHistory = false;
+        // Anything still pending in an open transaction becomes a new step.
+        this.txCheckpointed = false;
+        this.redoStack.push(this.presentation);
+        this.presentation = this.undoStack.pop() as Presentation;
+        this.onHistoryChange?.();
 
         return this.presentation;
     }
@@ -375,43 +312,15 @@ export class PresentationState {
     public redo(): Presentation | null {
         if (!this.canRedo()) return null;
 
-        this.isApplyingHistory = true;
-        this.historyIndex++;
-        this.presentation = this.deepClonePresentation(
-            this.history[this.historyIndex],
-        );
-        this.isApplyingHistory = false;
+        this.txCheckpointed = false;
+        this.undoStack.push(this.presentation);
+        this.presentation = this.redoStack.pop() as Presentation;
+        this.onHistoryChange?.();
 
         return this.presentation;
     }
 
     public clearHistory(): void {
-        this.history = [];
-        this.historyIndex = -1;
-        this.saveToHistory();
-    }
-
-    public getHistoryStats(): {
-        size: number;
-        currentIndex: number;
-        maxSize: number;
-    } {
-        return {
-            size: this.history.length,
-            currentIndex: this.historyIndex,
-            maxSize: this.maxHistorySize,
-        };
-    }
-
-    public setMaxHistorySize(newMax: number): void {
-        if (newMax < 1) newMax = 1;
-        this.maxHistorySize = newMax;
-
-        // Trim history if it exceeds the new limit
-        if (this.history.length > this.maxHistorySize) {
-            const itemsToRemove = this.history.length - this.maxHistorySize;
-            this.history.splice(0, itemsToRemove);
-            this.historyIndex = Math.max(0, this.historyIndex - itemsToRemove);
-        }
+        this.resetHistory();
     }
 }

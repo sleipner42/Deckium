@@ -25,8 +25,32 @@ export class PresentationService {
     private selectedSlideId: string | null = null;
 
     constructor() {
-        this.state = new PresentationState();
         this.eventBus = new PresentationEventBus();
+        this.state = new PresentationState(() =>
+            this.broadcastHistoryChanged(),
+        );
+    }
+
+    private broadcastHistoryChanged(): void {
+        this.eventBus.broadcastToWindows(
+            PresentationEventBus.events.HISTORY_CHANGED,
+            {
+                canUndo: this.state.canUndo(),
+                canRedo: this.state.canRedo(),
+            },
+        );
+    }
+
+    /**
+     * Group all mutations until the matching endTransaction into a single
+     * undo step. Nesting-safe; used per drag gesture and per AI turn.
+     */
+    beginTransaction(): void {
+        this.state.beginTransaction();
+    }
+
+    endTransaction(): void {
+        this.state.endTransaction();
     }
 
     getPresentation(): Presentation {
@@ -124,13 +148,8 @@ export class PresentationService {
     updateElement(
         elementId: string,
         updates: Partial<ContentElement>,
-        skipHistory = false,
     ): Slide | null {
-        const updatedSlide = this.state.updateElement(
-            elementId,
-            updates,
-            skipHistory,
-        );
+        const updatedSlide = this.state.updateElement(elementId, updates);
         if (updatedSlide) {
             this.eventBus.broadcastToWindows(
                 PresentationEventBus.events.SLIDE_UPDATED,

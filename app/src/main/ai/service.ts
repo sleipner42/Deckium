@@ -181,29 +181,36 @@ export class AIService {
 
         const loop = new AgentLoopState(this.state, this.eventBus, thread);
 
-        const result = streamText({
-            // Defaults first so explicit per-call values below always win.
-            ...AGENT_DEFAULTS,
-            model,
-            system,
-            messages: history,
-            tools,
-            abortSignal,
-            providerOptions: providerOptionsFor(config),
-        });
+        // Group every presentation edit made by this AI turn into a single
+        // undo step, including partial edits from aborted or failed turns.
+        this.presentationService.beginTransaction();
+        try {
+            const result = streamText({
+                // Defaults first so explicit per-call values below always win.
+                ...AGENT_DEFAULTS,
+                model,
+                system,
+                messages: history,
+                tools,
+                abortSignal,
+                providerOptions: providerOptionsFor(config),
+            });
 
-        for await (const part of result.fullStream) {
-            if (part.type === 'text-delta') {
-                loop.appendText(part.text);
-            } else if (part.type === 'tool-call') {
-                loop.onToolCall(part.toolCallId, part.toolName, part.input);
-            } else if (part.type === 'tool-result') {
-                loop.onToolResult(part.toolCallId, part.output);
-            } else if (part.type === 'tool-error') {
-                loop.onToolResult(part.toolCallId, undefined, true);
-            } else if (part.type === 'error') {
-                throw part.error;
+            for await (const part of result.fullStream) {
+                if (part.type === 'text-delta') {
+                    loop.appendText(part.text);
+                } else if (part.type === 'tool-call') {
+                    loop.onToolCall(part.toolCallId, part.toolName, part.input);
+                } else if (part.type === 'tool-result') {
+                    loop.onToolResult(part.toolCallId, part.output);
+                } else if (part.type === 'tool-error') {
+                    loop.onToolResult(part.toolCallId, undefined, true);
+                } else if (part.type === 'error') {
+                    throw part.error;
+                }
             }
+        } finally {
+            this.presentationService.endTransaction();
         }
 
         loop.finalize();

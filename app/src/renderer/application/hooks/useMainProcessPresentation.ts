@@ -48,9 +48,10 @@ interface ElectronWindow {
             updateElement: (
                 elementId: string,
                 updates: Partial<ContentElement>,
-                skipHistory?: boolean,
             ) => Promise<Slide>;
             deleteElement: (elementId: string) => Promise<Slide>;
+            beginTransaction: () => Promise<void>;
+            endTransaction: () => Promise<void>;
             undo: () => Promise<Presentation | null>;
             redo: () => Promise<Presentation | null>;
             canUndo: () => Promise<boolean>;
@@ -117,6 +118,11 @@ export const useMainProcessPresentation = () => {
                 .finally(() => {
                     setIsLoading(false);
                 });
+
+            // Initial undo/redo capabilities; afterwards the main process
+            // pushes updates via presentation:history-changed.
+            electronAPI.presentation.canUndo().then(setCanUndo);
+            electronAPI.presentation.canRedo().then(setCanRedo);
         }
     }, [isInitialized]);
 
@@ -322,10 +328,6 @@ export const useMainProcessPresentation = () => {
                 setSelectedElementId(null);
                 setSelectedElementIds([]);
                 setEditingElementId(null);
-
-                // Update undo/redo capabilities
-                electronAPI.presentation.canUndo().then(setCanUndo);
-                electronAPI.presentation.canRedo().then(setCanRedo);
             },
         );
 
@@ -356,23 +358,21 @@ export const useMainProcessPresentation = () => {
                 setSelectedElementId(null);
                 setSelectedElementIds([]);
                 setEditingElementId(null);
-
-                // Update undo/redo capabilities
-                electronAPI.presentation.canUndo().then(setCanUndo);
-                electronAPI.presentation.canRedo().then(setCanRedo);
             },
         );
 
-        // Update undo/redo capabilities on slide changes
-        const updateHistoryCapabilities = () => {
-            electronAPI.presentation.canUndo().then(setCanUndo);
-            electronAPI.presentation.canRedo().then(setCanRedo);
-        };
-
-        // Listen for slide updates to refresh undo/redo state
-        const slideChangedUnsubscribe = electronAPI.ipcRenderer.on(
-            'presentation:slide-updated',
-            updateHistoryCapabilities,
+        // The main process pushes undo/redo capabilities on every history
+        // change (mutations, transactions, undo/redo, load).
+        const historyChangedUnsubscribe = electronAPI.ipcRenderer.on(
+            'presentation:history-changed',
+            (...args: unknown[]) => {
+                const capabilities = args[0] as {
+                    canUndo: boolean;
+                    canRedo: boolean;
+                };
+                setCanUndo(capabilities.canUndo);
+                setCanRedo(capabilities.canRedo);
+            },
         );
 
         // Listen for menu undo/redo events
@@ -449,7 +449,7 @@ export const useMainProcessPresentation = () => {
             slidesReorderedUnsubscribe();
             undoExecutedUnsubscribe();
             redoExecutedUnsubscribe();
-            slideChangedUnsubscribe();
+            historyChangedUnsubscribe();
             menuUndoUnsubscribe();
             menuRedoUnsubscribe();
             menuCopyUnsubscribe();
@@ -739,11 +739,7 @@ export const useMainProcessPresentation = () => {
     );
 
     const updateElement = useCallback(
-        async (
-            elementId: string,
-            updates: Partial<ContentElement>,
-            skipHistory = false,
-        ) => {
+        async (elementId: string, updates: Partial<ContentElement>) => {
             try {
                 setIsLoading(true);
                 setError(null);
@@ -752,7 +748,6 @@ export const useMainProcessPresentation = () => {
                     await electronAPI.presentation.updateElement(
                         elementId,
                         updates,
-                        skipHistory,
                     );
 
                 return updatedSlide;
@@ -784,6 +779,14 @@ export const useMainProcessPresentation = () => {
         } finally {
             setIsLoading(false);
         }
+    }, []);
+
+    const beginTransaction = useCallback(() => {
+        return electronAPI.presentation.beginTransaction();
+    }, []);
+
+    const endTransaction = useCallback(() => {
+        return electronAPI.presentation.endTransaction();
     }, []);
 
     const undo = useCallback(async () => {
@@ -976,6 +979,8 @@ export const useMainProcessPresentation = () => {
         addElement,
         updateElement,
         deleteElement,
+        beginTransaction,
+        endTransaction,
         undo,
         redo,
         reorderSlides,
