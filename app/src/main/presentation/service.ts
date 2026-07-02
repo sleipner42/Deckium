@@ -44,13 +44,24 @@ export class PresentationService {
     /**
      * Group all mutations until the matching endTransaction into a single
      * undo step. Nesting-safe; used per drag gesture and per AI turn.
+     * Owners keep one actor's orphaned transaction from wedging another's:
+     * main-process callers default to 'main', renderer gestures are scoped
+     * to their webContents by the IPC handler.
      */
-    beginTransaction(): void {
-        this.state.beginTransaction();
+    beginTransaction(owner?: string): void {
+        this.state.beginTransaction(owner);
     }
 
-    endTransaction(): void {
-        this.state.endTransaction();
+    endTransaction(owner?: string): void {
+        this.state.endTransaction(owner);
+    }
+
+    /**
+     * Force-close every transaction held by an owner that can no longer
+     * send a matching end (renderer destroyed, navigated, or crashed).
+     */
+    endAllTransactionsFor(owner: string): void {
+        this.state.endAllTransactionsFor(owner);
     }
 
     getPresentation(): Presentation {

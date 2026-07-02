@@ -1,9 +1,27 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow, ipcMain, WebContents } from 'electron';
 import { ContentElement, Slide } from '../../common/domain/entities/types';
 import { PowerPointExportService } from '../powerpoint-export/service';
 import { PresentationService } from './service';
 
 export function setupPresentationIPC(service: PresentationService) {
+    // History transactions are scoped to the sending webContents so a
+    // renderer that reloads, navigates, or crashes mid-gesture cannot leave
+    // a transaction open in the main process forever.
+    const transactionOwner = (sender: WebContents) =>
+        `webcontents:${sender.id}`;
+    const trackedSenders = new Set<number>();
+    const trackTransactionSender = (sender: WebContents) => {
+        if (trackedSenders.has(sender.id)) return;
+        trackedSenders.add(sender.id);
+        const owner = transactionOwner(sender);
+        const forceClose = () => service.endAllTransactionsFor(owner);
+        sender.on('did-navigate', forceClose);
+        sender.on('render-process-gone', forceClose);
+        sender.once('destroyed', () => {
+            forceClose();
+            trackedSenders.delete(sender.id);
+        });
+    };
     ipcMain.handle('presentation:initialize', (_, title: string) => {
         return service.initializePresentation(title);
     });
@@ -56,12 +74,13 @@ export function setupPresentationIPC(service: PresentationService) {
         },
     );
 
-    ipcMain.handle('presentation:transaction-start', () => {
-        service.beginTransaction();
+    ipcMain.handle('presentation:transaction-start', (event) => {
+        trackTransactionSender(event.sender);
+        service.beginTransaction(transactionOwner(event.sender));
     });
 
-    ipcMain.handle('presentation:transaction-end', () => {
-        service.endTransaction();
+    ipcMain.handle('presentation:transaction-end', (event) => {
+        service.endTransaction(transactionOwner(event.sender));
     });
 
     ipcMain.handle('presentation:delete-element', (_, elementId: string) => {

@@ -12,20 +12,32 @@ export class PresentationState {
     private undoStack: Presentation[] = [];
     private redoStack: Presentation[] = [];
     private maxHistorySize: number = 150;
-    // Transaction nesting depth; while > 0, only the first mutation
-    // checkpoints, so the whole transaction becomes one undo step.
-    private txDepth: number = 0;
+    // Open transactions by owner (e.g. 'main', 'webcontents:<id>'), each with
+    // its own nesting depth. While ANY transaction is open, only the first
+    // mutation checkpoints, so concurrent gestures coalesce into one undo
+    // step — accepted tradeoff over per-owner undo granularity. Ownership
+    // exists so one actor's unbalanced or orphaned begin/end (crashed
+    // renderer, HTML5 drag swallowing mouseup) can be reset without
+    // corrupting another actor's open transaction.
+    private openTransactions: Map<string, number> = new Map();
     private txCheckpointed: boolean = false;
     private readonly onHistoryChange?: () => void;
 
     constructor(onHistoryChange?: () => void) {
         this.onHistoryChange = onHistoryChange;
-        const titleSlide = this.createSlide();
-        this.presentation = freeze(
+        // No resetHistory here: stacks are already empty, and the callback
+        // must not fire while the owning service is still constructing.
+        this.presentation = this.createEmptyPresentation(
+            'Untitled Presentation',
+        );
+    }
+
+    private createEmptyPresentation(title: string): Presentation {
+        return freeze(
             {
                 id: 'singleton',
-                title: 'Untitled Presentation',
-                slides: [titleSlide],
+                title,
+                slides: [this.createSlide()],
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },
@@ -46,13 +58,38 @@ export class PresentationState {
         return this.presentation;
     }
 
-    beginTransaction(): void {
-        this.txDepth++;
+    beginTransaction(owner = 'main'): void {
+        this.openTransactions.set(
+            owner,
+            (this.openTransactions.get(owner) ?? 0) + 1,
+        );
     }
 
-    endTransaction(): void {
-        this.txDepth = Math.max(0, this.txDepth - 1);
-        if (this.txDepth === 0) {
+    endTransaction(owner = 'main'): void {
+        const depth = this.openTransactions.get(owner);
+        if (depth === undefined) {
+            // Stale end: this owner's transactions were already invalidated
+            // (history reset, teardown cleanup) — must not touch other owners.
+            return;
+        }
+        if (depth <= 1) {
+            this.openTransactions.delete(owner);
+        } else {
+            this.openTransactions.set(owner, depth - 1);
+        }
+        if (this.openTransactions.size === 0) {
+            this.txCheckpointed = false;
+        }
+    }
+
+    /**
+     * Force-close every transaction held by an owner, regardless of depth.
+     * Used when the owner can no longer send a matching end (renderer
+     * destroyed or navigated away, gesture swallowed by native drag).
+     */
+    endAllTransactionsFor(owner: string): void {
+        if (!this.openTransactions.delete(owner)) return;
+        if (this.openTransactions.size === 0) {
             this.txCheckpointed = false;
         }
     }
@@ -63,7 +100,7 @@ export class PresentationState {
      * next state. Inside a transaction only the first mutation checkpoints.
      */
     private checkpoint(): void {
-        if (this.txDepth > 0) {
+        if (this.openTransactions.size > 0) {
             if (this.txCheckpointed) return;
             this.txCheckpointed = true;
         }
@@ -80,25 +117,15 @@ export class PresentationState {
     private resetHistory(): void {
         this.undoStack = [];
         this.redoStack = [];
-        this.txDepth = 0;
+        // Invalidate all open transactions: their owners' later end calls
+        // become no-ops instead of closing someone else's fresh transaction.
+        this.openTransactions.clear();
         this.txCheckpointed = false;
         this.onHistoryChange?.();
     }
 
     initializePresentation(title = 'Untitled Presentation'): Presentation {
-        const titleSlide = this.createSlide();
-
-        this.presentation = freeze(
-            {
-                id: 'singleton',
-                title,
-                slides: [titleSlide],
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-            true,
-        );
-
+        this.presentation = this.createEmptyPresentation(title);
         this.resetHistory();
         return this.presentation;
     }
@@ -318,9 +345,5 @@ export class PresentationState {
         this.onHistoryChange?.();
 
         return this.presentation;
-    }
-
-    public clearHistory(): void {
-        this.resetHistory();
     }
 }

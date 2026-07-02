@@ -15,7 +15,7 @@ const PresentationViewer: React.FC = () => {
             }}
         >
             <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                <SlideView defaultScale={2} />
+                <SlideView defaultScale={2} selectableElements={false} />
             </Box>
         </Box>
     );

@@ -61,6 +61,7 @@ const FullScreenPresentationViewer: React.FC = () => {
                 <SlideView
                     defaultScale={1}
                     selectedSlideOverride={slides[currentIndex]}
+                    selectableElements={false}
                 />
             )}
         </Box>

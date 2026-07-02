@@ -234,6 +234,62 @@ describe('PresentationState history', () => {
         expect(state.canUndo()).toBe(false);
     });
 
+    it('ignores an unbalanced end without touching other owners', () => {
+        state.beginTransaction('gesture');
+        state.endTransaction('never-began');
+        state.addSlide();
+        state.addSlide();
+        state.endTransaction('gesture');
+
+        // Both mutations happened inside 'gesture': exactly one step.
+        state.undo();
+        expect(state.getPresentation().slides).toHaveLength(1);
+        expect(state.canUndo()).toBe(false);
+    });
+
+    it('force-closes all of an owner’s nested transactions', () => {
+        state.beginTransaction('wc:1');
+        state.beginTransaction('wc:1');
+        state.addSlide();
+        state.endAllTransactionsFor('wc:1');
+
+        // Owner fully closed: the next mutation is its own step again.
+        state.addSlide();
+        state.undo();
+        expect(state.getPresentation().slides).toHaveLength(2);
+    });
+
+    it('invalidates open owners on load so their stale end is a no-op', () => {
+        state.beginTransaction('ai-turn');
+        state.loadPresentation(makePresentation());
+
+        // A new gesture starts after the load...
+        state.beginTransaction('wc:1');
+        state.addSlide();
+        // ...and the AI turn's late end must not close it.
+        state.endTransaction('ai-turn');
+        state.addSlide();
+        state.endTransaction('wc:1');
+
+        // Both slides were added inside the still-open 'wc:1' transaction.
+        state.undo();
+        expect(state.getPresentation().slides).toHaveLength(1);
+        expect(state.canUndo()).toBe(false);
+    });
+
+    it('coalesces overlapping transactions from different owners into one step', () => {
+        const before = state.getPresentation();
+        state.beginTransaction('ai-turn');
+        state.addSlide();
+        state.beginTransaction('wc:1');
+        state.addSlide();
+        state.endTransaction('wc:1');
+        state.endTransaction('ai-turn');
+
+        expect(state.undo()).toBe(before);
+        expect(state.canUndo()).toBe(false);
+    });
+
     it('starts a fresh step for edits made after an undo inside an open transaction', () => {
         state.beginTransaction();
         state.addSlide();

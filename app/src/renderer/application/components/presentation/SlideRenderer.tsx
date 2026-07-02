@@ -106,22 +106,43 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         updateElement(elementId, updates);
     };
 
+    const closeTransaction = useCallback(() => {
+        if (transactionOpenRef.current) {
+            transactionOpenRef.current = false;
+            endTransaction();
+        }
+    }, [endTransaction]);
+
     const handleMouseDown = useCallback(() => {
         transactionOpenRef.current = true;
         beginTransaction();
     }, [beginTransaction]);
 
     const handleMouseUp = useCallback(() => {
-        if (transactionOpenRef.current) {
-            transactionOpenRef.current = false;
-            endTransaction();
-        }
+        closeTransaction();
 
         // Clear snap guides
         setTimeout(() => {
             clearGuides();
         }, 0);
-    }, [endTransaction, clearGuides]);
+    }, [closeTransaction, clearGuides]);
+
+    // Once a gesture becomes a native HTML5 drag (slide thumbnail reorder,
+    // dragging selected text), the browser suppresses the matching mouseup
+    // and only dragend fires — close the transaction at dragstart or it
+    // leaks open for the rest of the session.
+    const handleDragStart = useCallback(() => {
+        closeTransaction();
+    }, [closeTransaction]);
+
+    // On focus loss mid-gesture, end the WHOLE gesture: the synthetic
+    // mouseup both stops element drag loops (their document mouseup
+    // listeners fire) and closes the transaction via our capture listener.
+    // Ending only the transaction would let a still-held drag keep emitting
+    // untransacted updates, one undo entry per mousemove.
+    const handleWindowBlur = useCallback(() => {
+        document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    }, []);
 
     // Wrap each mouse gesture in a history transaction so drags collapse
     // into one undo step. Only the editable canvas participates — thumbnails
@@ -133,23 +154,24 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
         document.addEventListener('mousedown', handleMouseDown, true);
         document.addEventListener('mouseup', handleMouseUp, true);
-        // Mouse released outside the window never fires mouseup
-        window.addEventListener('blur', handleMouseUp);
+        document.addEventListener('dragstart', handleDragStart, true);
+        window.addEventListener('blur', handleWindowBlur);
         return () => {
             document.removeEventListener('mousedown', handleMouseDown, true);
             document.removeEventListener('mouseup', handleMouseUp, true);
-            window.removeEventListener('blur', handleMouseUp);
-            if (transactionOpenRef.current) {
-                transactionOpenRef.current = false;
-                endTransaction();
-            }
+            document.removeEventListener('dragstart', handleDragStart, true);
+            window.removeEventListener('blur', handleWindowBlur);
+            // Unmount safety: never leak an open transaction.
+            closeTransaction();
         };
     }, [
         readOnly,
         selectableElements,
         handleMouseDown,
         handleMouseUp,
-        endTransaction,
+        handleDragStart,
+        handleWindowBlur,
+        closeTransaction,
     ]);
 
     const [contextMenu, setContextMenu] = useState<{
