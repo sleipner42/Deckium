@@ -1,34 +1,11 @@
-export type LintingErrorType =
-    | 'data_validation'
-    | 'dom_overlap'
-    | 'outside_slide'
-    | 'text_overlap'
-    | 'shape_overlap'
-    | 'zindex_issue'
-    | 'text_overflow'
-    | 'text_shape_boundary';
+import type { LintingError } from '../../common/domain/entities/linting-types';
 
-export type LintingSeverity = 'error' | 'warning' | 'info';
-
-export interface LintingError {
-    id: string;
-    elementId: string;
-    slideId: string;
-    type: LintingErrorType;
-    message: string;
-    severity: LintingSeverity;
-    line?: number;
-    column?: number;
-    suggestedFix?: string;
-    createdAt: Date;
-}
-
-export interface SlideLintingResult {
-    slideId: string;
-    errors: LintingError[];
-    hasErrors: boolean;
-    lintedAt: Date;
-}
+export type {
+    LintingError,
+    LintingErrorType,
+    LintingSeverity,
+    SlideLintingResult,
+} from '../../common/domain/entities/linting-types';
 
 export interface LintingState {
     errorsBySlide: Map<string, LintingError[]>;

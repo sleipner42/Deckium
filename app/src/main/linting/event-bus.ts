@@ -3,7 +3,6 @@ import { BrowserWindow } from 'electron';
 
 export class LintingEventBus extends EventEmitter {
     static events = {
-        ERRORS_UPDATED: 'linting:errors-updated',
         SLIDE_LINTED: 'linting:slide-linted',
         ERRORS_CLEARED: 'linting:errors-cleared',
     };

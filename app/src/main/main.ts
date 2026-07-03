@@ -14,7 +14,6 @@ import { setupPresentationIPC } from './presentation/ipc-handler';
 import { PresentationService } from './presentation/service';
 import { setupLLMSettingsIPC } from './settings/ipc-handler';
 import { LLMSettingsService } from './settings/llm-settings-service';
-import { setupTextMeasurementIPC } from './text-measurement/ipc-handler';
 import { textMeasurementService } from './text-measurement/service';
 import { resolveHtmlPath } from './util';
 
@@ -227,7 +226,6 @@ if (!gotTheLock) {
             powerpointImportHandler.setPresentationService(presentationService);
 
             lintingService = new LintingService();
-            lintingService.setPresentationService(presentationService);
 
             // Update menu with presentation service
             if (menuBuilder) {
@@ -245,7 +243,6 @@ if (!gotTheLock) {
 
             setupAIIPC(aiService);
             setupPresentationIPC(presentationService);
-            setupTextMeasurementIPC();
             new LintingIpcHandler(lintingService);
             new FileSystemIpcHandler();
             setupPDFExportIPC(pdfExportService);

@@ -13,5 +13,17 @@ export class LintingIpcHandler {
         ipcMain.handle('linting:lint-slide', async (_event, slide) => {
             return await this.lintingService.lintSlide(slide);
         });
+
+        ipcMain.handle('linting:get-errors', (_event, slideId?: string) => {
+            return this.lintingService.getLintingErrors(slideId);
+        });
+
+        ipcMain.handle('linting:clear-errors', (_event, slideId?: string) => {
+            this.lintingService.clearErrors(slideId);
+        });
+
+        ipcMain.handle('linting:has-errors', (_event, slideId?: string) => {
+            return this.lintingService.hasErrors(slideId);
+        });
     }
 }

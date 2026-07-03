@@ -11,49 +11,6 @@ export class LintingStateManager {
         };
     }
 
-    getState(): LintingState {
-        return {
-            ...this.state,
-            errorsBySlide: new Map(this.state.errorsBySlide),
-            allErrors: [...this.state.allErrors],
-        };
-    }
-
-    addError(error: LintingError): void {
-        const slideErrors = this.state.errorsBySlide.get(error.slideId) || [];
-        const existingErrorIndex = slideErrors.findIndex(
-            (e) => e.id === error.id,
-        );
-
-        if (existingErrorIndex >= 0) {
-            slideErrors[existingErrorIndex] = error;
-        } else {
-            slideErrors.push(error);
-        }
-
-        this.state.errorsBySlide.set(error.slideId, slideErrors);
-        this.updateAllErrors();
-    }
-
-    removeError(errorId: string): boolean {
-        let removed = false;
-
-        for (const [slideId, errors] of this.state.errorsBySlide.entries()) {
-            const filteredErrors = errors.filter((e) => e.id !== errorId);
-            if (filteredErrors.length !== errors.length) {
-                this.state.errorsBySlide.set(slideId, filteredErrors);
-                removed = true;
-                break;
-            }
-        }
-
-        if (removed) {
-            this.updateAllErrors();
-        }
-
-        return removed;
-    }
-
     clearSlideErrors(slideId: string): void {
         this.state.errorsBySlide.delete(slideId);
         this.updateAllErrors();
@@ -77,16 +34,6 @@ export class LintingStateManager {
 
     getAllErrors(): LintingError[] {
         return [...this.state.allErrors];
-    }
-
-    getErrorsByType(type: LintingError['type']): LintingError[] {
-        return this.state.allErrors.filter((error) => error.type === type);
-    }
-
-    getErrorsBySeverity(severity: LintingError['severity']): LintingError[] {
-        return this.state.allErrors.filter(
-            (error) => error.severity === severity,
-        );
     }
 
     hasErrors(): boolean {

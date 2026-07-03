@@ -6,8 +6,7 @@ import type {
     Slide,
     TextBox,
 } from '../../common/domain/entities/types';
-import { ElementValidator } from '../presentation/element-validator';
-import type { PresentationService } from '../presentation/service';
+import { PRESENTATION_DIMENSIONS } from '../../common/utils/constants';
 import { textMeasurementService } from '../text-measurement/service';
 import { LintingEventBus } from './event-bus';
 import { LintingStateManager } from './state';
@@ -16,15 +15,10 @@ import type { LintingError, SlideLintingResult } from './types';
 export class LintingService {
     private state: LintingStateManager;
     private eventBus: LintingEventBus;
-    private presentationService: PresentationService | null = null;
 
     constructor() {
         this.state = new LintingStateManager();
         this.eventBus = new LintingEventBus();
-    }
-
-    setPresentationService(presentationService: PresentationService): void {
-        this.presentationService = presentationService;
     }
 
     async lintSlide(slide: Slide): Promise<SlideLintingResult> {
@@ -52,130 +46,7 @@ export class LintingService {
             result,
         );
 
-        if (errors.length > 0) {
-            this.eventBus.broadcastToWindows(
-                LintingEventBus.events.ERRORS_UPDATED,
-                {
-                    slideId,
-                    errors,
-                },
-            );
-        }
-
         return result;
-    }
-
-    async checkDOMOverlap(elementId: string): Promise<LintingError[]> {
-        const errors: LintingError[] = [];
-
-        try {
-            const overlapCheck = await ElementValidator.checkElementOverlap(
-                elementId,
-                0,
-            );
-
-            if (overlapCheck.isOutsideSlide) {
-                errors.push(
-                    this.createError(
-                        `${elementId}-outside-slide`,
-                        elementId,
-                        'unknown',
-                        'outside_slide',
-                        `ELEMENT_OUTSIDE_SLIDE: Element "${elementId}" is positioned outside slide boundaries (1280x720). Current position causes element to extend beyond slide edges.`,
-                        'warning',
-                        overlapCheck.suggestedPosition
-                            ? `ACTION_REQUIRED: Use updateTextElement, updateShape, or updateImageElement tool to reposition element to x:${overlapCheck.suggestedPosition.x}, y:${overlapCheck.suggestedPosition.y}`
-                            : 'ACTION_REQUIRED: Use appropriate update tool to move element within slide boundaries (0-1280 width, 0-720 height)',
-                    ),
-                );
-            }
-
-            if (overlapCheck.hasOverlap) {
-                errors.push(
-                    this.createError(
-                        `${elementId}-overlap`,
-                        elementId,
-                        'unknown',
-                        'dom_overlap',
-                        `ELEMENT_OVERLAP_DETECTED: Element "${elementId}" overlaps with elements: ${overlapCheck.overlappingElements.join(', ')}. Visual collision detected.`,
-                        'info',
-                        overlapCheck.suggestedPosition
-                            ? `ACTION_SUGGESTED: Use appropriate update tool to move element to non-overlapping position x:${overlapCheck.suggestedPosition.x}, y:${overlapCheck.suggestedPosition.y}, or use changeElementZIndex tool to control layering`
-                            : 'ACTION_SUGGESTED: Use appropriate update tool to adjust element positions or changeElementZIndex tool to manage visual layering',
-                    ),
-                );
-            }
-        } catch (error) {
-            console.warn('DOM overlap detection failed:', error);
-        }
-
-        return errors;
-    }
-
-    async checkTextOverflow(elementId: string): Promise<LintingError[]> {
-        const errors: LintingError[] = [];
-
-        try {
-            const actualDimensions =
-                await textMeasurementService.getActualElementDimensions(
-                    elementId,
-                );
-
-            if (
-                actualDimensions?.elementFound &&
-                actualDimensions.textOverflow
-            ) {
-                const { textOverflow } = actualDimensions;
-
-                if (textOverflow.overflowsContainer) {
-                    errors.push(
-                        this.createError(
-                            `${elementId}-text-overflow`,
-                            elementId,
-                            'unknown',
-                            'text_overflow',
-                            `TEXT_CONTAINER_OVERFLOW: Text in element "${elementId}" exceeds container boundaries. Text size: ${textOverflow.actualTextWidth}x${textOverflow.actualTextHeight}px, Container: ${textOverflow.containerWidth}x${textOverflow.containerHeight}px`,
-                            'warning',
-                            'ACTION_REQUIRED: Use updateTextElement tool to increase container width/height or reduce font size to fit text within container',
-                        ),
-                    );
-                }
-
-                if (textOverflow.overflowsSlide) {
-                    errors.push(
-                        this.createError(
-                            `${elementId}-slide-overflow`,
-                            elementId,
-                            'unknown',
-                            'outside_slide',
-                            `TEXT_SLIDE_OVERFLOW: Text in element "${elementId}" extends beyond slide boundaries (1280x720). Text content exceeds slide viewport.`,
-                            'warning',
-                            'ACTION_REQUIRED: Use updateTextElement tool to reposition text within slide boundaries or reduce text size',
-                        ),
-                    );
-                }
-            }
-
-            const textDimensions =
-                await textMeasurementService.measureQuillText(elementId);
-            if (textDimensions.lineBreakInfo?.includes('TEXT OVERFLOW')) {
-                errors.push(
-                    this.createError(
-                        `${elementId}-line-overflow`,
-                        elementId,
-                        'unknown',
-                        'text_overflow',
-                        `TEXT_LINE_OVERFLOW: Text content in element "${elementId}" causes unexpected line breaks and potential overflow. Single-line text intended but wrapping occurred.`,
-                        'info',
-                        'ACTION_SUGGESTED: Use updateTextElement tool to increase width if single-line text layout is desired',
-                    ),
-                );
-            }
-        } catch (error) {
-            console.warn('Text overflow detection failed:', error);
-        }
-
-        return errors;
     }
 
     validateBarChartData(data: { x: any[]; y: any[] }): LintingError[] {
@@ -237,10 +108,6 @@ export class LintingService {
             return this.state.hasSlideErrors(slideId);
         }
         return this.state.hasErrors();
-    }
-
-    getErrorsBySeverity(severity: LintingError['severity']): LintingError[] {
-        return this.state.getErrorsBySeverity(severity);
     }
 
     onEvent(eventName: string, listener: (...args: any[]) => void): void {
@@ -450,8 +317,8 @@ export class LintingService {
             return errors;
         }
 
-        const SLIDE_WIDTH = 1280;
-        const SLIDE_HEIGHT = 720;
+        const SLIDE_WIDTH = PRESENTATION_DIMENSIONS.WIDTH;
+        const SLIDE_HEIGHT = PRESENTATION_DIMENSIONS.HEIGHT;
 
         const textRight = currentTextboxSize.x + currentTextboxSize.width;
         const textBottom = currentTextboxSize.y + currentTextboxSize.height;
@@ -549,8 +416,6 @@ export class LintingService {
                     shape.id,
                     textBox.id,
                 );
-
-            console.log(zIndexComparison);
 
             if (
                 zIndexComparison.elementAFound &&
@@ -665,10 +530,8 @@ export class LintingService {
 
     private isTextPartlyOutsideShape(
         textBounds: { x: number; y: number; width: number; height: number },
-        shapeBounds: { x: number; y?: number; width: number; height: number },
+        shapeBounds: { x: number; y: number; width: number; height: number },
     ): boolean {
-        if (!shapeBounds.y) return false;
-
         const textLeft = textBounds.x;
         const textRight = textBounds.x + textBounds.width;
         const textTop = textBounds.y;
@@ -710,15 +573,16 @@ export class LintingService {
         textA: { x?: number; y?: number; width?: number; height?: number },
         textB: { x?: number; y?: number; width?: number; height?: number },
     ): boolean {
+        // == null (not falsy) checks: 0 is a valid coordinate at slide edges.
         if (
-            !textA.x ||
-            !textA.y ||
-            !textA.width ||
-            !textA.height ||
-            !textB.x ||
-            !textB.y ||
-            !textB.width ||
-            !textB.height
+            textA.x == null ||
+            textA.y == null ||
+            textA.width == null ||
+            textA.height == null ||
+            textB.x == null ||
+            textB.y == null ||
+            textB.width == null ||
+            textB.height == null
         ) {
             return false;
         }
@@ -748,8 +612,8 @@ export class LintingService {
         slide: Slide,
     ): LintingError[] {
         const errors: LintingError[] = [];
-        const SLIDE_WIDTH = 1280;
-        const SLIDE_HEIGHT = 720;
+        const SLIDE_WIDTH = PRESENTATION_DIMENSIONS.WIDTH;
+        const SLIDE_HEIGHT = PRESENTATION_DIMENSIONS.HEIGHT;
 
         const elementRight = element.position.x + element.size.width;
         const elementBottom = element.position.y + element.size.height;

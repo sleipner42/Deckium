@@ -1,24 +1,11 @@
 import React, { createContext, ReactNode, useContext } from 'react';
+import type {
+    LintingError,
+    LintingSeverity,
+    SlideLintingResult,
+} from '../../../common/domain/entities/linting-types';
 import { Slide } from '../../../common/domain/entities/types';
 import { useMainProcessLinting } from '../hooks/useMainProcessLinting';
-
-interface LintingError {
-    id: string;
-    elementId: string;
-    slideId: string;
-    type: string;
-    message: string;
-    severity: 'error' | 'warning' | 'info';
-    suggestedFix?: string;
-    createdAt: Date;
-}
-
-interface SlideLintingResult {
-    slideId: string;
-    errors: LintingError[];
-    hasErrors: boolean;
-    lintedAt: Date;
-}
 
 interface LintingContextState {
     allErrors: LintingError[];
@@ -31,11 +18,8 @@ interface LintingContextActions {
     getLintingErrors: (slideId?: string) => Promise<LintingError[]>;
     clearErrors: (slideId?: string) => Promise<void>;
     hasErrors: (slideId?: string) => Promise<boolean>;
-    getErrorsBySeverity: (
-        severity: 'error' | 'warning' | 'info',
-    ) => Promise<LintingError[]>;
     getSlideErrors: (slideId: string) => LintingError[];
-    getErrorCount: (severity?: 'error' | 'warning' | 'info') => number;
+    getErrorCount: (severity?: LintingSeverity) => number;
     hasSlideErrors: (slideId: string) => boolean;
 }
 
@@ -60,7 +44,6 @@ export const LintingProvider: React.FC<LintingProviderProps> = ({
         getLintingErrors,
         clearErrors,
         hasErrors,
-        getErrorsBySeverity,
         getSlideErrors,
         getErrorCount,
         hasSlideErrors,
@@ -74,7 +57,6 @@ export const LintingProvider: React.FC<LintingProviderProps> = ({
         getLintingErrors,
         clearErrors,
         hasErrors,
-        getErrorsBySeverity,
         getSlideErrors,
         getErrorCount,
         hasSlideErrors,

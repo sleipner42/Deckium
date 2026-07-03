@@ -65,8 +65,6 @@ export type LintingChannels =
     | 'linting:get-errors'
     | 'linting:clear-errors'
     | 'linting:has-errors'
-    | 'linting:get-errors-by-severity'
-    | 'linting:errors-updated'
     | 'linting:slide-linted'
     | 'linting:errors-cleared';
 
@@ -279,12 +277,6 @@ const electronHandler = {
         },
         hasErrors(slideId?: string) {
             return ipcRenderer.invoke('linting:has-errors', slideId);
-        },
-        getErrorsBySeverity(severity: string) {
-            return ipcRenderer.invoke(
-                'linting:get-errors-by-severity',
-                severity,
-            );
         },
     },
 

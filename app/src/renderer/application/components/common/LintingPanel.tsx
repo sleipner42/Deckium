@@ -1,17 +1,7 @@
 import React, { useMemo, useState } from 'react';
+import type { LintingError } from '../../../../common/domain/entities/linting-types';
 import { useLinting } from '../../context/LintingContext';
 import { usePresentation } from '../../context/PresentationContext';
-
-interface LintingError {
-    id: string;
-    elementId: string;
-    slideId: string;
-    type: string;
-    message: string;
-    severity: 'error' | 'warning' | 'info';
-    suggestedFix?: string;
-    createdAt: Date;
-}
 
 const getSeverityIcon = (severity: string) => {
     switch (severity) {
