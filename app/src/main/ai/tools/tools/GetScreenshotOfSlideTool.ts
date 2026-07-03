@@ -44,15 +44,19 @@ export class GetScreenshotOfSlideTool extends BaseTool {
             };
         }
 
-        // Set slide only in hidden window to avoid disturbing the user's current view
+        // Set slide only in hidden window to avoid disturbing the user's
+        // current view; resolves once the hidden window reports it rendered.
         await setSlideInHiddenWindow(slideId);
-
-        await new Promise((resolve) => setTimeout(resolve, 800));
 
         const screenshot = await getScreenshotFromSecondaryWindow();
 
+        const slideIndex = currentPresentation.slides.indexOf(slide) + 1;
         return {
             success: true,
+            data: {
+                slideId,
+                message: `Screenshot of slide ${slideIndex} (${slideId}) attached.`,
+            },
             screenshot,
             editedSlidesIds: [],
         };

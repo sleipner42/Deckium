@@ -2,8 +2,18 @@ import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { AIToolResult } from '../../../common/domain/entities/ai-types';
 import { UUID } from '../../../common/domain/entities/types';
+import type { PDFExportService } from '../../pdf-export/service';
 import { PresentationService } from '../../presentation/service';
+import type { LLMSettingsService } from '../../settings/llm-settings-service';
 import { logger } from '../../utils/logger';
+
+// Extra main-process services a tool may need beyond the presentation.
+// Optional so tools (and their tests) that only need the presentation keep
+// their two-argument call shape.
+export interface ToolServices {
+    settings?: LLMSettingsService;
+    pdfExport?: PDFExportService;
+}
 
 export abstract class AITool {
     id: UUID;
@@ -21,6 +31,7 @@ export abstract class AITool {
     abstract execute(
         params: Record<string, any>,
         presentationService: PresentationService,
+        services?: ToolServices,
     ): Promise<AIToolResult>;
 
     protected logToolExecution(

@@ -1,10 +1,35 @@
+import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createImage } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 import { slideNotFound } from '../utils/errors';
+import { fetchImage, probeDimensions } from '../utils/image-probe';
 import { xSchema, ySchema, zIndexSchema } from '../utils/schemas';
+
+function faviconUrl(domain: string): string {
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+}
+
+// The favicon service answers unknown domains with a generic globe icon
+// instead of an error. To tell "real logo" from "globe", we fetch the icon
+// for a domain that certainly does not exist once and remember its hash.
+let defaultIconHash: string | null | undefined;
+
+async function getDefaultIconHash(): Promise<string | null> {
+    if (defaultIconHash !== undefined) {
+        return defaultIconHash;
+    }
+    const fetched = await fetchImage(
+        faviconUrl('this-domain-does-not-exist-a7f3k9.com'),
+    );
+    defaultIconHash =
+        fetched.ok && fetched.buffer
+            ? createHash('sha1').update(fetched.buffer).digest('hex')
+            : null;
+    return defaultIconHash;
+}
 
 export class AddLogoTool extends BaseTool {
     name = 'addLogo';
@@ -60,7 +85,28 @@ export class AddLogoTool extends BaseTool {
         const normalizedDomain = normalizeDomain(domain);
         const size = params.size !== undefined ? Number(params.size) : 64;
         const zIndex = params.zIndex !== undefined ? Number(params.zIndex) : 1;
-        const logoUrl = `https://www.google.com/s2/favicons?domain=${normalizedDomain}&sz=128`;
+        const logoUrl = faviconUrl(normalizedDomain);
+
+        const fetched = await fetchImage(logoUrl);
+        if (!fetched.ok || !fetched.buffer) {
+            return {
+                success: false,
+                error: `Could not fetch a logo for '${normalizedDomain}' (${fetched.statusText ?? 'network error'}). Check the domain or use generateImage/text instead.`,
+            };
+        }
+
+        const [logoHash, defaultHash] = [
+            createHash('sha1').update(fetched.buffer).digest('hex'),
+            await getDefaultIconHash(),
+        ];
+        if (defaultHash !== null && logoHash === defaultHash) {
+            return {
+                success: false,
+                error: `No logo found for '${normalizedDomain}' — the favicon service returned its generic default icon, which would look wrong on the slide. Check the domain spelling (e.g. 'ikea.com') or use generateImage instead.`,
+            };
+        }
+
+        const iconDimensions = probeDimensions(fetched.buffer);
 
         const element = createImage({
             content: logoUrl,
@@ -83,7 +129,7 @@ export class AddLogoTool extends BaseTool {
                 elementId: element.id,
                 slideId: updatedSlide.id,
                 domain: normalizedDomain,
-                message: `Added ${normalizedDomain} logo at (${Number(x)}, ${Number(y)}) sized ${size}x${size}.`,
+                message: `Added ${normalizedDomain} logo at (${Number(x)}, ${Number(y)}) sized ${size}x${size}${iconDimensions ? ` (source icon ${iconDimensions.width}x${iconDimensions.height}px)` : ''}.`,
             },
             editedSlidesIds: [updatedSlide.id],
         };

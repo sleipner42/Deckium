@@ -12,7 +12,7 @@ export class UpdateImageElementTool extends BaseTool {
     name = 'updateImageElement';
 
     description =
-        'Update an existing image element position, size, or z-index on a slide. When updating size, specify either width OR height and the other dimension will be calculated to maintain the current aspect ratio.';
+        'Update an existing raster image element position, size, or z-index on a slide. When updating size, specify either width OR height and the other dimension will be calculated to maintain the current aspect ratio. To change the markup of an SVG image, use updateSVGImage instead.';
 
     inputSchema = z.object({
         elementId: z.string().describe('The ID of the image element to update'),

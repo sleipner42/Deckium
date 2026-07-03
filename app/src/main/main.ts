@@ -1,6 +1,6 @@
 import path from 'node:path';
 import * as dotenv from 'dotenv';
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { setupAIIPC } from './ai/ipc-handler';
 import { AIService } from './ai/service';
 import { AppImageIntegration } from './appimage-integration';
@@ -29,13 +29,48 @@ let pdfExportService: PDFExportService;
 let powerpointImportHandler: PowerPointImportIPCHandler;
 let menuBuilder: MenuBuilder;
 
+// How long to wait for the hidden window's render ack before proceeding
+// anyway. The ack normally arrives in well under this; the timeout only
+// guards against a hung or reloading renderer.
+const SLIDE_RENDER_TIMEOUT_MS = 1500;
+
+function waitForSlideRendered(
+    slideId: string,
+    timeoutMs: number,
+): Promise<void> {
+    return new Promise((resolve) => {
+        const cleanup = () => {
+            clearTimeout(timer);
+            ipcMain.removeListener('presentation:slide-rendered', listener);
+        };
+        const listener = (
+            _event: Electron.IpcMainEvent,
+            renderedSlideId: string,
+        ) => {
+            if (renderedSlideId !== slideId) {
+                return;
+            }
+            cleanup();
+            resolve();
+        };
+        const timer = setTimeout(() => {
+            cleanup();
+            resolve();
+        }, timeoutMs);
+        ipcMain.on('presentation:slide-rendered', listener);
+    });
+}
+
 export async function setSlideInHiddenWindow(slideId: string): Promise<void> {
     if (!secondWindow) {
         throw new Error('Secondary window is not available');
     }
 
-    // Send the slide change directly to the hidden window only
+    // Start listening for the render ack before sending, then send the slide
+    // change directly to the hidden window only.
+    const rendered = waitForSlideRendered(slideId, SLIDE_RENDER_TIMEOUT_MS);
     secondWindow.webContents.send('presentation:set-selected-slide', slideId);
+    await rendered;
 }
 
 export function getMenuBuilder(): MenuBuilder | null {
@@ -142,6 +177,7 @@ const createWindow = async () => {
         }
 
         textMeasurementService.setMainWindow(mainWindow);
+        lintingService?.setMainWindow(mainWindow);
     });
 
     mainWindow.on('closed', () => {
@@ -240,6 +276,7 @@ if (!gotTheLock) {
                 presentationService,
                 lintingService,
             );
+            aiService.setPdfExportService(pdfExportService);
 
             setupAIIPC(aiService);
             setupPresentationIPC(presentationService);

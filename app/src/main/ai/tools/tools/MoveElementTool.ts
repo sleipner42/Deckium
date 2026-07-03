@@ -2,14 +2,14 @@ import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
-import { elementNotFoundInPresentation } from '../utils/errors';
+import { elementNotFoundInPresentation, slideNotFound } from '../utils/errors';
 import { heightSchema, widthSchema, xSchema, ySchema } from '../utils/schemas';
 
 export class MoveElementTool extends BaseTool {
     name = 'moveElement';
 
     description =
-        'Move and/or resize any element (text, shape, image, chart, plot) regardless of its type. Provide at least one of x, y, width, height; omitted values stay unchanged. Prefer this tool for pure move/resize operations; use the type-specific update tools to change content or styling.';
+        'Move and/or resize any element (text, shape, image, chart, plot) regardless of its type, optionally moving it to a different slide via targetSlideId. Provide at least one of x, y, width, height, targetSlideId; omitted values stay unchanged. Prefer this tool for pure move/resize operations; use the type-specific update tools to change content or styling.';
 
     inputSchema = z
         .object({
@@ -20,15 +20,23 @@ export class MoveElementTool extends BaseTool {
             y: ySchema(' (top-left corner of the element)').optional(),
             width: widthSchema().optional(),
             height: heightSchema().optional(),
+            targetSlideId: z
+                .string()
+                .optional()
+                .describe(
+                    'Move the element to this slide (keeps its ID). Omit to stay on the current slide.',
+                ),
         })
         .refine(
             (value) =>
                 value.x !== undefined ||
                 value.y !== undefined ||
                 value.width !== undefined ||
-                value.height !== undefined,
+                value.height !== undefined ||
+                value.targetSlideId !== undefined,
             {
-                message: 'Provide at least one of x, y, width, or height',
+                message:
+                    'Provide at least one of x, y, width, height, or targetSlideId',
             },
         );
 
@@ -36,7 +44,7 @@ export class MoveElementTool extends BaseTool {
         params: Record<string, any>,
         presentationService: PresentationService,
     ): Promise<AIToolResult> {
-        const { elementId, x, y, width, height } = params;
+        const { elementId, x, y, width, height, targetSlideId } = params;
 
         if (!elementId) {
             return {
@@ -49,11 +57,12 @@ export class MoveElementTool extends BaseTool {
             x === undefined &&
             y === undefined &&
             width === undefined &&
-            height === undefined
+            height === undefined &&
+            targetSlideId === undefined
         ) {
             return {
                 success: false,
-                error: 'Provide at least one of x, y, width, or height',
+                error: 'Provide at least one of x, y, width, height, or targetSlideId',
             };
         }
 
@@ -76,6 +85,39 @@ export class MoveElementTool extends BaseTool {
             };
         }
 
+        // Cross-slide move: delete from the source slide and re-add (same
+        // element object, same ID) on the target, as one undo step.
+        let movedToSlideId: string | null = null;
+        if (targetSlideId !== undefined && targetSlideId !== slideId) {
+            const targetSlide = presentation.slides.find(
+                (s) => s.id === targetSlideId,
+            );
+            if (!targetSlide) {
+                return {
+                    success: false,
+                    error: slideNotFound(targetSlideId, presentation),
+                };
+            }
+
+            presentationService.beginTransaction('moveElement');
+            try {
+                presentationService.deleteElement(elementId);
+                const added = presentationService.addElement(
+                    targetSlideId,
+                    element,
+                );
+                if (!added) {
+                    return {
+                        success: false,
+                        error: `Failed to move element to slide ${targetSlideId}`,
+                    };
+                }
+            } finally {
+                presentationService.endTransaction('moveElement');
+            }
+            movedToSlideId = targetSlideId;
+        }
+
         const updates: {
             position?: { x: number; y: number };
             size?: { width: number; height: number };
@@ -96,32 +138,39 @@ export class MoveElementTool extends BaseTool {
             };
         }
 
-        const updatedSlide = presentationService.updateElement(
-            elementId,
-            updates,
-        );
-
-        if (!updatedSlide) {
-            return {
-                success: false,
-                error: `Failed to update element with ID ${elementId}`,
-            };
+        if (Object.keys(updates).length > 0) {
+            const updatedSlide = presentationService.updateElement(
+                elementId,
+                updates,
+            );
+            if (!updatedSlide) {
+                return {
+                    success: false,
+                    error: `Failed to update element with ID ${elementId}`,
+                };
+            }
         }
 
         const finalPosition = updates.position ?? element.position;
         const finalSize = updates.size ?? element.size;
+        const finalSlideId = movedToSlideId ?? slideId;
+        const movedNote = movedToSlideId
+            ? ` and moved to slide ${movedToSlideId}`
+            : '';
 
         return {
             success: true,
             data: {
                 elementId,
-                slideId,
+                slideId: finalSlideId,
                 elementType: element.type,
                 position: finalPosition,
                 size: finalSize,
-                message: `Element moved/resized: now at (${finalPosition.x}, ${finalPosition.y}) with size ${finalSize.width}x${finalSize.height}px.`,
+                message: `Element moved/resized: now at (${finalPosition.x}, ${finalPosition.y}) with size ${finalSize.width}x${finalSize.height}px${movedNote}.`,
             },
-            editedSlidesIds: [slideId],
+            editedSlidesIds: movedToSlideId
+                ? [slideId, movedToSlideId]
+                : [slideId],
         };
     }
 }

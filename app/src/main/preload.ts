@@ -31,6 +31,7 @@ export type PresentationChannels =
     | 'presentation:meta-updated'
     | 'presentation:initialized'
     | 'presentation:set-selected-slide'
+    | 'presentation:slide-rendered'
     | 'presentation:saved'
     | 'presentation:loaded'
     | 'presentation:get-file-path'

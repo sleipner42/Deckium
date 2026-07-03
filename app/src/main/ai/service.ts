@@ -9,6 +9,7 @@ import {
 import type { UUID } from '../../common/domain/entities/types';
 import type { MessageContent } from '../../common/domain/interfaces/ai-service.interface';
 import { LintingService } from '../linting/service';
+import type { PDFExportService } from '../pdf-export/service';
 import { PresentationService } from '../presentation/service';
 import { generateSlideGrid } from '../presentation/utils';
 import { LLMSettingsService } from '../settings/llm-settings-service';
@@ -71,6 +72,13 @@ export class AIService {
     // Presentation state as of the end of each thread's last agent turn,
     // used to detect manual user edits between turns.
     private threadSnapshots: Map<UUID, PresentationSnapshot> = new Map();
+
+    // Set after construction (the PDF service needs windows that exist later).
+    private pdfExportService?: PDFExportService;
+
+    setPdfExportService(service: PDFExportService): void {
+        this.pdfExportService = service;
+    }
 
     constructor(
         settings: LLMSettingsService,
@@ -217,6 +225,10 @@ export class AIService {
             this.toolsService,
             this.presentationService,
             this.lintingService,
+            {
+                settings: this.settings,
+                pdfExport: this.pdfExportService,
+            },
         );
 
         const loop = new AgentLoopState(this.state, this.eventBus, thread);

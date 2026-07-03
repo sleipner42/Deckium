@@ -60,7 +60,68 @@ describe('CalculatorTool', () => {
         );
 
         expect(result.success).toBe(false);
-        expect(result.error).toContain('Invalid');
+        expect(result.error).toContain('Unknown function');
+    });
+
+    describe('code injection resistance', () => {
+        const injections = [
+            'sqrt(4) && process.exit(1)',
+            'min(1, globalThis.x = 5)',
+            "pow(2, require('fs'))",
+            'sqrt(4); console.log(1)',
+            'constructor.constructor("return 1")()',
+            '[].map(min)',
+        ];
+
+        for (const expression of injections) {
+            it(`rejects: ${expression}`, async () => {
+                const result = await calculatorTool.execute(
+                    { expression },
+                    mockPresentationService as any,
+                );
+
+                expect(result.success).toBe(false);
+            });
+        }
+
+        it('never executes side effects', async () => {
+            const globalRecord = globalThis as Record<string, unknown>;
+            await calculatorTool.execute(
+                { expression: 'min(1, globalThis.__calcInjected = 5)' },
+                mockPresentationService as any,
+            );
+            expect(globalRecord.__calcInjected).toBeUndefined();
+        });
+    });
+
+    it('handles modulo and nested functions', async () => {
+        const result = await calculatorTool.execute(
+            { expression: 'round(sqrt(pow(3, 2) + pow(4, 2))) % 3' },
+            mockPresentationService as any,
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.data?.result).toBe(2);
+    });
+
+    it('handles unary minus', async () => {
+        const result = await calculatorTool.execute(
+            { expression: '-5 + 10' },
+            mockPresentationService as any,
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.data?.result).toBe(5);
+    });
+
+    it('reports division producing non-finite results', async () => {
+        const result = await calculatorTool.execute(
+            { expression: '1/0' },
+            mockPresentationService as any,
+        );
+
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('not a finite number');
     });
 
     it('should return error for missing expression', async () => {

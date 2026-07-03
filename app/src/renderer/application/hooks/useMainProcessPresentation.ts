@@ -183,6 +183,20 @@ export const useMainProcessPresentation = () => {
             (...args: unknown[]) => {
                 const slideId = args[0] as string;
                 setSelectedSlide(slides.find((s) => s.id === slideId) || null);
+                // Ack back to the main process once the slide has actually
+                // painted (double rAF = after the next committed frame, plus
+                // a small delay for async chart mounts). The main process
+                // uses this to know when a screenshot/PDF capture is safe.
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        setTimeout(() => {
+                            electronAPI.ipcRenderer.sendMessage(
+                                'presentation:slide-rendered',
+                                slideId,
+                            );
+                        }, 100);
+                    });
+                });
             },
         );
 

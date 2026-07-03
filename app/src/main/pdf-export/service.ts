@@ -27,12 +27,32 @@ export class PDFExportService {
     }
 
     /**
-     * Export the entire presentation to PDF
+     * Export the entire presentation to PDF, asking the user where to save.
+     * Returns null if the user cancels the save dialog.
      */
     async exportToPDF(
         mainWindow: BrowserWindow,
         onProgress?: (progress: PDFExportProgress) => void,
     ): Promise<string | null> {
+        const presentation = this.presentationService.getPresentation();
+
+        // Show save dialog
+        const savePath = await this.showSaveDialog(mainWindow, presentation);
+        if (!savePath) {
+            return null; // User cancelled
+        }
+
+        return this.exportToFile(savePath, onProgress);
+    }
+
+    /**
+     * Export the entire presentation to PDF at a caller-chosen path (no
+     * dialog). Used by the AI tool; the menu flow wraps this with a dialog.
+     */
+    async exportToFile(
+        savePath: string,
+        onProgress?: (progress: PDFExportProgress) => void,
+    ): Promise<string> {
         try {
             console.log('Starting PDF export...');
 
@@ -59,15 +79,6 @@ export class PDFExportService {
                     `Slide ${index + 1}: ID=${slide.id}, Title="${(slide as { title?: string }).title || 'Untitled'}"`,
                 );
             });
-
-            // Show save dialog
-            const savePath = await this.showSaveDialog(
-                mainWindow,
-                presentation,
-            );
-            if (!savePath) {
-                return null; // User cancelled
-            }
 
             onProgress?.({
                 slideIndex: 0,
@@ -158,10 +169,8 @@ export class PDFExportService {
             console.log(
                 `Setting slide ${slide.id} in hidden viewer for PDF generation`,
             );
+            // Resolves once the hidden window reports the slide rendered
             await setSlideInHiddenWindow(slide.id);
-
-            // Wait for rendering
-            await new Promise((resolve) => setTimeout(resolve, 800));
 
             // Generate PDF for this slide
             console.log(
@@ -259,10 +268,8 @@ export class PDFExportService {
             console.log(
                 `Setting slide ${slide.id} in hidden viewer for capture`,
             );
+            // Resolves once the hidden window reports the slide rendered
             await setSlideInHiddenWindow(slide.id);
-
-            // Wait for rendering and slide change to take effect
-            await new Promise((resolve) => setTimeout(resolve, 800));
 
             // Capture screenshot at higher resolution
             console.log(`Capturing screenshot for slide ${i + 1}`);

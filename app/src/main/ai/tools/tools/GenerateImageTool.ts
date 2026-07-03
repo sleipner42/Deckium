@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { createImage } from '../../../../common/domain/entities/element-factory';
 import type { PresentationService } from '../../../presentation/service';
+import type { ToolServices } from '../AITool';
 import { BaseTool } from '../BaseTool';
 import { slideNotFound } from '../utils/errors';
 import {
@@ -41,14 +42,18 @@ export class GenerateImageTool extends BaseTool {
     protected async executeImpl(
         params: Record<string, any>,
         presentationService: PresentationService,
+        services?: ToolServices,
     ): Promise<AIToolResult> {
         const { slideId, prompt, x, y } = params;
 
-        const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+        const apiKey =
+            process.env.GEMINI_API_KEY ||
+            process.env.GOOGLE_API_KEY ||
+            services?.settings?.getProviderSettings('google')?.apiKey;
         if (!apiKey) {
             return {
                 success: false,
-                error: 'Image generation is not configured. Set GEMINI_API_KEY in the environment.',
+                error: 'Image generation is not configured. Add a Google AI API key in Settings (LLM provider "Google AI") or set GEMINI_API_KEY in the environment.',
             };
         }
 
@@ -79,13 +84,23 @@ export class GenerateImageTool extends BaseTool {
         }
 
         const model = createGoogleGenerativeAI({ apiKey })(IMAGE_MODEL);
-        const result = await generateText({
-            model,
-            prompt,
-            providerOptions: {
-                google: { responseModalities: ['IMAGE'] },
-            },
-        });
+        let result: Awaited<ReturnType<typeof generateText>>;
+        try {
+            result = await generateText({
+                model,
+                prompt,
+                providerOptions: {
+                    google: { responseModalities: ['IMAGE'] },
+                },
+            });
+        } catch (error) {
+            const detail =
+                error instanceof Error ? error.message : 'Unknown error';
+            return {
+                success: false,
+                error: `Image generation failed (${IMAGE_MODEL}): ${detail}. This is usually an invalid API key, exhausted quota, or a network problem — the slide was not changed.`,
+            };
+        }
 
         const imageFile = result.files.find((file) =>
             file.mediaType?.startsWith('image/'),

@@ -89,8 +89,90 @@ describe('MoveElementTool', () => {
 
         expect(result.success).toBe(false);
         expect(result.error).toContain(
-            'at least one of x, y, width, or height',
+            'at least one of x, y, width, height, or targetSlideId',
         );
+    });
+
+    describe('cross-slide moves', () => {
+        it('moves an element to another slide, keeping its ID', async () => {
+            const source = mockService.addSlide();
+            const target = mockService.addSlide();
+            mockService.addElement(
+                source.id,
+                mockService.createMockTextElement({ id: 'mover' }),
+            );
+
+            const result = await tool.execute(
+                { elementId: 'mover', targetSlideId: target.id },
+                mockService as any,
+            );
+
+            expect(result.success).toBe(true);
+            expect(result.data.slideId).toBe(target.id);
+            expect(result.editedSlidesIds?.sort()).toEqual(
+                [source.id, target.id].sort(),
+            );
+            const stored = mockService.getElementById('mover');
+            expect(stored?.slide.id).toBe(target.id);
+            expect(mockService.getSlideById(source.id)?.elements).toHaveLength(
+                0,
+            );
+        });
+
+        it('moves and repositions in one call', async () => {
+            const source = mockService.addSlide();
+            const target = mockService.addSlide();
+            mockService.addElement(
+                source.id,
+                mockService.createMockTextElement({ id: 'mover' }),
+            );
+
+            const result = await tool.execute(
+                { elementId: 'mover', targetSlideId: target.id, x: 10, y: 20 },
+                mockService as any,
+            );
+
+            expect(result.success).toBe(true);
+            expect(result.data.position).toEqual({ x: 10, y: 20 });
+            expect(mockService.getElementById('mover')?.slide.id).toBe(
+                target.id,
+            );
+        });
+
+        it('errors with slide listing for a missing target slide', async () => {
+            const source = mockService.addSlide();
+            mockService.addElement(
+                source.id,
+                mockService.createMockTextElement({ id: 'mover' }),
+            );
+
+            const result = await tool.execute(
+                { elementId: 'mover', targetSlideId: 'nope' },
+                mockService as any,
+            );
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain("Slide 'nope' not found");
+            expect(mockService.getElementById('mover')?.slide.id).toBe(
+                source.id,
+            );
+        });
+
+        it('treats same-slide targetSlideId as a no-op move', async () => {
+            const slide = mockService.addSlide();
+            mockService.addElement(
+                slide.id,
+                mockService.createMockTextElement({ id: 'mover' }),
+            );
+
+            const result = await tool.execute(
+                { elementId: 'mover', targetSlideId: slide.id },
+                mockService as any,
+            );
+
+            expect(result.success).toBe(true);
+            expect(result.data.slideId).toBe(slide.id);
+        });
     });
 
     it('should accept 0 as a valid coordinate', async () => {

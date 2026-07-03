@@ -3,6 +3,7 @@ import type { AIToolResult } from '../../../common/domain/entities/ai-types';
 import type { LintingService } from '../../linting/service';
 import type { PresentationService } from '../../presentation/service';
 import { generateSlideGrid } from '../../presentation/utils';
+import type { ToolServices } from './AITool';
 import type { AIToolsService } from './tools';
 
 export type ToolEventListener = (
@@ -21,6 +22,7 @@ export function buildToolSet(
     toolsService: AIToolsService,
     presentationService: PresentationService,
     lintingService: LintingService,
+    services?: ToolServices,
     onToolEvent?: ToolEventListener,
 ): ToolSet {
     const toolSet: ToolSet = {};
@@ -33,6 +35,7 @@ export function buildToolSet(
                 const result = await aiTool.execute(
                     params,
                     presentationService,
+                    services,
                 );
                 onToolEvent?.(aiTool.name, params, result);
 

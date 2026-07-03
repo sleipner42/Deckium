@@ -94,6 +94,10 @@ export class MockPresentationService {
         return this.mockPresentation.slides[slideIndex];
     }
 
+    beginTransaction(_owner?: string): void {}
+
+    endTransaction(_owner?: string): void {}
+
     reorderSlides(fromIndex: number, toIndex: number): Presentation {
         const slides = this.mockPresentation.slides;
         const [moved] = slides.splice(fromIndex, 1);

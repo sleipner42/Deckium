@@ -13,9 +13,11 @@ import { CreatePlotTool } from './tools/CreatePlotTool';
 import { CreateShapeTool } from './tools/CreateShapeTool';
 import { CreateSlideTool } from './tools/CreateSlideTool';
 import { CreateSVGImageTool } from './tools/CreateSVGImageTool';
+import { DeleteElementsTool } from './tools/DeleteElementsTool';
 import { DeleteElementTool } from './tools/DeleteElementTool';
 import { DeleteSlideTool } from './tools/DeleteSlideTool';
 import { DuplicateSlideTool } from './tools/DuplicateSlideTool';
+import { ExportPresentationToPdfTool } from './tools/ExportPresentationToPdfTool';
 import { GenerateImageTool } from './tools/GenerateImageTool';
 import { GetAllInfoAboutSlideTool } from './tools/GetAllInfoAboutSlideTool';
 import { GetDataFromUrl } from './tools/GetDataFromUrl';
@@ -30,6 +32,7 @@ import { UpdateImageElementTool } from './tools/UpdateImageElementTool';
 import { UpdatePlotTool } from './tools/UpdatePlotTool';
 import { UpdateShapeTool } from './tools/UpdateShapeTool';
 import { UpdateSlideTool } from './tools/UpdateSlideTool';
+import { UpdateSVGImageTool } from './tools/UpdateSVGImageTool';
 import { UpdateTextElementTool } from './tools/UpdateTextElementTool';
 
 export class ToolFactory {
@@ -59,9 +62,12 @@ export class ToolFactory {
             new AddImageFromUrlTool(),
             new AddLogoTool(),
             new UpdateImageElementTool(),
+            new UpdateSVGImageTool(),
             new DeleteElementTool(),
+            new DeleteElementsTool(),
             new MoveElementTool(),
             new MoveSlideTool(),
+            new ExportPresentationToPdfTool(),
             new AlignToSlideTool(),
             new ArrangeInMatrixTool(),
             new MatchSizeTool(),

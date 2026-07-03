@@ -4,6 +4,7 @@ import { createImage } from '../../../../common/domain/entities/element-factory'
 import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 import { slideNotFound } from '../utils/errors';
+import { fetchImage, probeDimensions } from '../utils/image-probe';
 import { xSchema, ySchema, zIndexSchema } from '../utils/schemas';
 
 export class AddImageFromUrlTool extends BaseTool {
@@ -103,9 +104,11 @@ export class AddImageFromUrlTool extends BaseTool {
 
             // Validate dimension parameters
             const hasWidth =
-                providedWidth !== undefined && !Number.isNaN(Number(providedWidth));
+                providedWidth !== undefined &&
+                !Number.isNaN(Number(providedWidth));
             const hasHeight =
-                providedHeight !== undefined && !Number.isNaN(Number(providedHeight));
+                providedHeight !== undefined &&
+                !Number.isNaN(Number(providedHeight));
 
             let dimensionWarning = '';
             if (hasWidth && hasHeight) {
@@ -127,23 +130,27 @@ export class AddImageFromUrlTool extends BaseTool {
                 };
             }
 
-            // Try to get image dimensions to calculate aspect ratio
-            let width: number;
-            let height: number;
-            let aspectRatio = 1; // Default to square if we can't determine
-
-            try {
-                // Try to load the image to get its natural dimensions
-                const imageInfo = await this.getImageInfo(imageUrl);
-                aspectRatio = imageInfo.width / imageInfo.height;
-            } catch (error) {
-                console.warn(
-                    'Could not load image to determine dimensions, using default aspect ratio:',
-                    error,
-                );
+            // Fetch the image so we can (a) fail loudly on a dead URL instead
+            // of placing a broken image, and (b) measure the real aspect ratio.
+            const fetched = await fetchImage(imageUrl);
+            if (!fetched.ok || !fetched.buffer) {
+                const status = fetched.status
+                    ? `HTTP ${fetched.status} ${fetched.statusText ?? ''}`.trim()
+                    : (fetched.statusText ?? 'network error');
+                return {
+                    success: false,
+                    error: `Image URL could not be loaded (${status}) — it would appear broken on the slide. Check the URL or use generateImage instead.`,
+                };
             }
 
+            const dimensions = probeDimensions(fetched.buffer);
+            const aspectRatio = dimensions
+                ? dimensions.width / dimensions.height
+                : 1;
+
             // Calculate dimensions
+            let width: number;
+            let height: number;
             if (hasWidth) {
                 width = Number(providedWidth);
                 height = Math.round(width / aspectRatio);
@@ -156,6 +163,10 @@ export class AddImageFromUrlTool extends BaseTool {
                 width = defaultWidth;
                 height = Math.round(defaultWidth / aspectRatio);
             }
+
+            const aspectNote = dimensions
+                ? `aspect ratio: ${aspectRatio.toFixed(2)} (measured ${dimensions.width}x${dimensions.height}px source)`
+                : 'aspect ratio could not be determined for this format; using the provided/default size';
 
             const elementPosition = { x: xPos, y: yPos };
             const elementSize = { width, height };
@@ -184,7 +195,7 @@ export class AddImageFromUrlTool extends BaseTool {
 Image details:
 - URL: ${imageUrl}
 - Position: (${xPos}, ${yPos})
-- Size: ${width} x ${height} (aspect ratio: ${aspectRatio.toFixed(2)})
+- Size: ${width} x ${height} (${aspectNote})
 - Z-index: ${zIndex}${title ? `\n- Title: ${title}` : ''}`;
 
             return {
@@ -195,7 +206,8 @@ Image details:
                     imageUrl,
                     position: elementPosition,
                     size: elementSize,
-                    aspectRatio,
+                    aspectRatio: dimensions ? aspectRatio : null,
+                    sourceDimensions: dimensions,
                     message,
                 },
                 editedSlidesIds: [updatedSlide.id],
@@ -210,23 +222,5 @@ Image details:
                         : 'Unknown error occurred while adding image',
             };
         }
-    }
-
-    private async getImageInfo(
-        url: string,
-    ): Promise<{ width: number; height: number }> {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                resolve({
-                    width: img.naturalWidth,
-                    height: img.naturalHeight,
-                });
-            };
-            img.onerror = () => {
-                reject(new Error('Failed to load image'));
-            };
-            img.src = url;
-        });
     }
 }

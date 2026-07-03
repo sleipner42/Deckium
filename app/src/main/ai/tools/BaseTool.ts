@@ -1,14 +1,19 @@
 import { AIToolResult } from '../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../presentation/service';
-import { AITool } from './AITool';
+import { AITool, type ToolServices } from './AITool';
 
 export abstract class BaseTool extends AITool {
     async execute(
         params: Record<string, any>,
         presentationService: PresentationService,
+        services?: ToolServices,
     ): Promise<AIToolResult> {
         try {
-            const result = await this.executeImpl(params, presentationService);
+            const result = await this.executeImpl(
+                params,
+                presentationService,
+                services,
+            );
             this.logToolExecution(params, result);
             return result;
         } catch (error) {
@@ -25,5 +30,6 @@ export abstract class BaseTool extends AITool {
     protected abstract executeImpl(
         params: Record<string, any>,
         presentationService: PresentationService,
+        services?: ToolServices,
     ): Promise<AIToolResult>;
 }
