@@ -76,6 +76,9 @@ export function useDraggableElement({
         };
     });
 
+    // Cleanup for the in-flight gesture's document listeners.
+    const dragCleanup = useRef<(() => void) | null>(null);
+
     const handleMouseDown = useCallback(
         (e: React.MouseEvent) => {
             movedRef.current = false;
@@ -117,82 +120,88 @@ export function useDraggableElement({
                 startPositions,
             };
             setIsDragging(true);
+
+            // Attach listeners synchronously (not via an effect) so no pointer
+            // movement between mousedown and the next render is lost.
+            let rafId: number | null = null;
+            let pending: MouseEvent | null = null;
+
+            const apply = () => {
+                rafId = null;
+                const s = session.current;
+                const ev = pending;
+                pending = null;
+                if (!s || !ev) return;
+
+                const rawDx = ev.clientX - s.startMouse.x;
+                const rawDy = ev.clientY - s.startMouse.y;
+                if (
+                    !movedRef.current &&
+                    Math.hypot(rawDx, rawDy) < DRAG_THRESHOLD_PX
+                ) {
+                    return;
+                }
+                movedRef.current = true;
+
+                const delta = screenDeltaToSlide(rawDx, rawDy, s.scale);
+                const {
+                    element: current,
+                    selectedElementIds: currentIds,
+                    onElementUpdate: onUpdate,
+                    onMultiElementUpdate: onMultiUpdate,
+                } = latest.current;
+
+                const posOf = (
+                    id: string,
+                    fallback: { x: number; y: number },
+                ) => {
+                    const start = s.startPositions.get(id) ?? fallback;
+                    return { x: start.x + delta.x, y: start.y + delta.y };
+                };
+
+                const primaryPos = posOf(current.id, current.position);
+
+                if (currentIds.length > 1 && onMultiUpdate) {
+                    const allUpdates: ElementUpdate[] = currentIds
+                        .filter((id) => s.startPositions.has(id))
+                        .map((id) => ({
+                            elementId: id,
+                            updates: { position: posOf(id, current.position) },
+                        }));
+                    onMultiUpdate(
+                        current.id,
+                        { position: primaryPos },
+                        allUpdates,
+                    );
+                } else if (onUpdate) {
+                    onUpdate(current.id, { position: primaryPos });
+                }
+            };
+
+            const onMove = (ev: MouseEvent) => {
+                pending = ev;
+                if (rafId === null) rafId = requestAnimationFrame(apply);
+            };
+            const cleanup = () => {
+                if (rafId !== null) cancelAnimationFrame(rafId);
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                dragCleanup.current = null;
+            };
+            const onUp = () => {
+                cleanup();
+                setIsDragging(false);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+            dragCleanup.current = cleanup;
         },
         [readOnly, isSelected],
     );
 
-    useEffect(() => {
-        if (!isDragging) return;
-
-        let rafId: number | null = null;
-        let pending: MouseEvent | null = null;
-
-        const apply = () => {
-            rafId = null;
-            const s = session.current;
-            const ev = pending;
-            pending = null;
-            if (!s || !ev) return;
-
-            const rawDx = ev.clientX - s.startMouse.x;
-            const rawDy = ev.clientY - s.startMouse.y;
-            if (
-                !movedRef.current &&
-                Math.hypot(rawDx, rawDy) < DRAG_THRESHOLD_PX
-            ) {
-                return;
-            }
-            movedRef.current = true;
-
-            const delta = screenDeltaToSlide(rawDx, rawDy, s.scale);
-            const {
-                element: el,
-                selectedElementIds: ids,
-                onElementUpdate: onUpdate,
-                onMultiElementUpdate: onMultiUpdate,
-            } = latest.current;
-
-            const posOf = (id: string, fallback: { x: number; y: number }) => {
-                const start = s.startPositions.get(id) ?? fallback;
-                return { x: start.x + delta.x, y: start.y + delta.y };
-            };
-
-            const primaryPos = posOf(el.id, el.position);
-
-            if (ids.length > 1 && onMultiUpdate) {
-                const allUpdates: ElementUpdate[] = ids
-                    .filter((id) => s.startPositions.has(id))
-                    .map((id) => ({
-                        elementId: id,
-                        updates: {
-                            position: posOf(id, el.position),
-                        },
-                    }));
-                onMultiUpdate(el.id, { position: primaryPos }, allUpdates);
-            } else if (onUpdate) {
-                onUpdate(el.id, { position: primaryPos });
-            }
-        };
-
-        const handleMouseMove = (e: MouseEvent) => {
-            pending = e;
-            if (rafId === null) {
-                rafId = requestAnimationFrame(apply);
-            }
-        };
-
-        const handleMouseUp = () => {
-            setIsDragging(false);
-        };
-
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-        return () => {
-            if (rafId !== null) cancelAnimationFrame(rafId);
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [isDragging]);
+    // Tear down a gesture that's still in flight if the element unmounts.
+    useEffect(() => () => dragCleanup.current?.(), []);
 
     const handleClick = useCallback(
         (e: React.MouseEvent, onClick?: (event?: React.MouseEvent) => void) => {
