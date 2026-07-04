@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import {
     type Chart,
     type Element,
@@ -171,7 +171,7 @@ export class PowerPointImportService {
             case 'shape':
                 // pptxtojson emits text boxes as shapes carrying HTML content;
                 // a shape with text is a textbox, an empty one is a shape.
-                return element.content && element.content.trim()
+                return element.content?.trim()
                     ? this.convertText(element, base, lb.scale)
                     : this.convertShape(element, base);
             case 'image':

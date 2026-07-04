@@ -7,7 +7,7 @@
  * The export-side mapping (units + rich-text) is covered by its own unit
  * tests; this locks the pptxgenjs<->pptxtojson coordinate agreement.
  */
-import * as path from 'path';
+import * as path from 'node:path';
 import { PowerPointImportService } from '../powerpoint-import/service';
 
 const fixture = (name: string) => path.join(__dirname, '__fixtures__', name);

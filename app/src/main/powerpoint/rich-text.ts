@@ -235,7 +235,7 @@ export const quillHtmlToPptxRichText = (
         if (opts.manualBullets && baseFmt.bullet) {
             const marker = typeof baseFmt.bullet === 'object' ? '' : '•  ';
             if (marker) {
-                const { bullet, ...rest } = baseFmt;
+                const rest: Fmt = { ...baseFmt, bullet: undefined };
                 runs.push({ text: marker, options: fmtToOptions(rest) });
             }
         }
@@ -264,7 +264,7 @@ export const quillHtmlToPptxRichText = (
                 const base = applyElementFmt({}, li);
                 if (opts.manualBullets && ordered) {
                     orderedCounter += 1;
-                    const { bullet, ...rest } = base;
+                    const rest: Fmt = { ...base, bullet: undefined };
                     blockStart = runs.length;
                     runs.push({
                         text: `${orderedCounter}.  `,

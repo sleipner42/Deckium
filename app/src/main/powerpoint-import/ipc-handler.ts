@@ -1,10 +1,6 @@
 import { dialog, ipcMain } from 'electron';
 import { PresentationService } from '../presentation/service';
-import {
-    ImportProgress,
-    ImportResult,
-    PowerPointImportService,
-} from './service';
+import { ImportProgress, PowerPointImportService } from './service';
 
 export class PowerPointImportIPCHandler {
     private importService: PowerPointImportService;
