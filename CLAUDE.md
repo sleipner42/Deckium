@@ -20,27 +20,24 @@ npm install
 
 # Development
 npm start             # Start the app in development mode
-npm run check         # Check linting and formatting
+npm run typecheck     # Type-check without emitting (tsc --noEmit)
+npm run check         # Check linting and formatting (Biome)
 npm run check:fix     # Auto-fix linting and formatting issues
-npm test              # Run tests
+
+# Testing (see the Testing section for details)
+npm test              # Unit/integration tests (Jest, jsdom)
+npm run test:e2e      # End-to-end tests (Playwright drives the built Electron app)
 
 # Building and Packaging
 npm run build         # Build the app (main and renderer)
 npm run package       # Package the app for the local platform
 ```
 
-### Backend (FastAPI)
+### Backend (FastAPI) — legacy
 
-```bash
-# Installation
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-# Development
-uvicorn app.main:app --reload  # Start the server with hot reload
-```
+The `/backend` FastAPI service is **not wired into the current app**: the
+desktop app talks to user-configured LLM providers directly (see Running
+Modes). The backend remains in the repo but nothing in `app/src` calls it.
 
 ## Architecture Overview
 
@@ -73,16 +70,20 @@ The Electron app follows a multi-process architecture:
 
 ### AI Integration
 
-The app integrates with OpenAI/Azure OpenAI for AI capabilities:
+The app is provider-agnostic, built on the **Vercel AI SDK** (`ai` + `@ai-sdk/*`). It supports OpenAI, Anthropic, Google, Azure OpenAI, and Ollama.
 
 1. **AI Service** (`/app/src/main/ai/service.ts`):
-   - Manages AI conversations using threads
-   - Processes AI responses and tool calls
-   - Uses streaming for real-time responses
+   - Runs the agent loop with the SDK's `streamText` (real-time streaming, multi-step tool calls, step limit).
+   - Persists each thread's full `response.messages` (model history) and replays them verbatim across turns, so tool calls/results and reasoning survive between user messages and provider prompt caching stays warm.
+   - Injects a per-turn context block (current slide + a diff of manual user edits since the last turn — see `staleness.ts`) into the user message.
 
-2. **AI Tools** (`/app/src/main/ai/tools/`):
-   - Tool system for AI to manipulate presentations
-   - Each tool has a specific purpose (e.g., creating slides, updating elements)
+2. **Provider layer** (`/app/src/main/ai/external/`):
+   - `providers.ts`: `resolveModel` / `providerOptions` per provider (the one place provider quirks live, e.g. OpenAI `store:false` + encrypted reasoning, Anthropic cache breakpoints).
+   - `messages.ts`: maps internal messages to the SDK's `ModelMessage[]`.
+
+3. **AI Tools** (`/app/src/main/ai/tools/`):
+   - `ToolFactory.ts` registers the built-in tools; `tool-adapter.ts` (`buildToolSet`) exposes each tool's zod `inputSchema` + description to the model and runs it, appending a slide grid + linting feedback after edits.
+   - Each tool extends `BaseTool` and lives in `tools/tools/*`. Shared helpers: `utils/schemas.ts` (positions/colors/font whitelist), `utils/errors.ts` (actionable not-found/wrong-type messages), `utils/html-sanitizer.ts` (validates agent text-box HTML against `common/config/text-formats.ts`), `utils/safe-fetch.ts` (SSRF guard for URL-fetching tools).
 
 ### Presentation System
 
@@ -108,30 +109,16 @@ The FastAPI backend provides:
 
 ## Running Modes
 
-The application supports two modes of operation:
-
-### 1. Backend Mode (Default)
-- Requires authentication via Google OAuth
-- Uses hosted backend for AI requests
-- Backend manages API keys and billing
-- Set `STANDALONE_MODE=false` in `.env` (or omit the variable)
-
-### 2. Standalone Mode (Open Source)
-- No backend or authentication required
-- Users provide their own LLM API keys
-- All data stays local
-- Set `STANDALONE_MODE=true` in `.env`
-
-## Standalone Mode Configuration
+The app runs **standalone**: users provide their own LLM API keys, all data
+stays local, and there is no backend or authentication. (Earlier versions had a
+hosted "backend mode" gated on `STANDALONE_MODE`; that path has been removed —
+the flag is no longer read anywhere in `app/src`.)
 
 ### Environment Setup
 
-Create a `.env` file in `/app` with:
+An `.env` file in `/app` is optional; relevant variables:
 
 ```bash
-# Enable standalone mode (no backend required)
-STANDALONE_MODE=true
-
 # Optional: Logging configuration
 LOG_ENABLED=false
 AI_LOGGING_ENABLED=false
@@ -182,19 +169,17 @@ In standalone mode, users configure their LLM provider through:
    - Contains provider configurations and API keys
    - Managed by: `/app/src/main/settings/llm-settings-service.ts`
 
-### Architecture Changes for Standalone Mode
+### AI Provider Wiring
 
-**Main Process** (`/app/src/main/main.ts`):
-```typescript
-// Detects STANDALONE_MODE from environment
-// If true: initializes MultiProviderAIServiceFactory with user's LLM settings
-// If false: initializes BackendAIServiceFactory with authentication
-```
+**Main Process** (`/app/src/main/main.ts`): constructs `AIService` with the
+`LLMSettingsService` (user's configured provider/keys) — no branching on a
+backend/standalone flag.
 
-**Multi-Provider Service** (`/app/src/main/ai/external/multi-provider-ai-service.ts`):
-- Implements `IAIService` interface for all supported providers
-- Handles provider-specific message formatting and streaming
-- Services: OpenAIService, AnthropicService, GoogleAIService, OllamaService, StandaloneAzureOpenAIService
+**Provider resolution** (`/app/src/main/ai/external/providers.ts`): `resolveModel(config)`
+returns a Vercel AI SDK `LanguageModel` for the selected provider, and
+`providerOptionsFor(config)` supplies provider-specific options. Adding a
+provider means adding one adapter here. (The old `multi-provider-ai-service.ts`
+and its `IAIService`/factory classes have been removed.)
 
 **Settings Management**:
 - Service: `/app/src/main/settings/llm-settings-service.ts`
@@ -213,20 +198,13 @@ In standalone mode, users configure their LLM provider through:
 
 ## Development Notes
 
-1. For AI features in **Backend Mode**:
-   - Backend handles all LLM communication
-   - Requires authentication to hosted service
-   - See backend setup in `/backend` directory
+1. LLM communication happens directly from the app using the user's configured
+   provider/keys (settings dialog). No authentication or backend.
 
-2. For AI features in **Standalone Mode**:
-   - Users provide their own API keys via settings dialog
-   - All LLM communication happens directly from the app
-   - No authentication or backend required
-
-3. The project uses a tool-based approach for AI:
-   - AI responses can trigger tools that modify the presentation
-   - Tool system works identically in both modes
-   - See `app/src/main/ai/tools/tools.ts` for tool execution
+2. The project uses a tool-based approach for AI — AI responses can trigger
+   tools that modify the presentation. Tools are registered in
+   `app/src/main/ai/tools/ToolFactory.ts` and exposed/executed via
+   `app/src/main/ai/tools/tool-adapter.ts` (`buildToolSet`).
 
 ## Code Quality and Formatting
 
@@ -287,22 +265,29 @@ The presentation editor supports advanced multi-element operations:
    - **Delete Key**: Delete all selected elements
 
 2. **Multi-Element Dragging**:
-   - When multiple elements are selected, dragging any element moves the entire group
-   - **Smart Snapping**: Only the dragged element snaps to alignment guides
-   - **Relative Positioning**: Other elements maintain their relative positions to the dragged element
-   - **Implementation**: Located in element components (`/app/src/renderer/application/components/presentation/elements/`)
+   - When multiple elements are selected, dragging any element moves the entire group rigidly.
+   - **Smart Snapping**: Only the dragged element snaps to alignment guides; the others move by the same delta.
+   - **Shared implementation**: All element types use the `useDraggableElement` hook (`/app/src/renderer/application/hooks/useDraggableElement.ts`) — single/group drag, movement-threshold click-vs-drag, and listener handling live there, not duplicated per component.
 
-3. **Supported Elements**:
+3. **Supported Elements** (all use the shared drag hook and resize handles):
    - ✅ ShapeElement (rectangles, circles, triangles)
-   - ✅ TextElement (text boxes with rich editing)
-   - ✅ ImageElement (embedded images)
-   - 🔄 PlotElement and BarChartElement (partial support)
+   - ✅ TextElement (rich text via Quill; see the Rich Text section)
+   - ✅ ImageElement (raster + SVG)
+   - ✅ BarChartElement and PlotElement (line/pie via Plotly)
 
-4. **Technical Implementation**:
-   - Primary element receives snap calculations via `calculateSnapPosition()`
-   - Secondary elements receive the same delta movement without individual snapping
-   - Coordinated through `handleMultiElementUpdate()` in SlideRenderer
-   - State managed via `selectedElementIds[]` in PresentationContext
+4. **Coordinate system (important)**:
+   - The slide is a fixed 1280×720 surface (`common/utils/constants.ts`); element positions/sizes are stored in these slide units, and `SlideView` renders the slide inside a `transform: scale(...)` to fit the window.
+   - Mouse events arrive in screen pixels, so any drag/resize delta MUST be converted to slide units. `utils/coordinates.ts` is the single conversion boundary — it **measures the rendered scale from the DOM** (`getRenderedScale`) rather than threading a prop, so it can't drift from the CSS transform. Snapping (`snapEngine.ts`) and multi-element propagation (`handleMultiElementUpdate` in `SlideRenderer`) operate in slide units.
+
+### Rich Text (text boxes)
+
+Text-box content is HTML edited with **Quill** (`elements/TextElement.tsx`).
+The allowed formatting is defined once in `common/config/text-formats.ts` and
+enforced everywhere: the Quill `formats`/font attributor, the agent's content
+documentation (`ai/tools/utils/html-content.ts`), the agent-HTML sanitizer
+(`ai/tools/utils/html-sanitizer.ts`), and the PPTX import/export converter
+(`main/powerpoint/rich-text.ts`) all derive from it. Agent-produced HTML is
+sanitized before storage and any adjustments are reported back to the model.
 
 ### PDF Export System
 
@@ -324,3 +309,26 @@ The application includes a comprehensive PDF export system:
    - Uses `webContents.printToPDF()` for native PDF generation
    - Cycles through slides in hidden window only
    - Merges multiple PDFs using pdf-lib for seamless output
+   - The agent can also trigger export via the `exportPresentationToPdf` tool (saves to Documents, returns the path).
+
+## Testing
+
+Three layers, each run separately:
+
+### Unit / integration (Jest)
+- `npm test` (or `npx jest <path>`). Environment is **jsdom**; **Quill is mocked** (`.erb/mocks/quillMock.js`), so text-editor internals aren't exercised here — drive those through the E2E suite instead.
+- Test files live next to the code (`*.test.ts`) and under `src/__tests__/`.
+- Heads-up: the full parallel `npm test` has run the machine out of memory before. When iterating, prefer targeted runs and `--runInBand` for large batches (e.g. `npx jest --runInBand src/main/ai src/__tests__/tools`).
+
+### End-to-end (Playwright + Electron)
+- `npm run test:e2e` builds the app then runs Playwright; `npm run test:e2e:only` skips the build (use when the build is already current). Config: `playwright.config.ts`; specs in `/app/e2e`.
+- **Opt-in and not part of `npm test`** — it launches the *built* app and drives the real renderer over the DevTools Protocol, so it needs a display (headless via the machine's display/Xvfb).
+- What it covers: `smoke` (editor mounts at the real measured zoom), `drag`/resize (element moves/grows by the cursor delta ÷ the DOM-measured scale — the regression guard for the zoom-scale bug), and `undo-lock` (manual edits blocked while the editing lock is held).
+- Testability hooks (inert in normal runs, gated by env):
+  - `E2E_PRELOAD_PATH` — lets the harness launch the built `main.js` directly with the correct preload (see `resolvePreloadPath` in `main.ts`).
+  - `E2E_TEST_HOOKS` — enables an ipc channel (`e2e:set-editing-locked`) so a spec can force the editing lock without a live agent turn.
+  - Each launch uses an **isolated `userData` dir**, so the persisted presentation can't leak between tests (`e2e/helpers.ts#launchApp`).
+- Anything needing a *live* agent turn (real LLM + network) isn't covered here; that logic is unit-tested instead.
+
+### PowerPoint round-trip
+- `npm run test:pptx-e2e` (`scripts/pptx-roundtrip.cjs`) exercises the full PPTX export → import path.
