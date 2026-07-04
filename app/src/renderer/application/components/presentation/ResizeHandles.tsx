@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getRenderedScale, getSlideContainer } from '../../utils/coordinates';
 
 interface ResizeHandlesProps {
     isSelected: boolean;
@@ -42,6 +43,9 @@ export const ResizeHandles: React.FC<ResizeHandlesProps> = ({
         x: 0,
         y: 0,
     });
+    // Rendered slide scale captured at gesture start, so screen-pixel mouse
+    // deltas convert to slide units (see utils/coordinates).
+    const [scale, setScale] = useState(1);
 
     const handleMouseDown =
         (direction: ResizeDirection) => (e: React.MouseEvent) => {
@@ -53,14 +57,19 @@ export const ResizeHandles: React.FC<ResizeHandlesProps> = ({
             setStartPosition({ x: e.clientX, y: e.clientY });
             setStartSize({ width: size.width, height: size.height });
             setStartElementPosition({ x: position.x, y: position.y });
+            setScale(
+                getRenderedScale(
+                    getSlideContainer(e.currentTarget as HTMLElement),
+                ),
+            );
         };
 
     useEffect(() => {
         if (!isResizing || !resizeDirection) return;
 
         const handleMouseMove = (e: MouseEvent) => {
-            const deltaX = e.clientX - startPosition.x;
-            const deltaY = e.clientY - startPosition.y;
+            const deltaX = (e.clientX - startPosition.x) / scale;
+            const deltaY = (e.clientY - startPosition.y) / scale;
 
             let newWidth = startSize.width;
             let newHeight = startSize.height;
@@ -172,6 +181,7 @@ export const ResizeHandles: React.FC<ResizeHandlesProps> = ({
         startPosition,
         startSize,
         startElementPosition,
+        scale,
         elementId,
         onResize,
         minWidth,

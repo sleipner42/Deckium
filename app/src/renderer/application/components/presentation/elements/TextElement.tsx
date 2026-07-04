@@ -3,19 +3,20 @@ import Quill from 'quill';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import {
+    FONT_CSS_VALUES,
+    QUILL_FORMATS,
+} from '../../../../../common/config/text-formats';
+import {
     DEFAULT_TEXT_FONT_SIZE,
     HEADER_FONT_SIZES,
     HEADER_LINE_SPACING,
 } from '../../../../../common/config/typography';
-import {
-    FONT_CSS_VALUES,
-    QUILL_FORMATS,
-} from '../../../../../common/config/text-formats';
 import type {
     ContentElement,
     TextBox,
 } from '../../../../../common/domain/entities/types';
 import { useTextEditing } from '../../../context/TextEditingContext';
+import { useDraggableElement } from '../../../hooks/useDraggableElement';
 import { ResizeHandles } from '../ResizeHandles';
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
@@ -824,9 +825,17 @@ export const TextElement: React.FC<TextElementProps> = ({
     const textRef = useRef<HTMLDivElement>(null);
     const quillRef = useRef<Quill | null>(null);
     const [preventBlur, setPreventBlur] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-    const [hasDragged, setHasDragged] = useState(false);
+
+    const { handleMouseDown: startDrag, handleClick: dragClick } =
+        useDraggableElement({
+            element,
+            isSelected: isSelected && !isEditing,
+            readOnly,
+            selectedElementIds,
+            slideElements,
+            onElementUpdate,
+            onMultiElementUpdate,
+        });
     const { setActiveEditor } = useTextEditing();
     const vAlignPickerRef = useRef<CustomVerticalAlignPicker | null>(null);
 
@@ -1009,108 +1018,12 @@ export const TextElement: React.FC<TextElementProps> = ({
         };
     }, [isEditing, preventBlur, onStopEditing]);
 
+    // Guard the shared drag hook: never drag from the toolbar or while editing.
     const handleMouseDown = (e: React.MouseEvent) => {
-        if (readOnly) return;
-
-        const target = e.target as HTMLElement;
-        if (target?.closest('.ql-toolbar')) {
-            return;
-        }
-
-        if (isSelected && !isEditing) {
-            e.stopPropagation();
-            setIsDragging(true);
-            setHasDragged(false);
-            setDragOffset({
-                x: e.clientX - position.x,
-                y: e.clientY - position.y,
-            });
-        }
+        if (readOnly || isEditing) return;
+        if ((e.target as HTMLElement)?.closest('.ql-toolbar')) return;
+        startDrag(e);
     };
-
-    const onElementUpdateRef = useRef(onElementUpdate);
-    const onMultiElementUpdateRef = useRef(onMultiElementUpdate);
-    useEffect(() => {
-        onElementUpdateRef.current = onElementUpdate;
-        onMultiElementUpdateRef.current = onMultiElementUpdate;
-    }, [onElementUpdate, onMultiElementUpdate]);
-
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (isDragging) {
-                setHasDragged(true);
-                const newX = e.clientX - dragOffset.x;
-                const newY = e.clientY - dragOffset.y;
-                const deltaX = newX - position.x;
-                const deltaY = newY - position.y;
-
-                // Check if multiple elements are selected and we have multi-element update capability
-                if (
-                    selectedElementIds.length > 1 &&
-                    onMultiElementUpdateRef.current
-                ) {
-                    // Prepare updates for all selected elements
-                    const allUpdates = selectedElementIds
-                        .map((elementId) => {
-                            const elem = slideElements.find(
-                                (el) => el.id === elementId,
-                            );
-                            if (elem) {
-                                return {
-                                    elementId,
-                                    updates: {
-                                        position: {
-                                            x: elem.position.x + deltaX,
-                                            y: elem.position.y + deltaY,
-                                        },
-                                    },
-                                };
-                            }
-                            return null;
-                        })
-                        .filter(Boolean) as Array<{
-                        elementId: string;
-                        updates: Partial<ContentElement>;
-                    }>;
-
-                    // Call with primary element (this one being dragged), its intended position, and all updates
-                    const primaryUpdates = { position: { x: newX, y: newY } };
-                    onMultiElementUpdateRef.current(
-                        element.id,
-                        primaryUpdates,
-                        allUpdates,
-                    );
-                } else if (onElementUpdateRef.current) {
-                    // Single element move
-                    onElementUpdateRef.current(element.id, {
-                        position: { x: newX, y: newY },
-                    });
-                }
-            }
-        };
-
-        const handleMouseUp = () => {
-            setIsDragging(false);
-        };
-
-        if (isDragging) {
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-        }
-
-        return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [
-        isDragging,
-        dragOffset,
-        element.id,
-        selectedElementIds,
-        slideElements,
-        position.x,
-        position.y,
-    ]);
 
     const handleDoubleClick = (e: React.MouseEvent) => {
         if (readOnly) return;
@@ -1156,20 +1069,9 @@ export const TextElement: React.FC<TextElementProps> = ({
     };
 
     const handleClick = (e: React.MouseEvent) => {
-        if (readOnly) return;
-
-        const target = e.target as HTMLElement;
-        if (target?.closest('.ql-toolbar')) {
-            return;
-        }
-
-        e.stopPropagation();
-        // Don't trigger click if we just finished dragging
-        if (!isEditing && !hasDragged) {
-            onClick(e);
-        }
-        // Reset drag flag after a short delay to allow for future clicks
-        setTimeout(() => setHasDragged(false), 100);
+        if (readOnly || isEditing) return;
+        if ((e.target as HTMLElement)?.closest('.ql-toolbar')) return;
+        dragClick(e, onClick);
     };
 
     const renderContent = () => {
