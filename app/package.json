@@ -39,7 +39,9 @@
         "start:preload": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack --config ./.erb/configs/webpack.config.preload.dev.ts",
         "start:renderer": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack serve --config ./.erb/configs/webpack.config.renderer.dev.ts",
         "test": "jest",
-        "test:pptx-e2e": "node scripts/pptx-roundtrip.cjs"
+        "test:pptx-e2e": "node scripts/pptx-roundtrip.cjs",
+        "test:e2e": "npm run build && playwright test",
+        "test:e2e:only": "playwright test"
     },
     "browserslist": [
         "extends browserslist-config-erb"
@@ -135,6 +137,7 @@
     "devDependencies": {
         "@biomejs/biome": "^2.0.6",
         "@electron/rebuild": "^4.0.6",
+        "@playwright/test": "^1.61.1",
         "@pmmmwh/react-refresh-webpack-plugin": "^0.5.15",
         "@svgr/webpack": "^8.1.0",
         "@teamsupercell/typings-for-css-modules-loader": "^2.5.2",

@@ -29,6 +29,18 @@ let pdfExportService: PDFExportService;
 let powerpointImportHandler: PowerPointImportIPCHandler;
 let menuBuilder: MenuBuilder;
 
+// Preload location. E2E_PRELOAD_PATH lets the Playwright harness launch the
+// built app directly (where app.isPackaged is false but the dev-path preload
+// doesn't exist) without any symlink tricks; unused in normal runs.
+function resolvePreloadPath(): string {
+    if (process.env.E2E_PRELOAD_PATH) {
+        return process.env.E2E_PRELOAD_PATH;
+    }
+    return app.isPackaged
+        ? path.join(__dirname, 'preload.js')
+        : path.join(__dirname, '../../.erb/dll/preload.js');
+}
+
 // How long to wait for the hidden window's render ack before proceeding
 // anyway. The ack normally arrives in well under this; the timeout only
 // guards against a hung or reloading renderer.
@@ -156,9 +168,7 @@ const createWindow = async () => {
         backgroundColor: '#1e1e1e',
         darkTheme: true,
         webPreferences: {
-            preload: app.isPackaged
-                ? path.join(__dirname, 'preload.js')
-                : path.join(__dirname, '../../.erb/dll/preload.js'),
+            preload: resolvePreloadPath(),
             devTools: true,
             partition: 'persist:main',
         },
@@ -211,9 +221,7 @@ const createSecondWindow = async () => {
         titleBarStyle: 'hiddenInset',
         webPreferences: {
             offscreen: true,
-            preload: app.isPackaged
-                ? path.join(__dirname, 'preload.js')
-                : path.join(__dirname, '../../.erb/dll/preload.js'),
+            preload: resolvePreloadPath(),
             partition: 'persist:main',
         },
     });
@@ -284,8 +292,17 @@ if (!gotTheLock) {
             aiService.setPdfExportService(pdfExportService);
 
             setupAIIPC(aiService);
-            setupPresentationIPC(presentationService, () =>
-                aiService.isProcessing(),
+            // E2E-only hook: let the harness force the editing lock without a
+            // live agent turn. Registered only when E2E_TEST_HOOKS is set.
+            let e2eForceLock = false;
+            if (process.env.E2E_TEST_HOOKS) {
+                ipcMain.on('e2e:set-editing-locked', (_, locked: boolean) => {
+                    e2eForceLock = Boolean(locked);
+                });
+            }
+            setupPresentationIPC(
+                presentationService,
+                () => aiService.isProcessing() || e2eForceLock,
             );
             new LintingIpcHandler(lintingService);
             new FileSystemIpcHandler();
