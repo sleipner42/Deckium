@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { nativeImage } from 'electron';
+import { assertPublicUrl, assertSafeRedirect } from './safe-fetch';
 
 export interface FetchedImage {
     ok: boolean;
@@ -19,9 +20,12 @@ export async function fetchImage(
     timeoutMs = 8000,
 ): Promise<FetchedImage> {
     try {
+        await assertPublicUrl(url);
         const response = await axios.get(url, {
             responseType: 'arraybuffer',
             timeout: timeoutMs,
+            maxRedirects: 3,
+            beforeRedirect: (options) => assertSafeRedirect(options),
             headers: {
                 'User-Agent':
                     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',

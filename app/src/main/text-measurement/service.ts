@@ -61,9 +61,14 @@ export class TextMeasurementService {
         (() => {
           const SLIDE_WIDTH = ${PRESENTATION_DIMENSIONS.WIDTH};
           const SLIDE_HEIGHT = ${PRESENTATION_DIMENSIONS.HEIGHT};
+          // Element id passed as data, never interpolated into a selector, so
+          // an id containing quotes/backticks can't inject script.
+          const wantedId = ${JSON.stringify(elementId)};
 
           // Find the target element by its data-element-id
-          const targetElement = document.querySelector('[data-element-id="${elementId}"]');
+          const targetElement = Array.from(
+            document.querySelectorAll('[data-element-id]'),
+          ).find((el) => el.getAttribute('data-element-id') === wantedId) || null;
           if (!targetElement) {
             return { elementFound: false };
           }
@@ -71,7 +76,6 @@ export class TextMeasurementService {
           // Find the Quill editor instance within this element
           const quillContainer = targetElement.querySelector('.ql-editor');
           if (!quillContainer) {
-            console.warn('No Quill editor found in element ${elementId}');
             return { elementFound: false };
           }
 

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { assertPublicUrl, assertSafeRedirect } from '../utils/safe-fetch';
 
 export class GetDataFromUrl extends BaseTool {
     name = 'getDataFromUrl';
@@ -139,7 +140,11 @@ export class GetDataFromUrl extends BaseTool {
 
         let response: { data: unknown };
         try {
+            await assertPublicUrl(url);
             response = await axios.get(url, {
+                timeout: 15000,
+                maxRedirects: 5,
+                beforeRedirect: (options) => assertSafeRedirect(options),
                 headers: {
                     'User-Agent':
                         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -163,7 +168,11 @@ export class GetDataFromUrl extends BaseTool {
                     error: `Failed to fetch ${url}: ${status}. The page may be unavailable, blocked, or the URL may be wrong.`,
                 };
             }
-            throw error;
+            // URL/SSRF guard rejections and other errors surface as tool errors.
+            return {
+                success: false,
+                error: `Failed to fetch ${url}: ${error instanceof Error ? error.message : 'unknown error'}.`,
+            };
         }
         const { data } = response;
 
