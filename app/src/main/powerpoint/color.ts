@@ -48,11 +48,7 @@ export const normalizeHex = (input?: string | null): string | undefined => {
     if (rgb) {
         const parts = rgb[1].split(',').map((s) => parseFloat(s.trim()));
         if (parts.length >= 3 && parts.slice(0, 3).every(Number.isFinite)) {
-            return parts
-                .slice(0, 3)
-                .map(toHexByte)
-                .join('')
-                .toUpperCase();
+            return parts.slice(0, 3).map(toHexByte).join('').toUpperCase();
         }
         return undefined;
     }

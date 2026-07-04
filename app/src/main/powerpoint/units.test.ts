@@ -1,7 +1,15 @@
 /**
  * @jest-environment node
  */
-import { letterbox, LAYOUT, mapPoint, mapSize, ptToPx, pxToInch, pxToPt } from './units';
+import {
+    LAYOUT,
+    letterbox,
+    mapPoint,
+    mapSize,
+    ptToPx,
+    pxToInch,
+    pxToPt,
+} from './units';
 
 describe('unit conversions', () => {
     it('round-trips px <-> pt at 96 DPI', () => {

@@ -10,3 +10,10 @@
 *.ttf   binary
 *.woff  binary
 *.woff2 binary
+
+# Office documents and archives are binary (override "* text eol=lf")
+*.pptx  binary
+*.docx  binary
+*.xlsx  binary
+*.kpres binary
+*.zip   binary
