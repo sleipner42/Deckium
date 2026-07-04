@@ -169,7 +169,11 @@ export class PowerPointImportService {
             case 'text':
                 return this.convertText(element, base, lb.scale);
             case 'shape':
-                return this.convertShape(element, base);
+                // pptxtojson emits text boxes as shapes carrying HTML content;
+                // a shape with text is a textbox, an empty one is a shape.
+                return element.content && element.content.trim()
+                    ? this.convertText(element, base, lb.scale)
+                    : this.convertShape(element, base);
             case 'image':
                 return this.convertImage(element, base);
             case 'chart':
@@ -181,7 +185,7 @@ export class PowerPointImportService {
     }
 
     private convertText(
-        element: PptxText,
+        element: PptxText | PptxShape,
         base: Omit<TextBox, 'type' | 'content' | 'verticalAlign'>,
         fontScale: number,
     ): TextBox {
