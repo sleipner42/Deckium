@@ -284,7 +284,9 @@ if (!gotTheLock) {
             aiService.setPdfExportService(pdfExportService);
 
             setupAIIPC(aiService);
-            setupPresentationIPC(presentationService);
+            setupPresentationIPC(presentationService, () =>
+                aiService.isProcessing(),
+            );
             new LintingIpcHandler(lintingService);
             new FileSystemIpcHandler();
             setupPDFExportIPC(pdfExportService);

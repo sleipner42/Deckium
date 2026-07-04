@@ -3,7 +3,15 @@ import { ContentElement, Slide } from '../../common/domain/entities/types';
 import { PowerPointExportService } from '../powerpoint-export/service';
 import { PresentationService } from './service';
 
-export function setupPresentationIPC(service: PresentationService) {
+export function setupPresentationIPC(
+    service: PresentationService,
+    // True while an AI turn holds its own transaction. Manual edits and
+    // undo/redo are no-op'd during that window: running them would revert or
+    // coalesce state under the agent's open transaction and corrupt history.
+    // The renderer disables the affordances via the AI processing events; this
+    // is the authoritative backstop.
+    isEditingLocked: () => boolean = () => false,
+) {
     // History transactions are scoped to the sending webContents so a
     // renderer that reloads, navigates, or crashes mid-gesture cannot leave
     // a transaction open in the main process forever.
@@ -35,27 +43,32 @@ export function setupPresentationIPC(service: PresentationService) {
     });
 
     ipcMain.handle('presentation:add-slide', () => {
+        if (isEditingLocked()) return null;
         return service.addSlide();
     });
 
     ipcMain.handle(
         'presentation:update-slide',
         (_, slideId: string, updates: Partial<Slide>) => {
+            if (isEditingLocked()) return null;
             return service.updateSlide(slideId, updates);
         },
     );
 
     ipcMain.handle('presentation:delete-slide', (_, slideId: string) => {
+        if (isEditingLocked()) return null;
         return service.deleteSlide(slideId);
     });
 
     ipcMain.handle('presentation:duplicate-slide', (_, slideId: string) => {
+        if (isEditingLocked()) return null;
         return service.duplicateSlide(slideId);
     });
 
     ipcMain.handle(
         'presentation:reorder-slides',
         (_, fromIndex: number, toIndex: number) => {
+            if (isEditingLocked()) return null;
             return service.reorderSlides(fromIndex, toIndex);
         },
     );
@@ -63,6 +76,7 @@ export function setupPresentationIPC(service: PresentationService) {
     ipcMain.handle(
         'presentation:add-element',
         (_, slideId: string, element: ContentElement) => {
+            if (isEditingLocked()) return null;
             return service.addElement(slideId, element);
         },
     );
@@ -70,11 +84,15 @@ export function setupPresentationIPC(service: PresentationService) {
     ipcMain.handle(
         'presentation:update-element',
         (_, elementId: string, updates: Partial<ContentElement>) => {
+            if (isEditingLocked()) return null;
             return service.updateElement(elementId, updates);
         },
     );
 
     ipcMain.handle('presentation:transaction-start', (event) => {
+        // Don't open a user transaction during an AI turn (its edits would be
+        // no-op'd anyway); transaction-end is always allowed so nothing wedges.
+        if (isEditingLocked()) return;
         trackTransactionSender(event.sender);
         service.beginTransaction(transactionOwner(event.sender));
     });
@@ -84,6 +102,7 @@ export function setupPresentationIPC(service: PresentationService) {
     });
 
     ipcMain.handle('presentation:delete-element', (_, elementId: string) => {
+        if (isEditingLocked()) return null;
         return service.deleteElement(elementId);
     });
 
@@ -139,10 +158,12 @@ export function setupPresentationIPC(service: PresentationService) {
     });
 
     ipcMain.handle('presentation:undo', () => {
+        if (isEditingLocked()) return null;
         return service.undo();
     });
 
     ipcMain.handle('presentation:redo', () => {
+        if (isEditingLocked()) return null;
         return service.redo();
     });
 

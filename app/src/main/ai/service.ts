@@ -199,6 +199,11 @@ export class AIService {
         return false;
     }
 
+    /** True while any thread is mid-turn — used to lock manual edits/undo. */
+    isProcessing(): boolean {
+        return this.processingThreads.size > 0;
+    }
+
     onEvent(eventName: string, listener: (...args: any[]) => void): void {
         this.eventBus.on(eventName, listener);
     }
