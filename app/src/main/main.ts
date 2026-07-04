@@ -77,6 +77,11 @@ export function getMenuBuilder(): MenuBuilder | null {
     return menuBuilder;
 }
 
+/** The offscreen viewer window, used to rasterize slides/elements for export. */
+export function getSecondWindow(): BrowserWindow | null {
+    return secondWindow;
+}
+
 export default async function getScreenshotFromSecondaryWindow(): Promise<string> {
     if (!secondWindow) {
         console.error('Secondary window is not available');
