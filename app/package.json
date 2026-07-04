@@ -103,6 +103,7 @@
     "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "katex": "^0.16.22",
+    "node-html-parser": "^8.0.4",
     "ollama-ai-provider-v2": "^3.6.0",
     "pdf-lib": "^1.17.1",
     "plotly.js": "^3.0.1",
