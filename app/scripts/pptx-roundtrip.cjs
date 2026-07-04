@@ -181,16 +181,16 @@ const near = (a, b, tol = 2) => Math.abs(a - b) <= tol;
     console.log(`\nRound trip: ${src.length} elements out -> ${out.length} in`);
 
     // Expected type after a round trip. A plot rasterizes to an image on
-    // export by design. A bar chart exports as a native PowerPoint chart but
-    // does NOT reimport: pptxtojson (1.5.0 and 2.0.6) does not parse charts,
-    // so it is dropped — a documented library limitation, not our bug.
+    // export by design; every other type is preserved, including the bar
+    // chart as a native, editable PowerPoint chart (thanks to the pptxgenjs
+    // single-level strRef + relative-target patches).
     const expected = {
         t1: 'textbox',
         r1: 'rectangle',
         c1: 'circle',
         g1: 'triangle',
         i1: 'image',
-        b1: null, // known limitation: not reimported
+        b1: 'barchart',
         p1: 'image',
     };
     const roundTripped = src.filter((s) => expected[s.id] !== null);
@@ -226,15 +226,13 @@ const near = (a, b, tol = 2) => Math.abs(a - b) <= tol;
     );
     check('text bold preserved', /<strong>/.test(text.content));
 
-    // Known limitation: charts export natively but pptxtojson cannot read
-    // them back, so no barchart is expected in the imported deck.
+    const chart = out.find((e) => e.type === 'barchart');
     check(
-        'bar chart absent on reimport (known pptxtojson limitation)',
-        !out.some((e) => e.type === 'barchart'),
-    );
-    console.log(
-        '  NOTE  barchart exports as a native PowerPoint chart but does not\n' +
-            '        reimport (pptxtojson 1.5.0/2.0.6 do not parse charts).',
+        'bar chart data preserved (labels + values)',
+        !!chart &&
+            JSON.stringify(chart.data.x) === JSON.stringify(['A', 'B', 'C']) &&
+            JSON.stringify(chart.data.y) === JSON.stringify([10, 20, 15]),
+        chart ? JSON.stringify(chart.data) : 'no chart',
     );
 
     fs.rmSync(path.dirname(exportPath), { recursive: true, force: true });

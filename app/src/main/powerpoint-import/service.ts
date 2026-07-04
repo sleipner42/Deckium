@@ -257,8 +257,10 @@ export class PowerPointImportService {
         if (!first) {
             return { x: [], y: [], title: 'Imported Chart' };
         }
+        // values[].x are point indices; the human category labels live in
+        // xlabels keyed by that index.
         return {
-            x: first.values.map((v) => v.x),
+            x: first.values.map((v) => first.xlabels?.[String(v.x)] ?? v.x),
             y: first.values.map((v) => v.y),
             title: first.key || 'Imported Chart',
         };

@@ -1,0 +1,74 @@
+diff --git a/node_modules/pptxgenjs/dist/pptxgen.cjs.js b/node_modules/pptxgenjs/dist/pptxgen.cjs.js
+index 143dfa3..bf5b26d 100644
+--- a/node_modules/pptxgenjs/dist/pptxgen.cjs.js
++++ b/node_modules/pptxgenjs/dist/pptxgen.cjs.js
+@@ -3770,6 +3770,20 @@ function makeChartType(chartType, data, opts, valAxisId, catAxisId, isMultiTypeC
+                         strXml += '    </c:numCache>';
+                         strXml += '  </c:numRef>';
+                     }
++                    else if (obj.labels.length === 1) {
++                        // Single-level string categories: emit the idiomatic
++                        // c:strRef (same as this lib's pie/doughnut output).
++                        // c:multiLvlStrRef for one level is valid but
++                        // mis-renders in Google Slides / LibreOffice and is not
++                        // read by strict parsers (e.g. pptxtojson).
++                        strXml += '  <c:strRef>';
++                        strXml += `    <c:f>Sheet1!$A$2:$A$${obj.labels[0].length + 1}</c:f>`;
++                        strXml += '    <c:strCache>';
++                        strXml += `      <c:ptCount val="${obj.labels[0].length}"/>`;
++                        obj.labels[0].forEach((label, idx) => (strXml += `<c:pt idx="${idx}"><c:v>${encodeXmlEntities(label)}</c:v></c:pt>`));
++                        strXml += '    </c:strCache>';
++                        strXml += '  </c:strRef>';
++                    }
+                     else {
+                         strXml += '  <c:multiLvlStrRef>';
+                         strXml += `    <c:f>Sheet1!$A$2:$${getExcelColName(obj.labels.length)}$${obj.labels[0].length + 1}</c:f>`;
+@@ -5750,7 +5764,10 @@ function slideObjectRelationsToXml(slide, defaultRels) {
+     });
+     (slide._relsChart || []).forEach((rel) => {
+         lastRid = Math.max(lastRid, rel.rId);
+-        strXml += `<Relationship Id="rId${rel.rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="${rel.Target}"/>`;
++        // Relationship targets are relative to the slide part; PowerPoint
++        // writes "../charts/chartN.xml". The absolute "/ppt/..." form is valid
++        // but mis-handled by stricter consumers. Content_Types keeps absolute.
++        strXml += `<Relationship Id="rId${rel.rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="${rel.Target.replace(/^\/ppt\//, '../')}"/>`;
+     });
+     (slide._relsMedia || []).forEach((rel) => {
+         const relRid = rel.rId.toString();
+diff --git a/node_modules/pptxgenjs/dist/pptxgen.es.js b/node_modules/pptxgenjs/dist/pptxgen.es.js
+index 449038c..bd08811 100644
+--- a/node_modules/pptxgenjs/dist/pptxgen.es.js
++++ b/node_modules/pptxgenjs/dist/pptxgen.es.js
+@@ -3768,6 +3768,20 @@ function makeChartType(chartType, data, opts, valAxisId, catAxisId, isMultiTypeC
+                         strXml += '    </c:numCache>';
+                         strXml += '  </c:numRef>';
+                     }
++                    else if (obj.labels.length === 1) {
++                        // Single-level string categories: emit the idiomatic
++                        // c:strRef (same as this lib's pie/doughnut output).
++                        // c:multiLvlStrRef for one level is valid but
++                        // mis-renders in Google Slides / LibreOffice and is not
++                        // read by strict parsers (e.g. pptxtojson).
++                        strXml += '  <c:strRef>';
++                        strXml += `    <c:f>Sheet1!$A$2:$A$${obj.labels[0].length + 1}</c:f>`;
++                        strXml += '    <c:strCache>';
++                        strXml += `      <c:ptCount val="${obj.labels[0].length}"/>`;
++                        obj.labels[0].forEach((label, idx) => (strXml += `<c:pt idx="${idx}"><c:v>${encodeXmlEntities(label)}</c:v></c:pt>`));
++                        strXml += '    </c:strCache>';
++                        strXml += '  </c:strRef>';
++                    }
+                     else {
+                         strXml += '  <c:multiLvlStrRef>';
+                         strXml += `    <c:f>Sheet1!$A$2:$${getExcelColName(obj.labels.length)}$${obj.labels[0].length + 1}</c:f>`;
+@@ -5748,7 +5762,10 @@ function slideObjectRelationsToXml(slide, defaultRels) {
+     });
+     (slide._relsChart || []).forEach((rel) => {
+         lastRid = Math.max(lastRid, rel.rId);
+-        strXml += `<Relationship Id="rId${rel.rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="${rel.Target}"/>`;
++        // Relationship targets are relative to the slide part; PowerPoint
++        // writes "../charts/chartN.xml". The absolute "/ppt/..." form is valid
++        // but mis-handled by stricter consumers. Content_Types keeps absolute.
++        strXml += `<Relationship Id="rId${rel.rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="${rel.Target.replace(/^\/ppt\//, '../')}"/>`;
+     });
+     (slide._relsMedia || []).forEach((rel) => {
+         const relRid = rel.rId.toString();
