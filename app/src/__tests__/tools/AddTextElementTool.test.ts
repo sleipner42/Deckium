@@ -80,6 +80,41 @@ describe('AddTextElementTool', () => {
             expect(element?.content).toBe('Test text content');
         });
 
+        it('sanitizes unsupported HTML and reports adjustments', async () => {
+            const result = await tool.execute(
+                {
+                    slideId,
+                    content: '<table><tr><td>data</td></tr></table>',
+                },
+                mockService as any,
+            );
+
+            expect(result.success).toBe(true);
+            const element = mockService.getSlideById(slideId)
+                ?.elements[0] as any;
+            expect(element?.content).toBe('data');
+            expect(result.data.contentAdjustments).toBeDefined();
+            expect(result.data.contentAdjustments.join(' ')).toContain('table');
+        });
+
+        it('stores valid HTML unchanged with no adjustments', async () => {
+            const result = await tool.execute(
+                {
+                    slideId,
+                    content: "<p class='ql-align-center'>Centered</p>",
+                },
+                mockService as any,
+            );
+
+            expect(result.success).toBe(true);
+            const element = mockService.getSlideById(slideId)
+                ?.elements[0] as any;
+            expect(element?.content).toBe(
+                "<p class='ql-align-center'>Centered</p>",
+            );
+            expect(result.data.contentAdjustments).toBeUndefined();
+        });
+
         it('should create text element with custom parameters', async () => {
             const result = await tool.execute(
                 {

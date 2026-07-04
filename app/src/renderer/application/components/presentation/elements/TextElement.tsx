@@ -7,6 +7,10 @@ import {
     HEADER_FONT_SIZES,
     HEADER_LINE_SPACING,
 } from '../../../../../common/config/typography';
+import {
+    FONT_CSS_VALUES,
+    QUILL_FORMATS,
+} from '../../../../../common/config/text-formats';
 import type {
     ContentElement,
     TextBox,
@@ -22,6 +26,13 @@ import katex from 'katex';
 const SizeStyle = Quill.import('attributors/style/size') as any;
 SizeStyle.whitelist = Array.from({ length: 117 }, (_, i) => `${i + 4}px`);
 Quill.register(SizeStyle, true);
+
+// Register font as an inline style attributor (like size) so agent/imported
+// `font-family` styles are preserved instead of dropped. Whitelist and format
+// list come from the shared spec that the sanitizer enforces.
+const FontStyle = Quill.import('attributors/style/font') as any;
+FontStyle.whitelist = FONT_CSS_VALUES;
+Quill.register(FontStyle, true);
 
 // Quill's `getModule` is typed as returning `unknown`; the toolbar module
 // exposes a `container` element we rely on for our custom pickers.
@@ -828,7 +839,7 @@ export const TextElement: React.FC<TextElementProps> = ({
                         toolbar: {
                             container: [
                                 [{ header: [1, 2, 3, false] }],
-                                [{ font: [] }],
+                                [{ font: FONT_CSS_VALUES }],
                                 ['bold', 'italic', 'underline', 'strike'],
                                 [{ color: [] }, { background: [] }],
                                 [{ list: 'ordered' }, { list: 'bullet' }],
@@ -845,22 +856,7 @@ export const TextElement: React.FC<TextElementProps> = ({
                             },
                         },
                     },
-                    formats: [
-                        'header',
-                        'font',
-                        'size',
-                        'bold',
-                        'italic',
-                        'underline',
-                        'strike',
-                        'list',
-                        'link',
-                        'align',
-                        'color',
-                        'background',
-                        'code',
-                        'formula',
-                    ],
+                    formats: [...QUILL_FORMATS],
                 });
 
                 if (content) {

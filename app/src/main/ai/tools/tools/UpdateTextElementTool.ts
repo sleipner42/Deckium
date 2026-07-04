@@ -8,6 +8,7 @@ import {
     wrongElementType,
 } from '../utils/errors';
 import { HTML_CONTENT_DESCRIPTION } from '../utils/html-content';
+import { sanitizeTextContent } from '../utils/html-sanitizer';
 import {
     COLOR_DESCRIPTION,
     colorSchema,
@@ -119,7 +120,9 @@ export class UpdateTextElementTool extends BaseTool {
 
         const updates: Partial<TextBox> = {};
 
-        if (content !== undefined) updates.content = content;
+        const cleaned =
+            content !== undefined ? sanitizeTextContent(content) : null;
+        if (cleaned) updates.content = cleaned.html;
         if (borderRadius !== undefined)
             updates.borderRadius = Number(borderRadius);
         if (backgroundColor !== undefined)
@@ -186,6 +189,9 @@ export class UpdateTextElementTool extends BaseTool {
                 updates: Object.keys(updates),
                 position: updates.position ?? finalElement.position,
                 size: updates.size ?? finalElement.size,
+                ...(cleaned?.changed
+                    ? { contentAdjustments: cleaned.notes }
+                    : {}),
             },
             editedSlidesIds: [slideId],
         };

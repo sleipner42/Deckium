@@ -5,6 +5,7 @@ import {
     parse,
     TextNode,
 } from 'node-html-parser';
+import { canonicalFont } from '../../common/config/text-formats';
 import { normalizeHex } from './color';
 import { ptToPx, pxToPt } from './units';
 
@@ -340,7 +341,6 @@ const convertInline = (node: Node, fontScale: number): string => {
     // span (or unknown wrapper): translate style into Quill span + wrappers.
     const style = parseStyle(node.getAttribute('style'));
     const spanStyle: string[] = [];
-    const classes: string[] = [];
     let wrapPre = '';
     let wrapPost = '';
 
@@ -358,8 +358,8 @@ const convertInline = (node: Node, fontScale: number): string => {
     }
 
     if (style['font-family']) {
-        const cls = FACE_TO_QL_FONT(style['font-family']);
-        if (cls) classes.push(cls);
+        const family = canonicalFont(style['font-family']);
+        if (family) spanStyle.push(`font-family: ${family}`);
     }
 
     if (
@@ -386,7 +386,6 @@ const convertInline = (node: Node, fontScale: number): string => {
     }
 
     const attrs: string[] = [];
-    if (classes.length) attrs.push(`class="${classes.join(' ')}"`);
     if (spanStyle.length) attrs.push(`style="${spanStyle.join('; ')}"`);
 
     const body = `${wrapPre}${inner}${wrapPost}`;

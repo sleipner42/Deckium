@@ -118,11 +118,18 @@ describe('pptxContentToQuillHtml (import)', () => {
         ).toBe('<p class="ql-align-center">c</p>');
     });
 
-    it('maps font-family to a ql-font class and strips the inline family', () => {
+    it('normalizes font-family to a whitelisted inline family', () => {
         const out = pptxContentToQuillHtml(
             '<p><span style="font-family: Georgia">g</span></p>',
         );
-        expect(out).toBe('<p><span class="ql-font-serif">g</span></p>');
+        expect(out).toBe('<p><span style="font-family: Georgia">g</span></p>');
+    });
+
+    it('maps an unlisted font-family to the nearest whitelisted family', () => {
+        const out = pptxContentToQuillHtml(
+            '<p><span style="font-family: Times New Roman">t</span></p>',
+        );
+        expect(out).toBe('<p><span style="font-family: Georgia">t</span></p>');
     });
 
     it('converts bold/strike style into tags, eliding the empty span', () => {

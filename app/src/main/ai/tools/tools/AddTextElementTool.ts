@@ -5,6 +5,7 @@ import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 import { slideNotFound } from '../utils/errors';
 import { HTML_CONTENT_DESCRIPTION } from '../utils/html-content';
+import { sanitizeTextContent } from '../utils/html-sanitizer';
 import {
     COLOR_DESCRIPTION,
     colorSchema,
@@ -109,8 +110,10 @@ export class AddTextElementTool extends BaseTool {
 
         const zIndex = params.zIndex !== undefined ? Number(params.zIndex) : 1;
 
+        const cleaned = sanitizeTextContent(content);
+
         const element = createTextBox({
-            content,
+            content: cleaned.html,
             position: { x: xPos, y: yPos },
             size: { width, height },
             borderRadius: borderRadius !== undefined ? Number(borderRadius) : 0,
@@ -136,6 +139,9 @@ export class AddTextElementTool extends BaseTool {
                 elementId: element.id,
                 slideId: updatedSlide.id,
                 message,
+                ...(cleaned.changed
+                    ? { contentAdjustments: cleaned.notes }
+                    : {}),
             },
             editedSlidesIds: [updatedSlide.id],
         };
