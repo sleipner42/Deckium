@@ -6,6 +6,7 @@ import {
     type Fill,
     type Shape as PptxShape,
     type Slide as PptxSlide,
+    type Table as PptxTable,
     type Text as PptxText,
     parse,
 } from 'pptxtojson';
@@ -17,6 +18,8 @@ import {
     Presentation,
     Shape,
     Slide,
+    Table,
+    TableCell,
     TextBox,
 } from '../../common/domain/entities/types';
 import { normalizeHex } from '../powerpoint/color';
@@ -178,8 +181,10 @@ export class PowerPointImportService {
                 return this.convertImage(element, base);
             case 'chart':
                 return this.convertChart(element, base);
+            case 'table':
+                return this.convertTable(element, base, lb.scale);
             default:
-                // table / video / audio / diagram / math have no model type.
+                // video / audio / diagram / math have no model type.
                 return null;
         }
     }
@@ -239,6 +244,93 @@ export class PowerPointImportService {
             xAxisLabel: '',
             yAxisLabel: '',
         };
+    }
+
+    private convertTable(
+        element: PptxTable,
+        base: Pick<Table, 'id' | 'position' | 'size' | 'zIndex'>,
+        fontScale: number,
+    ): Table {
+        const data = element.data ?? [];
+        const ncols = data[0]?.length ?? 0;
+
+        // pptxtojson emits col/row sizes in points; they're only relative
+        // weights to us, so raw values are fine.
+        const columnWidths =
+            element.colWidths?.length > 0
+                ? element.colWidths.map(Number)
+                : new Array(ncols).fill(1);
+        const rowHeights =
+            element.rowHeights?.length > 0
+                ? element.rowHeights.map(Number)
+                : new Array(data.length).fill(1);
+
+        // PowerPoint's firstRow flag isn't round-tripped by pptxgenjs, so infer
+        // a header from a fully-bold first row (matches how we export headers).
+        const headerRow =
+            data.length > 1 &&
+            ncols > 0 &&
+            data[0].every((cell) => this.cellIsBold(cell.text));
+
+        const rows: TableCell[][] = data.map((row, r) =>
+            row.map((cell) => {
+                const fill = normalizeHex(cell.fillColor);
+                const isHeader = headerRow && r === 0;
+                return {
+                    content: pptxContentToQuillHtml(cell.text || '', fontScale),
+                    // The header's shared fill is carried on the element, not
+                    // per cell, so it survives a header toggle in the editor.
+                    backgroundColor: fill && !isHeader ? `#${fill}` : undefined,
+                };
+            }),
+        );
+
+        const headerFill = headerRow
+            ? normalizeHex(data[0]?.[0]?.fillColor)
+            : undefined;
+        const border = this.cellBorder(element);
+
+        return {
+            ...base,
+            type: 'table',
+            rows,
+            columnWidths,
+            rowHeights,
+            headerRow: headerRow || undefined,
+            borderColor: border?.color ? `#${border.color}` : undefined,
+            borderWidth: border?.width,
+            headerBackgroundColor: headerFill ? `#${headerFill}` : undefined,
+        };
+    }
+
+    private cellIsBold(html?: string): boolean {
+        if (!html) return false;
+        return (
+            /font-weight:\s*(bold|[6-9]\d\d)/i.test(html) ||
+            /<(strong|b)[\s>]/i.test(html)
+        );
+    }
+
+    /** First per-cell border found (pptxtojson leaves table-level empty). */
+    private cellBorder(
+        element: PptxTable,
+    ): { color?: string; width: number } | undefined {
+        for (const row of element.data ?? []) {
+            for (const cell of row) {
+                const b =
+                    cell.borders?.top ??
+                    cell.borders?.bottom ??
+                    cell.borders?.left ??
+                    cell.borders?.right;
+                if (b?.borderWidth) {
+                    return {
+                        color: normalizeHex(b.borderColor),
+                        width: b.borderWidth,
+                    };
+                }
+            }
+        }
+        return undefined;
     }
 
     private chartData(element: Chart): {

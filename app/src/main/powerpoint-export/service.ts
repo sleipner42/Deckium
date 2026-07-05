@@ -7,6 +7,7 @@ import {
     Plot,
     Presentation,
     Shape,
+    Table,
     TextBox,
 } from '../../common/domain/entities/types';
 import { getSecondWindow, setSlideInHiddenWindow } from '../main';
@@ -132,6 +133,9 @@ export class PowerPointExportService {
             case 'plot':
                 await this.convertPlot(slide, element, rect, ensureRendered);
                 break;
+            case 'table':
+                this.convertTable(slide, element, rect);
+                break;
             default:
                 break;
         }
@@ -172,6 +176,72 @@ export class PowerPointExportService {
             runs.length ? runs : [{ text: '', options: {} }],
             options,
         );
+    }
+
+    private convertTable(
+        slide: PptxGenJS.Slide,
+        element: Table,
+        rect: InchRect,
+    ): void {
+        const columnWidths =
+            element.columnWidths?.length > 0
+                ? element.columnWidths
+                : new Array(element.rows[0]?.length ?? 1).fill(1);
+        const rowHeights =
+            element.rowHeights?.length > 0
+                ? element.rowHeights
+                : new Array(element.rows.length || 1).fill(1);
+
+        // Distribute the element's inch box across the relative weights so the
+        // table always fills its rect regardless of the weights' scale.
+        const colW = this.distribute(columnWidths, rect.w);
+        const rowH = this.distribute(rowHeights, rect.h);
+
+        const headerBg = normalizeHex(element.headerBackgroundColor);
+        const borderColor = normalizeHex(element.borderColor) ?? '000000';
+        const borderWidth = element.borderWidth ?? 1;
+        const border: PptxGenJS.BorderProps =
+            borderWidth > 0
+                ? { type: 'solid', color: borderColor, pt: borderWidth }
+                : { type: 'none' };
+
+        const rows: PptxGenJS.TableRow[] = element.rows.map((row, r) => {
+            const isHeader = !!element.headerRow && r === 0;
+            return row.map((cell): PptxGenJS.TableCell => {
+                const runs = quillHtmlToPptxRichText(cell.content || '');
+                const options: PptxGenJS.TableCellProps = { valign: 'top' };
+                if (isHeader) options.bold = true;
+
+                const cellFill = normalizeHex(cell.backgroundColor);
+                const fill = cellFill ?? (isHeader ? headerBg : undefined);
+                if (fill) options.fill = { color: fill };
+
+                return {
+                    text: runs.length
+                        ? (runs as unknown as PptxGenJS.TableCell[])
+                        : '',
+                    options,
+                };
+            });
+        });
+
+        slide.addTable(rows, {
+            ...rect,
+            colW,
+            rowH,
+            border,
+            valign: 'top',
+            autoPage: false,
+        });
+    }
+
+    /** Split `total` inches proportionally across relative weights. */
+    private distribute(weights: number[], total: number): number[] {
+        const sum = weights.reduce((a, w) => a + (w > 0 ? w : 0), 0);
+        if (sum <= 0) {
+            return weights.map(() => total / Math.max(weights.length, 1));
+        }
+        return weights.map((w) => (Math.max(w, 0) / sum) * total);
     }
 
     private convertShape(
