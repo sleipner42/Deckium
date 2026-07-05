@@ -321,6 +321,12 @@ class CustomVerticalAlignPicker {
             button.innerHTML = this.getSvgIcon(this.currentValue);
         }
     }
+
+    /** Remove the document-level listener so the picker can be GC'd on unmount. */
+    public destroy() {
+        document.removeEventListener('click', this.closeDropdownHandler);
+        this.container.innerHTML = '';
+    }
 }
 
 // Register custom pickers
@@ -839,121 +845,138 @@ export const TextElement: React.FC<TextElementProps> = ({
     const { setActiveEditor } = useTextEditing();
     const vAlignPickerRef = useRef<CustomVerticalAlignPicker | null>(null);
 
+    // Create the Quill instance once, and tear it down on unmount so the
+    // editor, its toolbar listeners, and the vertical-align picker's
+    // document-level click listener don't leak on every slide switch/delete.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only setup
     useEffect(() => {
-        if (textRef.current && !quillRef.current) {
-            try {
-                const quill = new Quill(textRef.current, {
-                    theme: 'snow',
-                    modules: {
-                        toolbar: {
-                            container: [
-                                [{ header: [1, 2, 3, false] }],
-                                [{ font: FONT_CSS_VALUES }],
-                                ['bold', 'italic', 'underline', 'strike'],
-                                [{ color: [] }, { background: [] }],
-                                [{ list: 'ordered' }, { list: 'bullet' }],
-                                ['link'],
-                                [{ align: [] }],
-                                ['emoji'],
-                                ['code', 'formula'],
-                                ['clean'],
-                            ],
-                            handlers: {
-                                emoji: () => {
-                                    showEmojiPicker(quill);
-                                },
+        if (!textRef.current || quillRef.current) return;
+
+        let toolbarEl: HTMLElement | null = null;
+        let onToolbarMouseDown: ((e: Event) => void) | null = null;
+        let onToolbarClick: ((e: Event) => void) | null = null;
+
+        try {
+            const quill = new Quill(textRef.current, {
+                theme: 'snow',
+                modules: {
+                    toolbar: {
+                        container: [
+                            [{ header: [1, 2, 3, false] }],
+                            [{ font: FONT_CSS_VALUES }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ color: [] }, { background: [] }],
+                            [{ list: 'ordered' }, { list: 'bullet' }],
+                            ['link'],
+                            [{ align: [] }],
+                            ['emoji'],
+                            ['code', 'formula'],
+                            ['clean'],
+                        ],
+                        handlers: {
+                            emoji: () => {
+                                showEmojiPicker(quill);
                             },
                         },
                     },
-                    formats: [...QUILL_FORMATS],
-                });
+                },
+                formats: [...QUILL_FORMATS],
+            });
 
-                if (content) {
-                    quill.clipboard.dangerouslyPasteHTML(content);
+            if (content) {
+                quill.clipboard.dangerouslyPasteHTML(content);
+            }
+
+            const handleVerticalAlignChange = (align: string) => {
+                if (onElementUpdate) {
+                    onElementUpdate(element.id, {
+                        verticalAlign: align as 'top' | 'middle' | 'bottom',
+                    });
                 }
+            };
 
-                // Handle vertical alignment changes
-                const handleVerticalAlignChange = (align: string) => {
-                    if (onElementUpdate) {
-                        onElementUpdate(element.id, {
-                            verticalAlign: align as 'top' | 'middle' | 'bottom',
-                        });
-                    }
+            vAlignPickerRef.current = registerCustomPickers(
+                quill,
+                handleVerticalAlignChange,
+                verticalAlign || 'top',
+            );
+
+            const toolbar = getToolbarModule(quill);
+            if (toolbar?.container) {
+                toolbarEl = toolbar.container;
+                onToolbarClick = (e: Event) => {
+                    e.stopPropagation();
+                    setPreventBlur(true);
+                    setTimeout(() => setPreventBlur(false), 300);
                 };
-
-                // Register custom pickers in toolbar
-                vAlignPickerRef.current = registerCustomPickers(
-                    quill,
-                    handleVerticalAlignChange,
-                    verticalAlign || 'top',
+                onToolbarMouseDown = () => setPreventBlur(true);
+                toolbarEl.addEventListener(
+                    'mousedown',
+                    onToolbarMouseDown,
+                    true,
                 );
-
-                const toolbar = getToolbarModule(quill);
-                if (toolbar?.container) {
-                    const handleToolbarClick = (e: Event) => {
-                        e.stopPropagation();
-                        setPreventBlur(true);
-
-                        setTimeout(() => setPreventBlur(false), 300);
-                    };
-
-                    const handleToolbarMouseDown = (_e: Event) => {
-                        setPreventBlur(true);
-                    };
-
-                    toolbar.container.addEventListener(
-                        'mousedown',
-                        handleToolbarMouseDown,
-                        true,
-                    );
-                    toolbar.container.addEventListener(
-                        'click',
-                        handleToolbarClick,
-                        false,
-                    );
-                }
-
-                quillRef.current = quill;
-            } catch (error) {
-                console.error('Failed to initialize Quill editor:', error);
+                toolbarEl.addEventListener('click', onToolbarClick, false);
             }
+
+            quillRef.current = quill;
+        } catch (error) {
+            console.error('Failed to initialize Quill editor:', error);
         }
 
-        if (quillRef.current) {
-            if (isEditing) {
-                quillRef.current.enable();
-                const toolbar = getToolbarModule(quillRef.current);
-                if (toolbar?.container) {
-                    toolbar.container.style.display = 'block';
-                }
-                setActiveEditor(quillRef.current);
-                setPreventBlur(true);
-                setTimeout(() => {
-                    setPreventBlur(false);
-                    if (quillRef.current) {
-                        quillRef.current.focus();
-                    }
-                }, 200);
-            } else {
-                quillRef.current.disable();
-                const toolbar = getToolbarModule(quillRef.current);
-                if (toolbar?.container) {
-                    toolbar.container.style.display = 'none';
-                }
-                setActiveEditor(null);
+        return () => {
+            if (toolbarEl && onToolbarMouseDown) {
+                toolbarEl.removeEventListener(
+                    'mousedown',
+                    onToolbarMouseDown,
+                    true,
+                );
             }
+            if (toolbarEl && onToolbarClick) {
+                toolbarEl.removeEventListener('click', onToolbarClick, false);
+            }
+            vAlignPickerRef.current?.destroy();
+            vAlignPickerRef.current = null;
+            setActiveEditor(null);
+            quillRef.current = null;
+        };
+    }, []);
+
+    // Enable/disable editing and toggle the toolbar.
+    useEffect(() => {
+        if (!quillRef.current) return;
+        if (isEditing) {
+            quillRef.current.enable();
+            const toolbar = getToolbarModule(quillRef.current);
+            if (toolbar?.container) {
+                toolbar.container.style.display = 'block';
+            }
+            setActiveEditor(quillRef.current);
+            setPreventBlur(true);
+            setTimeout(() => {
+                setPreventBlur(false);
+                quillRef.current?.focus();
+            }, 200);
+        } else {
+            quillRef.current.disable();
+            const toolbar = getToolbarModule(quillRef.current);
+            if (toolbar?.container) {
+                toolbar.container.style.display = 'none';
+            }
+            setActiveEditor(null);
         }
-    }, [isEditing, setActiveEditor, content]);
+    }, [isEditing, setActiveEditor]);
 
     useEffect(() => {
-        if (quillRef.current && content) {
-            const currentContent = quillRef.current.root.innerHTML;
-
-            if (currentContent !== content) {
-                quillRef.current.clipboard.dangerouslyPasteHTML(content);
-            }
+        // Don't re-paste while the user is actively editing: an external
+        // content change (another element committing a drag, or an agent edit)
+        // would reset the editor and jump the cursor, dropping in-progress
+        // typing. Pending external changes apply when editing ends (isEditing
+        // is a dependency, so this re-runs then).
+        if (!quillRef.current || isEditing) return;
+        if (content && quillRef.current.root.innerHTML !== content) {
+            quillRef.current.clipboard.dangerouslyPasteHTML(content);
         }
-    }, [content]);
+    }, [content, isEditing]);
 
     // Update vertical alignment picker when element's vertical alignment changes
     useEffect(() => {

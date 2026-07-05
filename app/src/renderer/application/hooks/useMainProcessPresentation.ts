@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ContentElement,
     Presentation,
@@ -79,6 +79,11 @@ export const useMainProcessPresentation = () => {
     const [updatedAt, setUpdatedAt] = useState<Date>(new Date());
     const [slides, setSlides] = useState<Slide[]>([]);
     const [selectedSlide, setSelectedSlide] = useState<Slide | null>(null);
+    // Always-current mirror of `slides` for IPC handlers whose effect doesn't
+    // re-subscribe on every slides change (otherwise they'd read a stale array
+    // and resolve the wrong/blank slide — e.g. selecting a just-added slide).
+    const slidesRef = useRef<Slide[]>([]);
+    slidesRef.current = slides;
     const [selectedElementId, setSelectedElementId] = useState<string | null>(
         null,
     );
@@ -182,7 +187,9 @@ export const useMainProcessPresentation = () => {
             'presentation:set-selected-slide',
             (...args: unknown[]) => {
                 const slideId = args[0] as string;
-                setSelectedSlide(slides.find((s) => s.id === slideId) || null);
+                setSelectedSlide(
+                    slidesRef.current.find((s) => s.id === slideId) || null,
+                );
                 // Ack back to the main process once the slide has actually
                 // painted (double rAF = after the next committed frame, plus
                 // a small delay for async chart mounts). The main process
