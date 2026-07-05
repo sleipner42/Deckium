@@ -421,4 +421,61 @@ describe('lint rules', () => {
         ]);
         expect(lint(slide)).toHaveLength(0);
     });
+
+    describe('text density', () => {
+        const words = (n: number) => Array(n).fill('word').join(' ');
+
+        it('flags a textbox over the per-box word limit', () => {
+            const slide = makeSlide([makeTextBox({ content: words(41) })]);
+            const errors = lint(slide).filter((e) => e.type === 'text_density');
+            expect(errors.some((e) => e.message.includes('TEXT_DENSITY'))).toBe(
+                true,
+            );
+        });
+
+        it('counts words from text content, not HTML markup', () => {
+            const html = `<ul>${'<li><strong>word</strong></li>'.repeat(3)}</ul>`;
+            const slide = makeSlide([makeTextBox({ content: html })]);
+            expect(
+                lint(slide).filter((e) => e.type === 'text_density'),
+            ).toHaveLength(0);
+        });
+
+        it('flags too many bullets', () => {
+            const html = `<ul>${'<li>point</li>'.repeat(5)}</ul>`;
+            const slide = makeSlide([makeTextBox({ content: html })]);
+            const errors = lint(slide).filter((e) => e.type === 'text_density');
+            expect(errors.some((e) => e.message.includes('BULLET_COUNT'))).toBe(
+                true,
+            );
+        });
+
+        it('flags slide-wide density once when boxes are individually fine', () => {
+            const slide = makeSlide([
+                makeTextBox({
+                    content: words(35),
+                    position: { x: 50, y: 50 },
+                    size: { width: 400, height: 200 },
+                }),
+                makeTextBox({
+                    content: words(35),
+                    position: { x: 50, y: 400 },
+                    size: { width: 400, height: 200 },
+                }),
+            ]);
+            const errors = lint(slide).filter((e) =>
+                e.message.includes('SLIDE_DENSITY'),
+            );
+            expect(errors).toHaveLength(1);
+        });
+
+        it('stays quiet for restrained slides', () => {
+            const slide = makeSlide([
+                makeTextBox({ content: `<h2>${words(6)}</h2>` }),
+            ]);
+            expect(
+                lint(slide).filter((e) => e.type === 'text_density'),
+            ).toHaveLength(0);
+        });
+    });
 });

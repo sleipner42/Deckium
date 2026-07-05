@@ -268,3 +268,51 @@ export const barChartDataMismatch = (
         'error',
         'ACTION_REQUIRED: Use updateBarChart tool to ensure x and y data arrays have the same number of elements',
     );
+
+export const textBoxTooDense = (
+    textBoxId: string,
+    slideId: string,
+    wordCount: number,
+    maxWords: number,
+): LintingError =>
+    createError(
+        `${textBoxId}-text-density`,
+        textBoxId,
+        slideId,
+        'text_density',
+        `TEXT_DENSITY: Text box "${textBoxId}" has ${wordCount} words (recommended max ${maxWords} per text box). Dense text reads as amateur slide design.`,
+        'warning',
+        'ACTION_REQUIRED: Cut the copy to its core point, or split the content across multiple slides. Slides support a speaker - they are not documents.',
+    );
+
+export const slideTooDense = (
+    firstTextBoxId: string,
+    slideId: string,
+    totalWords: number,
+    maxWords: number,
+): LintingError =>
+    createError(
+        `${slideId}-slide-density`,
+        firstTextBoxId,
+        slideId,
+        'text_density',
+        `SLIDE_DENSITY: This slide has ${totalWords} body words in total (recommended max ${maxWords}). There is too much text for one slide.`,
+        'warning',
+        'ACTION_REQUIRED: Split the content into multiple slides, or reduce it to one core idea with at most a few short bullets.',
+    );
+
+export const tooManyBullets = (
+    textBoxId: string,
+    slideId: string,
+    bulletCount: number,
+    maxBullets: number,
+): LintingError =>
+    createError(
+        `${textBoxId}-bullet-count`,
+        textBoxId,
+        slideId,
+        'text_density',
+        `BULLET_COUNT: Text box "${textBoxId}" has ${bulletCount} bullet points (recommended max ${maxBullets}). Long bullet lists lose the audience.`,
+        'warning',
+        `ACTION_REQUIRED: Keep the ${maxBullets} strongest bullets and cut or merge the rest, or split the list across slides.`,
+    );

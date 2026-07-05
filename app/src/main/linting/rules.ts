@@ -328,6 +328,66 @@ const barChartData: LintRule = (element) => {
     return [];
 };
 
+// --- Density rules --------------------------------------------------------
+
+const TEXT_BOX_MAX_WORDS = 40;
+const SLIDE_MAX_WORDS = 60;
+const MAX_BULLETS = 4;
+
+const htmlWordCount = (html: string): number => {
+    const text = html
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&[a-z]+;/gi, ' ')
+        .trim();
+    return text.length === 0 ? 0 : text.split(/\s+/).length;
+};
+
+const bulletCountOf = (html: string): number =>
+    (html.match(/<li[\s>]/gi) || []).length;
+
+const firstTextBoxOf = (ctx: LintContext): ContentElement | undefined =>
+    ctx.slide.elements.find((e) => e.type === 'textbox');
+
+const textBoxDensity: LintRule = (element, ctx) => {
+    const textBox = element as TextBox;
+    const words = htmlWordCount(textBox.content);
+    if (words <= TEXT_BOX_MAX_WORDS) return [];
+    return [
+        messages.textBoxTooDense(
+            textBox.id,
+            ctx.slide.id,
+            words,
+            TEXT_BOX_MAX_WORDS,
+        ),
+    ];
+};
+
+const textBoxBullets: LintRule = (element, ctx) => {
+    const textBox = element as TextBox;
+    const bullets = bulletCountOf(textBox.content);
+    if (bullets <= MAX_BULLETS) return [];
+    return [
+        messages.tooManyBullets(textBox.id, ctx.slide.id, bullets, MAX_BULLETS),
+    ];
+};
+
+const slideDensity: LintRule = (element, ctx) => {
+    if (firstTextBoxOf(ctx)?.id !== element.id) return [];
+
+    const totalWords = ctx.slide.elements
+        .filter((e) => e.type === 'textbox')
+        .reduce((sum, e) => sum + htmlWordCount((e as TextBox).content), 0);
+    if (totalWords <= SLIDE_MAX_WORDS) return [];
+    return [
+        messages.slideTooDense(
+            element.id,
+            ctx.slide.id,
+            totalWords,
+            SLIDE_MAX_WORDS,
+        ),
+    ];
+};
+
 // --- Registry -------------------------------------------------------------
 
 interface RuleGroup {
@@ -346,6 +406,9 @@ const ruleGroups: RuleGroup[] = [
             textOutsideSlide,
             shapeCoveringText,
             textPartlyOutsideShape,
+            textBoxDensity,
+            textBoxBullets,
+            slideDensity,
         ],
     },
     {
