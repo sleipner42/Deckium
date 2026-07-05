@@ -2,8 +2,13 @@ import { v4 as uuidv4 } from 'uuid';
 import type {
     BarChartData,
     ContentElement,
+<<<<<<< Updated upstream
     PlotData,
     TableCell,
+=======
+    ElementShadow,
+    PlotData,
+>>>>>>> Stashed changes
 } from './types';
 
 export function createTextBox(options: {
@@ -35,6 +40,9 @@ export function createShape(options: {
     fillColor: string;
     strokeColor: string;
     strokeWidth: number;
+    borderRadius?: number;
+    opacity?: number;
+    shadow?: ElementShadow;
     zIndex?: number;
 }): ContentElement {
     return {
@@ -45,6 +53,9 @@ export function createShape(options: {
         fillColor: options.fillColor,
         strokeColor: options.strokeColor,
         strokeWidth: options.strokeWidth,
+        borderRadius: options.borderRadius ?? 0,
+        opacity: options.opacity ?? 1,
+        shadow: options.shadow ?? 'none',
         zIndex: options.zIndex || 1,
     };
 }
@@ -101,6 +112,8 @@ export function createImage(options: {
     content: string;
     position: { x: number; y: number };
     size: { width: number; height: number };
+    borderRadius?: number;
+    shadow?: ElementShadow;
     zIndex?: number;
 }): ContentElement {
     return {
@@ -109,6 +122,8 @@ export function createImage(options: {
         position: options.position,
         size: options.size,
         content: options.content,
+        borderRadius: options.borderRadius ?? 0,
+        shadow: options.shadow ?? 'none',
         zIndex: options.zIndex || 1,
     };
 }

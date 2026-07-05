@@ -14,7 +14,7 @@ export class UpdateSlideTool extends BaseTool {
         slideId: z.string().describe('The ID of the slide to update'),
         background: colorSchema
             .describe(
-                `The new background color for the slide. ${COLOR_DESCRIPTION}`,
+                `The new background for the slide. ${COLOR_DESCRIPTION} Also accepts CSS gradients like 'linear-gradient(135deg, #0B1220, #1E293B)'.`,
             )
             .optional(),
     });

@@ -1,4 +1,9 @@
+<<<<<<< Updated upstream
 import React from 'react';
+=======
+import React, { useEffect, useRef, useState } from 'react';
+import { shadowCss } from '../../../../../common/config/design';
+>>>>>>> Stashed changes
 import {
     ContentElement,
     Shape,
@@ -45,6 +50,9 @@ const ShapeElementComponent: React.FC<ShapeElementProps> = ({
         fillColor,
         strokeColor,
         strokeWidth,
+        borderRadius,
+        opacity,
+        shadow,
         style,
         zIndex,
     } = element;
@@ -71,6 +79,9 @@ const ShapeElementComponent: React.FC<ShapeElementProps> = ({
                             height: '100%',
                             backgroundColor: fillColor,
                             border: `${strokeWidth}px solid ${strokeColor}`,
+                            borderRadius: `${borderRadius || 0}px`,
+                            opacity: opacity ?? 1,
+                            boxShadow: shadowCss(shadow),
                         }}
                         onClick={(e) => handleClick(e, onClick)}
                         onMouseDown={handleMouseDown}
@@ -88,6 +99,8 @@ const ShapeElementComponent: React.FC<ShapeElementProps> = ({
                             backgroundColor: fillColor,
                             border: `${strokeWidth}px solid ${strokeColor}`,
                             borderRadius: '50%',
+                            opacity: opacity ?? 1,
+                            boxShadow: shadowCss(shadow),
                         }}
                         onClick={(e) => handleClick(e, onClick)}
                         onMouseDown={handleMouseDown}
@@ -102,6 +115,7 @@ const ShapeElementComponent: React.FC<ShapeElementProps> = ({
                         style={{
                             width: '100%',
                             height: '100%',
+                            opacity: opacity ?? 1,
                         }}
                         onClick={(e) => handleClick(e, onClick)}
                         onMouseDown={handleMouseDown}

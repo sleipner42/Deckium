@@ -5,10 +5,13 @@ import type { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 import { slideNotFound } from '../utils/errors';
 import {
+    borderRadiusSchema,
     COLOR_DESCRIPTION,
     colorSchema,
     heightSchema,
+    opacitySchema,
     positionReferenceSchema,
+    shadowSchema,
     widthSchema,
     xSchema,
     ySchema,
@@ -40,15 +43,18 @@ export class CreateShapeTool extends BaseTool {
             .optional(),
         strokeColor: colorSchema
             .describe(
-                `The stroke/border color of the shape (defaults to black). ${COLOR_DESCRIPTION}`,
+                `The stroke/border color of the shape (only visible when strokeWidth > 0). ${COLOR_DESCRIPTION}`,
             )
             .optional(),
         strokeWidth: z
             .number()
             .describe(
-                'The stroke/border width of the shape in pixels (defaults to 2)',
+                'The stroke/border width of the shape in pixels (defaults to 0 - modern flat design rarely outlines shapes)',
             )
             .optional(),
+        borderRadius: borderRadiusSchema.optional(),
+        opacity: opacitySchema.optional(),
+        shadow: shadowSchema.optional(),
         zIndex: zIndexSchema.optional(),
     });
 
@@ -67,6 +73,9 @@ export class CreateShapeTool extends BaseTool {
             fillColor,
             strokeColor,
             strokeWidth,
+            borderRadius,
+            opacity,
+            shadow,
             zIndex,
         } = params;
 
@@ -90,7 +99,7 @@ export class CreateShapeTool extends BaseTool {
         const widthValue = width !== undefined ? Number(width) : 150;
         const heightValue = height !== undefined ? Number(height) : 150;
         const strokeWidthValue =
-            strokeWidth !== undefined ? Number(strokeWidth) : 2;
+            strokeWidth !== undefined ? Number(strokeWidth) : 0;
 
         let xPos = x !== undefined ? Number(x) : 100;
         let yPos = y !== undefined ? Number(y) : 100;
@@ -124,6 +133,10 @@ export class CreateShapeTool extends BaseTool {
             fillColor: fillColor || '#FFFFFF',
             strokeColor: strokeColor || '#000000',
             strokeWidth: strokeWidthValue,
+            borderRadius:
+                borderRadius !== undefined ? Number(borderRadius) : 0,
+            opacity: opacity !== undefined ? Number(opacity) : 1,
+            shadow: shadow || 'none',
             zIndex: zIndex !== undefined ? Number(zIndex) : 1,
         });
 

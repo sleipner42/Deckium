@@ -13,7 +13,7 @@ export class CreateSlideTool extends BaseTool {
         background: colorSchema
             .optional()
             .describe(
-                'Optional background color for the new slide (defaults to white). CSS color: hex, rgb(a), hsl(a), or named color.',
+                "Optional background for the new slide (defaults to white). Any CSS background: hex, rgb(a), hsl(a), named color, or a gradient like 'linear-gradient(135deg, #0B1220, #1E293B)'.",
             ),
     });
 

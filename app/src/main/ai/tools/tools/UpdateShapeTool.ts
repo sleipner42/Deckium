@@ -9,9 +9,12 @@ import {
 } from '../utils/errors';
 import { findElement } from '../utils/find-element';
 import {
+    borderRadiusSchema,
     COLOR_DESCRIPTION,
     colorSchema,
     heightSchema,
+    opacitySchema,
+    shadowSchema,
     widthSchema,
     xSchema,
     ySchema,
@@ -39,6 +42,9 @@ export class UpdateShapeTool extends BaseTool {
             .number()
             .describe('New stroke/border width in pixels')
             .optional(),
+        borderRadius: borderRadiusSchema.optional(),
+        opacity: opacitySchema.optional(),
+        shadow: shadowSchema.optional(),
         zIndex: zIndexSchema.optional(),
     });
 
@@ -55,6 +61,9 @@ export class UpdateShapeTool extends BaseTool {
             fillColor,
             strokeColor,
             strokeWidth,
+            borderRadius,
+            opacity,
+            shadow,
             zIndex,
         } = params;
 
@@ -120,6 +129,18 @@ export class UpdateShapeTool extends BaseTool {
 
         if (strokeWidth !== undefined) {
             updates.strokeWidth = Number(strokeWidth);
+        }
+
+        if (borderRadius !== undefined) {
+            updates.borderRadius = Number(borderRadius);
+        }
+
+        if (opacity !== undefined) {
+            updates.opacity = Number(opacity);
+        }
+
+        if (shadow !== undefined) {
+            updates.shadow = shadow;
         }
 
         if (zIndex !== undefined) {

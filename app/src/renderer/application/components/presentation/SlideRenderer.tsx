@@ -971,7 +971,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             style={{
                 width: PRESENTATION_DIMENSIONS.WIDTH,
                 height: PRESENTATION_DIMENSIONS.HEIGHT,
-                backgroundColor: slide.background,
+                background: slide.background,
                 overflow: 'hidden',
                 position: 'relative',
                 outline: 'none', // Remove focus outline

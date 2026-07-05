@@ -7,7 +7,11 @@ import {
     elementNotFoundInPresentation,
     wrongElementType,
 } from '../utils/errors';
+<<<<<<< Updated upstream
 import { findElement } from '../utils/find-element';
+=======
+import { borderRadiusSchema, shadowSchema } from '../utils/schemas';
+>>>>>>> Stashed changes
 
 export class UpdateImageElementTool extends BaseTool {
     name = 'updateImageElement';
@@ -41,6 +45,8 @@ export class UpdateImageElementTool extends BaseTool {
             .string()
             .describe('Direct URL to replace the current image')
             .optional(),
+        borderRadius: borderRadiusSchema.optional(),
+        shadow: shadowSchema.optional(),
     });
 
     protected async executeImpl(
@@ -55,6 +61,8 @@ export class UpdateImageElementTool extends BaseTool {
                 y,
                 width: providedWidth,
                 height: providedHeight,
+                borderRadius,
+                shadow,
                 zIndex,
             } = params;
 
@@ -86,6 +94,8 @@ export class UpdateImageElementTool extends BaseTool {
                 y === undefined &&
                 !hasWidth &&
                 !hasHeight &&
+                borderRadius === undefined &&
+                shadow === undefined &&
                 zIndex === undefined
             ) {
                 return {
@@ -158,6 +168,14 @@ export class UpdateImageElementTool extends BaseTool {
                 };
             }
             // If neither width nor height is provided, dimensions remain unchanged
+
+            if (borderRadius !== undefined) {
+                updates.borderRadius = Number(borderRadius);
+            }
+
+            if (shadow !== undefined) {
+                updates.shadow = shadow;
+            }
 
             // Update z-index if provided
             if (zIndex !== undefined) {

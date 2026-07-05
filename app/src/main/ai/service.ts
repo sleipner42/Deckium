@@ -34,7 +34,7 @@ import { AIState } from './state';
 import { buildToolSet, type ToolModelOutput } from './tools/tool-adapter';
 import { AIToolsService } from './tools/tools';
 
-const MAX_STEPS = 20;
+const MAX_STEPS = 40;
 
 // When the accumulated model history (JSON chars, incl. base64 screenshots)
 // exceeds this, prune old reasoning/tool results once. Pruning changes the

@@ -26,6 +26,8 @@ export interface ElementState {
     isEditing: boolean;
 }
 
+export type ElementShadow = 'none' | 'soft' | 'medium';
+
 export interface Shape {
     id: UUID;
     type: 'rectangle' | 'circle' | 'triangle';
@@ -34,6 +36,9 @@ export interface Shape {
     fillColor: string;
     strokeColor: string;
     strokeWidth: number;
+    borderRadius?: number;
+    opacity?: number;
+    shadow?: ElementShadow;
     zIndex?: number;
     style?: ElementStyle;
 }
@@ -102,6 +107,8 @@ export interface Image {
     position: Position;
     size: Size;
     content: string; // URL or base64
+    borderRadius?: number;
+    shadow?: ElementShadow;
     zIndex?: number;
     style?: ElementStyle;
 }

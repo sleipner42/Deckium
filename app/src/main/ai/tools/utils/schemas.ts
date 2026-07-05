@@ -44,3 +44,24 @@ export const elementIdsSchema = z
     .array(z.string())
     .min(1)
     .describe('Array of element IDs');
+
+export const borderRadiusSchema = z
+    .number()
+    .min(0)
+    .describe(
+        'Corner radius in pixels. Use 8-16 for modern cards/panels, higher for pills. 0 = sharp corners.',
+    );
+
+export const opacitySchema = z
+    .number()
+    .min(0)
+    .max(1)
+    .describe(
+        'Opacity from 0 (invisible) to 1 (solid). Use 0.05-0.15 for subtle background panels, 0.4-0.7 for scrims over images.',
+    );
+
+export const shadowSchema = z
+    .enum(['none', 'soft', 'medium'])
+    .describe(
+        "Drop shadow preset: 'none' (flat), 'soft' (subtle card elevation), 'medium' (prominent floating card).",
+    );
