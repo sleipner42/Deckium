@@ -938,6 +938,11 @@ export const TextElement: React.FC<TextElementProps> = ({
             vAlignPickerRef.current = null;
             setActiveEditor(null);
             quillRef.current = null;
+            // Quill inserts its `.ql-toolbar` as a sibling of our container in
+            // the *parent's* DOM (React only owns the container), so React never
+            // removes it on unmount. The orphaned toolbar stays attached and its
+            // button listeners retain the whole editor — remove it ourselves.
+            toolbarEl?.remove();
         };
     }, []);
 
