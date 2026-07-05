@@ -7,11 +7,8 @@ import {
     elementNotFoundInPresentation,
     wrongElementType,
 } from '../utils/errors';
-<<<<<<< Updated upstream
 import { findElement } from '../utils/find-element';
-=======
 import { borderRadiusSchema, shadowSchema } from '../utils/schemas';
->>>>>>> Stashed changes
 
 export class UpdateImageElementTool extends BaseTool {
     name = 'updateImageElement';

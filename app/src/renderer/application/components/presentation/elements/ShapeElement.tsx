@@ -1,9 +1,5 @@
-<<<<<<< Updated upstream
 import React from 'react';
-=======
-import React, { useEffect, useRef, useState } from 'react';
 import { shadowCss } from '../../../../../common/config/design';
->>>>>>> Stashed changes
 import {
     ContentElement,
     Shape,

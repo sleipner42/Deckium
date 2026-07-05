@@ -1,9 +1,5 @@
-<<<<<<< Updated upstream
 import React from 'react';
-=======
-import React, { useEffect, useRef, useState } from 'react';
 import { shadowCss } from '../../../../../common/config/design';
->>>>>>> Stashed changes
 import {
     ContentElement,
     Image,
@@ -43,15 +39,8 @@ const ImageElementComponent: React.FC<ImageElementProps> = ({
     slideElements = [],
     readOnly = false,
 }) => {
-<<<<<<< Updated upstream
-    const { position, size, content, style, zIndex } = element;
-=======
     const { position, size, content, borderRadius, shadow, style, zIndex } =
         element;
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-    const [hasDragged, setHasDragged] = useState(false);
->>>>>>> Stashed changes
 
     const { handleMouseDown, handleClick } = useDraggableElement({
         element,
