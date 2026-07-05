@@ -7,6 +7,7 @@ import {
     elementNotFoundInPresentation,
     wrongElementType,
 } from '../utils/errors';
+import { findElement } from '../utils/find-element';
 import {
     COLOR_DESCRIPTION,
     colorSchema,
@@ -85,19 +86,9 @@ export class UpdateBarChartTool extends BaseTool {
 
         // Find the element to ensure it's a bar chart
         const currentPresentation = presentationService.getPresentation();
-        let foundElement = null;
-        let slideId = null;
+        const found = findElement(currentPresentation, elementId);
 
-        for (const slide of currentPresentation.slides) {
-            const element = slide.elements.find((e) => e.id === elementId);
-            if (element) {
-                foundElement = element;
-                slideId = slide.id;
-                break;
-            }
-        }
-
-        if (!foundElement) {
+        if (!found) {
             return {
                 success: false,
                 error: elementNotFoundInPresentation(
@@ -106,6 +97,9 @@ export class UpdateBarChartTool extends BaseTool {
                 ),
             };
         }
+
+        const foundElement = found.element;
+        const slideId = found.slideId;
 
         if (foundElement.type !== 'barchart') {
             return {

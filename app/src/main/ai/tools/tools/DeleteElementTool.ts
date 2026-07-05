@@ -3,6 +3,7 @@ import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 import { elementNotFoundInPresentation } from '../utils/errors';
+import { findElement } from '../utils/find-element';
 
 export class DeleteElementTool extends BaseTool {
     name = 'deleteElement';
@@ -27,20 +28,10 @@ export class DeleteElementTool extends BaseTool {
         }
 
         // Find the element first to check if it exists and get its details
-        let targetElement = null;
-        let slideId = null;
         const currentPresentation = presentationService.getPresentation();
+        const found = findElement(currentPresentation, elementId);
 
-        for (const slide of currentPresentation.slides) {
-            const element = slide.elements.find((e) => e.id === elementId);
-            if (element) {
-                targetElement = element;
-                slideId = slide.id;
-                break;
-            }
-        }
-
-        if (!targetElement || !slideId) {
+        if (!found) {
             return {
                 success: false,
                 error: elementNotFoundInPresentation(
@@ -49,6 +40,9 @@ export class DeleteElementTool extends BaseTool {
                 ),
             };
         }
+
+        const targetElement = found.element;
+        const slideId = found.slideId;
 
         // Delete the element
         const updatedSlide = presentationService.deleteElement(elementId);

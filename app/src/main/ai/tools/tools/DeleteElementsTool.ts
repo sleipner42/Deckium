@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
+import { findElement } from '../utils/find-element';
 
 export class DeleteElementsTool extends BaseTool {
     name = 'deleteElements';
@@ -39,26 +40,17 @@ export class DeleteElementsTool extends BaseTool {
 
         for (const elementId of elementIds) {
             const presentation = presentationService.getPresentation();
-            let found = null;
-            let slideId = null;
-            for (const slide of presentation.slides) {
-                const element = slide.elements.find((e) => e.id === elementId);
-                if (element) {
-                    found = element;
-                    slideId = slide.id;
-                    break;
-                }
-            }
+            const found = findElement(presentation, elementId);
 
-            if (!found || !slideId) {
+            if (!found) {
                 notFound.push(elementId);
                 continue;
             }
 
             const updatedSlide = presentationService.deleteElement(elementId);
             if (updatedSlide) {
-                deleted.push({ elementId, type: found.type });
-                editedSlideIds.add(slideId);
+                deleted.push({ elementId, type: found.element.type });
+                editedSlideIds.add(found.slideId);
             } else {
                 notFound.push(elementId);
             }

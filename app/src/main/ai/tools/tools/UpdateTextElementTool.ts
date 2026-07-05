@@ -7,6 +7,7 @@ import {
     elementNotFoundInPresentation,
     wrongElementType,
 } from '../utils/errors';
+import { findElement } from '../utils/find-element';
 import { HTML_CONTENT_DESCRIPTION } from '../utils/html-content';
 import { sanitizeTextContent } from '../utils/html-sanitizer';
 import {
@@ -93,24 +94,17 @@ export class UpdateTextElementTool extends BaseTool {
 
         const currentPresentation = presentationService.getPresentation();
 
-        let foundAny = null;
-        for (const slide of currentPresentation.slides) {
-            const element = slide.elements.find((e) => e.id === elementId);
-            if (element) {
-                foundAny = element;
-                if (element.type === 'textbox') {
-                    targetElement = element as TextBox;
-                    slideId = slide.id;
-                }
-                break;
-            }
+        const found = findElement(currentPresentation, elementId);
+        if (found && found.element.type === 'textbox') {
+            targetElement = found.element as TextBox;
+            slideId = found.slideId;
         }
 
         if (!targetElement || !slideId) {
             return {
                 success: false,
-                error: foundAny
-                    ? wrongElementType(foundAny, 'text element')
+                error: found
+                    ? wrongElementType(found.element, 'text element')
                     : elementNotFoundInPresentation(
                           elementId,
                           currentPresentation,

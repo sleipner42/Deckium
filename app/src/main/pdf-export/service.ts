@@ -5,6 +5,7 @@ import { PDFDocument } from 'pdf-lib';
 import { Presentation } from '../../common/domain/entities/types';
 import { setSlideInHiddenWindow } from '../main';
 import { PresentationService } from '../presentation/service';
+import { logger } from '../utils/logger';
 
 export interface PDFExportProgress {
     slideIndex: number;
@@ -111,6 +112,16 @@ export class PDFExportService {
                     'Electron PDF export failed, falling back to image-based export:',
                     electronError,
                 );
+                logger.logSystem(
+                    'Electron PDF export failed, falling back to image-based export',
+                    'warn',
+                    {
+                        error:
+                            electronError instanceof Error
+                                ? electronError.message
+                                : String(electronError),
+                    },
+                );
 
                 // Fallback to image-based export
                 const pdfBuffer = await this.exportWithImageFallback(
@@ -131,6 +142,9 @@ export class PDFExportService {
             }
         } catch (error) {
             console.error('PDF export error:', error);
+            logger.logSystem('PDF export failed', 'error', {
+                error: error instanceof Error ? error.message : String(error),
+            });
             onProgress?.({
                 slideIndex: 0,
                 totalSlides: 0,

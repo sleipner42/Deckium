@@ -5,6 +5,7 @@ import { ContentElement } from '../../../../common/domain/entities/types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 import { elementNotFoundInPresentation, slideNotFound } from '../utils/errors';
+import { findElement } from '../utils/find-element';
 import { elementIdsSchema } from '../utils/schemas';
 
 export class CopyElementsTool extends BaseTool {
@@ -73,23 +74,12 @@ export class CopyElementsTool extends BaseTool {
         const sourceSlideIds: string[] = [];
 
         for (const elementId of elementIds) {
-            let foundElement: ContentElement | null = null;
-            let foundSlideId: string | null = null;
+            const found = findElement(currentPresentation, elementId);
 
-            // Search for the element across all slides
-            for (const slide of currentPresentation.slides) {
-                const element = slide.elements.find((e) => e.id === elementId);
-                if (element) {
-                    foundElement = element;
-                    foundSlideId = slide.id;
-                    break;
-                }
-            }
-
-            if (foundElement && foundSlideId) {
-                elementsToCopy.push(foundElement);
-                if (!sourceSlideIds.includes(foundSlideId)) {
-                    sourceSlideIds.push(foundSlideId);
+            if (found) {
+                elementsToCopy.push(found.element);
+                if (!sourceSlideIds.includes(found.slideId)) {
+                    sourceSlideIds.push(found.slideId);
                 }
             } else {
                 return {

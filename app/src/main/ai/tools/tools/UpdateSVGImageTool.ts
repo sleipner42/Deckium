@@ -3,6 +3,7 @@ import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 import { elementNotFoundInPresentation } from '../utils/errors';
+import { findElement } from '../utils/find-element';
 import { heightSchema, widthSchema } from '../utils/schemas';
 
 const SVG_DATA_URI_PREFIX = 'data:image/svg+xml';
@@ -48,23 +49,16 @@ export class UpdateSVGImageTool extends BaseTool {
         }
 
         const presentation = presentationService.getPresentation();
-        let element = null;
-        let slideId = null;
-        for (const slide of presentation.slides) {
-            const found = slide.elements.find((e) => e.id === elementId);
-            if (found) {
-                element = found;
-                slideId = slide.id;
-                break;
-            }
-        }
+        const found = findElement(presentation, elementId);
 
-        if (!element || !slideId) {
+        if (!found) {
             return {
                 success: false,
                 error: elementNotFoundInPresentation(elementId, presentation),
             };
         }
+
+        const { element, slideId } = found;
 
         if (element.type !== 'image') {
             return {

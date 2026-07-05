@@ -7,6 +7,7 @@ import {
     elementNotFoundInPresentation,
     wrongElementType,
 } from '../utils/errors';
+import { findElement } from '../utils/find-element';
 import {
     heightSchema,
     widthSchema,
@@ -83,23 +84,17 @@ export class UpdatePlotTool extends BaseTool {
         }
 
         const presentation = presentationService.getPresentation();
-        let foundElement = null;
-        let slideId = null;
-        for (const slide of presentation.slides) {
-            const element = slide.elements.find((e) => e.id === elementId);
-            if (element) {
-                foundElement = element;
-                slideId = slide.id;
-                break;
-            }
-        }
+        const found = findElement(presentation, elementId);
 
-        if (!foundElement || !slideId) {
+        if (!found) {
             return {
                 success: false,
                 error: elementNotFoundInPresentation(elementId, presentation),
             };
         }
+
+        const foundElement = found.element;
+        const slideId = found.slideId;
 
         if (foundElement.type !== 'plot') {
             return {

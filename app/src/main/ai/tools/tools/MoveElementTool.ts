@@ -3,6 +3,7 @@ import { AIToolResult } from '../../../../common/domain/entities/ai-types';
 import { PresentationService } from '../../../presentation/service';
 import { BaseTool } from '../BaseTool';
 import { elementNotFoundInPresentation, slideNotFound } from '../utils/errors';
+import { findElement } from '../utils/find-element';
 import { heightSchema, widthSchema, xSchema, ySchema } from '../utils/schemas';
 
 export class MoveElementTool extends BaseTool {
@@ -67,23 +68,16 @@ export class MoveElementTool extends BaseTool {
         }
 
         const presentation = presentationService.getPresentation();
-        let element = null;
-        let slideId = null;
-        for (const slide of presentation.slides) {
-            const found = slide.elements.find((e) => e.id === elementId);
-            if (found) {
-                element = found;
-                slideId = slide.id;
-                break;
-            }
-        }
+        const found = findElement(presentation, elementId);
 
-        if (!element || !slideId) {
+        if (!found) {
             return {
                 success: false,
                 error: elementNotFoundInPresentation(elementId, presentation),
             };
         }
+
+        const { element, slideId } = found;
 
         // Cross-slide move: delete from the source slide and re-add (same
         // element object, same ID) on the target, as one undo step.

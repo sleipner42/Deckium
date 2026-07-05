@@ -1,5 +1,6 @@
 import { BrowserWindow } from 'electron';
 import { PRESENTATION_DIMENSIONS } from '../../common/utils/constants';
+import { logger } from '../utils/logger';
 
 export class TextMeasurementService {
     private static instance: TextMeasurementService;
@@ -170,6 +171,14 @@ export class TextMeasurementService {
             return result;
         } catch (error) {
             console.error('Error getting Quill text dimensions:', error);
+            logger.logSystem(
+                'Failed to measure Quill text dimensions',
+                'error',
+                {
+                    error:
+                        error instanceof Error ? error.message : String(error),
+                },
+            );
             return { elementFound: false };
         }
     }

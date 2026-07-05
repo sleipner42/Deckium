@@ -7,6 +7,7 @@ import {
     elementNotFoundInPresentation,
     wrongElementType,
 } from '../utils/errors';
+import { findElement } from '../utils/find-element';
 
 export class UpdateImageElementTool extends BaseTool {
     name = 'updateImageElement';
@@ -99,24 +100,17 @@ export class UpdateImageElementTool extends BaseTool {
 
             const currentPresentation = presentationService.getPresentation();
 
-            let foundAny = null;
-            for (const slide of currentPresentation.slides) {
-                const element = slide.elements.find((e) => e.id === elementId);
-                if (element) {
-                    foundAny = element;
-                    if (element.type === 'image') {
-                        targetElement = element as Image;
-                        slideId = slide.id;
-                    }
-                    break;
-                }
+            const found = findElement(currentPresentation, elementId);
+            if (found && found.element.type === 'image') {
+                targetElement = found.element as Image;
+                slideId = found.slideId;
             }
 
             if (!targetElement || !slideId) {
                 return {
                     success: false,
-                    error: foundAny
-                        ? wrongElementType(foundAny, 'image')
+                    error: found
+                        ? wrongElementType(found.element, 'image')
                         : elementNotFoundInPresentation(
                               elementId,
                               currentPresentation,

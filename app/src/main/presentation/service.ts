@@ -7,6 +7,7 @@ import {
     Slide,
 } from '../../common/domain/entities/types';
 import { resolveHtmlPath } from '../util';
+import { logger } from '../utils/logger';
 import { PresentationEventBus } from './event-bus';
 import { PresentationState } from './state';
 
@@ -237,6 +238,9 @@ export class PresentationService {
             return filePath;
         } catch (error) {
             console.error('Error saving presentation:', error);
+            logger.logSystem('Failed to save presentation', 'error', {
+                error: error instanceof Error ? error.message : String(error),
+            });
             throw error;
         }
     }
@@ -280,6 +284,9 @@ export class PresentationService {
             return loadedPresentation;
         } catch (error) {
             console.error('Error loading presentation:', error);
+            logger.logSystem('Failed to load presentation', 'error', {
+                error: error instanceof Error ? error.message : String(error),
+            });
             throw error;
         }
     }

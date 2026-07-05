@@ -1,5 +1,6 @@
 import { dialog, ipcMain } from 'electron';
 import { PresentationService } from '../presentation/service';
+import { logger } from '../utils/logger';
 import { ImportProgress, PowerPointImportService } from './service';
 
 export class PowerPointImportIPCHandler {
@@ -74,6 +75,10 @@ export class PowerPointImportIPCHandler {
                 return importResult;
             } catch (error) {
                 console.error('PowerPoint import error:', error);
+                logger.logSystem('PowerPoint import failed', 'error', {
+                    error:
+                        error instanceof Error ? error.message : String(error),
+                });
                 return {
                     success: false,
                     error:
@@ -122,6 +127,12 @@ export class PowerPointImportIPCHandler {
                     return importResult;
                 } catch (error) {
                     console.error('PowerPoint import error:', error);
+                    logger.logSystem('PowerPoint import failed', 'error', {
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    });
                     return {
                         success: false,
                         error:

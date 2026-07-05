@@ -2,6 +2,7 @@ import { exec } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { app } from 'electron';
+import { logger } from './utils/logger';
 
 export class AppImageIntegration {
     private static isAppImage(): boolean {
@@ -156,6 +157,9 @@ MimeType=x-scheme-handler/deckium;
             }
         } catch (error) {
             console.error('Failed to integrate AppImage:', error);
+            logger.logSystem('Failed to integrate AppImage', 'error', {
+                error: error instanceof Error ? error.message : String(error),
+            });
         }
     }
 }

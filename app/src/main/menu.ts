@@ -5,6 +5,7 @@ import {
     MenuItemConstructorOptions,
     shell,
 } from 'electron';
+import { logger } from './utils/logger';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
     selector?: string;
@@ -121,6 +122,16 @@ export default class MenuBuilder {
                             `);
                         } catch (error) {
                             console.error('PowerPoint import error:', error);
+                            logger.logSystem(
+                                'PowerPoint import failed',
+                                'error',
+                                {
+                                    error:
+                                        error instanceof Error
+                                            ? error.message
+                                            : String(error),
+                                },
+                            );
                         }
                     },
                 },
@@ -159,6 +170,12 @@ export default class MenuBuilder {
                             `);
                         } catch (error) {
                             console.error('PDF export error:', error);
+                            logger.logSystem('PDF export failed', 'error', {
+                                error:
+                                    error instanceof Error
+                                        ? error.message
+                                        : String(error),
+                            });
                         }
                     },
                 },
@@ -172,6 +189,16 @@ export default class MenuBuilder {
                             `);
                         } catch (error) {
                             console.error('PowerPoint export error:', error);
+                            logger.logSystem(
+                                'PowerPoint export failed',
+                                'error',
+                                {
+                                    error:
+                                        error instanceof Error
+                                            ? error.message
+                                            : String(error),
+                                },
+                            );
                         }
                     },
                 },
@@ -278,6 +305,16 @@ export default class MenuBuilder {
                                     'PowerPoint import error:',
                                     error,
                                 );
+                                logger.logSystem(
+                                    'PowerPoint import failed',
+                                    'error',
+                                    {
+                                        error:
+                                            error instanceof Error
+                                                ? error.message
+                                                : String(error),
+                                    },
+                                );
                             }
                         },
                     },
@@ -316,6 +353,12 @@ export default class MenuBuilder {
                                 `);
                             } catch (error) {
                                 console.error('PDF export error:', error);
+                                logger.logSystem('PDF export failed', 'error', {
+                                    error:
+                                        error instanceof Error
+                                            ? error.message
+                                            : String(error),
+                                });
                             }
                         },
                     },
@@ -331,6 +374,16 @@ export default class MenuBuilder {
                                 console.error(
                                     'PowerPoint export error:',
                                     error,
+                                );
+                                logger.logSystem(
+                                    'PowerPoint export failed',
+                                    'error',
+                                    {
+                                        error:
+                                            error instanceof Error
+                                                ? error.message
+                                                : String(error),
+                                    },
                                 );
                             }
                         },
