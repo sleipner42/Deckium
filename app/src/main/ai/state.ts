@@ -5,7 +5,63 @@ import { UUID } from '../../common/domain/entities/types';
 import { MessageContent } from '../../common/domain/interfaces/ai-service.interface';
 import { logger } from '../utils/logger';
 
+const MODEL_HISTORY_MEDIA_PLACEHOLDER =
+    '[older screenshot removed to conserve context]';
+
+// A tool-result output part carrying inline media (e.g. a screenshot),
+// or a user-message image/file part. Kept loose because the exact shape
+// varies by provider; we only touch the fields we recognise.
+type LoosePart = { type?: string; output?: unknown; [key: string]: unknown };
+
+function stripToolResultMedia(part: LoosePart): LoosePart {
+    const output = part.output as
+        | { type?: string; value?: unknown }
+        | undefined;
+    if (!output || output.type !== 'content' || !Array.isArray(output.value)) {
+        return part;
+    }
+    let changed = false;
+    const value = output.value.map((entry: LoosePart) => {
+        if (entry?.type === 'media') {
+            changed = true;
+            return { type: 'text', text: MODEL_HISTORY_MEDIA_PLACEHOLDER };
+        }
+        return entry;
+    });
+    return changed ? { ...part, output: { ...output, value } } : part;
+}
+
+// Replace large inline media in an old message with a text placeholder while
+// keeping the message shape valid for replay to the provider.
+function stripMediaFromMessage(message: ModelMessage): ModelMessage {
+    if (!Array.isArray(message.content)) {
+        return message;
+    }
+    let changed = false;
+    const content = message.content.map((rawPart) => {
+        const part = rawPart as unknown as LoosePart;
+        if (part?.type === 'image' || part?.type === 'file') {
+            changed = true;
+            return { type: 'text', text: MODEL_HISTORY_MEDIA_PLACEHOLDER };
+        }
+        if (part?.type === 'tool-result') {
+            const stripped = stripToolResultMedia(part);
+            if (stripped !== part) {
+                changed = true;
+            }
+            return stripped;
+        }
+        return part;
+    });
+    return changed
+        ? ({ ...message, content } as unknown as ModelMessage)
+        : message;
+}
+
 export class AIState {
+    // Cap on retained model-history messages per thread (sliding window).
+    private static readonly MODEL_HISTORY_WINDOW = 40;
+
     private threads: Map<UUID, Thread> = new Map<UUID, Thread>();
 
     // Full ModelMessage history per thread, persisted verbatim from
@@ -28,6 +84,52 @@ export class AIState {
         const history = this.modelHistories.get(threadId) ?? [];
         history.push(...structuredClone(messages));
         this.modelHistories.set(threadId, history);
+        this.trimModelHistory(threadId);
+    }
+
+    /**
+     * Bound the per-thread model history so it can't grow forever. Two guards,
+     * both preserving the newest turn intact:
+     *  1. Sliding window — retain at most MODEL_HISTORY_WINDOW messages, cutting
+     *     at a user-turn boundary so we never begin on an orphaned tool result.
+     *  2. Media stripping — replace large base64 image/media payloads (screen-
+     *     shots) in every message before the most recent user turn with a short
+     *     text placeholder, so old screenshots don't accumulate. The current
+     *     turn keeps its media so the in-flight request still sees it.
+     */
+    trimModelHistory(threadId: UUID): void {
+        const history = this.modelHistories.get(threadId);
+        if (!history || history.length === 0) {
+            return;
+        }
+
+        let windowed = history;
+        if (history.length > AIState.MODEL_HISTORY_WINDOW) {
+            let cut = history.length - AIState.MODEL_HISTORY_WINDOW;
+            while (cut < history.length && history[cut].role !== 'user') {
+                cut++;
+            }
+            // No user boundary in the tail: fall back to the raw window.
+            if (cut >= history.length) {
+                cut = history.length - AIState.MODEL_HISTORY_WINDOW;
+            }
+            windowed = history.slice(cut);
+        }
+
+        let lastUserIndex = -1;
+        for (let i = windowed.length - 1; i >= 0; i--) {
+            if (windowed[i].role === 'user') {
+                lastUserIndex = i;
+                break;
+            }
+        }
+        const boundary = lastUserIndex === -1 ? windowed.length : lastUserIndex;
+
+        const trimmed = windowed.map((message, index) =>
+            index < boundary ? stripMediaFromMessage(message) : message,
+        );
+
+        this.modelHistories.set(threadId, trimmed);
     }
 
     replaceModelMessages(threadId: UUID, messages: ModelMessage[]): void {

@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { BrowserWindow, dialog, screen } from 'electron';
@@ -364,7 +363,6 @@ export class PresentationService {
             return;
         }
 
-        const _displays = screen.getAllDisplays();
         const primaryDisplay = screen.getPrimaryDisplay();
 
         this.fullscreenWindow = new BrowserWindow({
@@ -485,28 +483,5 @@ export class PresentationService {
     canRedo(): boolean {
         const result = this.state.canRedo();
         return result;
-    }
-
-    // TEST METHOD - to be removed later
-    testAddElement(): void {
-        const slides = this.state.getPresentation().slides;
-        if (slides.length > 0) {
-            const testElement = {
-                id: crypto.randomUUID(),
-                type: 'rectangle' as const,
-                position: { x: 100, y: 100 },
-                size: { width: 200, height: 100 },
-                fillColor: '#3b82f6',
-                strokeColor: '#1e40af',
-                strokeWidth: 2,
-            };
-
-            this.addElement(slides[0].id, testElement);
-        }
-    }
-
-    // DEBUG METHOD - to be removed later
-    getEventBus(): PresentationEventBus {
-        return this.eventBus;
     }
 }

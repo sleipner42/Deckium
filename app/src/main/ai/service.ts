@@ -2,7 +2,6 @@ import { type ModelMessage, pruneMessages, stepCountIs, streamText } from 'ai';
 import {
     AIRequest,
     AIResponse,
-    Message,
     Thread,
 } from '../../common/domain/entities/ai-types';
 
@@ -22,6 +21,7 @@ import {
     resolveModel,
     withCacheBreakpoints,
 } from './external/providers';
+import { cleanupStreamingMessages, TOOL_PREFIX } from './message-cleanup';
 import { getDeveloperPrompt } from './prompt/systemPrompt';
 import {
     diffSnapshots,
@@ -600,8 +600,6 @@ class AgentLoopState {
     }
 }
 
-const TOOL_PREFIX = '[TOOL]';
-
 function encodeToolStep(
     name: string,
     input: unknown,
@@ -678,26 +676,4 @@ function isAbortError(error: unknown): boolean {
             error.name === 'ResponseAborted' ||
             error.message.toLowerCase().includes('abort'))
     );
-}
-
-function cleanupStreamingMessages(thread: Thread): Thread {
-    const messages: Message[] = thread.messages
-        .map((message) => {
-            if (
-                message.role === 'assistant' &&
-                message.streamingState === 'streaming'
-            ) {
-                if (
-                    typeof message.content === 'string' &&
-                    message.content.trim().length === 0
-                ) {
-                    return null;
-                }
-                return { ...message, streamingState: 'completed' as const };
-            }
-            return message;
-        })
-        .filter((message): message is Message => message !== null);
-
-    return { ...thread, messages };
 }

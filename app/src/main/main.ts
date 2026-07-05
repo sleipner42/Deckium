@@ -16,8 +16,28 @@ import { setupLLMSettingsIPC } from './settings/ipc-handler';
 import { LLMSettingsService } from './settings/llm-settings-service';
 import { textMeasurementService } from './text-measurement/service';
 import { resolveHtmlPath } from './util';
+import { logger } from './utils/logger';
 
 dotenv.config();
+
+// Global crash handlers: log stray errors through the app logger instead of
+// letting them crash or silently hang the main process. We deliberately do NOT
+// force-quit — an unhandled rejection or a recoverable uncaught exception
+// should be surfaced, not turned into a hard exit.
+process.on('unhandledRejection', (reason) => {
+    logger.logSystem('Unhandled promise rejection in main process', 'error', {
+        reason:
+            reason instanceof Error
+                ? { message: reason.message, stack: reason.stack }
+                : String(reason),
+    });
+});
+
+process.on('uncaughtException', (error) => {
+    logger.logSystem('Uncaught exception in main process', 'error', {
+        error: { message: error.message, stack: error.stack },
+    });
+});
 
 let mainWindow: BrowserWindow | null = null;
 let secondWindow: BrowserWindow | null = null;
