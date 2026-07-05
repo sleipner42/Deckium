@@ -68,6 +68,21 @@ export class PresentationService {
         return this.state.getPresentation();
     }
 
+    /**
+     * Restore a presentation snapshot from within an AI turn's own snapshot
+     * history (agent undo/redo) without disturbing the user's undo/redo stacks.
+     * Broadcasts a full refresh reusing the undo-executed channel so the
+     * renderer repaints and keeps the current slide selection.
+     */
+    restoreForAgent(presentation: Presentation): Presentation {
+        const restored = this.state.restoreState(presentation);
+        this.eventBus.broadcastToWindows(
+            PresentationEventBus.events.UNDO_EXECUTED,
+            restored,
+        );
+        return restored;
+    }
+
     initializePresentation(title = 'Untitled Presentation'): Presentation {
         const presentation = this.state.initializePresentation(title);
         this.currentFilePath = null;

@@ -14,6 +14,7 @@ import { generateSlideGrid } from '../presentation/utils';
 import { LLMSettingsService } from '../settings/llm-settings-service';
 
 import { logger } from '../utils/logger';
+import { AgentHistory } from './agent-history';
 import { AIEventBus } from './event-bus';
 import { conversationHistory, toUserContent } from './external/messages';
 import {
@@ -226,6 +227,13 @@ export class AIService {
                 : conversationHistory(thread.messages);
         const config = this.settings.getCurrentProvider();
         const model = resolveModel(config);
+
+        // Per-turn snapshot history for undoLastEdit / redoLastEdit. Restores
+        // move within the turn only (never touching the user's undo stacks).
+        const agentHistory = new AgentHistory((presentation) => {
+            this.presentationService.restoreForAgent(presentation);
+        });
+
         const tools = buildToolSet(
             this.toolsService,
             this.presentationService,
@@ -233,6 +241,7 @@ export class AIService {
             {
                 settings: this.settings,
                 pdfExport: this.pdfExportService,
+                agentHistory,
             },
         );
 
@@ -248,6 +257,9 @@ export class AIService {
         // Group every presentation edit made by this AI turn into a single
         // undo step, including partial edits from aborted or failed turns.
         this.presentationService.beginTransaction();
+        // Seed the per-turn history with the pre-turn state — the floor the
+        // agent cannot undo past.
+        agentHistory.record(this.presentationService.getPresentation());
         try {
             const result = streamText({
                 // Defaults first so explicit per-call values below always win.
@@ -282,8 +294,16 @@ export class AIService {
                     loop.onToolCall(part.toolCallId, part.toolName, part.input);
                 } else if (part.type === 'tool-result') {
                     loop.onToolResult(part.toolCallId, part.output);
+                    // Snapshot after each tool result; no-op (by reference
+                    // identity) unless the tool actually edited the deck.
+                    agentHistory.record(
+                        this.presentationService.getPresentation(),
+                    );
                 } else if (part.type === 'tool-error') {
                     loop.onToolResult(part.toolCallId, undefined, true);
+                    agentHistory.record(
+                        this.presentationService.getPresentation(),
+                    );
                 } else if (part.type === 'error') {
                     throw part.error;
                 }

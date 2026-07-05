@@ -230,4 +230,29 @@ describe('PresentationService broadcasting and transactions', () => {
         expect(service.getPresentation().slides[0].elements).toHaveLength(0);
         expect(service.canUndo()).toBe(false);
     });
+
+    it('restoreForAgent reverts state and broadcasts without touching undo stacks', () => {
+        const slide = service.getPresentation().slides[0];
+        const snapshot = service.getPresentation(); // frozen, 0 elements
+
+        // A within-turn edit (transaction open, mirroring an AI turn).
+        service.beginTransaction('main');
+        service.addElement(slide.id, makeTextBox('x') as ContentElement);
+        expect(service.getPresentation().slides[0].elements).toHaveLength(1);
+        const undoDepthBefore = service.canUndo();
+
+        const restored: unknown[] = [];
+        service.onEvent(PresentationEventBus.events.UNDO_EXECUTED, (p) =>
+            restored.push(p),
+        );
+
+        // Agent undo: restore the pre-edit snapshot.
+        service.restoreForAgent(snapshot);
+
+        expect(service.getPresentation().slides[0].elements).toHaveLength(0);
+        expect(restored).toHaveLength(1);
+        // The user's undo availability is unchanged by an agent restore.
+        expect(service.canUndo()).toBe(undoDepthBefore);
+        service.endTransaction('main');
+    });
 });

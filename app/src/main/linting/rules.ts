@@ -24,17 +24,28 @@ const isShapeType = (e: ContentElement): e is Shape =>
     e.type === 'rectangle' || e.type === 'circle' || e.type === 'triangle';
 
 const isCollidableType = (e: ContentElement): boolean =>
-    isShapeType(e) || e.type === 'image' || e.type === 'barchart';
+    isShapeType(e) ||
+    e.type === 'image' ||
+    e.type === 'barchart' ||
+    e.type === 'table';
 
 const elementTypeName = (e: ContentElement): string =>
-    e.type === 'barchart' ? 'Chart' : e.type === 'image' ? 'Image' : 'Shape';
+    e.type === 'barchart'
+        ? 'Chart'
+        : e.type === 'image'
+          ? 'Image'
+          : e.type === 'table'
+            ? 'Table'
+            : 'Shape';
 
 const elementToolName = (e: ContentElement): string =>
     e.type === 'barchart'
         ? 'updateBarChart'
         : e.type === 'image'
           ? 'updateImageElement'
-          : 'updateShape';
+          : e.type === 'table'
+            ? 'updateTable'
+            : 'updateShape';
 
 const modelRect = (e: ContentElement): Rect => ({
     x: e.position.x,

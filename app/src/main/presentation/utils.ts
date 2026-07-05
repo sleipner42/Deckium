@@ -11,6 +11,7 @@ interface GridConfig {
         plot?: string;
         image?: string;
         barchart?: string;
+        table?: string;
     };
 }
 
@@ -26,6 +27,7 @@ export function generateSlideGrid(slide: Slide, config: GridConfig): string {
             plot: 'P',
             image: 'I',
             barchart: 'B',
+            table: 'A',
         },
     } = config;
 
@@ -72,7 +74,7 @@ export function generateSlideGrid(slide: Slide, config: GridConfig): string {
         `Please use the following representation to see that the slide looks balanced and aligned.`,
         `Canvas: ${canvasWidth}x${canvasHeight}px | Grid: ${gridWidth}x${gridHeight} chars | ${pixelsPerSquare}px per char`,
         `Elements: ${slide.elements.length} | Slide ID: ${slide.id}`,
-        `Legend: ${elementChars.textbox}=TextBox, ${elementChars.shape}=Shape, ${elementChars.plot}=Plot, ${elementChars.image}=Image, ${elementChars.barchart}=BarChart, X=Collision, ${emptyChar}=Empty`,
+        `Legend: ${elementChars.textbox}=TextBox, ${elementChars.shape}=Shape, ${elementChars.plot}=Plot, ${elementChars.image}=Image, ${elementChars.barchart}=BarChart, ${elementChars.table}=Table, X=Collision, ${emptyChar}=Empty`,
         `${'='.repeat(Math.min(80, gridWidth * 2))}`,
         '',
     ].join('\n');
@@ -97,6 +99,8 @@ function getElementChar(
             return elementChars?.image || 'I';
         case 'barchart':
             return elementChars?.barchart || 'B';
+        case 'table':
+            return elementChars?.table || 'A';
         default:
             return 'X';
     }

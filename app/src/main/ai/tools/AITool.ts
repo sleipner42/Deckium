@@ -6,6 +6,7 @@ import type { PDFExportService } from '../../pdf-export/service';
 import { PresentationService } from '../../presentation/service';
 import type { LLMSettingsService } from '../../settings/llm-settings-service';
 import { logger } from '../../utils/logger';
+import type { AgentHistory } from '../agent-history';
 
 // Extra main-process services a tool may need beyond the presentation.
 // Optional so tools (and their tests) that only need the presentation keep
@@ -13,6 +14,8 @@ import { logger } from '../../utils/logger';
 export interface ToolServices {
     settings?: LLMSettingsService;
     pdfExport?: PDFExportService;
+    // Per-turn snapshot history backing undoLastEdit / redoLastEdit.
+    agentHistory?: AgentHistory;
 }
 
 export abstract class AITool {

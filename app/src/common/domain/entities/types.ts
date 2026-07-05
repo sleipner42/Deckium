@@ -106,7 +106,35 @@ export interface Image {
     style?: ElementStyle;
 }
 
-export type ContentElement = Shape | TextBox | Plot | Image | BarChart;
+// A table cell holds sanitized rich-text HTML — the same formatting contract as
+// TextBox.content (see common/config/text-formats.ts). `rows[r][c]` is the cell
+// at row r, column c; every row has `columnWidths.length` cells.
+export interface TableCell {
+    content: string; // HTML content
+    backgroundColor?: string;
+}
+
+export interface Table {
+    id: UUID;
+    type: 'table';
+    position: Position;
+    size: Size;
+    // rows[r][c] — rectangular: every row has columnWidths.length cells.
+    rows: TableCell[][];
+    // Relative column/row weights (not pixels); rendered proportionally to the
+    // element's size so the table always fills its box.
+    columnWidths: number[];
+    rowHeights: number[];
+    // Style the first row as a header (distinct background + bold default).
+    headerRow?: boolean;
+    borderColor?: string;
+    borderWidth?: number;
+    headerBackgroundColor?: string;
+    zIndex?: number;
+    style?: ElementStyle;
+}
+
+export type ContentElement = Shape | TextBox | Plot | Image | BarChart | Table;
 
 export interface Slide {
     id: UUID;

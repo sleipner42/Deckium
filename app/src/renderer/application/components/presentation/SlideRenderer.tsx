@@ -10,6 +10,7 @@ import {
     Plot,
     Shape,
     Slide,
+    Table,
     TextBox,
 } from '../../../../common/domain/entities/types';
 import { PRESENTATION_DIMENSIONS } from '../../../../common/utils/constants';
@@ -21,6 +22,7 @@ import { BarChartElement } from './elements/BarChartElement';
 import { ImageElement } from './elements/ImageElement';
 import { PlotElement } from './elements/PlotElement';
 import { ShapeElement } from './elements/ShapeElement';
+import { TableElement } from './elements/TableElement';
 import { TextElement } from './elements/TextElement';
 import { ShapePropertiesDialog } from './ShapePropertiesDialog';
 import { SlideContextMenu } from './SlideContextMenu';
@@ -946,6 +948,14 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                         key={element.id}
                         {...commonProps}
                         element={element as BarChart}
+                    />
+                );
+            case 'table':
+                return (
+                    <TableElement
+                        key={element.id}
+                        {...commonProps}
+                        element={element as Table}
                     />
                 );
             default:

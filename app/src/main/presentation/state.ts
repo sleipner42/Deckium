@@ -346,4 +346,16 @@ export class PresentationState {
 
         return this.presentation;
     }
+
+    /**
+     * Replace the current state without touching the undo/redo stacks or the
+     * open-transaction bookkeeping. Used to move within a single AI turn's own
+     * fine-grained snapshot history (see AgentHistory): the turn stays one user
+     * undo step, but the agent can step back and forth through its own edits.
+     * The snapshot must be a state this instance produced (already frozen).
+     */
+    public restoreState(presentation: Presentation): Presentation {
+        this.presentation = freeze(presentation, true);
+        return this.presentation;
+    }
 }

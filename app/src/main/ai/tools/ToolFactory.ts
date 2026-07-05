@@ -13,6 +13,7 @@ import { CreatePlotTool } from './tools/CreatePlotTool';
 import { CreateShapeTool } from './tools/CreateShapeTool';
 import { CreateSlideTool } from './tools/CreateSlideTool';
 import { CreateSVGImageTool } from './tools/CreateSVGImageTool';
+import { CreateTableTool } from './tools/CreateTableTool';
 import { DeleteElementsTool } from './tools/DeleteElementsTool';
 import { DeleteElementTool } from './tools/DeleteElementTool';
 import { DeleteSlideTool } from './tools/DeleteSlideTool';
@@ -26,13 +27,16 @@ import { GetScreenshotOfSlideTool } from './tools/GetScreenshotOfSlideTool';
 import { MatchSizeTool } from './tools/MatchSizeTool';
 import { MoveElementTool } from './tools/MoveElementTool';
 import { MoveSlideTool } from './tools/MoveSlideTool';
+import { RedoLastEditTool } from './tools/RedoLastEditTool';
 import { SpaceElementsEvenlyTool } from './tools/SpaceElementsEvenlyTool';
+import { UndoLastEditTool } from './tools/UndoLastEditTool';
 import { UpdateBarChartTool } from './tools/UpdateBarChartTool';
 import { UpdateImageElementTool } from './tools/UpdateImageElementTool';
 import { UpdatePlotTool } from './tools/UpdatePlotTool';
 import { UpdateShapeTool } from './tools/UpdateShapeTool';
 import { UpdateSlideTool } from './tools/UpdateSlideTool';
 import { UpdateSVGImageTool } from './tools/UpdateSVGImageTool';
+import { UpdateTableTool } from './tools/UpdateTableTool';
 import { UpdateTextElementTool } from './tools/UpdateTextElementTool';
 
 export class ToolFactory {
@@ -48,6 +52,8 @@ export class ToolFactory {
             new UpdateTextElementTool(),
             new CreateBarChartTool(),
             new UpdateBarChartTool(),
+            new CreateTableTool(),
+            new UpdateTableTool(),
             new CreatePlotTool(),
             new UpdatePlotTool(),
             new CreateShapeTool(),
@@ -73,6 +79,8 @@ export class ToolFactory {
             new MatchSizeTool(),
             new CreateSVGImageTool(),
             new DuplicateSlideTool(),
+            new UndoLastEditTool(),
+            new RedoLastEditTool(),
         ];
     }
 }

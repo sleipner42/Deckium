@@ -1,5 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { BarChartData, ContentElement, PlotData } from './types';
+import type {
+    BarChartData,
+    ContentElement,
+    PlotData,
+    TableCell,
+} from './types';
 
 export function createTextBox(options: {
     content: string;
@@ -108,6 +113,34 @@ export function createImage(options: {
     };
 }
 
+export function createTable(options: {
+    rows: TableCell[][];
+    columnWidths: number[];
+    rowHeights: number[];
+    position: { x: number; y: number };
+    size: { width: number; height: number };
+    headerRow?: boolean;
+    borderColor?: string;
+    borderWidth?: number;
+    headerBackgroundColor?: string;
+    zIndex?: number;
+}): ContentElement {
+    return {
+        id: uuidv4(),
+        type: 'table',
+        position: options.position,
+        size: options.size,
+        rows: options.rows,
+        columnWidths: options.columnWidths,
+        rowHeights: options.rowHeights,
+        headerRow: options.headerRow ?? false,
+        borderColor: options.borderColor ?? '#000000',
+        borderWidth: options.borderWidth ?? 1,
+        headerBackgroundColor: options.headerBackgroundColor,
+        zIndex: options.zIndex || 1,
+    };
+}
+
 /**
  * Creates a deep copy of an element with a new UUID
  * Useful for copy/paste and duplication operations
@@ -127,6 +160,17 @@ export function cloneElement(
             y: element.position.y + offset.y,
         },
     };
+
+    // Tables hold nested arrays; deep-copy them so the clone doesn't alias the
+    // source's rows/dimensions (a later per-cell edit would otherwise leak
+    // across both elements).
+    if (clonedElement.type === 'table' && element.type === 'table') {
+        clonedElement.rows = element.rows.map((row) =>
+            row.map((cell) => ({ ...cell })),
+        );
+        clonedElement.columnWidths = [...element.columnWidths];
+        clonedElement.rowHeights = [...element.rowHeights];
+    }
 
     return clonedElement;
 }
