@@ -19,6 +19,7 @@ import { AIEventBus } from './event-bus';
 import { conversationHistory, toUserContent } from './external/messages';
 import {
     providerOptionsFor,
+    providerToolsFor,
     resolveModel,
     withCacheBreakpoints,
 } from './external/providers';
@@ -245,6 +246,12 @@ export class AIService {
             },
         );
 
+        // Add the provider's native web search tool when the user enabled it and
+        // the provider supports one (OpenAI / Anthropic / Google). These run
+        // server-side and compose with our own tools in the same call.
+        const providerTools = providerToolsFor(config);
+        const allTools = providerTools ? { ...tools, ...providerTools } : tools;
+
         const loop = new AgentLoopState(this.state, this.eventBus, thread);
 
         // Cumulative response messages from the last completed step; persisted
@@ -267,7 +274,7 @@ export class AIService {
                 model,
                 system,
                 messages: withCacheBreakpoints(history, config.provider),
-                tools,
+                tools: allTools,
                 abortSignal,
                 providerOptions: providerOptionsFor(config),
                 onStepFinish: (step) => {

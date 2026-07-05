@@ -2,7 +2,7 @@ import { createAnthropic } from '@ai-sdk/anthropic';
 import { createAzure } from '@ai-sdk/azure';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
-import type { LanguageModel, ModelMessage } from 'ai';
+import type { LanguageModel, ModelMessage, ToolSet } from 'ai';
 import { createOllama } from 'ollama-ai-provider-v2';
 import type {
     LLMProviderConfig,
@@ -19,6 +19,10 @@ type ProviderOptions = Record<string, Record<string, any>>;
 interface ProviderAdapter {
     createModel(config: LLMProviderConfig): LanguageModel;
     providerOptions?(config: LLMProviderConfig): ProviderOptions | undefined;
+    // The provider's native, server-side web search tool, keyed for the tool
+    // set. Only defined for providers that support one; gated by the user's
+    // webSearchEnabled setting in providerToolsFor.
+    providerTools?(config: LLMProviderConfig): ToolSet | undefined;
 }
 
 const PROVIDERS: Record<LLMProviderType, ProviderAdapter> = {
@@ -42,16 +46,31 @@ const PROVIDERS: Record<LLMProviderType, ProviderAdapter> = {
                     : {}),
             },
         }),
+        providerTools: (c) => ({
+            web_search: createOpenAI({
+                apiKey: requireApiKey(c, 'OpenAI'),
+            }).tools.webSearch(),
+        }),
     },
     anthropic: {
         createModel: (c) =>
             createAnthropic({ apiKey: requireApiKey(c, 'Anthropic') })(c.model),
+        providerTools: (c) => ({
+            web_search: createAnthropic({
+                apiKey: requireApiKey(c, 'Anthropic'),
+            }).tools.webSearch_20250305({ maxUses: 5 }),
+        }),
     },
     google: {
         createModel: (c) =>
             createGoogleGenerativeAI({ apiKey: requireApiKey(c, 'Google AI') })(
                 c.model,
             ),
+        providerTools: (c) => ({
+            google_search: createGoogleGenerativeAI({
+                apiKey: requireApiKey(c, 'Google AI'),
+            }).tools.googleSearch({}),
+        }),
     },
     'azure-openai': {
         createModel: (c) => azureModel(c),
@@ -73,6 +92,18 @@ export function providerOptionsFor(
     config: LLMProviderConfig,
 ): ProviderOptions | undefined {
     return PROVIDERS[config.provider]?.providerOptions?.(config);
+}
+
+/**
+ * The active provider's native web search tool(s), or undefined. Returns
+ * nothing unless the user enabled web search AND the provider supports it, so
+ * it's safe to spread into the tool set unconditionally.
+ */
+export function providerToolsFor(
+    config: LLMProviderConfig,
+): ToolSet | undefined {
+    if (!config.webSearchEnabled) return undefined;
+    return PROVIDERS[config.provider]?.providerTools?.(config);
 }
 
 /**

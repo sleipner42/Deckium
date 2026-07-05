@@ -20,10 +20,22 @@ export interface LLMProviderConfig {
     // default". Which values a given model accepts is model-specific and only
     // enforced by the OpenAI API, so this is user-selected, not validated here.
     reasoningEffort?: string;
+    // Opt in to the provider's native, server-side web search tool (OpenAI,
+    // Anthropic, Google only — see WEB_SEARCH_PROVIDERS). Off by default because
+    // the provider bills each search. Ignored for providers without support.
+    webSearchEnabled?: boolean;
     // Set on configs sent to the renderer instead of the raw apiKey: indicates
     // whether a key is stored, without exposing the secret itself.
     hasApiKey?: boolean;
 }
+
+// Providers whose SDK exposes a native, server-side web search tool. Used to
+// gate the settings toggle and the tool wiring (providerToolsFor).
+export const WEB_SEARCH_PROVIDERS: LLMProviderType[] = [
+    'openai',
+    'anthropic',
+    'google',
+];
 
 // The full set of reasoning-effort values the OpenAI provider type accepts.
 // Mirrors the SDK's compile-time union (it is not exposed at runtime), and is

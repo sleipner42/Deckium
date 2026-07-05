@@ -15,6 +15,7 @@ jest.mock('./external/providers', () => ({
     resolveModel: jest.fn(() => ({})),
     withCacheBreakpoints: jest.fn((messages) => messages),
     providerOptionsFor: jest.fn(() => ({})),
+    providerToolsFor: jest.fn(() => undefined),
 }));
 jest.mock('./tools/tool-adapter', () => ({
     buildToolSet: jest.fn(() => ({})),

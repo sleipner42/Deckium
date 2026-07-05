@@ -2,11 +2,13 @@ import {
     Alert,
     Box,
     Button,
+    Checkbox,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
     FormControl,
+    FormControlLabel,
     FormHelperText,
     InputLabel,
     MenuItem,
@@ -25,6 +27,7 @@ import {
     DEFAULT_MODELS,
     OPENAI_REASONING_EFFORTS,
     PROVIDER_DISPLAY_NAMES,
+    WEB_SEARCH_PROVIDERS,
 } from '../../../../common/domain/interfaces/llm-provider';
 
 interface Props {
@@ -83,6 +86,8 @@ const LLMSettingsDialog: React.FC<Props> = ({ open, onClose }) => {
                 apiVersion: config.apiVersion,
                 // Empty string = "Auto"; send undefined so the model default is used.
                 reasoningEffort: config.reasoningEffort || undefined,
+                // Only meaningful for WEB_SEARCH_PROVIDERS; ignored elsewhere.
+                webSearchEnabled: config.webSearchEnabled || undefined,
             };
 
             // Only send a key when the user actually entered one; an empty
@@ -323,6 +328,30 @@ const LLMSettingsDialog: React.FC<Props> = ({ open, onClose }) => {
                 </Typography>
 
                 {renderProviderFields()}
+
+                {WEB_SEARCH_PROVIDERS.includes(currentProvider) && (
+                    <FormControl fullWidth margin="normal">
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={!!config.webSearchEnabled}
+                                    onChange={(e) =>
+                                        setConfig({
+                                            ...config,
+                                            webSearchEnabled: e.target.checked,
+                                        })
+                                    }
+                                />
+                            }
+                            label="Enable native web search"
+                        />
+                        <FormHelperText>
+                            Lets the model search the web using{' '}
+                            {PROVIDER_DISPLAY_NAMES[currentProvider]}'s built-in
+                            search. The provider bills each search.
+                        </FormHelperText>
+                    </FormControl>
+                )}
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose} disabled={saving}>
