@@ -9,12 +9,16 @@ import { CalculatorTool } from './tools/CalculatorTool';
 import { ChangeElementZIndexTool } from './tools/ChangeElementZIndexTool';
 import { CopyElementsTool } from './tools/CopyElementsTool';
 import { CreateBarChartTool } from './tools/CreateBarChartTool';
+import { CreateCardTool } from './tools/CreateCardTool';
+import { CreateHeaderBarTool } from './tools/CreateHeaderBarTool';
 import { CreateLineTool } from './tools/CreateLineTool';
 import { CreatePlotTool } from './tools/CreatePlotTool';
 import { CreateShapeTool } from './tools/CreateShapeTool';
 import { CreateSlideTool } from './tools/CreateSlideTool';
+import { CreateStatCardTool } from './tools/CreateStatCardTool';
 import { CreateSVGImageTool } from './tools/CreateSVGImageTool';
 import { CreateTableTool } from './tools/CreateTableTool';
+import { CreateTakeawayBarTool } from './tools/CreateTakeawayBarTool';
 import { DeleteElementsTool } from './tools/DeleteElementsTool';
 import { DeleteElementTool } from './tools/DeleteElementTool';
 import { DeleteSlideTool } from './tools/DeleteSlideTool';
@@ -62,6 +66,10 @@ export class ToolFactory {
             new UpdateShapeTool(),
             new CreateLineTool(),
             new MeasureTextTool(),
+            new CreateCardTool(),
+            new CreateStatCardTool(),
+            new CreateHeaderBarTool(),
+            new CreateTakeawayBarTool(),
             new AlignElementsTool(),
             new SpaceElementsEvenlyTool(),
             new GetDataFromUrl(),

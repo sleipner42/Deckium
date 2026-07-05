@@ -133,8 +133,7 @@ export class CreateShapeTool extends BaseTool {
             fillColor: fillColor || '#FFFFFF',
             strokeColor: strokeColor || '#000000',
             strokeWidth: strokeWidthValue,
-            borderRadius:
-                borderRadius !== undefined ? Number(borderRadius) : 0,
+            borderRadius: borderRadius !== undefined ? Number(borderRadius) : 0,
             opacity: opacity !== undefined ? Number(opacity) : 1,
             shadow: shadow || 'none',
             zIndex: zIndex !== undefined ? Number(zIndex) : 1,
