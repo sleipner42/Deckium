@@ -2,7 +2,7 @@
   "name": "deckium",
   "version": "1.0.0",
   "description": "AI-powered presentations with human control",
-  "license": "All rights reserved",
+  "license": "MIT",
   "author": {
     "name": "Deckium",
     "email": "support@deckium.xyz",

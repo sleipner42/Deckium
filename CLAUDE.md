@@ -4,10 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Structure
 
-This project consists of two main components:
-
-1. **Electron React Frontend** (`/app`): A desktop application using Electron and React for a presentation tool with AI capabilities.
-2. **FastAPI Backend** (`/backend`): A Python backend providing API services.
+The project is a single component: an **Electron React desktop app** (`/app`) — a presentation tool with AI capabilities. (An earlier hosted FastAPI backend and marketing landing page have been removed from the repo.)
 
 ## Commands
 
@@ -32,12 +29,6 @@ npm run test:e2e      # End-to-end tests (Playwright drives the built Electron a
 npm run build         # Build the app (main and renderer)
 npm run package       # Package the app for the local platform
 ```
-
-### Backend (FastAPI) — legacy
-
-The `/backend` FastAPI service is **not wired into the current app**: the
-desktop app talks to user-configured LLM providers directly (see Running
-Modes). The backend remains in the repo but nothing in `app/src` calls it.
 
 ## Architecture Overview
 
@@ -94,18 +85,6 @@ The app is provider-agnostic, built on the **Vercel AI SDK** (`ai` + `@ai-sdk/*`
 2. **State Management**:
    - Uses a state pattern with event broadcasting for updates
    - Changes are propagated to all windows/views
-
-### Backend Architecture
-
-The FastAPI backend provides:
-
-1. **API Routes** (`/backend/app/api/`):
-   - REST endpoints organized by domain
-   - Authentication using Google OAuth
-
-2. **Data Access** (`/backend/app/repositories/`):
-   - Repository pattern for data access
-   - SQLite used for storage
 
 ## Running Modes
 

@@ -25,7 +25,7 @@ Deckium is a desktop application that helps you create professional presentation
 
 1. **Clone the repository**
    ```bash
-   git clone git@github.com:sleipner42/kraftpo-ng.git
+   git clone https://github.com/sleipner42/kraftpo-ng.git
    cd kraftpo-ng
    ```
 
@@ -129,8 +129,7 @@ kraftpo-ng/
 │   │   └── common/             # Types and config shared by both processes
 │   ├── e2e/                    # Playwright end-to-end tests
 │   └── package.json
-├── backend/                    # Legacy FastAPI backend (not used by the app)
-└── landing_page/               # Marketing site
+└── LICENSE
 ```
 
 ### AI Integration
@@ -196,7 +195,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📝 License
 
-A license for this project has not been finalized yet. The `app/LICENSE` file is inherited from Electron React Boilerplate (MIT) and covers the boilerplate code.
+This project is licensed under the [MIT License](LICENSE).
 
 ## 🙏 Acknowledgments
 
