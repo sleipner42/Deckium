@@ -2,25 +2,23 @@
 
 **AI-powered presentation software with human control.**
 
-Deckium is an open-source desktop application that helps you create professional presentations using AI assistance. Built with Electron and React, it runs completely standalone on your machine.
-
-![Deckium](./assets/deckium-banner.png)
+Deckium is a desktop application that helps you create professional presentations using AI assistance. Built with Electron and React, it runs completely standalone on your machine — you bring your own LLM API key, and everything stays local.
 
 ## ✨ Features
 
-- **AI-Powered Slide Creation**: Use natural language to create and edit slides
-- **Multiple LLM Support**: Works with OpenAI, Anthropic, Google AI, Azure OpenAI, and Ollama
-- **Professional Design Tools**: Built-in linting, alignment guides, and design best practices
-- **Rich Content**: Support for text, shapes, images, charts, and more
-- **Export Options**: Export to PDF or PowerPoint
-- **Standalone Mode**: No backend required - runs entirely on your machine
-- **Privacy-Focused**: Your presentations and API keys stay on your computer
+- **AI-Powered Slide Creation**: Describe what you want in natural language; the agent builds and refines slides through a tool-based editing loop
+- **Provider-Agnostic AI**: Built on the [Vercel AI SDK](https://ai-sdk.dev) — works with OpenAI, Anthropic, Google AI, Azure OpenAI, and Ollama
+- **Design System Built In**: Compound components (cards, stat cards, header bars, takeaway bars, tables), automatic layout linting, text-density checks, and visual review keep AI output looking professional
+- **Full Editor**: Rich text (Quill), shapes, lines, images, SVG, bar charts and plots — with multi-select, group dragging, alignment guides, and smart snapping
+- **AI Extras**: Optional provider-native web search, image generation, data fetching from URLs, and slide screenshots for the agent's own visual review
+- **Import & Export**: PowerPoint import/export (full round-trip) and high-quality PDF export with real, selectable text
+- **Privacy-Focused**: No backend, no account, no telemetry — presentations and API keys never leave your computer
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 20+ and npm
 - An API key from one of the supported LLM providers (or use Ollama for free local AI)
 
 ### Installation
@@ -43,9 +41,8 @@ Deckium is an open-source desktop application that helps you create professional
    ```
 
 4. **Configure your LLM provider**
-   - Open the app
    - Go to **Edit > LLM Settings...** (or press **Cmd+,** / **Ctrl+,**)
-   - Select your provider and enter your API key
+   - Select your provider, model, and enter your API key
    - Click **Save**
 
 That's it! You're ready to create presentations.
@@ -55,16 +52,17 @@ That's it! You're ready to create presentations.
 ### Supported LLM Providers
 
 #### OpenAI
-- Models: GPT-4o, GPT-4o-mini, GPT-4 Turbo, GPT-4, GPT-3.5 Turbo
+- Models: GPT-5.5, GPT-5.5 Pro, GPT-5.1, GPT-5, GPT-4.1, GPT-4o
+- Supports configurable reasoning effort on reasoning models
 - Get API key: https://platform.openai.com/api-keys
 
 #### Anthropic (Claude)
-- Models: Claude 3.5 Sonnet, Claude 3.5 Haiku, Claude 3 Opus
+- Models: Claude Opus 4.8, Claude Sonnet 4.6, Claude Haiku 4.5, Claude 3.5 Sonnet/Haiku
 - Get API key: https://console.anthropic.com/
 
 #### Google AI (Gemini)
 - Models: Gemini 2.0 Flash, Gemini 1.5 Pro, Gemini 1.5 Flash
-- Get API key: https://makersuite.google.com/app/apikey
+- Get API key: https://aistudio.google.com/apikey
 
 #### Azure OpenAI
 - Requires: Endpoint, API key, deployment name, API version
@@ -72,8 +70,10 @@ That's it! You're ready to create presentations.
 
 #### Ollama (Free, Local)
 - Models: Llama 3.2, Llama 3.1, Mistral, Phi3, CodeLlama
-- Install: https://ollama.ai/
+- Install: https://ollama.com/
 - No API key needed!
+
+> **Web search**: OpenAI, Anthropic, and Google support the provider's native web search tool. It's off by default (each search is billed by the provider) and can be enabled per provider in LLM Settings.
 
 ### Settings File Location
 
@@ -88,94 +88,101 @@ Settings are stored locally at:
 
 1. Start a conversation with the AI assistant
 2. Describe what you want: "Create a title slide for my company presentation"
-3. The AI will create and design slides based on your instructions
-4. Continue refining with natural language commands
+3. The AI creates and designs slides, checking its own work against layout linting and visual review
+4. Continue refining with natural language — or edit anything directly by hand; the agent sees your manual changes on its next turn
 
 ### Keyboard Shortcuts
 
-- **Cmd/Ctrl + S**: Save presentation
-- **Cmd/Ctrl + O**: Open presentation
-- **Cmd/Ctrl + E**: Export to PDF
-- **Cmd/Ctrl + ,**: Open LLM Settings
-- **Cmd/Ctrl + Z**: Undo
-- **Cmd/Ctrl + Y**: Redo
+| Action | macOS | Windows/Linux |
+| --- | --- | --- |
+| Open presentation | Cmd+O | Ctrl+O |
+| Save | Cmd+S | Ctrl+S |
+| Save As | Cmd+Shift+S | Ctrl+Shift+S |
+| Export to PDF | Cmd+E | Ctrl+E |
+| Export to PowerPoint | Cmd+Shift+E | Ctrl+Shift+E |
+| LLM Settings | Cmd+, | Ctrl+, |
+| Undo | Cmd+Z | Ctrl+Z |
+| Redo | Cmd+Shift+Z | Ctrl+Y |
 
-### Exporting
+### Import & Export
 
-- **PDF Export**: File > Export to PDF...
+- **PDF Export**: File > Export to PDF... — real text (not images) with accurate positioning
 - **PowerPoint Export**: File > Export to PowerPoint...
-- **Import PowerPoint**: File > Import PowerPoint...
+- **PowerPoint Import**: File > Import PowerPoint...
 
 ## 🏗️ Architecture
 
 ### Project Structure
 
 ```
-deckium/
-├── app/                        # Electron React application
+kraftpo-ng/
+├── app/                        # Electron React application (the product)
 │   ├── src/
 │   │   ├── main/               # Electron main process
-│   │   │   ├── ai/             # AI service and tool system
-│   │   │   ├── presentation/   # Presentation management
+│   │   │   ├── ai/             # AI service, provider adapters, tool system
+│   │   │   ├── presentation/   # Presentation state and operations
+│   │   │   ├── powerpoint/     # PPTX import/export
+│   │   │   ├── pdf-export/     # PDF export service
 │   │   │   ├── settings/       # LLM settings service
 │   │   │   └── main.ts         # Application entry point
-│   │   ├── renderer/           # React frontend
-│   │   │   └── application/
-│   │   │       ├── components/ # UI components
-│   │   │       ├── context/    # React contexts
-│   │   │       └── hooks/      # Custom hooks
-│   │   └── common/             # Shared code
+│   │   ├── renderer/           # React frontend (editor UI)
+│   │   └── common/             # Types and config shared by both processes
+│   ├── e2e/                    # Playwright end-to-end tests
 │   └── package.json
-└── backend/                    # FastAPI backend (optional)
+├── backend/                    # Legacy FastAPI backend (not used by the app)
+└── landing_page/               # Marketing site
 ```
 
 ### AI Integration
 
-The AI system uses a tool-based architecture:
-1. AI assistant receives presentation context and user request
-2. AI calls tools to manipulate the presentation (e.g., `createSlide`, `addTextElement`)
-3. Tools execute and return results
-4. Process continues until task is complete
+The AI system uses a tool-based agent loop (Vercel AI SDK `streamText`):
 
-The system includes automatic linting and validation to ensure high-quality output.
+1. The assistant receives the presentation context, the current slide, and a diff of any manual edits you made since its last turn
+2. It calls tools to manipulate the presentation — creating slides, adding elements, building compound components like cards and stat rows, aligning and distributing, generating images, fetching data
+3. After each edit, the tool result includes a slide grid and linting feedback so the model can catch and fix layout problems itself
+4. Conversation history (including tool calls and reasoning) is persisted per thread, so multi-turn sessions stay coherent and provider prompt caching stays warm
+
+Agent-produced HTML is sanitized against a single shared formatting config, which also drives the editor's Quill setup and the PPTX converter — so what the AI writes, what you edit, and what exports are always in sync.
 
 ## 🛠️ Development
 
-### Running in Development Mode
+All commands run from the `app/` directory.
 
 ```bash
-cd app
-npm start
+npm start             # Development mode with hot reload
+npm run typecheck     # Type-check (tsc --noEmit)
+npm run check         # Lint + format check (Biome)
+npm run check:fix     # Auto-fix lint and formatting issues
+npm run build         # Production build (main + renderer)
+npm run package       # Package for the local platform
 ```
 
-This starts the app with hot reload enabled.
-
-### Building
+### Testing
 
 ```bash
-# Build for production
-npm run build
-
-# Package for distribution
-npm run package
+npm test              # Unit/integration tests (Jest, jsdom)
+npm run test:e2e      # End-to-end tests (Playwright drives the built Electron app)
+npm run test:e2e:only # E2E without rebuilding (when the build is current)
+npm run test:pptx-e2e # PowerPoint export → import round-trip
 ```
 
-### Linting and Formatting
+The E2E suite launches the packaged app with an isolated user-data directory and drives the real renderer, covering editor mounting, drag/resize behavior at measured zoom, and the editing lock. See `CLAUDE.md` for more detail on the test layers.
+
+### Code Quality
+
+The project uses **Biome** for linting and formatting (configured in `app/biome.json`). Recommended before committing:
 
 ```bash
-# Check code quality
-npm run check
-
-# Auto-fix issues
-npm run check:fix
+npm run check:fix && npm run typecheck
 ```
 
 ## 🔒 Privacy & Security
 
-- **Local-First**: All presentations stored on your machine
-- **API Keys**: Stored locally, never sent to any backend
+- **Local-First**: All presentations are stored on your machine
+- **Direct API Calls**: The app talks straight to your configured LLM provider — no intermediary backend
+- **API Keys**: Stored locally, never sent anywhere except your chosen provider
 - **No Tracking**: No analytics or telemetry
-- **Open Source**: Full transparency, audit the code yourself
+- **Hardened Tooling**: Agent HTML is sanitized before storage, and URL-fetching tools are SSRF-guarded
 
 ## 🤝 Contributing
 
@@ -183,14 +190,15 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+3. Commit your changes using [conventional commits](https://www.conventionalcommits.org/) (`git commit -m 'feat: add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+A license for this project has not been finalized yet. The `app/LICENSE` file is inherited from Electron React Boilerplate (MIT) and covers the boilerplate code.
 
 ## 🙏 Acknowledgments
 
 - Built from [Electron React Boilerplate](https://github.com/electron-react-boilerplate/electron-react-boilerplate)
+- AI layer powered by the [Vercel AI SDK](https://ai-sdk.dev)
