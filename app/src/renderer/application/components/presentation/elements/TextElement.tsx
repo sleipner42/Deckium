@@ -336,7 +336,7 @@ const registerCustomPickers = (
     currentVerticalAlign: string,
 ) => {
     const toolbar = getToolbarModule(quill);
-    if (toolbar && toolbar.container) {
+    if (toolbar?.container) {
         // Find the font group and add our custom size picker
         const fontGroup = toolbar.container.querySelector(
             '.ql-formats:first-child',
@@ -717,9 +717,12 @@ const showEmojiPicker = (quill: Quill) => {
             font-size: 16px;
             transition: background-color 0.2s;
         `;
-        button.onmouseover = () => (button.style.backgroundColor = '#f0f0f0');
-        button.onmouseout = () =>
-            (button.style.backgroundColor = 'transparent');
+        button.onmouseover = () => {
+            button.style.backgroundColor = '#f0f0f0';
+        };
+        button.onmouseout = () => {
+            button.style.backgroundColor = 'transparent';
+        };
         button.onclick = (e) => {
             e.preventDefault();
             quill.insertText(range.index, emoji);
@@ -848,7 +851,6 @@ export const TextElement: React.FC<TextElementProps> = ({
     // Create the Quill instance once, and tear it down on unmount so the
     // editor, its toolbar listeners, and the vertical-align picker's
     // document-level click listener don't leak on every slide switch/delete.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only setup
     useEffect(() => {
         if (!textRef.current || quillRef.current) return;
 

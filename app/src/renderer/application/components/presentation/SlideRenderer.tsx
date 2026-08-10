@@ -46,7 +46,6 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     className,
     readOnly = false,
     scale = 1,
-    maintainAspectRatio = true,
     selectableElements = true,
 }) => {
     const {
@@ -216,7 +215,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             setCanPasteElements(
                 elementData.type === 'kraftpo-elements' && elementData.elements,
             );
-        } catch (error) {
+        } catch {
             setCanPasteElements(false);
         }
     };
@@ -250,7 +249,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                         timestamp: Date.now(),
                     };
 
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                    if (navigator.clipboard?.writeText) {
                         navigator.clipboard
                             .writeText(JSON.stringify(elementData))
                             .catch(() => {
@@ -479,7 +478,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                             }, 10);
                             return;
                         }
-                    } catch (parseError) {
+                    } catch {
                         // Not JSON or not our element data, continue to check for file paths
                     }
 
@@ -680,7 +679,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     }
                 }, 10);
             }
-        } catch (error) {
+        } catch {
             console.warn('No valid elements to paste');
         }
     };
@@ -804,7 +803,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     timestamp: Date.now(),
                 };
 
-                if (navigator.clipboard && navigator.clipboard.writeText) {
+                if (navigator.clipboard?.writeText) {
                     navigator.clipboard
                         .writeText(JSON.stringify(elementData))
                         .catch(() => {

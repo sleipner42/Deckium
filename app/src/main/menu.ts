@@ -1,10 +1,4 @@
-import {
-    app,
-    BrowserWindow,
-    Menu,
-    MenuItemConstructorOptions,
-    shell,
-} from 'electron';
+import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from 'electron';
 import { logger } from './utils/logger';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {

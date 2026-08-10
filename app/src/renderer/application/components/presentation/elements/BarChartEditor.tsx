@@ -209,7 +209,10 @@ export const BarChartEditor: React.FC<BarChartEditorProps> = ({
                                 </TableHead>
                                 <TableBody>
                                     {chartData.x.map((xValue, index) => (
-                                        <TableRow key={index}>
+                                        <TableRow
+                                            // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional
+                                            key={index}
+                                        >
                                             <TableCell>
                                                 <TextField
                                                     fullWidth
