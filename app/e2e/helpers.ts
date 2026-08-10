@@ -35,7 +35,6 @@ export async function launchApp(): Promise<{
         env: {
             ...process.env,
             NODE_ENV: 'production',
-            STANDALONE_MODE: 'true',
             E2E_PRELOAD_PATH: PRELOAD,
             E2E_TEST_HOOKS: '1',
         },

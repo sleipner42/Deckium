@@ -2,7 +2,7 @@
 
 **AI-powered presentation software with human control.**
 
-Deckium is a desktop application that helps you create professional presentations using AI assistance. Built with Electron and React, it runs completely standalone on your machine — you bring your own LLM API key, and everything stays local.
+Deckium is a desktop application that helps you create professional presentations using AI assistance. Built with Electron and React, it runs without a Deckium-hosted backend or account: you bring your own LLM API key and choose which provider receives your AI requests.
 
 ## ✨ Features
 
@@ -12,7 +12,7 @@ Deckium is a desktop application that helps you create professional presentation
 - **Full Editor**: Rich text (Quill), shapes, lines, images, SVG, bar charts and plots — with multi-select, group dragging, alignment guides, and smart snapping
 - **AI Extras**: Optional provider-native web search, image generation, data fetching from URLs, and slide screenshots for the agent's own visual review
 - **Import & Export**: PowerPoint import/export (full round-trip) and high-quality PDF export with real, selectable text
-- **Privacy-Focused**: No backend, no account, no telemetry — presentations and API keys never leave your computer
+- **Privacy-Focused**: No Deckium backend, account, or telemetry; files stay local and AI requests go directly to the provider you configure
 
 ## 🚀 Quick Start
 
@@ -25,8 +25,8 @@ Deckium is a desktop application that helps you create professional presentation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/sleipner42/kraftpo-ng.git
-   cd kraftpo-ng
+   git clone https://github.com/sleipner42/Deckium.git
+   cd Deckium
    ```
 
 2. **Install dependencies**
@@ -115,7 +115,7 @@ Settings are stored locally at:
 ### Project Structure
 
 ```
-kraftpo-ng/
+Deckium/
 ├── app/                        # Electron React application (the product)
 │   ├── src/
 │   │   ├── main/               # Electron main process
@@ -177,11 +177,14 @@ npm run check:fix && npm run typecheck
 
 ## 🔒 Privacy & Security
 
-- **Local-First**: All presentations are stored on your machine
-- **Direct API Calls**: The app talks straight to your configured LLM provider — no intermediary backend
-- **API Keys**: Stored locally, never sent anywhere except your chosen provider
+- **Local-First Storage**: Presentation files and application state are stored on your machine
+- **Direct API Calls**: Prompts and relevant presentation context, including slide data or screenshots when requested by the agent, are sent directly to your configured LLM provider — there is no Deckium intermediary
+- **API Keys**: Keys are encrypted at rest with Electron `safeStorage` when the operating system provides a secure backend; systems without one fall back to local plaintext storage with a warning. Keys are sent only to the provider they configure
+- **Optional Network Tools**: Web search, image generation, URL data fetching, and logo lookup contact their respective external services only when used
 - **No Tracking**: No analytics or telemetry
 - **Hardened Tooling**: Agent HTML is sanitized before storage, and URL-fetching tools are SSRF-guarded
+
+See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 
 ## 🤝 Contributing
 

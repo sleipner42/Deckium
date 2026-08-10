@@ -233,7 +233,6 @@ const TableElementComponent: React.FC<TableElementProps> = ({
                 <colgroup>
                     {columnWidths.map((w, ci) => (
                         <col
-                            // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
                             key={ci}
                             style={{ width: `${(w / totalCols) * 100}%` }}
                         />
@@ -244,7 +243,6 @@ const TableElementComponent: React.FC<TableElementProps> = ({
                         const isHeader = headerRow && ri === 0;
                         return (
                             <tr
-                                // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional
                                 key={ri}
                                 style={{
                                     height: `${((rowHeights[ri] ?? 1) / totalRows) * 100}%`,
@@ -260,7 +258,6 @@ const TableElementComponent: React.FC<TableElementProps> = ({
                                         editing?.r === ri && editing?.c === ci;
                                     return (
                                         <td
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: cells are positional
                                             key={ci}
                                             onDoubleClick={(e) => {
                                                 e.stopPropagation();

@@ -1,67 +1,41 @@
-# Logs
-logs
-*.log
+# Dependencies
+node_modules/
 
-# Runtime data
-pids
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Logs and runtime data
+logs/
+*.log
 *.pid
 *.seed
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Coverage directory used by tools like istanbul
-coverage
+# Test and tool output
+coverage/
 .eslintcache
+playwright-report/
+test-results/
+*.cache
 
-# Dependency directory
-# https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git
-node_modules
-
-# OSX
-.DS_Store
-
-release/app/dist
-release/build
-.erb/dll
-
-.idea
-npm-debug.log.*
-*.css.d.ts
-*.sass.d.ts
-*.scss.d.ts
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Electron Forge environment files
-.env.forge
-.env.forge.local
-
-**/.claude/settings.local.json
-
-# Build artifacts
-app/.erb/dll/*.dll.js
-app/.erb/dll/*.dll
-app/.erb/dll/*.json
-app/.erb/dll/*.bundle.dev.js
-app/.erb/dll/*.bundle.*.js
+# Electron build output
 app/.erb/dll/
-app/assets/icons/*.png
-
-# Electron Forge build outputs
 app/out/
 app/dist/
 app/.webpack/
-
-# Packaged applications (Electron Forge)
-app/release/
+app/release/build/
 app/release/app/dist/
 app/release/app/node_modules/
-app/release/build/
 
-# Platform-specific distributions
+# Packaged applications and installers
 *.app
 *.dmg
 *.exe
@@ -72,70 +46,32 @@ app/release/build/
 *.msi
 *.AppImage
 
-# Temporary files
-*.tmp
-*.temp
-tmp/
-temp/
-
-# Editor directories and files
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Code signing artifacts
+# Code signing material
 *.p12
 *.pem
 *.crt
 *.key
 *.provisionprofile
 
-*.db
-.firebase/
-landing_page/.firebase/
-*.cache
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
 
-
-__pycache__
-
-.mypy_cache/
-.venv/
-backend/data/
-dist/
-
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Editors and operating systems
 .DS_Store
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-db.sql
 
-untrackes/
-__pycache__/
+# Local AI-agent settings
+**/.claude/settings.local.json

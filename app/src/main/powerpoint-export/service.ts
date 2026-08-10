@@ -45,10 +45,10 @@ export class PowerPointExportService {
         parentWindow?: BrowserWindow,
     ): Promise<void> {
         const pptx = new PptxGenJS();
-        pptx.author = 'KraftPo';
-        pptx.company = 'KraftPo Presentation Tool';
+        pptx.author = 'Deckium';
+        pptx.company = 'Deckium';
         pptx.title = presentation.title || 'Presentation';
-        pptx.subject = 'Exported from KraftPo';
+        pptx.subject = 'Exported from Deckium';
 
         // Layout matches the app canvas exactly at 96 DPI.
         pptx.defineLayout({

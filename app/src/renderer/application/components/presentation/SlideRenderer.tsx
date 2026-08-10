@@ -213,7 +213,9 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             const text = await navigator.clipboard.readText();
             const elementData = JSON.parse(text);
             setCanPasteElements(
-                elementData.type === 'kraftpo-elements' && elementData.elements,
+                ['deckium-elements', 'kraftpo-elements'].includes(
+                    elementData.type,
+                ) && elementData.elements,
             );
         } catch {
             setCanPasteElements(false);
@@ -242,7 +244,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
                     // Store only in system clipboard with marker
                     const elementData = {
-                        type: 'kraftpo-elements',
+                        type: 'deckium-elements',
                         version: '1.0',
                         elements: selectedElements,
                         elementIds: selectedElements.map((el) => el.id),
@@ -444,7 +446,9 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
                     try {
                         const elementData = JSON.parse(trimmedText);
                         if (
-                            elementData.type === 'kraftpo-elements' &&
+                            ['deckium-elements', 'kraftpo-elements'].includes(
+                                elementData.type,
+                            ) &&
                             elementData.elements
                         ) {
                             e.preventDefault();
@@ -657,7 +661,9 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             const elementData = JSON.parse(text);
 
             if (
-                elementData.type === 'kraftpo-elements' &&
+                ['deckium-elements', 'kraftpo-elements'].includes(
+                    elementData.type,
+                ) &&
                 elementData.elements
             ) {
                 const clonedElements = cloneElements(elementData.elements);
@@ -796,7 +802,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             if (selectedElements.length > 0) {
                 // Store only in system clipboard with marker
                 const elementData = {
-                    type: 'kraftpo-elements',
+                    type: 'deckium-elements',
                     version: '1.0',
                     elements: selectedElements,
                     elementIds: selectedElements.map((el) => el.id),
@@ -966,6 +972,8 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         <div
             ref={slideRef}
             data-slide-container
+            role="application"
+            aria-label="Slide canvas"
             tabIndex={0}
             style={{
                 width: PRESENTATION_DIMENSIONS.WIDTH,

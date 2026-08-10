@@ -20,7 +20,7 @@ export const pxToInch = (px: number): number => px / DPI;
 
 /** pptxgenjs layout matching the app canvas exactly at 96 DPI. */
 export const LAYOUT = {
-    name: 'KRAFTPO_16x9',
+    name: 'DECKIUM_16x9',
     width: PRESENTATION_DIMENSIONS.WIDTH / DPI, // 13.333...
     height: PRESENTATION_DIMENSIONS.HEIGHT / DPI, // 7.5
 };

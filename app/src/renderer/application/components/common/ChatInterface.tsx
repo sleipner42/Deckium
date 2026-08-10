@@ -389,7 +389,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             >
                 {imageContents.map((item, index) => (
                     <Box
-                        // biome-ignore lint/suspicious/noArrayIndexKey: images have no stable id
                         key={index}
                         component="img"
                         src={
@@ -863,11 +862,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         }}
                     >
                         {pastedImages.map((img, index) => (
-                            <Box
-                                // biome-ignore lint/suspicious/noArrayIndexKey: images have no stable id
-                                key={index}
-                                sx={{ position: 'relative' }}
-                            >
+                            <Box key={index} sx={{ position: 'relative' }}>
                                 <Box
                                     component="img"
                                     src={img}

@@ -24,13 +24,15 @@ npm run package
 
 ## Configuration
 
-The app runs in **standalone mode** by default (no backend required).
+The app runs without a Deckium backend or account. AI requests go directly to
+the LLM provider configured by the user.
 
 To configure your LLM provider:
 - Go to **Edit > LLM Settings...**
 - Or press **Cmd+,** (Mac) / **Ctrl+,** (Windows/Linux)
 
-For detailed setup instructions, see [QUICK_START_STANDALONE.md](./QUICK_START_STANDALONE.md).
+For detailed setup and privacy information, see the main
+[README.md](../README.md).
 
 ## Architecture
 

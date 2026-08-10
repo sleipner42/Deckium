@@ -117,6 +117,7 @@ const ShapeElementComponent: React.FC<ShapeElementProps> = ({
                         onMouseDown={handleMouseDown}
                         onContextMenu={onContextMenu}
                     >
+                        <title>Triangle</title>
                         <polygon
                             points={`${size.width / 2},${strokeWidth} ${strokeWidth},${size.height - strokeWidth} ${size.width - strokeWidth},${size.height - strokeWidth}`}
                             fill={fillColor}

@@ -304,10 +304,7 @@ export const BarChartPropertiesDialog: React.FC<
                                     </TableHead>
                                     <TableBody>
                                         {dataPoints.map((point, index) => (
-                                            <TableRow
-                                                // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional
-                                                key={index}
-                                            >
+                                            <TableRow key={index}>
                                                 <TableCell>
                                                     <TextField
                                                         size="small"

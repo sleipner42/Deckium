@@ -88,10 +88,11 @@ The app is provider-agnostic, built on the **Vercel AI SDK** (`ai` + `@ai-sdk/*`
 
 ## Running Modes
 
-The app runs **standalone**: users provide their own LLM API keys, all data
-stays local, and there is no backend or authentication. (Earlier versions had a
-hosted "backend mode" gated on `STANDALONE_MODE`; that path has been removed —
-the flag is no longer read anywhere in `app/src`.)
+The app runs **standalone**: users provide their own LLM API keys, and there is
+no Deckium backend or authentication. Presentation files stay local, while AI
+requests send prompts and relevant presentation context directly to the
+configured provider. Earlier versions had a hosted backend mode; that path has
+been removed.
 
 ### Environment Setup
 
@@ -110,12 +111,12 @@ When running in standalone mode, users can configure any of these providers:
 
 1. **OpenAI**
    - Requires: API Key
-   - Models: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-3.5-turbo
+   - Models: gpt-5.5, gpt-5.5-pro, gpt-5.1, gpt-5, gpt-4.1, gpt-4o
    - Get API key: https://platform.openai.com/api-keys
 
 2. **Anthropic**
    - Requires: API Key
-   - Models: claude-3-5-sonnet, claude-3-5-haiku, claude-3-opus
+   - Models: claude-opus-4-8, claude-sonnet-4-6, claude-haiku-4-5-20251001, claude-3-5-sonnet-20241022, claude-3-5-haiku-20241022
    - Get API key: https://console.anthropic.com/
 
 3. **Azure OpenAI**
@@ -126,13 +127,13 @@ When running in standalone mode, users can configure any of these providers:
 4. **Google AI**
    - Requires: API Key
    - Models: gemini-2.0-flash-exp, gemini-1.5-pro, gemini-1.5-flash
-   - Get API key: https://makersuite.google.com/app/apikey
+   - Get API key: https://aistudio.google.com/apikey
 
 5. **Ollama (Local)**
    - Requires: Local Ollama installation and endpoint
    - Models: llama3.2, llama3.1, mistral, phi3, codellama
    - Default endpoint: http://localhost:11434
-   - Setup: https://ollama.ai/
+   - Setup: https://ollama.com/
 
 ### User Configuration
 
@@ -145,14 +146,15 @@ In standalone mode, users configure their LLM provider through:
 
 2. **Settings File** (stored automatically):
    - Located at: `{userData}/llm-settings.json`
-   - Contains provider configurations and API keys
+   - Contains provider configurations and API keys encrypted with Electron
+     `safeStorage` when OS-backed encryption is available
    - Managed by: `/app/src/main/settings/llm-settings-service.ts`
 
 ### AI Provider Wiring
 
 **Main Process** (`/app/src/main/main.ts`): constructs `AIService` with the
 `LLMSettingsService` (user's configured provider/keys) — no branching on a
-backend/standalone flag.
+hosted-service flag.
 
 **Provider resolution** (`/app/src/main/ai/external/providers.ts`): `resolveModel(config)`
 returns a Vercel AI SDK `LanguageModel` for the selected provider, and

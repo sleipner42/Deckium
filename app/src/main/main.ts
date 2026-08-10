@@ -223,7 +223,14 @@ const createWindow = async () => {
     menuBuilder.buildMenu();
 
     mainWindow.webContents.setWindowOpenHandler((edata) => {
-        shell.openExternal(edata.url);
+        try {
+            const protocol = new URL(edata.url).protocol;
+            if (['https:', 'http:', 'mailto:'].includes(protocol)) {
+                void shell.openExternal(edata.url);
+            }
+        } catch {
+            logger.logSystem('Blocked invalid external URL', 'warn');
+        }
         return { action: 'deny' };
     });
 };

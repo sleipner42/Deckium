@@ -9,7 +9,13 @@
                 "useImportType": "off"
             },
             "suspicious": {
+                "noArrayIndexKey": "off",
                 "noExplicitAny": "off"
+            },
+            "a11y": {
+                "noNoninteractiveTabindex": "off",
+                "noStaticElementInteractions": "off",
+                "useKeyWithClickEvents": "off"
             },
             "correctness": {
                 "useExhaustiveDependencies": "off"

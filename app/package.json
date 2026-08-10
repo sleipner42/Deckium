@@ -10,11 +10,11 @@
     ],
     "homepage": "https://deckium.xyz",
     "bugs": {
-        "url": "https://github.com/sleipner42/kraftpo-ng/issues"
+        "url": "https://github.com/sleipner42/Deckium/issues"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/sleipner42/kraftpo-ng.git"
+        "url": "git+https://github.com/sleipner42/Deckium.git"
     },
     "author": {
         "name": "Deckium",
@@ -124,7 +124,7 @@
         "plotly.js": "^3.0.1",
         "pptxgenjs": "4.0.1",
         "pptxtojson": "^1.5.0",
-        "quill": "^2.0.3",
+        "quill": "2.0.2",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-markdown": "^10.1.0",
@@ -261,7 +261,7 @@
         "publish": {
             "provider": "github",
             "owner": "sleipner42",
-            "repo": "kraftpo-ng"
+            "repo": "Deckium"
         }
     },
     "devEngines": {
