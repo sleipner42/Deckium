@@ -2,7 +2,8 @@
 
 **AI-powered presentation software with human control.**
 
-<img width="627" height="824" alt="image" src="https://github.com/user-attachments/assets/a1d94ce0-6c52-43aa-b4fc-5f0dfb4e333c" />
+<img width="584" height="352" alt="image" src="https://github.com/user-attachments/assets/72c945f3-45fb-42af-8aa2-1f912b854979" />
+
 
 Deckium is a desktop application that helps you create professional presentations using AI assistance. Built with Electron and React, it runs without a Deckium-hosted backend or account: you bring your own LLM API key and choose which provider receives your AI requests.
 
